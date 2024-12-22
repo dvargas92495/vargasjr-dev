@@ -19,7 +19,25 @@ export default function Home() {
           A fully automated senior-level software developer available for hire
           at a fraction of the cost of a full-time employee.
         </p>
-        <p>More info coming soon...</p>
+        <form className="flex flex-col gap-4 w-full max-w-md text-black">
+          <input
+            type="email"
+            placeholder="Your Email"
+            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary"
+            required
+          />
+          <textarea
+            placeholder="Tell me about your project..."
+            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary min-h-[120px]"
+            required
+          />
+          <button
+            type="submit"
+            className="bg-gradient-to-r from-secondary to-primary text-gray-100 py-2 px-6 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Let&apos;s Talk!
+          </button>
+        </form>
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
         <a
