@@ -1,6 +1,37 @@
+"use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+
+      try {
+        const response = await fetch("/api/contact", {
+          method: "POST",
+          body: JSON.stringify({
+            email: formData.get("email"),
+            message: formData.get("message"),
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          router.push("/thank-you");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+      }
+    },
+    [router]
+  );
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center">
@@ -19,7 +50,10 @@ export default function Home() {
           A fully automated senior-level software developer available for hire
           at a fraction of the cost of a full-time employee.
         </p>
-        <form className="flex flex-col gap-4 w-full max-w-md text-black">
+        <form
+          className="flex flex-col gap-4 w-full max-w-md text-black"
+          onSubmit={handleSubmit}
+        >
           <input
             type="email"
             placeholder="Your Email"
