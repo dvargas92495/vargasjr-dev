@@ -3,9 +3,9 @@ import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
-export const db = drizzle(sql);
+const db = drizzle(sql);
 
-export const ContactFormResponsesTable = pgTable("contact_form_responses", {
+const ContactFormResponsesTable = pgTable("contact_form_responses", {
   id: serial("id").primaryKey(),
   email: text("email").notNull(),
   message: text("message").notNull(),

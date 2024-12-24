@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "vargasjr-dev-agent"
+version = "0.0.1"
+description = "Vargas Jr Dev Agent"
+authors = []
+keywords = []
+license = "MIT"
+classifiers = []
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+vellum-ai = "0.12.4"
+
+[tool.poetry.dev-dependencies]
+mypy = "1.11.0"
+
+[tool.mypy]
+plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy"]
