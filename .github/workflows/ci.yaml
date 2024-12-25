@@ -1,0 +1,21 @@
+name: ci
+
+on: [push]
+jobs:
+  test-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Bootstrap poetry
+        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
+      - name: Install dependencies
+        run: poetry install
+        working-directory: agent
+      - name: Test
+        run: poetry run pytest -rP .
+        working-directory: agent
