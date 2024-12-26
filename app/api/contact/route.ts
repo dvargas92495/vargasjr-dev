@@ -1,26 +1,34 @@
 import { NextResponse } from "next/server";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { ContactFormResponsesTable } from "@/db/schema";
+import { z, ZodError } from "zod";
 
 const db = drizzle(sql);
-
-const ContactFormResponsesTable = pgTable("contact_form_responses", {
-  id: serial("id").primaryKey(),
-  email: text("email").notNull(),
-  message: text("message").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, message } = body;
+    const { email, message } = z
+      .object({
+        email: z.string().email(),
+        message: z.string(),
+      })
+      .parse(body);
 
-    await db.insert(ContactFormResponsesTable).values({ email, message });
+    await db
+      .insert(ContactFormResponsesTable)
+      .values({ email, message, formId: "landing-page" });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to process contact form" },
       { status: 500 }
