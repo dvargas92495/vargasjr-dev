@@ -31,12 +31,14 @@ def mock_session_info(mock_engine_info):
         yield session, url
 
 
-def test_agent_runner__happy_path(mocker):
+def test_agent_runner__happy_path(mocker, mock_session_info):
     # GIVEN a cancel signal and logger
     cancel_signal = Event()
     logger = mocker.Mock()
+    _, url = mock_session_info
 
     # AND an agent runner
+    os.environ["POSTGRES_URL"] = url
     agent_runner = AgentRunner(
         cancel_signal=cancel_signal,
         logger=logger,
@@ -46,7 +48,7 @@ def test_agent_runner__happy_path(mocker):
     agent_runner.run()
 
     # AND sleep for a bit
-    time.sleep(0.01)
+    time.sleep(0.02)
 
     # AND then cancel the runner
     cancel_signal.set()
@@ -80,7 +82,7 @@ def test_agent_runer__triage_message(mocker, mock_session_info):
     agent_runner.run()
 
     # AND sleep for a bit
-    time.sleep(0.01)
+    time.sleep(0.02)
 
     # AND then cancel the runner
     cancel_signal.set()
