@@ -1,20 +1,21 @@
 import os
+from uuid import UUID, uuid4
 from sqlalchemy import create_engine
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
-from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from sqlmodel import Session, select
-from agent.models.contact_form_response import ContactFormResponse
+from vellum.client.core.pydantic_utilities import UniversalBaseModel
+from agent.models.inbox_message import InboxMessage
 
 
-class InboxMessage(UniversalBaseModel):
-    message_id: int
+class SlimMessage(UniversalBaseModel):
+    message_id: UUID
     body: str
 
 
 class ReadMessageNode(BaseNode):
     class Outputs(BaseNode.Outputs):
-        message: InboxMessage
+        message: SlimMessage
 
     def run(self) -> Outputs:
         url = os.getenv("POSTGRES_URL")
@@ -23,21 +24,21 @@ class ReadMessageNode(BaseNode):
 
         engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
         with Session(engine) as session:
-            statement = select(ContactFormResponse).order_by(ContactFormResponse.created_at.desc())
+            statement = select(InboxMessage).order_by(InboxMessage.created_at.desc())
             result = session.exec(statement).first()
 
         if not result:
             return self.Outputs(
-                message=InboxMessage(
-                    message_id=0,
+                message=SlimMessage(
+                    message_id=uuid4(),
                     body="No messages found",
                 )
             )
 
         return self.Outputs(
-            message=InboxMessage(
+            message=SlimMessage(
                 message_id=result.id,
-                body=result.message,
+                body=result.body,
             )
         )
 

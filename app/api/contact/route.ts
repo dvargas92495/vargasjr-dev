@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
-import { ContactFormResponsesTable } from "@/db/schema";
+import { InboxesTable, InboxMessagesTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 
 const db = drizzle(sql);
@@ -16,9 +17,20 @@ export async function POST(request: Request) {
       })
       .parse(body);
 
+    const inbox = await db
+      .select({ id: InboxesTable.id })
+      .from(InboxesTable)
+      .where(eq(InboxesTable.name, "landing-page"))
+      .limit(1)
+      .execute();
+
+    if (!inbox.length) {
+      return NextResponse.json({ error: "Inbox not found" }, { status: 404 });
+    }
+
     await db
-      .insert(ContactFormResponsesTable)
-      .values({ email, message, formId: "landing-page" });
+      .insert(InboxMessagesTable)
+      .values({ source: email, body: message, inboxId: inbox[0].id });
 
     return NextResponse.json({ success: true });
   } catch (error) {

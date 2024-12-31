@@ -29,4 +29,5 @@ plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy"]
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore::DeprecationWarning:pytz",
+    "ignore:Load is deprecated on a client fixture:DeprecationWarning",
 ]
