@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
@@ -20,20 +21,20 @@ export default async function AdminLayout({
         <nav>
           <ul className="space-y-2">
             <li>
-              <a
+              <Link
                 href="/admin"
                 className="block p-2 hover:bg-gray-200 hover:text-black rounded"
               >
                 Dashboard
-              </a>
+              </Link>
             </li>
             <li>
-              <a
+              <Link
                 href="/admin/inboxes"
                 className="block p-2 hover:bg-gray-200 hover:text-black rounded"
               >
                 Inboxes
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>

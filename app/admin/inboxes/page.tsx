@@ -3,6 +3,7 @@ import { desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import InboxRow from "@/components/inbox-row";
+import Link from "next/link";
 
 const db = drizzle(sql);
 
@@ -31,12 +32,12 @@ export default async function InboxesPage() {
         </table>
       </div>
       <div className="mt-4">
-        <a
+        <Link
           href="/admin/inboxes/new"
           className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
         >
           New Inbox
-        </a>
+        </Link>
       </div>
     </>
   );
