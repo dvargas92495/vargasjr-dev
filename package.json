@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
+    "cookies-next": "^5.0.2",
     "drizzle-orm": "^0.38.2",
     "next": "15.1.2",
     "react": "^19.0.0",
