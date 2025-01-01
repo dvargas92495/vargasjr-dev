@@ -48,7 +48,7 @@ jobs:
         id: get_version
         run: |
           VERSION=$(sed -n '3p' agent/pyproject.toml | cut -d'"' -f2)
-          echo "$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
