@@ -7,9 +7,9 @@ from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
 from sqlmodel import Session, select
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
-from agent.models.inbox_message import InboxMessage
-from agent.models.inbox_message_operation import InboxMessageOperation
-from agent.models.types import InboxMessageOperationType
+from src.models.inbox_message import InboxMessage
+from src.models.inbox_message_operation import InboxMessageOperation
+from src.models.types import InboxMessageOperationType
 
 
 class SlimMessage(UniversalBaseModel):

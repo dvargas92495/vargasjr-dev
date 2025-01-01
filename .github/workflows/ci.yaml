@@ -19,3 +19,41 @@ jobs:
       - name: Test
         run: poetry run pytest -rP .
         working-directory: agent
+  publish-agent:
+    runs-on: ubuntu-latest
+    needs: test-agent
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Bootstrap poetry
+        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
+      - name: Install dependencies
+        run: poetry install
+        working-directory: agent
+      - name: Build package
+        run: poetry build
+        working-directory: agent
+      - name: Publish package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: agent/dist/*
+          retention-days: 5
+      - name: Get version from pyproject.toml
+        id: get_version
+        run: |
+          VERSION=$(sed -n '3p' agent/pyproject.toml | cut -d'"' -f2)
+          echo "$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: agent/dist/*
+          tag_name: v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true

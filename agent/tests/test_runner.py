@@ -2,11 +2,12 @@ from threading import Event
 import time
 from uuid import uuid4
 from sqlmodel import Session, select
-from agent.models.inbox import Inbox
-from agent.models.inbox_message import InboxMessage
-from agent.models.inbox_message_operation import InboxMessageOperation
-from agent.models.types import InboxMessageOperationType
-from agent.runner import AgentRunner
+
+from src.models.inbox import Inbox
+from src.models.inbox_message import InboxMessage
+from src.models.inbox_message_operation import InboxMessageOperation
+from src.models.types import InboxMessageOperationType
+from src.runner import AgentRunner
 
 
 def test_agent_runner__happy_path(mocker, mock_sql_session):

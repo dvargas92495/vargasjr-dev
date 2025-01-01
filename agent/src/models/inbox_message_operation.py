@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
 
-from agent.models.types import InboxMessageOperationType
+from src.models.types import InboxMessageOperationType
 
 
 class InboxMessageOperation(SQLModel, table=True):

@@ -4,7 +4,7 @@ import time
 from typing import Optional
 from dotenv import load_dotenv
 
-from agent.workflows.triage_message.workflow import TriageMessageWorkflow
+from src.workflows.triage_message.workflow import TriageMessageWorkflow
 
 
 class AgentRunner:

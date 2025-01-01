@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
 from sqlalchemy.dialects.postgresql import JSONB
 
-from agent.models.types import InboxType
+from src.models.types import InboxType
 
 
 class Inbox(SQLModel, table=True):
