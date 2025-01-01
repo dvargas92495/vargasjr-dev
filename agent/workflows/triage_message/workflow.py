@@ -2,6 +2,7 @@ import os
 from uuid import UUID, uuid4
 import psycopg
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
 from sqlmodel import Session, select
@@ -58,7 +59,7 @@ class ReadMessageNode(BaseNode):
                     message_id=result.id,
                     body=result.body,
                 )
-        except psycopg.OperationalError:
+        except (psycopg.OperationalError, SQLAlchemyOperationalError):
             # I suppose the agent could spin down while the agent is running, so we need to cancel this case.
             return self.Outputs(
                 message=SlimMessage(

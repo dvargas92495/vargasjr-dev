@@ -1,3 +1,4 @@
+import StopInstanceButton from "@/components/stop-instance-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
 
@@ -11,19 +12,22 @@ export default async function AdminPage() {
     notFound();
   }
 
+  const instanceState = instance.State?.Name;
+  const instanceId = instance.InstanceId;
+
   return (
-    <div>
-      <h1>Vargas JR</h1>
-      <p>Manage Vargas Jr Settings</p>
+    <div className="flex flex-col gap-2 justify-start items-start">
+      <h1 className="text-2xl font-bold">Vargas JR</h1>
+      <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
       <p>
-        InstanceID: <span className="font-mono">{instance.InstanceId}</span>
+        Instance ID: <span className="font-mono">{instance.InstanceId}</span>
       </p>
       <p>
         Instance Type:{" "}
         <span className="font-mono">{instance.InstanceType}</span>
       </p>
       <p>
-        State: <span className="font-mono">{instance.State?.Name}</span>
+        State: <span className="font-mono">{instanceState}</span>
       </p>
       <p>
         ImageID: <span className="font-mono">{instance.ImageId}</span>
@@ -31,17 +35,9 @@ export default async function AdminPage() {
       <p>
         Public IP: <span className="font-mono">{instance.PublicIpAddress}</span>
       </p>
-      <p>
-        Private IP:{" "}
-        <span className="font-mono">{instance.PrivateIpAddress}</span>
-      </p>
-      <p>
-        Public DNS: <span className="font-mono">{instance.PublicDnsName}</span>
-      </p>
-      <p>
-        Private DNS:{" "}
-        <span className="font-mono">{instance.PrivateDnsName}</span>
-      </p>
+      {instanceState === "running" && instanceId && (
+        <StopInstanceButton id={instanceId} />
+      )}
     </div>
   );
 }
