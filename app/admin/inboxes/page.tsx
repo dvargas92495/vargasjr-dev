@@ -2,6 +2,7 @@ import { InboxesTable } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
+import InboxRow from "@/components/inbox-row";
 
 const db = drizzle(sql);
 
@@ -24,13 +25,7 @@ export default async function InboxesPage() {
           </thead>
           <tbody>
             {allInboxes.map((inbox) => (
-              <tr key={inbox.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 border-b">{inbox.name}</td>
-                <td className="px-6 py-4 border-b">
-                  {inbox.createdAt.toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 border-b">{inbox.type}</td>
-              </tr>
+              <InboxRow key={inbox.id} inbox={inbox} />
             ))}
           </tbody>
         </table>

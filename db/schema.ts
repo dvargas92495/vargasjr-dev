@@ -20,6 +20,8 @@ export const InboxesTable = pgTable("inboxes", {
   config: jsonb("config").notNull(),
 });
 
+export type Inbox = typeof InboxesTable.$inferSelect;
+
 export const InboxMessagesTable = pgTable("inbox_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   inboxId: uuid("inbox_id")

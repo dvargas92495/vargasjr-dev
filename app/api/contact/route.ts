@@ -4,6 +4,7 @@ import { sql } from "@vercel/postgres";
 import { InboxesTable, InboxMessagesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
+import formatZodError from "@/utils/format-zod-error";
 
 const db = drizzle(sql);
 
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: "Invalid request body" },
+        { error: `Invalid request body: ${formatZodError(error)}` },
         { status: 400 }
       );
     }

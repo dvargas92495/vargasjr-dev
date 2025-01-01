@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 export default function Home() {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -25,9 +26,11 @@ export default function Home() {
 
         if (response.ok) {
           router.push("/thank-you");
+        } else {
+          throw new Error(await response.text());
         }
       } catch (error) {
-        console.error("Error submitting form:", error);
+        setError("Error submitting form: " + error);
       }
     },
     [router]
@@ -58,11 +61,13 @@ export default function Home() {
             type="email"
             placeholder="Your Email"
             className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary"
+            name="email"
             required
           />
           <textarea
             placeholder="Tell me about your project..."
             className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary min-h-[120px]"
+            name="message"
             required
           />
           <button
@@ -71,6 +76,7 @@ export default function Home() {
           >
             Let&apos;s Talk!
           </button>
+          {error && <p className="text-red-500">{error}</p>}
         </form>
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
