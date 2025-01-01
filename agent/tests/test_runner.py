@@ -12,7 +12,7 @@ from agent.models.types import InboxMessageOperationType
 from agent.runner import AgentRunner
 
 
-def test_agent_runner__happy_path(mocker):
+def test_agent_runner__happy_path(mocker, mock_sql_session):
     # GIVEN a cancel signal and logger
     cancel_signal = Event()
     logger = mocker.Mock()
