@@ -30,3 +30,20 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
   body: text("body").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+const InboxMessageOperationTypes = ["READ", "ARCHIVED"] as const;
+export type InboxMessageOperationType =
+  (typeof InboxMessageOperationTypes)[number];
+export const InboxMessageOperationTypesEnum = pgEnum(
+  "inbox_message_operation_type",
+  InboxMessageOperationTypes
+);
+
+export const InboxMessageOperationsTable = pgTable("inbox_message_operations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  inboxMessageId: uuid("inbox_message_id")
+    .notNull()
+    .references(() => InboxMessagesTable.id),
+  operation: InboxMessageOperationTypesEnum("operation").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

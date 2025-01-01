@@ -15,6 +15,13 @@
       "when": 1735685418207,
       "tag": "0001_adorable_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1735746921125,
+      "tag": "0002_safe_karnak",
+      "breakpoints": true
     }
   ]
 }
