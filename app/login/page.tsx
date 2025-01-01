@@ -1,7 +1,8 @@
 "use client";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, Suspense } from "react";
 import { setCookie } from "cookies-next";
+import SearchParamError from "@/components/search-param-error";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,8 +20,6 @@ export default function LoginPage() {
     },
     [router]
   );
-  const searchParams = useSearchParams();
-  const error = searchParams.get("error");
 
   return (
     <div className="min-h-screen grid place-items-center p-8">
@@ -41,7 +40,9 @@ export default function LoginPage() {
         >
           Login
         </button>
-        {error && <p className="text-red-500">{error}</p>}
+        <Suspense>
+          <SearchParamError />
+        </Suspense>
       </form>
     </div>
   );

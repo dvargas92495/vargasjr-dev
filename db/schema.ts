@@ -7,8 +7,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-
-const InboxTypes = ["FORM", "EMAIL", "TEXT"] as const;
+import { InboxMessageOperationTypes, InboxTypes } from "./constants";
 
 export type InboxType = (typeof InboxTypes)[number];
 export const InboxTypesEnum = pgEnum("inbox_type", InboxTypes);
@@ -31,7 +30,6 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-const InboxMessageOperationTypes = ["READ", "ARCHIVED"] as const;
 export type InboxMessageOperationType =
   (typeof InboxMessageOperationTypes)[number];
 export const InboxMessageOperationTypesEnum = pgEnum(
