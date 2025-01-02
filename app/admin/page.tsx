@@ -1,6 +1,24 @@
 import StopInstanceButton from "@/components/stop-instance-button";
+import StartInstanceButton from "@/components/start-instance-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
+import PendingInstanceRefresh from "@/components/pending-instance-refresh";
+import CopyableText from "@/components/copyable-text";
+
+/**
+ * Steps takin to create Vargas JR:
+ * - Create the EC2 instance
+ * - Create the Key Pair
+ * - `sudo apt update`
+ * - `sudo apt install -y python3.12 python3.12-venv python3-pip`
+ * - `sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1`
+ * - `sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1`
+ * - `curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3`
+ * - source ~/.profile
+ * - add `~/run_agent.sh` to the instance
+ * - chmod u+x ~/run_agent.sh
+ * - curl -s https://api.github.com/repos/dvargas92495/vargasjs-dev/releases/latest | grep vargasjr_dev_agent-*.tar.gz
+ */
 
 export default async function AdminPage() {
   const ec2 = new EC2({});
@@ -14,6 +32,7 @@ export default async function AdminPage() {
 
   const instanceState = instance.State?.Name;
   const instanceId = instance.InstanceId;
+  const command = `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`;
 
   return (
     <div className="flex flex-col gap-2 justify-start items-start">
@@ -33,11 +52,15 @@ export default async function AdminPage() {
         ImageID: <span className="font-mono">{instance.ImageId}</span>
       </p>
       <p>
-        Public IP: <span className="font-mono">{instance.PublicIpAddress}</span>
+        Connect: <CopyableText className="font-mono" text={command} />
       </p>
       {instanceState === "running" && instanceId && (
         <StopInstanceButton id={instanceId} />
       )}
+      {instanceState === "stopped" && instanceId && (
+        <StartInstanceButton id={instanceId} />
+      )}
+      {instanceState === "pending" && <PendingInstanceRefresh />}
     </div>
   );
 }

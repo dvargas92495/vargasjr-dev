@@ -1,6 +1,9 @@
 name: ci
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'agent/pyproject.toml'
 jobs:
   test-agent:
     runs-on: ubuntu-latest
