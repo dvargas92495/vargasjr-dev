@@ -76,7 +76,7 @@ export default async function InboxPage({
             >
               <td className="px-6 py-4 border-b">{message.source}</td>
               <td className="px-6 py-4 border-b">
-                {message.createdAt.toLocaleDateString()}
+                {message.createdAt.toLocaleString()}
               </td>
               <td className="px-6 py-4 border-b">
                 {message.body.slice(0, 25)}
