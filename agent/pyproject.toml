@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.1"
+version = "0.0.2"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -15,6 +15,9 @@ python = "^3.12"
 vellum-ai = "0.12.4"
 sqlmodel = "^0.0.22"
 psycopg = {extras = ["binary"], version = "^3.2.3"}
+
+[tool.poetry.scripts]
+agent = "src.cli:main"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -1,10 +1,21 @@
 import logging
+import os
+import sys
 from threading import Event, Thread
 import time
 from typing import Optional
 from dotenv import load_dotenv
 
 from src.workflows.triage_message.workflow import TriageMessageWorkflow
+
+
+def _default_logger():
+    logger = logging.getLogger(__name__)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
 
 
 class AgentRunner:
@@ -17,8 +28,12 @@ class AgentRunner:
     ):
         load_dotenv()
         self._cancel_signal = cancel_signal or Event()
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or _default_logger()
         self._sleep_time = sleep_time
+
+        log_level = os.getenv("LOG_LEVEL")
+        if log_level:
+            self._logger.setLevel(log_level)
 
     def run(self):
         main_thread = Thread(target=self._main_thread)

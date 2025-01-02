@@ -16,8 +16,12 @@ import CopyableText from "@/components/copyable-text";
  * - `curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3`
  * - source ~/.profile
  * - add `~/run_agent.sh` to the instance
+ * - add `~/.env` to the instance with the following:
+ *   - `POSTGRES_URL`
+ *   - `LOG_LEVEL=INFO`
  * - chmod u+x ~/run_agent.sh
  * - curl -s https://api.github.com/repos/dvargas92495/vargasjs-dev/releases/latest | grep vargasjr_dev_agent-*.tar.gz
+ * - 
  */
 
 export default async function AdminPage() {
