@@ -1,25 +1,26 @@
-import os
+import logging
 from uuid import UUID, uuid4
 import psycopg
-from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from src.models.inbox import Inbox
+from src.services import postgres_session
 from vellum import (
     ChatMessagePromptBlock,
     JinjaPromptBlock,
-    PlainTextPromptBlock,
     PromptParameters,
-    RichTextPromptBlock,
 )
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode, BaseInlinePromptNode
-from sqlmodel import Session, select
+from sqlmodel import select
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from src.models.inbox_message import InboxMessage
 from src.models.inbox_message_operation import InboxMessageOperation
 from src.models.types import InboxMessageOperationType
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
+import boto3
+
+logger = logging.getLogger(__name__)
 
 
 class SlimMessage(UniversalBaseModel):
@@ -34,13 +35,8 @@ class ReadMessageNode(BaseNode):
         message: SlimMessage
 
     def run(self) -> Outputs:
-        url = os.getenv("POSTGRES_URL")
-        if not url:
-            raise ValueError("POSTGRES_URL is not set")
-
-        engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
         try:
-            with Session(engine) as session:
+            with postgres_session() as session:
                 statement = (
                     select(InboxMessage, Inbox.type)
                     .join(
@@ -192,6 +188,17 @@ class SendEmailNode(BaseNode):
         summary: str
 
     def run(self) -> BaseNode.Outputs:
+        ses_client = boto3.client("ses")
+        try:
+            ses_client.send_email(
+                Source="hello@vargasjr.dev",
+                Destination={"ToAddresses": [self.to]},
+                Message={"Subject": {"Data": self.subject}, "Body": {"Text": {"Data": self.body}}},
+            )
+        except Exception:
+            logger.exception("Failed to send email to %s", self.to)
+            return self.Outputs(summary=f"Failed to send email to {self.to}.")
+
         return self.Outputs(summary=f"Sent email to {self.to}.")
 
 

@@ -50,6 +50,13 @@ def mock_ad_hoc_function_call(mocker):
     return _mock_prompt_output
 
 
+@pytest.fixture
+def mock_ses_send_email(mocker):
+    ses_client_class = mocker.patch("boto3.client")
+    ses_client = ses_client_class.return_value
+    return ses_client.send_email
+
+
 def test_agent_runner__happy_path(mocker, mock_sql_session):
     # GIVEN a cancel signal and logger
     cancel_signal = Event()
@@ -80,7 +87,9 @@ def test_agent_runner__happy_path(mocker, mock_sql_session):
     # AND the test should exit...
 
 
-def test_agent_runer__triage_message(mocker, mock_sql_session: Session, mock_ad_hoc_function_call):
+def test_agent_runer__triage_message(
+    mocker, mock_sql_session: Session, mock_ad_hoc_function_call, mock_ses_send_email
+):
     # GIVEN an agent runner
     cancel_signal = Event()
     logger = mocker.Mock()
@@ -109,6 +118,9 @@ def test_agent_runer__triage_message(mocker, mock_sql_session: Session, mock_ad_
     # AND a mock ad hoc function call
     mock_ad_hoc_function_call(FunctionCall(name="email_reply", arguments={"body": "Hello there!"}))
 
+    # AND the send email call was successful
+    mock_ses_send_email.return_value = {}
+
     # WHEN running the agent runner
     agent_runner.run()
     while not cancel_signal.is_set():
@@ -125,6 +137,13 @@ def test_agent_runer__triage_message(mocker, mock_sql_session: Session, mock_ad_
     result = mock_sql_session.exec(select_query).first()
     assert result is not None
     assert result.operation == InboxMessageOperationType.READ
+
+    # AND the email should have been sent
+    mock_ses_send_email.assert_called_once_with(
+        Source="hello@vargasjr.dev",
+        Destination={"ToAddresses": ["test@test.com"]},
+        Message={"Subject": {"Data": "RE: "}, "Body": {"Text": {"Data": "Hello there!"}}},
+    )
 
 
 def test_agent_runer__triage_message_all_read(mocker, mock_sql_session: Session, mock_ad_hoc_function_call):
