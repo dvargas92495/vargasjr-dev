@@ -18,6 +18,8 @@ from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from src.models.inbox_message import InboxMessage
 from src.models.inbox_message_operation import InboxMessageOperation
 from src.models.types import InboxMessageOperationType
+from vellum.workflows.ports import Port
+from vellum.workflows.references import LazyReference
 
 
 class SlimMessage(UniversalBaseModel):
@@ -132,12 +134,8 @@ class TriageMessageNode(BaseInlinePromptNode):
         ChatMessagePromptBlock(
             chat_role="SYSTEM",
             blocks=[
-                RichTextPromptBlock(
-                    blocks=[
-                        PlainTextPromptBlock(
-                            text="You are triaging the latest unread message from your inbox. It was from {{ source }} and was submitted via {{ channel }}. Pick the most relevant action.",
-                        ),
-                    ],
+                JinjaPromptBlock(
+                    template="You are triaging the latest unread message from your inbox. It was from {{ source }} and was submitted via {{ channel }}. Pick the most relevant action.",
                 ),
             ],
         ),
@@ -172,13 +170,74 @@ class TriageMessageNode(BaseInlinePromptNode):
 
 
 class ParseFunctionCallNode(BaseNode):
+    class Ports(BaseNode.Ports):
+        no_action = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("no_action")))
+        email_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_reply")))
+        email_initiate = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))
+        )
+        text_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("text_reply")))
+
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]
         parameters = TriageMessageNode.Outputs.results[0]["value"]["arguments"]
 
 
+class SendEmailNode(BaseNode):
+    to: str
+    subject: str
+    body: str
+
+    class Outputs(BaseNode.Outputs):
+        summary: str
+
+    def run(self) -> BaseNode.Outputs:
+        return self.Outputs(summary=f"Sent email to {self.to}.")
+
+
+class NoActionNode(BaseNode):
+    class Outputs(BaseNode.Outputs):
+        summary = "No action taken."
+
+
+class EmailReplyNode(SendEmailNode):
+    to = ReadMessageNode.Outputs.message["source"]
+    subject = "RE: "
+    body = ParseFunctionCallNode.Outputs.parameters["body"]
+
+
+class EmailInitiateNode(SendEmailNode):
+    to = ParseFunctionCallNode.Outputs.parameters["to"]
+    subject = ParseFunctionCallNode.Outputs.parameters["subject"]
+    body = ParseFunctionCallNode.Outputs.parameters["body"]
+
+
+class TextReplyNode(BaseNode):
+    phone_number = ParseFunctionCallNode.Outputs.parameters["phone_number"]
+    message = ParseFunctionCallNode.Outputs.parameters["message"]
+
+    class Outputs(BaseNode.Outputs):
+        summary: str
+
+    def run(self) -> BaseNode.Outputs:
+        return self.Outputs(summary=f"Sent text message to {self.phone_number}.")
+
+
 class TriageMessageWorkflow(BaseWorkflow):
-    graph = ReadMessageNode >> TriageMessageNode >> ParseFunctionCallNode
+    graph = (
+        ReadMessageNode
+        >> TriageMessageNode
+        >> {
+            ParseFunctionCallNode.Ports.no_action >> NoActionNode,
+            ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
+            ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
+            ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
+        }
+    )
 
     class Outputs(BaseWorkflow.Outputs):
-        action = ParseFunctionCallNode.Outputs.action
+        summary = (
+            NoActionNode.Outputs.summary.coalesce(EmailReplyNode.Outputs.summary)
+            .coalesce(EmailInitiateNode.Outputs.summary)
+            .coalesce(TextReplyNode.Outputs.summary)
+        )

@@ -41,6 +41,7 @@ def mock_ad_hoc_function_call(mocker):
                 outputs=expected_outputs,
             ),
         ]
+
         def generate_prompt_events(*args: Any, **kwargs: Any) -> Iterator[ExecutePromptEvent]:
             yield from expected_events
 
@@ -106,7 +107,7 @@ def test_agent_runer__triage_message(mocker, mock_sql_session: Session, mock_ad_
     mock_sql_session.commit()
 
     # AND a mock ad hoc function call
-    mock_ad_hoc_function_call(FunctionCall(name="email_reply", arguments={}))
+    mock_ad_hoc_function_call(FunctionCall(name="email_reply", arguments={"body": "Hello there!"}))
 
     # WHEN running the agent runner
     agent_runner.run()
@@ -117,7 +118,7 @@ def test_agent_runer__triage_message(mocker, mock_sql_session: Session, mock_ad_
     assert logger.error.call_count == 0
     assert logger.info.call_count >= 2, logger.info.call_args_list
     assert logger.info.call_args_list[0] == mocker.call("Running...")
-    assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: email_reply")
+    assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: Sent email to test@test.com.")
 
     # AND the inbox message should have been read
     select_query = select(InboxMessageOperation).where(InboxMessageOperation.inbox_message_id == inbox_message.id)
@@ -169,4 +170,4 @@ def test_agent_runer__triage_message_all_read(mocker, mock_sql_session: Session,
     assert logger.error.call_count == 0
     assert logger.info.call_count >= 2, logger.info.call_args_list
     assert logger.info.call_args_list[0] == mocker.call("Running...")
-    assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: no_action")
+    assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: No action taken.")

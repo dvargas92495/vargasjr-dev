@@ -49,7 +49,7 @@ class AgentRunner:
             workflow = TriageMessageWorkflow()
             final_event = workflow.run()
             if final_event.name == "workflow.execution.fulfilled":
-                self._logger.info(f"Workflow Complete: {final_event.outputs.action}")
+                self._logger.info(f"Workflow Complete: {final_event.outputs.summary}")
             elif final_event.name == "workflow.execution.rejected":
                 self._logger.error(f"Workflow Failed: {final_event.error.message}")
 
