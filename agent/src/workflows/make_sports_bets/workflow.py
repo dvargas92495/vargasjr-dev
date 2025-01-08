@@ -151,6 +151,7 @@ class GatherTodaysGames(BaseNode):
 class PredictedOutcome(UniversalBaseModel):
     game: TodaysGame
     outcome: Literal["home", "away"]
+    confidence: float
 
 
 class PredictOutcomes(BaseNode):
@@ -168,6 +169,7 @@ class PredictOutcomes(BaseNode):
                     PredictedOutcome(
                         game=game,
                         outcome="home",
+                        confidence=threshold / 0.6,
                     )
                 )
             else:
@@ -175,10 +177,11 @@ class PredictOutcomes(BaseNode):
                     PredictedOutcome(
                         game=game,
                         outcome="away",
+                        confidence=(1-threshold) / 0.4,
                     )
                 )
 
-        return self.Outputs(outcomes=outcomes)
+        return self.Outputs(outcomes=sorted(outcomes, key=lambda x: x.confidence, reverse=True))
 
 BROKER_MAP = {
     "fanduel": "Fanduel",
@@ -207,6 +210,7 @@ class SubmitBets(BaseNode):
         rows = []
         date = datetime.now().strftime("%Y/%m/%d")
         balance = self.initial_balance
+        picks = []
         for outcome in self.outcomes:
             wager = max(1, floor(balance * 5) / 100)
             balance = round(balance - wager, 2)
@@ -214,6 +218,8 @@ class SubmitBets(BaseNode):
                 raise Exception("Ran out of money")
 
             spread = outcome.game.spread if outcome.outcome == "home" else -outcome.game.spread
+            pick = f"{outcome.game.home_team if outcome.outcome == "home" else outcome.game.away_team} COVERS {outcome.game.away_team if outcome.outcome == "home" else outcome.game.home_team}"
+            picks.append((pick, outcome.confidence))
             rows.append(
                 [
                     date, # DATE
@@ -222,7 +228,7 @@ class SubmitBets(BaseNode):
                     None, # WINNINGS
                     SPORT_MAP[outcome.game.sport], # SPORT
                     f"Spread {"+" if spread > 0 else ""}{spread}", # TYPE
-                    f"{outcome.game.home_team if outcome.outcome == "home" else outcome.game.away_team} COVERS {outcome.game.away_team if outcome.outcome == "home" else outcome.game.home_team}", # PICK
+                    pick, # PICK
                     date, # Event Date
                     BROKER_MAP[outcome.game.bookmaker], # BROKER
                     None, # External ID
@@ -259,7 +265,11 @@ class SubmitBets(BaseNode):
             body={"values": rows},
         ).execute()
 
-        summary = f"Bets submitted for {len(rows)} games. Remaining balance: ${balance}"
+        summary = f"""\
+Bets submitted for {len(rows)} games. Remaining balance: ${balance}
+---
+{"\n".join([f"Picked {pick} with confidence {confidence:.4f}" for pick, confidence in picks])}
+"""
         return self.Outputs(summary=summary)
 
 
