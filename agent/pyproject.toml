@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.4"
+version = "0.0.5"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -16,6 +16,9 @@ vellum-ai = "0.12.9"
 sqlmodel = "^0.0.22"
 psycopg = {extras = ["binary"], version = "^3.2.3"}
 boto3 = "^1.35.91"
+google-api-python-client = "^2.157.0"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.1"
 
 [tool.poetry.scripts]
 agent = "src.cli:main"

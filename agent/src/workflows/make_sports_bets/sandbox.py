@@ -9,6 +9,4 @@ if __name__ == "__main__":
     if final_event.name != "workflow.execution.fulfilled":
         raise Exception("Workflow failed" + str(final_event))
 
-    print(final_event.outputs.csv)
-    print("----------------------------------------------------------------------------------------------------")
-    print(f"Remaining balance: ${final_event.outputs.balance:.2f}")
+    print(final_event.outputs.summary)

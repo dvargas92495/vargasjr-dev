@@ -1,11 +1,14 @@
 import csv
 from datetime import datetime, timedelta
 import io
+import json
 from math import floor
 import os
 import random
 from typing import List, Literal
 import requests
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
@@ -56,7 +59,7 @@ class TodaysGame(UniversalBaseModel):
     home_price: int
     away_price: int
     spread: float
-
+    bookmaker: str
 
 class Inputs(BaseInputs):
     initial_balance: float
@@ -119,10 +122,10 @@ class GatherTodaysGames(BaseNode):
         return self.Outputs(odds=odds)
 
     def _parse_odds(self, entry: OddsAPIResponseEntry) -> TodaysGame:
-        bookmaker = next((bookmaker for bookmaker in entry.bookmakers if bookmaker.key == "fanduel"), None)
-        if not bookmaker:
-            raise ValueError(f"fanduel bookmaker not found")
+        if not entry.bookmakers:
+            raise ValueError(f"No bookmakers found for {entry.home_team} vs {entry.away_team}")
 
+        bookmaker = entry.bookmakers[0]
         market = next((market for market in bookmaker.markets if market.key == "spreads"), None)
         if not market:
             raise ValueError(f"No spreads market found for {entry.home_team} vs {entry.away_team}")
@@ -139,6 +142,7 @@ class GatherTodaysGames(BaseNode):
             home_price=home_outcome.price,
             away_price=away_outcome.price,
             spread=home_outcome.point,
+            bookmaker=bookmaker.key,
         )
     
     def _team_matches(self, team: str, other: str) -> bool:
@@ -176,28 +180,30 @@ class PredictOutcomes(BaseNode):
 
         return self.Outputs(outcomes=outcomes)
 
+BROKER_MAP = {
+    "fanduel": "Fanduel",
+    "hardrockbet": "Hard Rock Bet",
+}
+
+SPORT_MAP = {
+    "baseball_mlb": "MLB",
+    "basketball_nba": "NBA",
+    "americanfootball_nfl": "NFL",
+    "basketball_ncaab": "NCAAB",
+}
 
 class SubmitBets(BaseNode):
     outcomes = PredictOutcomes.Outputs.outcomes
     initial_balance = Inputs.initial_balance
 
     class Outputs(BaseNode.Outputs):
-        csv: str
-        remaining_balance: float
+        summary: str
 
     def run(self):
-        headers = [
-            "DATE",
-            "WAGER",
-            "ODDS",
-            "WINNINGS",
-            "SPORT",
-            "TYPE",
-            "PICK",
-            "Event Date",
-            "BROKER",
-            "External ID",
-        ]
+        creds_json = os.getenv("GOOGLE_CREDENTIALS")
+        if not creds_json:
+            raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
+
         rows = []
         date = datetime.now().strftime("%Y/%m/%d")
         balance = self.initial_balance
@@ -209,30 +215,56 @@ class SubmitBets(BaseNode):
 
             spread = outcome.game.spread if outcome.outcome == "home" else -outcome.game.spread
             rows.append(
-                {
-                    "DATE": date,
-                    "WAGER": wager,
-                    "ODDS": outcome.game.home_price if outcome.outcome == "home" else outcome.game.away_price,
-                    "WINNINGS": None,
-                    "SPORT": outcome.game.sport,
-                    "TYPE": f"Spread {"+" if spread > 0 else ""}{spread}",
-                    "PICK": f"{outcome.game.home_team if outcome.outcome == "home" else outcome.game.away_team} COVERS {outcome.game.away_team if outcome.outcome == "home" else outcome.game.home_team}",
-                    "Event Date": date,
-                    "BROKER": "fanduel",
-                    "External ID": None,
-                }
+                [
+                    date, # DATE
+                    wager, # WAGER
+                    outcome.game.home_price if outcome.outcome == "home" else outcome.game.away_price, # ODDS
+                    None, # WINNINGS
+                    SPORT_MAP[outcome.game.sport], # SPORT
+                    f"Spread {"+" if spread > 0 else ""}{spread}", # TYPE
+                    f"{outcome.game.home_team if outcome.outcome == "home" else outcome.game.away_team} COVERS {outcome.game.away_team if outcome.outcome == "home" else outcome.game.home_team}", # PICK
+                    date, # Event Date
+                    BROKER_MAP[outcome.game.bookmaker], # BROKER
+                    None, # External ID
+                ]
             )
 
-        output = io.StringIO()
+        SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+        SPREADSHEET_ID = "1-wq0IIQd31xsMB1ZAxgflN0TQNuewjQHVVGEeVKUEbI"
+        google_credentials = Credentials.from_service_account_info(json.loads(creds_json), scopes=SCOPES,)
+        service = build("sheets", "v4", credentials=google_credentials)
+        sheet = service.spreadsheets()
+
         rows.reverse()
-        writer = csv.DictWriter(output, fieldnames=headers)
-        writer.writerows(rows)
-        return self.Outputs(csv=output.getvalue().strip(), remaining_balance=balance)
+        sheet.batchUpdate(
+            spreadsheetId=SPREADSHEET_ID,
+            body={
+                "requests": [{
+                    "insertRange": {
+                        "range": {
+                            "sheetId": 0,
+                            "startRowIndex": 1,
+                            "endRowIndex": 1+len(rows),
+                        },
+                        "shiftDimension": "ROWS",
+                    }
+                }]
+            }
+        ).execute()
+
+        sheet.values().update(
+            spreadsheetId=SPREADSHEET_ID,
+            range="Bets!A2",
+            valueInputOption="USER_ENTERED",
+            body={"values": rows},
+        ).execute()
+
+        summary = f"Bets submitted for {len(rows)} games. Remaining balance: ${balance}"
+        return self.Outputs(summary=summary)
 
 
 class MakeSportsBetsWorkflow(BaseWorkflow):
     graph = GatherTodaysGames >> PredictOutcomes >> SubmitBets
 
     class Outputs(BaseWorkflow.Outputs):
-        csv = SubmitBets.Outputs.csv
-        balance = SubmitBets.Outputs.remaining_balance
+        summary = SubmitBets.Outputs.summary
