@@ -1,5 +1,7 @@
+from datetime import datetime
 import logging
 import os
+from pathlib import Path
 import sys
 from threading import Event, Thread
 import time
@@ -10,11 +12,14 @@ from src.workflows.triage_message.workflow import TriageMessageWorkflow
 
 
 def _default_logger():
+    Path("logs").mkdir(exist_ok=True)
+
     logger = logging.getLogger(__name__)
-    handler = logging.StreamHandler(sys.stdout)
+    log_file = f"logs/{datetime.now().strftime('%Y%m%d')}-stdout.log"
+    file_handler = logging.FileHandler(log_file)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
     return logger
 
 
