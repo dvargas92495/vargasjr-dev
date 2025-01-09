@@ -44,3 +44,6 @@ next-env.d.ts
 # poetry
 .venv
 __pycache__
+
+# data
+agent/data

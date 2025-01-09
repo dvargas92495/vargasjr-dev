@@ -9,13 +9,15 @@ from typing import List, Literal
 import requests
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from src.models.types import Sport, Team
+from src.services import get_teams, normalize_team_name
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
 from vellum.core.pydantic_utilities import UniversalBaseModel
 
 
-SPORTS = Literal[
+OddsAPISport = Literal[
     "americanfootball_nfl",
     "baseball_mlb",
     "basketball_nba",
@@ -44,7 +46,7 @@ class OddsAPIResponseBookmaker(UniversalBaseModel):
 
 class OddsAPIResponseEntry(UniversalBaseModel):
     id: str
-    sport_key: SPORTS
+    sport_key: OddsAPISport
     sport_title: str
     commence_time: str
     home_team: str
@@ -53,7 +55,7 @@ class OddsAPIResponseEntry(UniversalBaseModel):
 
 
 class TodaysGame(UniversalBaseModel):
-    sport: SPORTS
+    sport: OddsAPISport
     home_team: str
     away_team: str
     home_price: int
@@ -85,7 +87,7 @@ class GatherTodaysGames(BaseNode):
         if not poll:
             raise ValueError("AP Poll not found")
         
-        ncaab_top_25 = [f"{rank['team']['location']} {rank['team']['name']}" for rank in poll['ranks']]
+        ncaab_top_25 = [normalize_team_name(f"{rank['team']['location']} {rank['team']['name']}") for rank in poll['ranks']]
 
         api_key = os.getenv("ODDS_API_KEY")
         odds = []
@@ -114,7 +116,7 @@ class GatherTodaysGames(BaseNode):
                     odds.append(odd)
                     continue
 
-                if not any(self._team_matches(team, odd.home_team) or self._team_matches(team, odd.away_team) for team in ncaab_top_25):
+                if not any(team == odd.home_team or team == odd.away_team for team in ncaab_top_25):
                     continue
                 
                 odds.append(odd)
@@ -137,16 +139,13 @@ class GatherTodaysGames(BaseNode):
 
         return TodaysGame(
             sport=entry.sport_key,
-            home_team=entry.home_team,
-            away_team=entry.away_team,
+            home_team=normalize_team_name(entry.home_team),
+            away_team=normalize_team_name(entry.away_team),
             home_price=home_outcome.price,
             away_price=away_outcome.price,
             spread=home_outcome.point,
             bookmaker=bookmaker.key,
         )
-    
-    def _team_matches(self, team: str, other: str) -> bool:
-        return team == other or team.replace("State", "St") == other or team == other.replace("State", "St")
 
 class PredictedOutcome(UniversalBaseModel):
     game: TodaysGame
@@ -161,8 +160,15 @@ class PredictOutcomes(BaseNode):
         outcomes: List[PredictedOutcome]
 
     def run(self):
+        all_teams = get_teams()
+        all_teams_by_full_name = {team.full_name: team for team in all_teams}
         outcomes = []
         for game in self.games:
+            # home_team = all_teams_by_full_name[game.home_team]
+            # away_team = all_teams_by_full_name[game.away_team]
+            # home_team_last_5_games = self._get_team_last_5_games(home_team)
+            # away_team_last_5_games = self._get_team_last_5_games(away_team)
+
             threshold = random.random()
             if threshold < 0.6:
                 outcomes.append(
@@ -182,13 +188,33 @@ class PredictOutcomes(BaseNode):
                 )
 
         return self.Outputs(outcomes=sorted(outcomes, key=lambda x: x.confidence, reverse=True))
+    
+    def _get_team_last_5_games(self, team: Team) -> None:
+        url = f"http://site.api.espn.com/apis/site/v2/sports/{team.espn_data.espn_sport}/{team.espn_data.espn_league}/teams/{team.espn_data.espn_id}/schedule"
+        params = {
+            "limit": 5,
+        }
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        games = response.json()["events"]
+        # return [
+        #     {
+        #         'date': game['date'],
+        #         'home_team': game['competitions'][0]['competitors'][0]['team']['name'],
+        #         'away_team': game['competitions'][0]['competitors'][1]['team']['name'],
+        #         'home_score': game['competitions'][0]['competitors'][0]['score'],
+        #         'away_score': game['competitions'][0]['competitors'][1]['score'],
+        #     }
+        #     for game in games
+        # ]
+        
 
 BROKER_MAP = {
     "fanduel": "Fanduel",
     "hardrockbet": "Hard Rock Bet",
 }
 
-SPORT_MAP = {
+SPORT_MAP: dict[OddsAPISport, Sport] = {
     "baseball_mlb": "MLB",
     "basketball_nba": "NBA",
     "americanfootball_nfl": "NFL",

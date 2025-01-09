@@ -1,3 +1,4 @@
+import json
 from src.models.inbox import Inbox
 
 
@@ -5,6 +6,7 @@ import os
 from sqlalchemy import create_engine
 from sqlmodel import Session, select
 from src.models.inbox_message import InboxMessage
+from src.models.types import Team
 
 
 def postgres_session():
@@ -33,3 +35,12 @@ def create_inbox_message(
         )
         session.add(inbox_message)
         session.commit()
+
+
+def get_teams() -> list[Team]:
+    with open("data/teams.json", "r") as f:
+        teams = json.load(f)
+        return [Team.model_validate(team) for team in teams]
+    
+def normalize_team_name(team_name: str) -> str:
+    return team_name.replace(" St ", " State ")
