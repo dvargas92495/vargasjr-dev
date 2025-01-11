@@ -1,16 +1,17 @@
-import csv
 from datetime import datetime, timedelta
-import io
 import json
 from math import floor
 import os
-import random
 from typing import List, Literal
 import requests
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from src.models.types import Sport, Team
-from src.services import get_teams, normalize_team_name
+from sqlmodel import or_, select
+from src.models.pkm.sport_game import SportGame
+from src.models.pkm.sport_team import SportTeam
+from src.models.types import Sport
+from src.services import get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
@@ -23,6 +24,13 @@ OddsAPISport = Literal[
     "basketball_nba",
     "basketball_ncaab",
 ]
+
+SPORT_MAP: dict[OddsAPISport, Sport] = {
+    "baseball_mlb": "MLB",
+    "basketball_nba": "NBA",
+    "americanfootball_nfl": "NFL",
+    "basketball_ncaab": "NCAAB",
+}
 
 
 class OddsAPIResponseOutcome(UniversalBaseModel):
@@ -55,9 +63,9 @@ class OddsAPIResponseEntry(UniversalBaseModel):
 
 
 class TodaysGame(UniversalBaseModel):
-    sport: OddsAPISport
-    home_team: str
-    away_team: str
+    sport: Sport
+    home_team: SportTeam
+    away_team: SportTeam
     home_price: int
     away_price: int
     spread: float
@@ -111,12 +119,16 @@ class GatherTodaysGames(BaseNode):
             response.raise_for_status()
             entries = [OddsAPIResponseEntry.model_validate(entry) for entry in response.json()]
             for entry in entries:
-                odd = self._parse_odds(entry)
-                if odd.sport != "basketball_ncaab":
+                try:
+                    odd = self._parse_odds(entry)
+                except Exception:
+                    continue
+
+                if odd.sport != Sport.NCAAB:
                     odds.append(odd)
                     continue
 
-                if not any(team == odd.home_team or team == odd.away_team for team in ncaab_top_25):
+                if not any(team == odd.home_team.full_name or team == odd.away_team.full_name for team in ncaab_top_25):
                     continue
                 
                 odds.append(odd)
@@ -137,21 +149,43 @@ class GatherTodaysGames(BaseNode):
         if not home_outcome or not away_outcome:
             raise ValueError(f"No outcomes found for {entry.home_team} vs {entry.away_team}")
 
+        sport = SPORT_MAP[entry.sport_key]
+        try:
+            home_team = get_sport_team_by_full_name(sport, entry.home_team)
+        except Exception as e:
+            raise ValueError(f"Failed to find team: {entry.home_team}") from e
+
+        try:
+            away_team = get_sport_team_by_full_name(sport, entry.away_team)
+        except Exception as e:
+            raise ValueError(f"Failed to find team: {entry.away_team}") from e
+
         return TodaysGame(
-            sport=entry.sport_key,
-            home_team=normalize_team_name(entry.home_team),
-            away_team=normalize_team_name(entry.away_team),
+            sport=sport,
+            home_team=home_team,
+            away_team=away_team,
             home_price=home_outcome.price,
             away_price=away_outcome.price,
             spread=home_outcome.point,
             bookmaker=bookmaker.key,
         )
 
+class TeamRecentGame(UniversalBaseModel):
+    score_diff: int
+    was_home: bool
+
+class PredictedOutcomeReasoning(UniversalBaseModel):
+    home_team_last_5_games: List[TeamRecentGame]
+    away_team_last_5_games: List[TeamRecentGame]
+    home_team_recency_score: float
+    away_team_recency_score: float
+    calculated_spread: float
+
 class PredictedOutcome(UniversalBaseModel):
     game: TodaysGame
     outcome: Literal["home", "away"]
     confidence: float
-
+    reasoning: PredictedOutcomeReasoning
 
 class PredictOutcomes(BaseNode):
     games = GatherTodaysGames.Outputs.odds
@@ -160,65 +194,53 @@ class PredictOutcomes(BaseNode):
         outcomes: List[PredictedOutcome]
 
     def run(self):
-        all_teams = get_teams()
-        all_teams_by_full_name = {team.full_name: team for team in all_teams}
         outcomes = []
         for game in self.games:
-            home_team = all_teams_by_full_name[game.home_team]
-            away_team = all_teams_by_full_name[game.away_team]
-            home_team_last_5_games = self._get_team_last_5_games(home_team)
-            away_team_last_5_games = self._get_team_last_5_games(away_team)
+            home_team_last_5_games = self._get_team_last_5_games(game.home_team)
+            away_team_last_5_games = self._get_team_last_5_games(game.away_team)
 
-            threshold = random.random()
-            if threshold < 0.6:
-                outcomes.append(
-                    PredictedOutcome(
-                        game=game,
-                        outcome="home",
-                        confidence=threshold / 0.6,
-                    )
+            home_recency_score = sum(game.score_diff * (0.9 if game.was_home else 1.1) for game in home_team_last_5_games) * 1.1
+            away_recency_score = sum(game.score_diff * (0.9 if not game.was_home else 1.1) for game in away_team_last_5_games) * 0.9
+
+            calculated_spread = (away_recency_score - home_recency_score) / 5
+            outcome = "home" if calculated_spread < game.spread else "away"
+            confidence = abs(calculated_spread - game.spread)
+
+            outcomes.append(
+                PredictedOutcome(
+                    game=game,
+                    outcome=outcome,
+                    confidence=confidence,
+                    reasoning=PredictedOutcomeReasoning(
+                        home_team_last_5_games=home_team_last_5_games,
+                        away_team_last_5_games=away_team_last_5_games,
+                        home_team_recency_score=home_recency_score,
+                        away_team_recency_score=away_recency_score,
+                        calculated_spread=calculated_spread,
+                    ),
                 )
-            else:
-                outcomes.append(
-                    PredictedOutcome(
-                        game=game,
-                        outcome="away",
-                        confidence=(1-threshold) / 0.4,
-                    )
-                )
+            )
 
         return self.Outputs(outcomes=sorted(outcomes, key=lambda x: x.confidence, reverse=True))
     
-    def _get_team_last_5_games(self, team: Team) -> None:
-        url = f"http://site.api.espn.com/apis/site/v2/sports/{team.espn_data.espn_sport}/{team.espn_data.espn_league}/teams/{team.espn_data.espn_id}/schedule"
-        params = {
-            "limit": 5,
-        }
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        games = response.json()["events"]
-        return [
-            {
-                'date': game['date'],
-                'home_team': game['competitions'][0]['competitors'][0]['team']['name'],
-                'away_team': game['competitions'][0]['competitors'][1]['team']['name'],
-                'home_score': game['competitions'][0]['competitors'][0]['score'],
-                'away_score': game['competitions'][0]['competitors'][1]['score'],
-            }
-            for game in games
-        ]
+    def _get_team_last_5_games(self, team: SportTeam) -> List[TeamRecentGame]:
+        with sqlite_session() as session:
+            statement = select(SportGame).where(
+                or_(SportGame.home_team_id == team.id, SportGame.away_team_id == team.id),
+            ).order_by(SportGame.start_time.desc()).limit(5)
+            sport_games = session.exec(statement).all()
         
+        return [
+            TeamRecentGame(
+                score_diff=game.home_team_score - game.away_team_score if game.home_team_id == team.id else game.away_team_score - game.home_team_score,
+                was_home=game.home_team_id == team.id,
+            )
+            for game in sport_games
+        ]
 
 BROKER_MAP = {
     "fanduel": "Fanduel",
     "hardrockbet": "Hard Rock Bet",
-}
-
-SPORT_MAP: dict[OddsAPISport, Sport] = {
-    "baseball_mlb": "MLB",
-    "basketball_nba": "NBA",
-    "americanfootball_nfl": "NFL",
-    "basketball_ncaab": "NCAAB",
 }
 
 class SubmitBets(BaseNode):
@@ -237,14 +259,16 @@ class SubmitBets(BaseNode):
         date = datetime.now().strftime("%Y/%m/%d")
         balance = self.initial_balance
         picks = []
+        ran_out_of_money = False
         for outcome in self.outcomes:
             wager = max(1, floor(balance * 5) / 100)
             balance = round(balance - wager, 2)
             if balance < 1:
-                raise Exception("Ran out of money")
+                ran_out_of_money = True
+                break
 
             spread = outcome.game.spread if outcome.outcome == "home" else -outcome.game.spread
-            pick = f"{outcome.game.home_team if outcome.outcome == "home" else outcome.game.away_team} COVERS {outcome.game.away_team if outcome.outcome == "home" else outcome.game.home_team}"
+            pick = f"{outcome.game.home_team.full_name if outcome.outcome == "home" else outcome.game.away_team.full_name} COVERS {outcome.game.away_team.full_name if outcome.outcome == "home" else outcome.game.home_team.full_name}"
             picks.append((pick, outcome.confidence, wager))
             rows.append(
                 [
@@ -252,7 +276,7 @@ class SubmitBets(BaseNode):
                     wager, # WAGER
                     outcome.game.home_price if outcome.outcome == "home" else outcome.game.away_price, # ODDS
                     None, # WINNINGS
-                    SPORT_MAP[outcome.game.sport], # SPORT
+                    outcome.game.sport, # SPORT
                     f"Spread {"+" if spread > 0 else ""}{spread}", # TYPE
                     pick, # PICK
                     date, # Event Date
@@ -291,11 +315,18 @@ class SubmitBets(BaseNode):
             body={"values": rows},
         ).execute()
 
+        report_md_file = f"data/reports/bets/{date.replace('/', '-')}.md"
         summary = f"""\
-Bets submitted for {len(rows)} games. Remaining balance: ${balance}
+Bets submitted for {len(rows)} games. Remaining balance: ${balance}{" (ran out of money)" if ran_out_of_money else ""}
 ---
 {"\n".join([f"Picked {pick} with ${wager:.2f} on confidence {confidence:.4f}" for pick, confidence, wager in picks])}
+---
+Report: {report_md_file}
 """
+        
+        with open(report_md_file, "w") as f:
+            json.dump(self.outcomes, f, indent=2, cls=DefaultStateEncoder)
+
         return self.Outputs(summary=summary)
 
 

@@ -1,11 +1,15 @@
+from functools import lru_cache
 import json
+from typing import Optional
 from src.models.inbox import Inbox
 
 
 import os
 from sqlalchemy import create_engine
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from src.models.inbox_message import InboxMessage
+from src.models.pkm.sport_team import SportTeam
+from src.models.types import Sport
 
 
 def postgres_session():
@@ -16,6 +20,7 @@ def postgres_session():
 
     engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
     return Session(engine)
+
 
 def sqlite_session():
     engine = create_engine("sqlite:///data/pkm.db")
@@ -39,6 +44,31 @@ def create_inbox_message(
         session.add(inbox_message)
         session.commit()
 
-    
+
+@lru_cache
+def get_sport_team_by_espn_id(sport: Sport, espn_id: str) -> SportTeam:
+    with sqlite_session() as session:
+        statement = select(SportTeam).where(SportTeam.sport == sport, SportTeam.espn_id == espn_id)
+        return session.exec(statement).one()
+
+
+@lru_cache
+def get_sport_team_by_full_name(sport: Sport, full_name: str) -> SportTeam:
+    with sqlite_session() as session:
+        statement = select(SportTeam).where(
+            SportTeam.sport == sport,
+            func.printf("%s %s", SportTeam.location, SportTeam.name) == normalize_team_name(full_name),
+        )
+        return session.exec(statement).one()
+
+
+def list_sport_teams(sport: Optional[Sport] = None) -> list[SportTeam]:
+    with sqlite_session() as session:
+        statement = select(SportTeam)
+        if sport:
+            statement = statement.where(SportTeam.sport == sport)
+        return session.exec(statement).all()
+
+
 def normalize_team_name(team_name: str) -> str:
     return team_name.replace(" St ", " State ")

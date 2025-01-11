@@ -1,6 +1,6 @@
 from uuid import UUID, uuid4
 from sqlmodel import Field, SQLModel
-from src.models.types import Sport, TeamEspnData
+from src.models.types import Sport
 
 
 class SportTeam(SQLModel, table=True):

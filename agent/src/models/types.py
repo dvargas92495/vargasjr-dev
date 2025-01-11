@@ -19,9 +19,3 @@ class Sport(str, Enum):
     NBA = "NBA"
     NFL = "NFL"
     NCAAB = "NCAAB"
-
-
-class TeamEspnData(UniversalBaseModel):
-    espn_id: str
-    espn_sport: str
-    espn_league: str
