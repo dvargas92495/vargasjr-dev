@@ -164,10 +164,10 @@ class PredictOutcomes(BaseNode):
         all_teams_by_full_name = {team.full_name: team for team in all_teams}
         outcomes = []
         for game in self.games:
-            # home_team = all_teams_by_full_name[game.home_team]
-            # away_team = all_teams_by_full_name[game.away_team]
-            # home_team_last_5_games = self._get_team_last_5_games(home_team)
-            # away_team_last_5_games = self._get_team_last_5_games(away_team)
+            home_team = all_teams_by_full_name[game.home_team]
+            away_team = all_teams_by_full_name[game.away_team]
+            home_team_last_5_games = self._get_team_last_5_games(home_team)
+            away_team_last_5_games = self._get_team_last_5_games(away_team)
 
             threshold = random.random()
             if threshold < 0.6:
@@ -197,16 +197,16 @@ class PredictOutcomes(BaseNode):
         response = requests.get(url, params=params)
         response.raise_for_status()
         games = response.json()["events"]
-        # return [
-        #     {
-        #         'date': game['date'],
-        #         'home_team': game['competitions'][0]['competitors'][0]['team']['name'],
-        #         'away_team': game['competitions'][0]['competitors'][1]['team']['name'],
-        #         'home_score': game['competitions'][0]['competitors'][0]['score'],
-        #         'away_score': game['competitions'][0]['competitors'][1]['score'],
-        #     }
-        #     for game in games
-        # ]
+        return [
+            {
+                'date': game['date'],
+                'home_team': game['competitions'][0]['competitors'][0]['team']['name'],
+                'away_team': game['competitions'][0]['competitors'][1]['team']['name'],
+                'home_score': game['competitions'][0]['competitors'][0]['score'],
+                'away_score': game['competitions'][0]['competitors'][1]['score'],
+            }
+            for game in games
+        ]
         
 
 BROKER_MAP = {
@@ -245,7 +245,7 @@ class SubmitBets(BaseNode):
 
             spread = outcome.game.spread if outcome.outcome == "home" else -outcome.game.spread
             pick = f"{outcome.game.home_team if outcome.outcome == "home" else outcome.game.away_team} COVERS {outcome.game.away_team if outcome.outcome == "home" else outcome.game.home_team}"
-            picks.append((pick, outcome.confidence))
+            picks.append((pick, outcome.confidence, wager))
             rows.append(
                 [
                     date, # DATE
@@ -294,7 +294,7 @@ class SubmitBets(BaseNode):
         summary = f"""\
 Bets submitted for {len(rows)} games. Remaining balance: ${balance}
 ---
-{"\n".join([f"Picked {pick} with confidence {confidence:.4f}" for pick, confidence in picks])}
+{"\n".join([f"Picked {pick} with ${wager:.2f} on confidence {confidence:.4f}" for pick, confidence, wager in picks])}
 """
         return self.Outputs(summary=summary)
 
