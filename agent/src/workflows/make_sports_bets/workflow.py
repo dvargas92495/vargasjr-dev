@@ -4,13 +4,12 @@ from math import floor
 import os
 from typing import List, Literal
 import requests
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
 from src.services import get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from src.services.google_sheets import get_spreadsheets, prepend_rows
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
@@ -26,10 +25,10 @@ OddsAPISport = Literal[
 ]
 
 SPORT_MAP: dict[OddsAPISport, Sport] = {
-    "baseball_mlb": "MLB",
-    "basketball_nba": "NBA",
-    "americanfootball_nfl": "NFL",
-    "basketball_ncaab": "NCAAB",
+    "baseball_mlb": Sport.MLB,
+    "basketball_nba": Sport.NBA,
+    "americanfootball_nfl": Sport.NFL,
+    "basketball_ncaab": Sport.NCAAB,
 }
 
 
@@ -251,10 +250,6 @@ class SubmitBets(BaseNode):
         summary: str
 
     def run(self):
-        creds_json = os.getenv("GOOGLE_CREDENTIALS")
-        if not creds_json:
-            raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
-
         rows = []
         date = datetime.now().strftime("%Y/%m/%d")
         balance = self.initial_balance
@@ -285,35 +280,14 @@ class SubmitBets(BaseNode):
                 ]
             )
 
-        SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
         SPREADSHEET_ID = "1-wq0IIQd31xsMB1ZAxgflN0TQNuewjQHVVGEeVKUEbI"
-        google_credentials = Credentials.from_service_account_info(json.loads(creds_json), scopes=SCOPES,)
-        service = build("sheets", "v4", credentials=google_credentials)
-        sheet = service.spreadsheets()
 
         rows.reverse()
-        sheet.batchUpdate(
-            spreadsheetId=SPREADSHEET_ID,
-            body={
-                "requests": [{
-                    "insertRange": {
-                        "range": {
-                            "sheetId": 0,
-                            "startRowIndex": 1,
-                            "endRowIndex": 1+len(rows),
-                        },
-                        "shiftDimension": "ROWS",
-                    }
-                }]
-            }
-        ).execute()
-
-        sheet.values().update(
-            spreadsheetId=SPREADSHEET_ID,
-            range="Bets!A2",
-            valueInputOption="USER_ENTERED",
-            body={"values": rows},
-        ).execute()
+        prepend_rows(
+            spreadsheet_id=SPREADSHEET_ID,
+            rows=rows,
+            sheet_name="Bets",
+        )
 
         report_md_file = f"data/reports/bets/{date.replace('/', '-')}.md"
         summary = f"""\
