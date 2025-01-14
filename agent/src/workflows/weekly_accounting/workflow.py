@@ -108,7 +108,7 @@ class UpdateFinances(BaseNode):
             sheet_name="Snapshots",
             rows=[
                 [date, "Mercury Checking", self.bank_snapshot],
-                [date, "Venmo Credit Card", self.credit_card_snapshot],
+                [date, "Venmo Credit", self.credit_card_snapshot],
             ],
         )
 

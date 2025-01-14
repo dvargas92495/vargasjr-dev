@@ -8,13 +8,19 @@ from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
-from src.services import get_sport_team_by_full_name, normalize_team_name, sqlite_session
-from src.services.google_sheets import get_spreadsheets, prepend_rows
+from src.services import fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from src.services.google_sheets import prepend_rows
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
 from vellum.core.pydantic_utilities import UniversalBaseModel
+
+class RecordYesterdaysGames(BaseNode):
+    def run(self):
+        yesterday = datetime.now() - timedelta(days=1)
+        fetch_scoreboard_on_date(yesterday)
+        return self.Outputs()
 
 
 OddsAPISport = Literal[
@@ -107,7 +113,6 @@ class GatherTodaysGames(BaseNode):
             url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
             params = {
                 "apiKey": api_key,
-                "regions": ["us", "us2"],
                 "markets": "spreads",
                 "oddsFormat": "american",
                 "bookmakers": ["fanduel", "hardrockbet"],
@@ -120,7 +125,8 @@ class GatherTodaysGames(BaseNode):
             for entry in entries:
                 try:
                     odd = self._parse_odds(entry)
-                except Exception:
+                except Exception as e:
+                    print(f"Failed to parse odds for {entry.home_team} vs {entry.away_team}: {e}")
                     continue
 
                 if odd.sport != Sport.NCAAB:
@@ -305,7 +311,7 @@ Report: {report_md_file}
 
 
 class MakeSportsBetsWorkflow(BaseWorkflow):
-    graph = GatherTodaysGames >> PredictOutcomes >> SubmitBets
+    graph = RecordYesterdaysGames >> GatherTodaysGames >> PredictOutcomes >> SubmitBets
 
     class Outputs(BaseWorkflow.Outputs):
         summary = SubmitBets.Outputs.summary
