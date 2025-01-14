@@ -107,11 +107,11 @@ class AgentRunner:
         return "unknown"
 
     def _default_logger(self) -> logging.Logger:
-        log_dir = Path.home() / ".local" / "var" / "log" / "vargas-jr"
+        log_dir = Path.home() / ".local" / "var" / "log" / "vargas-jr" / f"v{self._current_version}"
         log_dir.mkdir(exist_ok=True, parents=True)
 
         logger = logging.getLogger(__name__)
-        log_file = log_dir / f"v{self._current_version}" / f"stdout-{datetime.now().strftime('%Y%m%d')}.log"
+        log_file = log_dir / f"stdout-{datetime.now().strftime('%Y%m%d')}.log"
         file_handler = logging.FileHandler(str(log_file))
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
