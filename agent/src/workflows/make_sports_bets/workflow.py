@@ -115,7 +115,7 @@ class GatherTodaysGames(BaseNode):
                 "apiKey": api_key,
                 "markets": "spreads",
                 "oddsFormat": "american",
-                "bookmakers": ["fanduel", "hardrockbet"],
+                "bookmakers": ["hardrockbet", "fanduel"],
                 "commenceTimeFrom": today_start,
                 "commenceTimeTo": today_end,
             }

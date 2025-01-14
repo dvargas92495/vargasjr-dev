@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 import logging
 import os
 from pathlib import Path
+import subprocess
+import sys
 from threading import Event, Thread
 import time
 from typing import Optional
@@ -91,7 +93,8 @@ class AgentRunner:
                     os.chdir(f"vargasjr_dev_agent-{latest_version}")
                     os.system("cp ../.env .")
                     os.system("poetry install")
-                    os.system("poetry run agent")
+                    subprocess.Popen(["poetry", "run", "agent"])
+                    sys.exit(0)
                 except Exception:
                     self._logger.exception(f"Failed to update to version: {latest_version}")
                     continue
