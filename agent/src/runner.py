@@ -108,7 +108,7 @@ class AgentRunner:
 
     def _default_logger(self) -> logging.Logger:
         log_dir = Path.home() / ".local" / "var" / "log" / "vargas-jr"
-        log_dir.mkdir(exist_ok=True)
+        log_dir.mkdir(exist_ok=True, parents=True)
 
         logger = logging.getLogger(__name__)
         log_file = log_dir / f"v{self._current_version}" / f"stdout-{datetime.now().strftime('%Y%m%d')}.log"

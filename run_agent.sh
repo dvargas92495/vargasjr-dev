@@ -5,4 +5,4 @@ tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
 cd vargasjr_dev_agent-$VERSION
 cp ../.env .
 poetry install
-poetry run agent
+screen -dmS agent bash -c 'poetry run agent'
