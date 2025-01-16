@@ -1,3 +1,5 @@
+import boto3
+import logging
 from datetime import datetime, timedelta
 import json
 from math import floor
@@ -15,6 +17,8 @@ from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
 from vellum.core.pydantic_utilities import UniversalBaseModel
+
+logger = logging.getLogger(__name__)
 
 class RecordYesterdaysGames(BaseNode):
     def run(self):
@@ -306,6 +310,19 @@ Report: {report_md_file}
         
         with open(report_md_file, "w") as f:
             json.dump(self.outcomes, f, indent=2, cls=DefaultStateEncoder)
+
+        ses_client = boto3.client("ses")
+        try:
+            to_email = "dvargas92495@gmail.com"
+            ses_client.send_email(
+                # Source="hello@vargasjr.dev",
+                Source="support@samepage.network",
+                Destination={"ToAddresses": [to_email]},
+                Message={"Subject": {"Data": "Submitted Bets for " + date}, "Body": {"Text": {"Data": summary}}},
+            )
+            return self.Outputs(summary=f"Sent bets to {to_email}.")
+        except Exception:
+            logger.exception("Failed to send email")
 
         return self.Outputs(summary=summary)
 
