@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import os
 from pathlib import Path
 import subprocess
@@ -35,7 +36,7 @@ class AgentRunner:
         if log_level:
             self._logger.setLevel(log_level)
 
-        self._logger.debug(f"Initialized agent v{self._current_version}")
+        self._logger.info(f"Initialized agent v{self._current_version}")
 
     def run(self):
         main_thread = Thread(target=self._main_thread)
@@ -56,11 +57,11 @@ class AgentRunner:
             time.sleep(self._sleep_time)
             loops += 1
             if self._max_loops and loops >= self._max_loops:
-                self._logger.debug("Max loops reached, stopping...")
+                self._logger.info("Max loops reached, stopping...")
                 self._cancel_signal.set()
 
             if datetime.now() - self._last_updated > self._update_interval:
-                self._logger.debug("Checking for updates...")
+                self._logger.info("Checking for updates...")
                 self._last_updated = datetime.now()
                 release_url = "https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest"
                 response = requests.get(release_url)
@@ -79,7 +80,7 @@ class AgentRunner:
                     continue
 
                 if latest_version == self._current_version:
-                    self._logger.debug(f"No new version available: {latest_version}")
+                    self._logger.info(f"No new version available: {latest_version}")
                     continue
 
                 try:
@@ -111,8 +112,14 @@ class AgentRunner:
         log_dir.mkdir(exist_ok=True, parents=True)
 
         logger = logging.getLogger(__name__)
-        log_file = log_dir / f"stdout-{datetime.now().strftime('%Y%m%d')}.log"
-        file_handler = logging.FileHandler(str(log_file))
+        log_file = log_dir / "agent.log"
+        file_handler = TimedRotatingFileHandler(
+            str(log_file),
+            when="midnight",
+            interval=1,
+            backupCount=30,
+            encoding="utf-8",
+        )
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)

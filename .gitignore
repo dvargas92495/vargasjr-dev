@@ -45,5 +45,5 @@ next-env.d.ts
 .venv
 __pycache__
 
-# data
-agent/data
+# memory
+.memory

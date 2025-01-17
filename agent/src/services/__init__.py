@@ -1,6 +1,7 @@
 from datetime import datetime
 from functools import lru_cache
 import json
+from pathlib import Path
 from typing import Optional
 import requests
 from src.models.inbox import Inbox
@@ -15,6 +16,9 @@ from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
 
 
+MEMORY_DIR = Path(__file__).parent.parent.parent.parent / ".memory"
+
+
 def postgres_session():
     """Get a SQLModel Session using the POSTGRES_URL environment variable"""
     url = os.getenv("POSTGRES_URL")
@@ -26,7 +30,7 @@ def postgres_session():
 
 
 def sqlite_session():
-    engine = create_engine("sqlite:///data/pkm.db")
+    engine = create_engine(f"sqlite:///{MEMORY_DIR}/pkm.db")
     return Session(engine)
 
 

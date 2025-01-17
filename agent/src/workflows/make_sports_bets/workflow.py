@@ -10,7 +10,7 @@ from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
-from src.services import fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from src.services import MEMORY_DIR, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.google_sheets import prepend_rows
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
@@ -299,7 +299,7 @@ class SubmitBets(BaseNode):
             sheet_name="Bets",
         )
 
-        report_md_file = f"data/reports/bets/{date.replace('/', '-')}.md"
+        report_md_file = MEMORY_DIR / "reports" / "bets" / f"{date.replace('/', '-')}.md"
         summary = f"""\
 Bets submitted for {len(rows)} games. Remaining balance: ${balance}{" (ran out of money)" if ran_out_of_money else ""}
 ---
@@ -315,8 +315,7 @@ Report: {report_md_file}
         try:
             to_email = "dvargas92495@gmail.com"
             ses_client.send_email(
-                # Source="hello@vargasjr.dev",
-                Source="support@samepage.network",
+                Source="hello@vargasjr.dev",
                 Destination={"ToAddresses": [to_email]},
                 Message={"Subject": {"Data": "Submitted Bets for " + date}, "Body": {"Text": {"Data": summary}}},
             )
