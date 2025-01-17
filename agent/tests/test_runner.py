@@ -57,6 +57,13 @@ def mock_ses_send_email(mocker):
     return ses_client.send_email
 
 
+@pytest.fixture
+def mock_download_memory(mocker):
+    download_memory = mocker.patch("src.runner.AgentRunner._download_memory")
+    return download_memory
+
+
+@pytest.mark.usefixtures("mock_download_memory")
 def test_agent_runner__happy_path(mocker, mock_sql_session):
     # GIVEN a cancel signal and logger
     cancel_signal = Event()
@@ -80,13 +87,15 @@ def test_agent_runner__happy_path(mocker, mock_sql_session):
     # THEN the logger should have been called once
     assert logger.error.call_count == 0, logger.error.call_args_list
     assert logger.info.call_count >= 1, logger.info.call_args_list
-    assert logger.info.call_args_list[0] == mocker.call("Running...")
+    assert logger.info.call_args_list[0].startswith("Initialized agent v")
+    assert logger.info.call_args_list[1] == mocker.call("Running...")
     # TODO: Fix this test on CI by making call count >= 2
-    # assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: No messages found")
+    # assert logger.info.call_args_list[2] == mocker.call("Workflow Complete: No messages found")
 
     # AND the test should exit...
 
 
+@pytest.mark.usefixtures("mock_download_memory")
 def test_agent_runer__triage_message(
     mocker, mock_sql_session: Session, mock_ad_hoc_function_call, mock_ses_send_email
 ):
@@ -129,8 +138,9 @@ def test_agent_runer__triage_message(
     # THEN the logger should have been called twice
     assert logger.error.call_count == 0
     assert logger.info.call_count >= 2, logger.info.call_args_list
-    assert logger.info.call_args_list[0] == mocker.call("Running...")
-    assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: Sent email to test@test.com.")
+    assert logger.info.call_args_list[0].startswith("Initialized agent v")
+    assert logger.info.call_args_list[1] == mocker.call("Running...")
+    assert logger.info.call_args_list[2] == mocker.call("Workflow Complete: Sent email to test@test.com.")
 
     # AND the inbox message should have been read
     select_query = select(InboxMessageOperation).where(InboxMessageOperation.inbox_message_id == inbox_message.id)
@@ -146,6 +156,7 @@ def test_agent_runer__triage_message(
     )
 
 
+@pytest.mark.usefixtures("mock_download_memory")
 def test_agent_runer__triage_message_all_read(mocker, mock_sql_session: Session, mock_ad_hoc_function_call):
     # GIVEN an agent runner
     cancel_signal = Event()
@@ -188,5 +199,6 @@ def test_agent_runer__triage_message_all_read(mocker, mock_sql_session: Session,
     # THEN the logger should have been called twice with no messages found
     assert logger.error.call_count == 0
     assert logger.info.call_count >= 2, logger.info.call_args_list
-    assert logger.info.call_args_list[0] == mocker.call("Running...")
-    assert logger.info.call_args_list[1] == mocker.call("Workflow Complete: No action taken.")
+    assert logger.info.call_args_list[0].startswith("Initialized agent v")
+    assert logger.info.call_args_list[1] == mocker.call("Running...")
+    assert logger.info.call_args_list[2] == mocker.call("Workflow Complete: No action taken.")
