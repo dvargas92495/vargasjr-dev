@@ -82,6 +82,7 @@ class AgentRunner:
                     self._logger.error(f"Failed to parse release data for tag name: {release_data}")
                     continue
 
+                latest_version = latest_version.replace("v", "")
                 if latest_version == self._current_version:
                     self._logger.info(f"No new version available: {latest_version}")
                     continue
