@@ -31,6 +31,10 @@ class SlimMessage(UniversalBaseModel):
 
 
 class ReadMessageNode(BaseNode):
+    class Ports(BaseNode.Ports):
+        no_action = Port.on_if(LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals("")))
+        triage = Port.on_else()
+
     class Outputs(BaseNode.Outputs):
         message: SlimMessage
 
@@ -231,16 +235,17 @@ class TextReplyNode(BaseNode):
 
 
 class TriageMessageWorkflow(BaseWorkflow):
-    graph = (
-        ReadMessageNode
+    graph = {
+        ReadMessageNode.Ports.no_action >> NoActionNode,
+        ReadMessageNode.Ports.traige
         >> TriageMessageNode
         >> {
             ParseFunctionCallNode.Ports.no_action >> NoActionNode,
             ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
             ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
             ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
-        }
-    )
+        },
+    }
 
     class Outputs(BaseWorkflow.Outputs):
         summary = (

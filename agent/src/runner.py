@@ -95,9 +95,12 @@ class AgentRunner:
                         self._logger.error("Failed to remove old agent")
                         continue
 
-                    if os.system(
-                        f"wget https://github.com/dvargas92495/vargasjr-dev/releases/download/v{latest_version}/vargasjr_dev_agent-{latest_version}.tar.gz"
-                    ) != 0:
+                    if (
+                        os.system(
+                            f"wget https://github.com/dvargas92495/vargasjr-dev/releases/download/v{latest_version}/vargasjr_dev_agent-{latest_version}.tar.gz"
+                        )
+                        != 0
+                    ):
                         self._logger.error("Failed to download new agent")
                         continue
 
@@ -114,7 +117,11 @@ class AgentRunner:
                         self._logger.error("Failed to install dependencies")
                         continue
 
-                    subprocess.Popen(["poetry", "run", "agent"])
+                    subprocess.Popen(
+                        ["nuhup", "poetry", "run", "agent"],
+                        preexec_fn=os.setsid,
+                        start_new_session=True,
+                    )
                     sys.exit(0)
                 except Exception:
                     self._logger.exception(f"Failed to update to version: {latest_version}")

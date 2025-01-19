@@ -159,6 +159,9 @@ class GetCreditCardTransactions(BaseNode):
 
     def run(self) -> Outputs:
         data = ParseVenmoOutput.model_validate_json(self.prompt_text)
+        for transaction in data.transactions:
+            transaction.amount = -transaction.amount
+
         return self.Outputs(
             transactions=data.transactions,
             snapshot=data.credit_balance,
@@ -206,6 +209,7 @@ class GetBankTransactions(BaseNode):
                 )
                 for transaction in transactions
             ],
+            # TODO
             snapshot=8000.0,
         )
 
