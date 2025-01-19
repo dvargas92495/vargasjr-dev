@@ -90,14 +90,30 @@ class AgentRunner:
                 try:
                     self._logger.info(f"New version available: {latest_version}")
                     os.chdir("..")
-                    os.system(f"rm -Rf vargasjr_dev_agent-*")
-                    os.system(
+
+                    if os.system(f"rm -Rf vargasjr_dev_agent-*") != 0:
+                        self._logger.error("Failed to remove old agent")
+                        continue
+
+                    if os.system(
                         f"wget https://github.com/dvargas92495/vargasjr-dev/releases/download/v{latest_version}/vargasjr_dev_agent-{latest_version}.tar.gz"
-                    )
-                    os.system(f"tar -xzf vargasjr_dev_agent-{latest_version}.tar.gz")
+                    ) != 0:
+                        self._logger.error("Failed to download new agent")
+                        continue
+
+                    if os.system(f"tar -xzf vargasjr_dev_agent-{latest_version}.tar.gz") != 0:
+                        self._logger.error("Failed to extract new agent")
+                        continue
+
                     os.chdir(f"vargasjr_dev_agent-{latest_version}")
-                    os.system("cp ../.env .")
-                    os.system("poetry install")
+                    if os.system("cp ../.env .") != 0:
+                        self._logger.error("Failed to copy .env file")
+                        continue
+
+                    if os.system("poetry install") != 0:
+                        self._logger.error("Failed to install dependencies")
+                        continue
+
                     subprocess.Popen(["poetry", "run", "agent"])
                     sys.exit(0)
                 except Exception:

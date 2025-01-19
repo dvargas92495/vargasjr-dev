@@ -1,28 +1,85 @@
+import base64
 from datetime import datetime, timedelta
+import json
+import logging
 import os
-from typing import List
+import boto3
+from typing import List, Literal
+import pydantic
 import requests
 from src.services.google_sheets import get_spreadsheets, prepend_rows
-from vellum import ChatMessagePromptBlock, PlainTextPromptBlock, RichTextPromptBlock
+from vellum import (
+    ChatMessagePromptBlock,
+    ImagePromptBlock,
+    PlainTextPromptBlock,
+    PromptParameters,
+    RichTextPromptBlock,
+)
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode, InlinePromptNode
 from vellum.workflows.types import MergeBehavior
 
+logger = logging.getLogger(__name__)
 
 SPREADSHEET_ID = "1azbspgulxIEW7YSMFgscFm7GEJkSQIS3S_6cq60E4hw"
+
+PersonalTransactionSource = Literal[
+    "Mercury Checking",
+    "Venmo Credit",
+]
+
+PersonalTransactionCategory = Literal[
+    "Vehicle for Personal",
+    "Residential Parking",
+    "Commercial Parking",
+    "Commercial Transportation",
+    "Personal Transportation",
+    "Health Insurance",
+    "Medical Bills",
+    "Dental Insurance",
+    "Fitness",
+    "Health goods",
+    "Food & Drink",
+    "Entertainment",
+    "Hobby",
+    "Financial Services",
+    "Clothing",
+    "Laundry",
+    "Hair",
+    "Family Fund Deposit",
+    "Family Loan Repayment",
+    "Housing",
+    "Furniture",
+    "Home Supplies",
+    "Utilities",
+    "Marriage",
+    "Vacation",
+    "Experience",
+    "Gift",
+    "Employment Income",
+    "Socials",
+    "Equipment",
+    "Reimbursable Business Expense",
+    "Business Investment",
+    "Charity",
+    "Federal Tax Payment",
+    "Federal Tax Return",
+    "Civil Income",
+    "Fines",
+]
 
 
 def to_dollar_float(value: str) -> float:
     return float(value.replace("$", "").replace(",", ""))
 
 
-class Transaction(UniversalBaseModel):
-    date: datetime
-    source: str
+class PersonalTransaction(UniversalBaseModel):
+    date: datetime = pydantic.Field(description="Must be in ISO format (YYYY-MM-DD)")
+    source: PersonalTransactionSource
     description: str
     amount: float
-    category: str
+    category: PersonalTransactionCategory
     notes: str
 
 
@@ -31,22 +88,86 @@ class BuildPersonalFinancialContext(BaseNode):
     pass
 
 
-class GetCreditCardTransactions(BaseNode):
+class GetVenmoScreenshots(BaseNode):
+    attachments = [
+        "IMG_3206.png",
+        "IMG_3207.png",
+    ]
+
     class Outputs(BaseNode.Outputs):
-        transactions: List[Transaction]
+        image_blocks: list[ImagePromptBlock]
+
+    def run(self) -> Outputs:
+        s3 = boto3.client("s3")
+        image_blocks = []
+
+        for attachment in self.attachments:
+            response = s3.get_object(Bucket="vargas-jr-inbox", Key=f"attachments/{attachment}")
+            image_data = response["Body"].read()
+
+            b64_data = base64.b64encode(image_data).decode()
+            data_url = f"data:image/png;base64,{b64_data}"
+
+            # Create image block
+            image_blocks.append(ImagePromptBlock(src=data_url))
+
+        return self.Outputs(image_blocks=image_blocks)
+
+
+class ParseVenmoOutput(UniversalBaseModel):
+    transactions: list[PersonalTransaction]
+    credit_balance: float
+
+
+class ParseVenmoScreenshots(InlinePromptNode):
+    ml_model = "gpt-4o"
+    blocks = [
+        ChatMessagePromptBlock(
+            chat_role="SYSTEM",
+            blocks=[
+                RichTextPromptBlock(
+                    blocks=[
+                        PlainTextPromptBlock(
+                            text="Parse the set of Venmo screenshots and return a list of transactions and the current credit balance."
+                        ),
+                    ]
+                )
+            ],
+        ),
+        ChatMessagePromptBlock(
+            chat_role="USER",
+            blocks=GetVenmoScreenshots.Outputs.image_blocks,
+        ),
+    ]
+    parameters = PromptParameters(
+        max_tokens=8000,
+        custom_parameters={
+            "json_schema": {
+                "name": "venmo_output",
+                "schema": ParseVenmoOutput.model_json_schema(),
+            },
+        },
+    )
+
+
+class GetCreditCardTransactions(BaseNode):
+    prompt_text = ParseVenmoScreenshots.Outputs.text
+
+    class Outputs(BaseNode.Outputs):
+        transactions: List[PersonalTransaction]
         snapshot: float
 
     def run(self) -> Outputs:
-        # TODO: Use external Inputs here to text me and ask for Venmo screenshots
+        data = ParseVenmoOutput.model_validate_json(self.prompt_text)
         return self.Outputs(
-            transactions=[],
-            snapshot=-2000.0,
+            transactions=data.transactions,
+            snapshot=data.credit_balance,
         )
 
 
 class GetBankTransactions(BaseNode):
     class Outputs(BaseNode.Outputs):
-        transactions: List[Transaction]
+        transactions: List[PersonalTransaction]
         snapshot: float
 
     def run(self) -> Outputs:
@@ -75,7 +196,7 @@ class GetBankTransactions(BaseNode):
 
         return self.Outputs(
             transactions=[
-                Transaction(
+                PersonalTransaction(
                     date=datetime.fromisoformat(transaction["postedAt"] or transaction["createdAt"]),
                     source="Mercury Checking",
                     description=transaction["bankDescription"],
@@ -89,14 +210,82 @@ class GetBankTransactions(BaseNode):
         )
 
 
-class UpdateFinances(BaseNode):
-    credit_card_snapshot = GetCreditCardTransactions.Outputs.snapshot
-    bank_snapshot = GetBankTransactions.Outputs.snapshot
+class NormalizeTransactions(BaseNode):
     credit_card_transactions = GetCreditCardTransactions.Outputs.transactions
     bank_transactions = GetBankTransactions.Outputs.transactions
 
     class Trigger(BaseNode.Trigger):
         merge_behavior = MergeBehavior.AWAIT_ALL
+
+    class Outputs(BaseNode.Outputs):
+        transactions: list[PersonalTransaction]
+
+    def run(self) -> Outputs:
+        all_transactions = self.credit_card_transactions + self.bank_transactions
+        for transaction in all_transactions:
+            if transaction.date.tzinfo is not None:
+                transaction.date = transaction.date.replace(tzinfo=None)
+
+        sorted_transactions = sorted(all_transactions, key=lambda x: x.date, reverse=True)
+        for transaction in sorted_transactions:
+            response = self._context.vellum_client.ad_hoc.adhoc_execute_prompt_stream(
+                ml_model="gpt-4o-mini",
+                blocks=[
+                    ChatMessagePromptBlock(
+                        chat_role="SYSTEM",
+                        blocks=[
+                            RichTextPromptBlock(
+                                blocks=[
+                                    PlainTextPromptBlock(
+                                        text="Classify the following transaction description into a category."
+                                    )
+                                ]
+                            )
+                        ],
+                    ),
+                    ChatMessagePromptBlock(
+                        chat_role="USER",
+                        blocks=[
+                            RichTextPromptBlock(
+                                blocks=[PlainTextPromptBlock(text=transaction.description)],
+                            )
+                        ],
+                    ),
+                ],
+                input_values=[],
+                input_variables=[],
+                parameters=PromptParameters(
+                    max_tokens=1000,
+                    custom_parameters={
+                        "json_schema": {
+                            "name": "transaction_category",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [category for category in PersonalTransactionCategory.__args__],
+                                    },
+                                },
+                            },
+                        },
+                    },
+                ),
+            )
+            for prompt_event in response:
+                if not prompt_event.state == "FULFILLED":
+                    continue
+
+                transaction.category = json.loads(prompt_event.outputs[0].value)["category"]
+                break
+
+        return self.Outputs(transactions=sorted_transactions)
+
+
+class UpdateFinances(BaseNode):
+    credit_card_snapshot = GetCreditCardTransactions.Outputs.snapshot
+    bank_snapshot = GetBankTransactions.Outputs.snapshot
+    normalized_transactions = NormalizeTransactions.Outputs.transactions
 
     class Outputs(BaseNode.Outputs):
         transactions_added: int
@@ -112,20 +301,16 @@ class UpdateFinances(BaseNode):
             ],
         )
 
-        sorted_transactions = sorted(
-            self.credit_card_transactions + self.bank_transactions, key=lambda x: x.date, reverse=True
-        )
-
         prepend_rows(
             spreadsheet_id=SPREADSHEET_ID,
             sheet_name="Transactions",
             rows=[
                 [t.date.strftime("%m/%d/%Y"), t.source, t.description, t.amount, t.category, t.notes]
-                for t in sorted_transactions
+                for t in self.normalized_transactions
             ],
         )
 
-        return self.Outputs(transactions_added=len(sorted_transactions))
+        return self.Outputs(transactions_added=len(self.normalized_transactions))
 
 
 class Snapshot(UniversalBaseModel):
@@ -229,7 +414,22 @@ class SendFinancesReport(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
-        # TODO: Send message as email
+        try:
+            ses_client = boto3.client("ses")
+            to_email = "dvargas92495@gmail.com"
+            date = datetime.now().strftime("%m/%d/%Y")
+            ses_client.send_email(
+                Source="hello@vargasjr.dev",
+                Destination={"ToAddresses": [to_email]},
+                Message={
+                    "Subject": {"Data": f"Financial Summary for {date}"},
+                    "Body": {"Text": {"Data": self.message}},
+                },
+            )
+            return self.Outputs(summary=f"Sent financial summary to {to_email}")
+        except Exception:
+            logger.exception("Failed to send email")
+
         return self.Outputs(summary=self.message)
 
 
@@ -237,9 +437,10 @@ class WeeklyAccountingWorkflow(BaseWorkflow):
     graph = (
         BuildPersonalFinancialContext
         >> {
-            GetCreditCardTransactions,
+            GetVenmoScreenshots >> ParseVenmoScreenshots >> GetCreditCardTransactions,
             GetBankTransactions,
         }
+        >> NormalizeTransactions
         >> UpdateFinances
         >> GetSummaryData
         >> SummarizeData

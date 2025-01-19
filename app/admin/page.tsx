@@ -22,7 +22,7 @@ import CopyableText from "@/components/copyable-text";
  *   - `VELLUM_API_KEY`
  *   - `AWS_ACCESS_KEY_ID`
  *   - `AWS_SECRET_ACCESS_KEY`
- *   - `AWS_REGION=us-east-1`
+ *   - `AWS_DEFAULT_REGION=us-east-1`
  *   - Other Vargas Jr specific env vars
  * - chmod u+x ~/run_agent.sh
  * - curl -s https://api.github.com/repos/dvargas92495/vargasjs-dev/releases/latest | grep vargasjr_dev_agent-*.tar.gz

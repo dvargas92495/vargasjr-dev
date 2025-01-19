@@ -10,7 +10,7 @@ from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
-from src.services import MEMORY_DIR, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.google_sheets import prepend_rows
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
@@ -311,8 +311,8 @@ Report: {report_md_file}
         with open(report_md_file, "w") as f:
             json.dump(self.outcomes, f, indent=2, cls=DefaultStateEncoder)
 
-        ses_client = boto3.client("ses")
         try:
+            ses_client = boto3.client("ses")
             to_email = "dvargas92495@gmail.com"
             ses_client.send_email(
                 Source="hello@vargasjr.dev",
@@ -324,10 +324,15 @@ Report: {report_md_file}
             logger.exception("Failed to send email")
 
         return self.Outputs(summary=summary)
+    
+class BackupMemory(BaseNode):
+    def run(self):
+        backup_memory()
+        return self.Outputs()
 
 
 class MakeSportsBetsWorkflow(BaseWorkflow):
-    graph = RecordYesterdaysGames >> GatherTodaysGames >> PredictOutcomes >> SubmitBets
+    graph = RecordYesterdaysGames >> GatherTodaysGames >> PredictOutcomes >> SubmitBets >> BackupMemory
 
     class Outputs(BaseWorkflow.Outputs):
         summary = SubmitBets.Outputs.summary
