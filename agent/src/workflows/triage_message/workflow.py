@@ -237,7 +237,7 @@ class TextReplyNode(BaseNode):
 class TriageMessageWorkflow(BaseWorkflow):
     graph = {
         ReadMessageNode.Ports.no_action >> NoActionNode,
-        ReadMessageNode.Ports.traige
+        ReadMessageNode.Ports.triage
         >> TriageMessageNode
         >> {
             ParseFunctionCallNode.Ports.no_action >> NoActionNode,
