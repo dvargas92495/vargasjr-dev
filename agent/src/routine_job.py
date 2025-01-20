@@ -1,10 +1,13 @@
 from datetime import datetime
+from logging import Logger
 from vellum.workflows import BaseWorkflow
+from vellum.workflows.state.context import WorkflowContext
 
 
 class RoutineJob:
-    def __init__(self, name: str, cron_expression: str):
+    def __init__(self, name: str, cron_expression: str, logger: Logger):
         self._name = name
+        self._logger = logger
         self._last_run = None
 
         cron_parts = cron_expression.split()
@@ -19,50 +22,55 @@ class RoutineJob:
 
     def should_run(self):
         now = datetime.now()
-        
+
         # If never run before, or if it's been more than 1 minute since last run, check schedule
         if self._last_run is None or (now - self._last_run).total_seconds() > 60:
             if self._matches_schedule(now):
                 self._last_run = now
                 return True
-        
+
         return False
-    
+
     def _matches_schedule(self, dt: datetime) -> bool:
         # Check each component
         if not self._matches_field(dt.minute, self._minute):
             return False
-            
+
         if not self._matches_field(dt.hour, self._hour):
             return False
-            
+
         if not self._matches_field(dt.day, self._day):
             return False
-            
+
         if not self._matches_field(dt.month, self._month):
             return False
-            
+
         if not self._matches_field(dt.weekday(), self._weekday):
             return False
-            
+
         return True
-    
+
     def _matches_field(self, value: int, pattern: str) -> bool:
         if pattern == "*":
             return True
-            
+
         # Handle lists (e.g., "1,3,5")
         if "," in pattern:
             return str(value) in pattern.split(",")
-            
+
         # Handle ranges (e.g., "1-5")
         if "-" in pattern:
             start, end = map(int, pattern.split("-"))
             return start <= value <= end
-            
+
         # Handle exact matches
         return int(pattern) == value
 
     def run(self):
-        workflow = BaseWorkflow.load_from_module(f"src.workflows.{self._name}")
+        workflow_class = BaseWorkflow.load_from_module(f"src.workflows.{self._name}")
+        workflow_context = WorkflowContext()
+        setattr(workflow_context, "logger", self._logger)
+        workflow = workflow_class(
+            context=workflow_context,
+        )
         workflow.run()

@@ -24,7 +24,7 @@ def get_spreadsheets() -> Any:
 def prepend_rows(
     spreadsheet_id: str,
     sheet_name: str,
-    rows: list[list[str | float]],
+    rows: list[list[str | float | None]],
     sheets: Optional[Any] = None,
 ) -> None:
     if sheets is None:

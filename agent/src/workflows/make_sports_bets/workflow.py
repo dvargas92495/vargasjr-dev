@@ -1,7 +1,6 @@
-import boto3
-import logging
 from datetime import datetime, timedelta
 import json
+from logging import Logger
 from math import floor
 import os
 from typing import List, Literal
@@ -18,8 +17,6 @@ from vellum.workflows import BaseWorkflow
 from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
 from vellum.core.pydantic_utilities import UniversalBaseModel
-
-logger = logging.getLogger(__name__)
 
 class RecordYesterdaysGames(BaseNode):
     def run(self):
@@ -96,7 +93,7 @@ class GatherTodaysGames(BaseNode):
     class Outputs(BaseNode.Outputs):
         odds: List[TodaysGame]
 
-    def run(self):
+    def run(self) -> Outputs:
         ncaab_top_25_url = "http://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/rankings"
         ncaab_top_25_response = requests.get(ncaab_top_25_url)
         ncaab_top_25_response.raise_for_status()
@@ -131,7 +128,8 @@ class GatherTodaysGames(BaseNode):
                 try:
                     odd = self._parse_odds(entry)
                 except Exception as e:
-                    print(f"Failed to parse odds for {entry.home_team} vs {entry.away_team}: {e}")
+                    logger: Logger = getattr(self._context, "logger")
+                    logger.error(f"Failed to parse odds for {entry.home_team} vs {entry.away_team}")
                     continue
 
                 if odd.sport != Sport.NCAAB:
@@ -260,8 +258,8 @@ class SubmitBets(BaseNode):
     class Outputs(BaseNode.Outputs):
         summary: str
 
-    def run(self):
-        rows = []
+    def run(self) -> Outputs:
+        rows: list[list[str | float | None]] = []
         date = datetime.now().strftime("%Y/%m/%d")
         balance = self.initial_balance
         picks = []
@@ -321,6 +319,7 @@ Report: {report_md_file}
             )
             return self.Outputs(summary=f"Sent bets to {to_email}.")
         except Exception:
+            logger: Logger = getattr(self._context, "logger")
             logger.exception("Failed to send email")
 
         return self.Outputs(summary=summary)

@@ -121,7 +121,7 @@ class AgentRunner:
                         continue
 
                     subprocess.Popen(
-                        ["nuhup", "poetry", "run", "agent"],
+                        ["nohup", "poetry", "run", "agent"],
                         preexec_fn=os.setsid,
                         start_new_session=True,
                     )
