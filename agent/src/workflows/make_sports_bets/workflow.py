@@ -11,18 +11,34 @@ from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
 from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.aws import send_email
-from src.services.google_sheets import prepend_rows
+from src.services.google_sheets import get_spreadsheets, prepend_rows
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
-from vellum.workflows.inputs import BaseInputs
 from vellum.workflows.nodes import BaseNode
 from vellum.core.pydantic_utilities import UniversalBaseModel
 
+SPREADSHEET_ID = "1-wq0IIQd31xsMB1ZAxgflN0TQNuewjQHVVGEeVKUEbI"
+
 class RecordYesterdaysGames(BaseNode):
-    def run(self):
+    class Outputs(BaseNode.Outputs):
+        initial_balance: float
+
+    def run(self) -> Outputs:
         yesterday = datetime.now() - timedelta(days=1)
-        fetch_scoreboard_on_date(yesterday)
-        return self.Outputs()
+        logger: Logger = getattr(self._context, "logger")
+        fetch_scoreboard_on_date(yesterday, logger)
+
+        # TODO use games from yesterday's scoreboard to backfill outcomes
+
+        # TODO use games from yesterday's scoreboard to update current broker balances
+
+        sheets = get_spreadsheets()
+        # Analytics!B2
+        balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!B2").execute()["values"]
+
+        logger.info(f"Initial balance: {balance_data}")
+        initial_balance = float(balance_data[0][0]) if isinstance(balance_data[0], list) else float(balance_data[0])
+        return self.Outputs(initial_balance=initial_balance)
 
 
 OddsAPISport = Literal[
@@ -77,9 +93,6 @@ class TodaysGame(UniversalBaseModel):
     away_price: int
     spread: float
     bookmaker: str
-
-class Inputs(BaseInputs):
-    initial_balance: float
 
 
 class GatherTodaysGames(BaseNode):
@@ -253,7 +266,7 @@ BROKER_MAP = {
 
 class SubmitBets(BaseNode):
     outcomes = PredictOutcomes.Outputs.outcomes
-    initial_balance = Inputs.initial_balance
+    initial_balance = RecordYesterdaysGames.Outputs.initial_balance
 
     class Outputs(BaseNode.Outputs):
         summary: str
@@ -289,8 +302,6 @@ class SubmitBets(BaseNode):
                 ]
             )
 
-        SPREADSHEET_ID = "1-wq0IIQd31xsMB1ZAxgflN0TQNuewjQHVVGEeVKUEbI"
-
         rows.reverse()
         prepend_rows(
             spreadsheet_id=SPREADSHEET_ID,
@@ -325,8 +336,9 @@ Report: {report_md_file}
         return self.Outputs(summary=summary)
     
 class BackupMemory(BaseNode):
-    def run(self):
-        backup_memory()
+    def run(self) -> BaseNode.Outputs:
+        logger: Logger = getattr(self._context, "logger")
+        backup_memory(logger)
         return self.Outputs()
 
 

@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import lru_cache
+from logging import Logger
 from pathlib import Path
 from typing import Optional
 import requests
@@ -80,8 +81,8 @@ def normalize_team_name(team_name: str) -> str:
     return team_name.replace(" St ", " State ").replace("LA Clippers", "Los Angeles Clippers")
 
 
-def fetch_scoreboard_on_date(date: datetime) -> list[SportGame]:
-    print(f"Fetching games for {date}")
+def fetch_scoreboard_on_date(date: datetime, logger: Logger) -> list[SportGame]:
+    logger.info(f"Fetching games for {date}")
     sports = [
         (Sport.MLB, "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"),
         (Sport.NBA, "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"),
@@ -109,20 +110,20 @@ def fetch_scoreboard_on_date(date: datetime) -> list[SportGame]:
                 raise ValueError(f"No home or away team found for {espn_event['name']}")
             if not espn_competition["status"]["type"]["completed"]:
                 if espn_competition["status"]["type"]["name"] == "STATUS_POSTPONED":
-                    print(f"Game {espn_event['name']} was postponed. Skipping...")
+                    logger.info(f"Game {espn_event['name']} was postponed. Skipping...")
                     continue
                 raise ValueError(f"Game {espn_event['name']} is not completed")
 
             try:
                 home_team_id = get_sport_team_by_espn_id(sport, espn_home_team["id"]).id
             except Exception:
-                print(f"Error getting team {espn_home_team['team']['displayName']}. Skipping...")
+                logger.error(f"Error getting team {espn_home_team['team']['displayName']}. Skipping...")
                 continue
 
             try:
                 away_team_id = get_sport_team_by_espn_id(sport, espn_away_team["id"]).id
             except Exception:
-                print(f"Error getting team {espn_away_team['team']['displayName']}. Skipping...")
+                logger.error(f"Error getting team {espn_away_team['team']['displayName']}. Skipping...")
                 continue
 
             games.append(
@@ -136,7 +137,7 @@ def fetch_scoreboard_on_date(date: datetime) -> list[SportGame]:
                 )
             )
 
-    print(f"Recording {len(games)} games")
+    logger.info(f"Recording {len(games)} games")
     with sqlite_session() as session:
         session.add_all(games)
         session.commit()
@@ -144,9 +145,9 @@ def fetch_scoreboard_on_date(date: datetime) -> list[SportGame]:
     return games
 
 
-def backup_memory():
+def backup_memory(logger: Logger):
     if not MEMORY_DIR.exists():
-        print("No memory directory found")
+        logger.info("No memory directory found")
         return
 
     s3_client = boto3.client("s3")
@@ -159,8 +160,8 @@ def backup_memory():
             # Create S3 key by getting relative path from MEMORY_DIR
             s3_key = os.path.relpath(local_path, start=MEMORY_DIR)
 
-            print(f"Uploading {local_path} to s3://{bucket_name}/{s3_key}")
+            logger.info(f"Uploading {local_path} to s3://{bucket_name}/{s3_key}")
             try:
                 s3_client.upload_file(local_path, bucket_name, s3_key)
             except Exception as e:
-                print(f"Failed to upload {local_path}: {str(e)}")
+                logger.exception(f"Failed to upload {local_path}: {str(e)}")

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.26"
+version = "0.0.27"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -35,7 +35,7 @@ types-requests = "^2.32.0.20241016"
 google-api-python-client-stubs = "^1.28.0"
 
 [tool.mypy]
-plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy"]
+plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy", "sqlalchemy.ext.mypy.plugin"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
