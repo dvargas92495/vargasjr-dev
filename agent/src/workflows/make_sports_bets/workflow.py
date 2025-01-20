@@ -12,6 +12,7 @@ from src.models.types import Sport
 from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
+from src.workflows.weekly_accounting.workflow import to_dollar_float
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
@@ -34,10 +35,10 @@ class RecordYesterdaysGames(BaseNode):
 
         sheets = get_spreadsheets()
         # Analytics!B2
-        balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!B2").execute()["values"]
+        balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!C4").execute()["values"]
 
         logger.info(f"Initial balance: {balance_data}")
-        initial_balance = float(balance_data[0][0]) if isinstance(balance_data[0], list) else float(balance_data[0])
+        initial_balance = to_dollar_float(balance_data[0][0])
         return self.Outputs(initial_balance=initial_balance)
 
 

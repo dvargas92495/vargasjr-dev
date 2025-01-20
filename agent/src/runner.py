@@ -98,7 +98,7 @@ class AgentRunner:
                         self._logger.error("Failed to remove old agent")
                         continue
 
-                    if os.system("rm -rf ~/.cache/pypoetry/virtualenvs/*") != 0:
+                    if os.system("yes | rm -rf ~/.cache/pypoetry/virtualenvs/*") != 0:
                         self._logger.error("Failed to remove old virtualenvs")
                         continue
 
