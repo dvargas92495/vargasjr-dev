@@ -24,18 +24,18 @@ class AgentRunner:
         max_loops: Optional[int] = None,
     ):
         load_dotenv()
+        self._logger = logger or self._default_logger()
+        log_level = os.getenv("LOG_LEVEL")
+        if log_level:
+            self._logger.setLevel(log_level)
+
         self._current_version = self._get_version()
         self._cancel_signal = cancel_signal or Event()
-        self._logger = logger or self._default_logger()
         self._sleep_time = sleep_time
         self._max_loops = max_loops
         self._last_updated = datetime.now()
         self._update_interval = timedelta(minutes=1)
         self._routine_jobs = self._load_routine_jobs()
-
-        log_level = os.getenv("LOG_LEVEL")
-        if log_level:
-            self._logger.setLevel(log_level)
 
         self._logger.info(f"Initialized agent v{self._current_version}")
 
@@ -158,7 +158,11 @@ class AgentRunner:
     def _should_run(self):
         return not self._cancel_signal.is_set()
 
-    def _load_routine_jobs(self):
+    def _load_routine_jobs(self) -> list[RoutineJob]:
         return [
-            RoutineJob("make_sports_bets", "0 9 * * *"),
+            RoutineJob(
+                name="make_sports_bets",
+                cron_expression="0 9 * * *",
+                logger=self._logger,
+            ),
         ]
