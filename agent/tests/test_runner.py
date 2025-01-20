@@ -58,12 +58,13 @@ def mock_ses_send_email(mocker):
 
 
 @pytest.fixture
-def mock_download_memory(mocker):
-    download_memory = mocker.patch("src.runner.AgentRunner._download_memory")
-    return download_memory
+def mock_load_routine_jobs(mocker):
+    load_routine_jobs = mocker.patch("src.runner.AgentRunner._load_routine_jobs")
+    load_routine_jobs.return_value = []
+    return load_routine_jobs
 
 
-@pytest.mark.usefixtures("mock_download_memory")
+@pytest.mark.usefixtures("mock_load_routine_jobs")
 def test_agent_runner__happy_path(mocker, mock_sql_session):
     # GIVEN a cancel signal and logger
     cancel_signal = Event()
@@ -95,7 +96,7 @@ def test_agent_runner__happy_path(mocker, mock_sql_session):
     # AND the test should exit...
 
 
-@pytest.mark.usefixtures("mock_download_memory")
+@pytest.mark.usefixtures("mock_load_routine_jobs")
 def test_agent_runer__triage_message(
     mocker, mock_sql_session: Session, mock_ad_hoc_function_call, mock_ses_send_email
 ):
@@ -150,13 +151,13 @@ def test_agent_runer__triage_message(
 
     # AND the email should have been sent
     mock_ses_send_email.assert_called_once_with(
-        Source="hello@vargasjr.dev",
+        Source="Vargas JR <hello@vargasjr.dev>",
         Destination={"ToAddresses": ["test@test.com"]},
         Message={"Subject": {"Data": "RE: "}, "Body": {"Text": {"Data": "Hello there!"}}},
     )
 
 
-@pytest.mark.usefixtures("mock_download_memory")
+@pytest.mark.usefixtures("mock_load_routine_jobs")
 def test_agent_runer__triage_message_all_read(mocker, mock_sql_session: Session, mock_ad_hoc_function_call):
     # GIVEN an agent runner
     cancel_signal = Event()

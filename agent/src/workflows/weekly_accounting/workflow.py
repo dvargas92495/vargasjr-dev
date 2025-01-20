@@ -7,6 +7,7 @@ import boto3
 from typing import List, Literal
 import pydantic
 import requests
+from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
 from vellum import (
     ChatMessagePromptBlock,
@@ -419,16 +420,12 @@ class SendFinancesReport(BaseNode):
 
     def run(self) -> Outputs:
         try:
-            ses_client = boto3.client("ses")
             to_email = "dvargas92495@gmail.com"
             date = datetime.now().strftime("%m/%d/%Y")
-            ses_client.send_email(
-                Source="hello@vargasjr.dev",
-                Destination={"ToAddresses": [to_email]},
-                Message={
-                    "Subject": {"Data": f"Financial Summary for {date}"},
-                    "Body": {"Text": {"Data": self.message}},
-                },
+            send_email(
+                to=to_email,
+                body=self.message,
+                subject=f"Financial Summary for {date}",
             )
             return self.Outputs(summary=f"Sent financial summary to {to_email}")
         except Exception:

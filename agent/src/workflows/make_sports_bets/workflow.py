@@ -11,6 +11,7 @@ from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.types import Sport
 from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from src.services.aws import send_email
 from src.services.google_sheets import prepend_rows
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
@@ -312,12 +313,11 @@ Report: {report_md_file}
             json.dump(self.outcomes, f, indent=2, cls=DefaultStateEncoder)
 
         try:
-            ses_client = boto3.client("ses")
             to_email = "dvargas92495@gmail.com"
-            ses_client.send_email(
-                Source="hello@vargasjr.dev",
-                Destination={"ToAddresses": [to_email]},
-                Message={"Subject": {"Data": "Submitted Bets for " + date}, "Body": {"Text": {"Data": summary}}},
+            send_email(
+                to=to_email,
+                body=summary,
+                subject="Submitted Bets for " + date,
             )
             return self.Outputs(summary=f"Sent bets to {to_email}.")
         except Exception:

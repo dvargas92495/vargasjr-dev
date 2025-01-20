@@ -4,6 +4,7 @@ import psycopg
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from src.models.inbox import Inbox
 from src.services import postgres_session
+from src.services.aws import send_email
 from vellum import (
     ChatMessagePromptBlock,
     JinjaPromptBlock,
@@ -192,12 +193,11 @@ class SendEmailNode(BaseNode):
         summary: str
 
     def run(self) -> BaseNode.Outputs:
-        ses_client = boto3.client("ses")
         try:
-            ses_client.send_email(
-                Source="hello@vargasjr.dev",
-                Destination={"ToAddresses": [self.to]},
-                Message={"Subject": {"Data": self.subject}, "Body": {"Text": {"Data": self.body}}},
+            send_email(
+                to=self.to,
+                body=self.body,
+                subject=self.subject,
             )
         except Exception:
             logger.exception("Failed to send email to %s", self.to)

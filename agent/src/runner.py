@@ -9,9 +9,8 @@ from threading import Event, Thread
 import time
 from typing import Optional
 from dotenv import load_dotenv
-import boto3
 import requests
-from src.services import MEMORY_DIR
+from src.routine_job import RoutineJob
 from src.workflows.triage_message.workflow import TriageMessageWorkflow
 
 
@@ -32,12 +31,11 @@ class AgentRunner:
         self._max_loops = max_loops
         self._last_updated = datetime.now()
         self._update_interval = timedelta(minutes=1)
+        self._routine_jobs = self._load_routine_jobs()
 
         log_level = os.getenv("LOG_LEVEL")
         if log_level:
             self._logger.setLevel(log_level)
-
-        self._download_memory()
 
         self._logger.info(f"Initialized agent v{self._current_version}")
 
@@ -62,6 +60,11 @@ class AgentRunner:
             if self._max_loops and loops >= self._max_loops:
                 self._logger.info("Max loops reached, stopping...")
                 self._cancel_signal.set()
+
+            for job in self._routine_jobs:
+                if job.should_run():
+                    job.run()
+                    break
 
             if datetime.now() - self._last_updated > self._update_interval:
                 self._logger.info("Checking for updates...")
@@ -155,26 +158,7 @@ class AgentRunner:
     def _should_run(self):
         return not self._cancel_signal.is_set()
 
-    def _download_memory(self):
-        s3_client = boto3.client("s3")
-        bucket_name = "vargas-jr-memory"
-        if not MEMORY_DIR.exists():
-            MEMORY_DIR.mkdir(parents=True)
-            self._logger.info(f"Created memory directory: {MEMORY_DIR}")
-
-        # List all objects in the bucket
-        objects = s3_client.list_objects_v2(Bucket=bucket_name)
-
-        # Download each file
-        for obj in objects.get("Contents", []):
-            key = obj["Key"]
-            target_path = MEMORY_DIR / key
-
-            # Create directories if they don't exist
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-
-            try:
-                self._logger.info(f"Downloading {key} from S3")
-                s3_client.download_file(bucket_name, key, str(target_path))
-            except Exception:
-                self._logger.exception(f"Failed to download {key} from S3")
+    def _load_routine_jobs(self):
+        return [
+            RoutineJob("make_sports_bets", "0 9 * * *"),
+        ]

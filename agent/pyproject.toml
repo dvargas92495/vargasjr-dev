@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.22"
+version = "0.0.23"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -31,6 +31,7 @@ pytest-mock = "3.10.0"
 python-dotenv = "^1.0.1"
 pytest-postgresql = "^6.1.1"
 ipdb = "^0.13.13"
+types-requests = "^2.32.0.20241016"
 
 [tool.mypy]
 plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy"]
