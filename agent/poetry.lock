@@ -413,6 +413,22 @@ httplib2 = ">=0.19.0,<1.dev0"
 uritemplate = ">=3.0.1,<5"
 
 [[package]]
+name = "google-api-python-client-stubs"
+version = "1.28.0"
+description = "Type stubs for google-api-python-client"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google_api_python_client_stubs-1.28.0-py3-none-any.whl", hash = "sha256:75b3dfe67b9d74ac3b58d78725326836769d0b2df1cbef354a5455a5cc57d68d"},
+    {file = "google_api_python_client_stubs-1.28.0.tar.gz", hash = "sha256:7327c058fb5ba975309922f962f17931b9c82af51d95a5dc04061ed0c20b9f06"},
+]
+
+[package.dependencies]
+google-api-python-client = ">=2.147.0"
+types-httplib2 = ">=0.22.0.2"
+typing-extensions = ">=3.10.0"
+
+[[package]]
 name = "google-auth"
 version = "2.37.0"
 description = "Google Authentication Library"
@@ -2064,6 +2080,17 @@ doc = ["sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
 test = ["mypy", "pytest", "typing-extensions"]
 
 [[package]]
+name = "types-httplib2"
+version = "0.22.0.20241221"
+description = "Typing stubs for httplib2"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types_httplib2-0.22.0.20241221-py3-none-any.whl", hash = "sha256:b15aed53ae5430b87205b6ac270d6332cb5e28e27151e2ac4848fe417827eb54"},
+    {file = "types_httplib2-0.22.0.20241221.tar.gz", hash = "sha256:42b67f16a6b0abb337a1fcea628dcd335e1e75f32cd198a657f41a6f4d507508"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.0.20241016"
 description = "Typing stubs for requests"
@@ -2171,4 +2198,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "35afb94e8b72eb49ac82c83f511ff2c56ae2ce4c6c7b6c52a6a35e6f779cfeaa"
+content-hash = "6686f06020e03975b1c4922a8a84e59664fd5ddb0d5d99aa55ce07477d63dd32"

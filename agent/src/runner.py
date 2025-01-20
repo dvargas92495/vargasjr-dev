@@ -24,12 +24,12 @@ class AgentRunner:
         max_loops: Optional[int] = None,
     ):
         load_dotenv()
+        self._current_version = self._get_version()
         self._logger = logger or self._default_logger()
         log_level = os.getenv("LOG_LEVEL")
         if log_level:
             self._logger.setLevel(log_level)
 
-        self._current_version = self._get_version()
         self._cancel_signal = cancel_signal or Event()
         self._sleep_time = sleep_time
         self._max_loops = max_loops
