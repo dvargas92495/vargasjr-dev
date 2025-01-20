@@ -98,6 +98,10 @@ class AgentRunner:
                         self._logger.error("Failed to remove old agent")
                         continue
 
+                    if os.system("rm -rf ~/.cache/pypoetry/virtualenvs/*") != 0:
+                        self._logger.error("Failed to remove old virtualenvs")
+                        continue
+
                     if (
                         os.system(
                             f"wget https://github.com/dvargas92495/vargasjr-dev/releases/download/v{latest_version}/vargasjr_dev_agent-{latest_version}.tar.gz"
