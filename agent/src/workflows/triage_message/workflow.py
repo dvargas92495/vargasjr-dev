@@ -103,7 +103,8 @@ def email_reply(
     body: str,
 ):
     """
-    Reply to the message by sending an email to the sender.
+    Reply to the message by sending an email to the sender. Avoid a signature in the body
+    of the email, as our template will add one for you.
     """
     pass
 
@@ -114,7 +115,9 @@ def email_initiate(
     body: str,
 ):
     """
-    Initiate an email to the sender.
+    Initiate an email to the sender. Form submissions should always prefer this action
+    over email_reply, since there are no emails to reply to. Avoid a signature in the body
+    of the email, as our template will add one for you.
     """
     pass
 
@@ -136,7 +139,8 @@ class TriageMessageNode(BaseInlinePromptNode):
             chat_role="SYSTEM",
             blocks=[
                 JinjaPromptBlock(
-                    template="You are triaging the latest unread message from your inbox. It was from {{ source }} and was submitted via {{ channel }}. Pick the most relevant action.",
+                    template="""You are triaging the latest unread message from your inbox. It was from \
+{{ source }} and was submitted via {{ channel }}. Pick the most relevant action.""",
                 ),
             ],
         ),
