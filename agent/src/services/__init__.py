@@ -1,6 +1,7 @@
 from datetime import datetime
 from functools import lru_cache
 from logging import Logger
+import logging
 from pathlib import Path
 from typing import Optional
 import requests
@@ -17,6 +18,10 @@ from src.models.types import Sport
 
 
 MEMORY_DIR = Path(__file__).parent.parent.parent.parent / ".memory"
+
+
+def to_dollar_float(value: str) -> float:
+    return float(value.replace("$", "").replace(",", ""))
 
 
 def postgres_session():
@@ -165,3 +170,21 @@ def backup_memory(logger: Logger):
                 s3_client.upload_file(local_path, bucket_name, s3_key)
             except Exception as e:
                 logger.exception(f"Failed to upload {local_path}: {str(e)}")
+
+
+def create_console_logger(name: str = __name__) -> Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    # Create console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+
+    # Create formatter
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    console_handler.setFormatter(formatter)
+
+    # Add handler to logger
+    logger.addHandler(console_handler)
+
+    return logger

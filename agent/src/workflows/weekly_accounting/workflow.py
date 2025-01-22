@@ -7,6 +7,7 @@ import boto3
 from typing import List, Literal
 import pydantic
 import requests
+from src.services import to_dollar_float
 from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
 from vellum import (
@@ -69,10 +70,6 @@ PersonalTransactionCategory = Literal[
     "Civil Income",
     "Fines",
 ]
-
-
-def to_dollar_float(value: str) -> float:
-    return float(value.replace("$", "").replace(",", ""))
 
 
 class PersonalTransaction(UniversalBaseModel):

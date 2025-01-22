@@ -3,7 +3,7 @@ import json
 from logging import Logger
 from math import floor
 import os
-from typing import List, Literal
+from typing import List, Literal, Optional
 import requests
 from sqlalchemy.orm import aliased
 from sqlmodel import or_, select
@@ -13,7 +13,7 @@ from src.models.types import Sport
 from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
-from src.workflows.weekly_accounting.workflow import to_dollar_float
+from src.services import to_dollar_float
 from vellum.workflows.state.encoder import DefaultStateEncoder
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
@@ -34,59 +34,89 @@ class RecordYesterdaysGames(BaseNode):
         recent_bets = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Bets!A2:H100").execute()["values"]
         yesterday_cell = yesterday.strftime("%m/%d/%y")
         yesterday_games = [
-            row
-            for row in recent_bets
+            (index, row)
+            for index, row in enumerate(recent_bets)
             if row[0] == yesterday_cell
         ]
 
+        with sqlite_session() as session:
+            HomeTeam = aliased(SportTeam, name="home_team")
+            AwayTeam = aliased(SportTeam, name="away_team")
+            statement = select(  # type: ignore
+                SportGame.away_team_score,
+                SportGame.home_team_score,
+                AwayTeam.location.label("away_team_location"),
+                AwayTeam.name.label("away_team_name"),
+                HomeTeam.location.label("home_team_location"), 
+                HomeTeam.name.label("home_team_name"),
+                HomeTeam.sport,
+            ).join(
+                AwayTeam, 
+                SportGame.away_team_id == AwayTeam.id,
+                isouter=True
+            ).join(
+                HomeTeam,
+                SportGame.home_team_id == HomeTeam.id,
+                isouter=True
+            ).where(
+                SportGame.start_time >= yesterday - timedelta(days=1),
+            ).order_by(SportGame.start_time.desc())
+            games = session.exec(statement).all()
+
         winnings = []
-        for row in yesterday_games:
+        range_min: Optional[int] = None
+        range_max: Optional[int] = None
+        for index, row in yesterday_games:
+            if range_min is None or index + 2 < range_min:
+                range_min = index + 2
+            if range_max is None or index + 2 > range_max:
+                range_max = index + 2
+
             picks = row[6].split(" COVERS ")
             selected_winner = picks[0]
             selected_spread = float(row[5].split(" ")[1])
             sport = Sport(row[4])
-            
             odds = int(row[2])
             wager = to_dollar_float(row[1])
+            
+            recent_game = next((game for game in games if game.sport == sport and f"{game.home_team_location} {game.home_team_name}" in picks and f"{game.away_team_location} {game.away_team_name}" in picks), None)
+            if not recent_game:
+                raise ValueError(f"Failed to find recent game for {picks} in {sport}")
+            
             did_win = False
-            with sqlite_session() as session:
-                HomeTeam = aliased(SportTeam, name="home_team")
-                AwayTeam = aliased(SportTeam, name="away_team")
-                statement = select(  # type: ignore
-                    SportGame.away_team_score,
-                    SportGame.home_team_score,
-                    AwayTeam.location.label("away_team_location"),
-                    AwayTeam.name.label("away_team_name"),
-                    HomeTeam.location.label("home_team_location"), 
-                    HomeTeam.name.label("home_team_name")
-                ).join(
-                    AwayTeam, 
-                    SportGame.away_team_id == AwayTeam.id,
-                    isouter=True
-                ).join(
-                    HomeTeam,
-                    SportGame.home_team_id == HomeTeam.id,
-                    isouter=True
-                ).where(
-                    SportGame.start_time >= yesterday,
-                    SportGame.start_time < yesterday + timedelta(days=1),
-                    HomeTeam.sport == sport,
-                )
-                result = session.exec(statement).one()
-                away_team = f"{result.away_team_location} {result.away_team_name}"
-                home_team = f"{result.home_team_location} {result.home_team_name}"
-                if selected_winner == home_team:
-                    did_win = result.home_team_score + selected_spread > result.away_team_score
-                elif selected_winner == away_team:
-                    did_win = result.away_team_score + selected_spread > result.home_team_score
-                else:
-                    raise ValueError(f"Selected winner {selected_winner} not found in game {away_team} @ {home_team}")
+            did_tie = False
+            home_team = f"{recent_game.home_team_location} {recent_game.home_team_name}"
+            away_team = f"{recent_game.away_team_location} {recent_game.away_team_name}"
 
-                winnings.append((did_win, wager, odds))
+            if selected_winner == home_team:
+                did_win = recent_game.home_team_score + selected_spread > recent_game.away_team_score
+                did_tie = recent_game.home_team_score + selected_spread == recent_game.away_team_score
+            elif selected_winner == away_team:
+                did_win = recent_game.away_team_score + selected_spread > recent_game.home_team_score
+                did_tie = recent_game.away_team_score + selected_spread == recent_game.home_team_score
+            else:
+                raise ValueError(f"Selected winner {selected_winner} not found in game {away_team} @ {home_team}")
 
-        logger.info(f"Winnings: {winnings}")
+            if did_tie:
+                winnings.append([wager])
+            elif did_win:
+                delta = (wager * 100 / -odds) if odds < 0 else (wager * odds / 100)
+                winning = round(wager + delta, 2)
+                winnings.append([winning])
+            else:
+                winnings.append([0])
 
-        # TODO use games from yesterday's scoreboard to backfill outcomes
+        range_name = f"Bets!D{range_min}:D{range_max}"
+        logger.info(f"Winnings: {winnings} to enter into {range_name}")
+
+        sheets.values().update(
+            spreadsheetId=SPREADSHEET_ID,
+            range=range_name,
+            valueInputOption='USER_ENTERED',
+            body={
+                "values": winnings
+            }
+        ).execute()        
 
         # TODO use games from yesterday's scoreboard to update current broker balances
 
