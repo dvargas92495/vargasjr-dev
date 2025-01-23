@@ -64,6 +64,7 @@ class RecordYesterdaysGames(BaseNode):
             games = session.exec(statement).all()
 
         winnings = []
+        total_wager = 0.0
         range_min: Optional[int] = None
         range_max: Optional[int] = None
         for index, row in yesterday_games:
@@ -78,11 +79,13 @@ class RecordYesterdaysGames(BaseNode):
             sport = Sport(row[4])
             odds = int(row[2])
             wager = to_dollar_float(row[1])
+            total_wager += wager
             
             recent_game = next((game for game in games if game.sport == sport and f"{game.home_team_location} {game.home_team_name}" in picks and f"{game.away_team_location} {game.away_team_name}" in picks), None)
             if not recent_game:
-                raise ValueError(f"Failed to find recent game for {picks} in {sport}")
-            
+                logger.exception(f"Failed to find recent game for {picks} in {sport}. Treating as a void...")
+                winnings.append([wager])
+                continue
             did_win = False
             did_tie = False
             home_team = f"{recent_game.home_team_location} {recent_game.home_team_name}"
@@ -107,7 +110,9 @@ class RecordYesterdaysGames(BaseNode):
                 winnings.append([0])
 
         range_name = f"Bets!D{range_min}:D{range_max}"
-        logger.info(f"Winnings: {winnings} to enter into {range_name}")
+        total_winnings = sum([w[0] for w in winnings])
+        profit = round(total_winnings - total_wager, 2)
+        logger.info(f"Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}")
 
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
@@ -371,17 +376,19 @@ class SubmitBets(BaseNode):
                 ran_out_of_money = True
                 break
 
-            spread = outcome.game.spread if outcome.outcome == "home" else -outcome.game.spread
+            spread_amount = outcome.game.spread if outcome.outcome == "home" else -outcome.game.spread
             pick = f"{outcome.game.home_team.full_name if outcome.outcome == "home" else outcome.game.away_team.full_name} COVERS {outcome.game.away_team.full_name if outcome.outcome == "home" else outcome.game.home_team.full_name}"
-            picks.append((pick, outcome.confidence, wager))
+            spread = f"{'+' if spread_amount > 0 else ''}{spread_amount}"
+            odds = outcome.game.home_price if outcome.outcome == "home" else outcome.game.away_price
+            picks.append((pick, outcome.confidence, wager, spread, odds))
             rows.append(
                 [
                     date, # DATE
                     wager, # WAGER
-                    outcome.game.home_price if outcome.outcome == "home" else outcome.game.away_price, # ODDS
+                    odds, # ODDS
                     None, # WINNINGS
                     outcome.game.sport, # SPORT
-                    f"Spread {"+" if spread > 0 else ""}{spread}", # TYPE
+                    f"Spread {spread}", # TYPE
                     pick, # PICK
                     date, # Event Date
                     BROKER_MAP[outcome.game.bookmaker], # BROKER
@@ -400,7 +407,7 @@ class SubmitBets(BaseNode):
         summary = f"""\
 Bets submitted for {len(rows)} games. Remaining balance: ${balance}{" (ran out of money)" if ran_out_of_money else ""}
 ---
-{"\n".join([f"Picked {pick} with ${wager:.2f} on confidence {confidence:.4f}" for pick, confidence, wager in picks])}
+{"\n".join([f"- Bet ${wager:.2f} to {spread} {pick} on {odds} odds. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in picks])}
 ---
 Report: {report_md_file}
 """

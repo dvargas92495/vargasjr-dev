@@ -73,4 +73,9 @@ class RoutineJob:
         workflow = workflow_class(
             context=workflow_context,
         )
-        workflow.run()
+        self._logger.info(f"Running Routine Job {self._name}")
+        outcome = workflow.run()
+        if outcome.name == "workflow.execution.fulfilled":
+            self._logger.info(f"Routine Job {self._name} completed successfully")
+        elif outcome.name == "workflow.execution.rejected":
+            self._logger.error(f"Routine Job {self._name} failed: [{outcome.error.code}] {outcome.error.message}")
