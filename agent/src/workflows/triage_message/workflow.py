@@ -1,9 +1,11 @@
 import logging
+from typing import Optional
 from uuid import UUID, uuid4
 import psycopg
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
+from src.models.contact import Contact
 from src.models.inbox import Inbox
-from src.services import postgres_session
+from src.services import create_contact, get_contact_by_email, get_contact_by_phone_number, postgres_session
 from src.services.aws import send_email
 from vellum import (
     ChatMessagePromptBlock,
@@ -16,7 +18,7 @@ from sqlmodel import select
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from src.models.inbox_message import InboxMessage
 from src.models.inbox_message_operation import InboxMessageOperation
-from src.models.types import InboxMessageOperationType
+from src.models.types import InboxMessageOperationType, InboxType
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
 import boto3
@@ -28,12 +30,14 @@ class SlimMessage(UniversalBaseModel):
     message_id: UUID
     body: str
     source: str
-    channel: str
+    channel: InboxType
 
 
 class ReadMessageNode(BaseNode):
     class Ports(BaseNode.Ports):
-        no_action = Port.on_if(LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals("")))
+        no_action = Port.on_if(
+            LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
+        )
         triage = Port.on_else()
 
     class Outputs(BaseNode.Outputs):
@@ -60,7 +64,7 @@ class ReadMessageNode(BaseNode):
                             message_id=uuid4(),
                             body="No messages found",
                             source="",
-                            channel="",
+                            channel=InboxType.NONE,
                         )
                     )
 
@@ -76,7 +80,7 @@ class ReadMessageNode(BaseNode):
                     message_id=inbox_message.id,
                     body=inbox_message.body,
                     source=inbox_message.source,
-                    channel=inbox_type.value,
+                    channel=inbox_type,
                 )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
             # I suppose the agent could spin down while the agent is running, so we need to cancel this case.
@@ -85,7 +89,7 @@ class ReadMessageNode(BaseNode):
                     message_id=uuid4(),
                     body="No messages found",
                     source="",
-                    channel="",
+                    channel=InboxType.NONE,
                 )
             )
 
@@ -132,6 +136,28 @@ def text_reply(
     pass
 
 
+class UpdateCRMNode(BaseNode):
+    channel = ReadMessageNode.Outputs.message["channel"]
+    source = ReadMessageNode.Outputs.message["source"]
+
+    class Outputs(BaseNode.Outputs):
+        contact: Contact
+
+    def run(self) -> BaseNode.Outputs:
+        contact: Optional[Contact] = None
+        if self.channel == InboxType.EMAIL or self.channel == InboxType.FORM:
+            contact = get_contact_by_email(self.source)
+        elif self.channel == InboxType.TEXT:
+            contact = get_contact_by_phone_number(self.source)
+        else:
+            raise ValueError(f"Unknown channel {self.channel}")
+
+        if not contact:
+            contact = create_contact(self.channel, self.source)
+
+        return self.Outputs(contact=contact)
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -140,7 +166,7 @@ class TriageMessageNode(BaseInlinePromptNode):
             blocks=[
                 JinjaPromptBlock(
                     template="""You are triaging the latest unread message from your inbox. It was from \
-{{ source }} and was submitted via {{ channel }}. Pick the most relevant action.""",
+{{ contact }} and was submitted via {{ channel }}. Pick the most relevant action.""",
                 ),
             ],
         ),
@@ -156,7 +182,7 @@ class TriageMessageNode(BaseInlinePromptNode):
         ),
     ]
     prompt_inputs = {
-        "source": ReadMessageNode.Outputs.message["source"],
+        "contact": UpdateCRMNode.Outputs.contact["identifier"],
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
     }
@@ -242,6 +268,7 @@ class TriageMessageWorkflow(BaseWorkflow):
     graph = {
         ReadMessageNode.Ports.no_action >> NoActionNode,
         ReadMessageNode.Ports.triage
+        >> UpdateCRMNode
         >> TriageMessageNode
         >> {
             ParseFunctionCallNode.Ports.no_action >> NoActionNode,

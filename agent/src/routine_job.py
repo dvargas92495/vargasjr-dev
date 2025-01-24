@@ -2,6 +2,7 @@ from datetime import datetime
 from logging import Logger
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.state.context import WorkflowContext
+from vellum.workflows.events import WorkflowEvent
 
 
 class RoutineJob:
@@ -74,8 +75,23 @@ class RoutineJob:
             context=workflow_context,
         )
         self._logger.info(f"Running Routine Job {self._name}")
-        outcome = workflow.run()
-        if outcome.name == "workflow.execution.fulfilled":
-            self._logger.info(f"Routine Job {self._name} completed successfully")
-        elif outcome.name == "workflow.execution.rejected":
-            self._logger.error(f"Routine Job {self._name} failed: [{outcome.error.code}] {outcome.error.message}")
+        events = workflow.stream(event_filter=self._event_filter)
+        for event in events:
+            if event.name == "workflow.execution.initiated":
+                self._logger.info(f"Routine Job {self._name} started. Trace: {event.trace_id} Span: {event.span_id}")
+            elif event.name == "node.execution.fulfilled":
+                self._logger.info(
+                    f"Routine Job {self._name} successfully completed node {event.node_definition.__name__}"
+                )
+            elif event.name == "workflow.execution.fulfilled":
+                self._logger.info(f"Routine Job {self._name} completed successfully")
+            elif event.name == "workflow.execution.rejected":
+                self._logger.error(f"Routine Job {self._name} failed: [{event.error.code}] {event.error.message}")
+
+    def _event_filter(self, workflow: BaseWorkflow, event: WorkflowEvent) -> bool:
+        return event.name in {
+            "workflow.execution.initiated",
+            "workflow.execution.fulfilled",
+            "workflow.execution.rejected",
+            "node.execution.fulfilled",
+        }

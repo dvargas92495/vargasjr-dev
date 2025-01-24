@@ -126,7 +126,7 @@ class AgentRunner:
 
                     subprocess.Popen(
                         ["nohup", "poetry", "run", "agent"],
-                        preexec_fn=os.setsid,
+                        preexec_fn=self._subprocess_preexec_fn,
                         start_new_session=True,
                     )
                     sys.exit(0)
@@ -170,3 +170,9 @@ class AgentRunner:
                 logger=self._logger,
             ),
         ]
+
+    def _subprocess_preexec_fn(self):
+        try:
+            os.setsid()
+        except Exception:
+            self._logger.exception("Failed to set session id for subprocess")

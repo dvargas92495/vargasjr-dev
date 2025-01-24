@@ -7,6 +7,7 @@ class InboxType(str, Enum):
     FORM = "FORM"
     EMAIL = "EMAIL"
     TEXT = "TEXT"
+    NONE = "NONE"
 
 
 class InboxMessageOperationType(str, Enum):

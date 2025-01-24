@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 import requests
+from src.models.contact import Contact
 from src.models.inbox import Inbox
 import boto3
 
@@ -14,7 +15,7 @@ from sqlmodel import Session, select, func
 from src.models.inbox_message import InboxMessage
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
-from src.models.types import Sport
+from src.models.types import InboxType, Sport
 
 
 MEMORY_DIR = Path(__file__).parent.parent.parent.parent / ".memory"
@@ -55,6 +56,32 @@ def create_inbox_message(
         )
         session.add(inbox_message)
         session.commit()
+
+
+def create_contact(channel: InboxType, source: str) -> Contact:
+    with postgres_session() as session:
+        if channel == InboxType.EMAIL or channel == InboxType.FORM:
+            contact = Contact(email=source)
+        elif channel == InboxType.TEXT:
+            contact = Contact(phone_number=source)
+        else:
+            raise ValueError(f"Unknown channel {channel}")
+
+        session.add(contact)
+        session.commit()
+        return contact
+
+
+def get_contact_by_email(email: str) -> Optional[Contact]:
+    with postgres_session() as session:
+        statement = select(Contact).where(Contact.email == email)
+        return session.exec(statement).one_or_none()
+
+
+def get_contact_by_phone_number(phone_number: str) -> Optional[Contact]:
+    with postgres_session() as session:
+        statement = select(Contact).where(Contact.phone_number == phone_number)
+        return session.exec(statement).one_or_none()
 
 
 @lru_cache

@@ -127,8 +127,6 @@ class RecordYesterdaysGames(BaseNode):
 
         # Analytics!B2
         balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!C4").execute()["values"]
-
-        logger.info(f"Initial balance: {balance_data}")
         initial_balance = to_dollar_float(balance_data[0][0])
         return self.Outputs(initial_balance=initial_balance)
 
