@@ -3,7 +3,7 @@ import json
 from logging import Logger
 from math import floor
 import os
-from typing import List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 import requests
 from sqlalchemy.orm import aliased
 from sqlmodel import or_, select
@@ -24,6 +24,7 @@ SPREADSHEET_ID = "1-wq0IIQd31xsMB1ZAxgflN0TQNuewjQHVVGEeVKUEbI"
 class RecordYesterdaysGames(BaseNode):
     class Outputs(BaseNode.Outputs):
         initial_balance: float
+        yesterday_recap: str
 
     def run(self) -> Outputs:
         yesterday = datetime.now() - timedelta(days=1)
@@ -112,7 +113,7 @@ class RecordYesterdaysGames(BaseNode):
         range_name = f"Bets!D{range_min}:D{range_max}"
         total_winnings = sum([w[0] for w in winnings])
         profit = round(total_winnings - total_wager, 2)
-        logger.info(f"Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}")
+        yesterday_recap = f"Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}"
 
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
@@ -128,7 +129,7 @@ class RecordYesterdaysGames(BaseNode):
         # Analytics!B2
         balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!C4").execute()["values"]
         initial_balance = to_dollar_float(balance_data[0][0])
-        return self.Outputs(initial_balance=initial_balance)
+        return self.Outputs(initial_balance=initial_balance, yesterday_recap=yesterday_recap)
 
 
 OddsAPISport = Literal[
@@ -359,7 +360,7 @@ class SubmitBets(BaseNode):
     initial_balance = RecordYesterdaysGames.Outputs.initial_balance
 
     class Outputs(BaseNode.Outputs):
-        summary: str
+        wagers: Dict[str, Any]
 
     def run(self) -> Outputs:
         rows: list[list[str | float | None]] = []
@@ -402,23 +403,49 @@ class SubmitBets(BaseNode):
         )
 
         report_md_file = MEMORY_DIR / "reports" / "bets" / f"{date.replace('/', '-')}.md"
-        summary = f"""\
-Bets submitted for {len(rows)} games. Remaining balance: ${balance}{" (ran out of money)" if ran_out_of_money else ""}
----
-{"\n".join([f"- Bet ${wager:.2f} to {spread} {pick} on {odds} odds. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in picks])}
----
-Report: {report_md_file}
-"""
         
         with open(report_md_file, "w") as f:
             json.dump(self.outcomes, f, indent=2, cls=DefaultStateEncoder)
+
+        return self.Outputs(
+            wagers={
+                "rows": rows,
+                "balance": balance,
+                "ran_out_of_money": ran_out_of_money,
+                "picks": picks,
+                "report_md_file": report_md_file,
+                "date": date,
+            }
+        )
+    
+
+class SendSummary(BaseNode):
+    recap = RecordYesterdaysGames.Outputs.yesterday_recap
+    wagers = SubmitBets.Outputs.wagers
+
+    class Outputs(BaseNode.Outputs):
+        summary: str
+
+    def run(self) -> Outputs:
+        summary = f"""\
+Yesterday's Recap:
+
+{self.recap}
+---
+
+Bets submitted for {len(self.wagers['rows'])} games. Remaining balance: ${self.wagers['balance']}{" (ran out of money)" if self.wagers['ran_out_of_money'] else ""}
+---
+{"\n".join([f"- Bet ${wager:.2f} to {spread} {pick} on {odds} odds. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])}
+---
+Report: {self.wagers['report_md_file']}
+"""
 
         try:
             to_email = "dvargas92495@gmail.com"
             send_email(
                 to=to_email,
                 body=summary,
-                subject="Submitted Bets for " + date,
+                subject="Submitted Bets for " + self.wagers['date'],
             )
             return self.Outputs(summary=f"Sent bets to {to_email}.")
         except Exception:

@@ -47,3 +47,11 @@ export const InboxMessageOperationsTable = pgTable("inbox_message_operations", {
   operation: InboxMessageOperationTypesEnum("operation").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const ContactsTable = pgTable("contacts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: varchar("email"),
+  phoneNumber: varchar("phone_number"),
+  fullName: varchar("full_name"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
