@@ -15,7 +15,8 @@ from sqlmodel import Session, select, func
 from src.models.inbox_message import InboxMessage
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
-from src.models.types import InboxType, Sport
+from src.models.pkm.transaction_rule import TransactionRule
+from src.models.types import InboxType, PersonalTransactionCategory, Sport
 
 
 MEMORY_DIR = Path(__file__).parent.parent.parent.parent / ".memory"
@@ -25,14 +26,14 @@ def to_dollar_float(value: str) -> float:
     return float(value.replace("$", "").replace(",", ""))
 
 
-def postgres_session():
+def postgres_session(expire_on_commit: bool = True):
     """Get a SQLModel Session using the POSTGRES_URL environment variable"""
     url = os.getenv("POSTGRES_URL")
     if not url:
         raise ValueError("POSTGRES_URL is not set")
 
     engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
-    return Session(engine)
+    return Session(engine, expire_on_commit=expire_on_commit)
 
 
 def sqlite_session():
@@ -59,7 +60,7 @@ def create_inbox_message(
 
 
 def create_contact(channel: InboxType, source: str) -> Contact:
-    with postgres_session() as session:
+    with postgres_session(expire_on_commit=False) as session:
         if channel == InboxType.EMAIL or channel == InboxType.FORM:
             contact = Contact(email=source)
         elif channel == InboxType.TEXT:
@@ -215,3 +216,21 @@ def create_console_logger(name: str = __name__) -> Logger:
     logger.addHandler(console_handler)
 
     return logger
+
+
+def get_all_transaction_rules() -> list[TransactionRule]:
+    with sqlite_session() as session:
+        statement = select(TransactionRule)
+        return session.exec(statement).all()
+
+
+def add_transaction_rule(description: str, category: PersonalTransactionCategory) -> None:
+    with sqlite_session() as session:
+        session.add(
+            TransactionRule(
+                category=category,
+                operation="EQUALS",
+                target=description,
+            )
+        )
+        session.commit()

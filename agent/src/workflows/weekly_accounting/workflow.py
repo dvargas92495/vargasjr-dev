@@ -1,14 +1,13 @@
 import base64
-from datetime import datetime, timedelta
-import json
+from datetime import datetime, timedelta, timezone
 import logging
 import os
 import boto3
-from typing import List, Literal
-import pydantic
+from typing import List
 import requests
-from src.services import to_dollar_float
-from src.services.aws import send_email
+from src.models.types import PERSONAL_TRANSACTION_CATEGORIES, PersonalTransaction
+from src.services import add_transaction_rule, get_all_transaction_rules, to_dollar_float
+from src.services.aws import list_attachments_since, send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
 from vellum import (
     ChatMessagePromptBlock,
@@ -22,63 +21,7 @@ from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode, InlinePromptNode
 from vellum.workflows.types import MergeBehavior
 
-logger = logging.getLogger(__name__)
-
 SPREADSHEET_ID = "1azbspgulxIEW7YSMFgscFm7GEJkSQIS3S_6cq60E4hw"
-
-PersonalTransactionSource = Literal[
-    "Mercury Checking",
-    "Venmo Credit",
-]
-
-PersonalTransactionCategory = Literal[
-    "Vehicle for Personal",
-    "Residential Parking",
-    "Commercial Parking",
-    "Commercial Transportation",
-    "Personal Transportation",
-    "Health Insurance",
-    "Medical Bills",
-    "Dental Insurance",
-    "Fitness",
-    "Health goods",
-    "Food & Drink",
-    "Entertainment",
-    "Hobby",
-    "Financial Services",
-    "Clothing",
-    "Laundry",
-    "Hair",
-    "Family Fund Deposit",
-    "Family Loan Repayment",
-    "Housing",
-    "Furniture",
-    "Home Supplies",
-    "Utilities",
-    "Marriage",
-    "Vacation",
-    "Experience",
-    "Gift",
-    "Employment Income",
-    "Socials",
-    "Equipment",
-    "Reimbursable Business Expense",
-    "Business Investment",
-    "Charity",
-    "Federal Tax Payment",
-    "Federal Tax Return",
-    "Civil Income",
-    "Fines",
-]
-
-
-class PersonalTransaction(UniversalBaseModel):
-    date: datetime = pydantic.Field(description="Must be in ISO format (YYYY-MM-DD)")
-    source: PersonalTransactionSource
-    description: str
-    amount: float
-    category: PersonalTransactionCategory
-    notes: str
 
 
 class BuildPersonalFinancialContext(BaseNode):
@@ -87,24 +30,22 @@ class BuildPersonalFinancialContext(BaseNode):
 
 
 class GetVenmoScreenshots(BaseNode):
-    attachments = [
-        "IMG_3206.png",
-        "IMG_3207.png",
-    ]
-
     class Outputs(BaseNode.Outputs):
         image_blocks: list[ImagePromptBlock]
 
     def run(self) -> Outputs:
         s3 = boto3.client("s3")
         image_blocks = []
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=7)
+        attachments = list_attachments_since(cutoff_date)
 
-        for attachment in self.attachments:
+        for attachment in attachments:
             response = s3.get_object(Bucket="vargas-jr-inbox", Key=f"attachments/{attachment}")
             image_data = response["Body"].read()
+            content_type = response["ContentType"]
 
             b64_data = base64.b64encode(image_data).decode()
-            data_url = f"data:image/png;base64,{b64_data}"
+            data_url = f"data:{content_type};base64,{b64_data}"
 
             # Create image block
             image_blocks.append(ImagePromptBlock(src=data_url))
@@ -182,7 +123,9 @@ class GetBankTransactions(BaseNode):
         accounts_response = requests.get(accounts_url, headers=headers)
         accounts_response.raise_for_status()
         accounts = accounts_response.json()["accounts"]
-        checking_account_id = next(account["id"] for account in accounts if account["kind"] == "checking")
+        checking_account = next(account for account in accounts if account["kind"] == "checking")
+        checking_account_id = checking_account["id"]
+        checking_account_balance = checking_account["currentBalance"]
 
         today_date = datetime.now()
         last_week_date = today_date - timedelta(days=7)
@@ -207,8 +150,7 @@ class GetBankTransactions(BaseNode):
                 )
                 for transaction in transactions
             ],
-            # TODO
-            snapshot=8000.0,
+            snapshot=checking_account_balance,
         )
 
 
@@ -223,13 +165,27 @@ class NormalizeTransactions(BaseNode):
         transactions: list[PersonalTransaction]
 
     def run(self) -> Outputs:
+        logger = getattr(self._context, "logger", logging.getLogger(__name__))
         all_transactions = self.credit_card_transactions + self.bank_transactions
         for transaction in all_transactions:
             if transaction.date.tzinfo is not None:
                 transaction.date = transaction.date.replace(tzinfo=None)
 
         sorted_transactions = sorted(all_transactions, key=lambda x: x.date, reverse=True)
+        rules = get_all_transaction_rules()
         for transaction in sorted_transactions:
+            has_matched = False
+            for rule in rules:
+                if rule.matches(transaction):
+                    transaction.category = rule.category
+                    if rule.description:
+                        transaction.description = rule.description
+                    has_matched = True
+                    break
+
+            if has_matched:
+                continue
+
             response = self._context.vellum_client.ad_hoc.adhoc_execute_prompt_stream(
                 ml_model="gpt-4o-mini",
                 blocks=[
@@ -266,7 +222,7 @@ class NormalizeTransactions(BaseNode):
                                 "properties": {
                                     "category": {
                                         "type": "string",
-                                        "enum": [category for category in PersonalTransactionCategory.__args__],
+                                        "enum": list(PERSONAL_TRANSACTION_CATEGORIES),
                                     },
                                 },
                             },
@@ -278,7 +234,19 @@ class NormalizeTransactions(BaseNode):
                 if not prompt_event.state == "FULFILLED":
                     continue
 
-                transaction.category = json.loads(prompt_event.outputs[0].value)["category"]
+                output = prompt_event.outputs[0]
+                if not output:
+                    raise ValueError("No output from prompt")
+
+                if output.type != "STRING" or not output.value:
+                    raise ValueError("Output from prompt is not a string")
+
+                if output.value not in PERSONAL_TRANSACTION_CATEGORIES:
+                    logger.error(f"Invalid category: {output.value}")
+                    break
+
+                add_transaction_rule(description=transaction.description, category=output.value)
+                transaction.category = output.value
                 break
 
         return self.Outputs(transactions=sorted_transactions)
@@ -416,6 +384,8 @@ class SendFinancesReport(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
+        logger = getattr(self._context, "logger", logging.getLogger(__name__))
+
         try:
             to_email = "dvargas92495@gmail.com"
             date = datetime.now().strftime("%m/%d/%Y")

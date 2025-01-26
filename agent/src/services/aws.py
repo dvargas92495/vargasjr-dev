@@ -1,3 +1,4 @@
+from datetime import datetime
 import boto3
 from logging import Logger
 from src.services import MEMORY_DIR
@@ -39,3 +40,24 @@ def send_email(to: str, body: str, subject: str) -> None:
             "Body": {"Text": {"Data": body}},
         },
     )
+
+
+def list_attachments_since(cutoff_date: datetime) -> list[str]:
+    s3 = boto3.client("s3")
+
+    # List objects
+    recent_objects = []
+    paginator = s3.get_paginator("list_objects_v2")
+
+    for page in paginator.paginate(
+        Bucket="vargas-jr-inbox",
+        Prefix="attachments/",
+    ):
+        if "Contents" not in page:
+            continue
+
+        for obj in page["Contents"]:
+            if obj["LastModified"] >= cutoff_date:
+                recent_objects.append(obj["Key"])
+
+    return recent_objects

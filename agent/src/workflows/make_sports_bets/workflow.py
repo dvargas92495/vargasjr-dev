@@ -3,7 +3,7 @@ import json
 from logging import Logger
 from math import floor
 import os
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Tuple
 import requests
 from sqlalchemy.orm import aliased
 from sqlmodel import or_, select
@@ -68,6 +68,7 @@ class RecordYesterdaysGames(BaseNode):
         total_wager = 0.0
         range_min: Optional[int] = None
         range_max: Optional[int] = None
+        sports_records: Dict[Sport, Tuple[int, int, int]] = {}
         for index, row in yesterday_games:
             if range_min is None or index + 2 < range_min:
                 range_min = index + 2
@@ -101,19 +102,35 @@ class RecordYesterdaysGames(BaseNode):
             else:
                 raise ValueError(f"Selected winner {selected_winner} not found in game {away_team} @ {home_team}")
 
+            sport_record = sports_records.get(sport, (0, 0, 0))
             if did_tie:
                 winnings.append([wager])
+                sports_records[sport] = (sport_record[0], sport_record[1], sport_record[2] + 1)
             elif did_win:
                 delta = (wager * 100 / -odds) if odds < 0 else (wager * odds / 100)
                 winning = round(wager + delta, 2)
                 winnings.append([winning])
+                sports_records[sport] = (sport_record[0] + 1, sport_record[1], sport_record[2])
             else:
                 winnings.append([0])
+                sports_records[sport] = (sport_record[0], sport_record[1]+ 1, sport_record[2])
+
 
         range_name = f"Bets!D{range_min}:D{range_max}"
         total_winnings = sum([w[0] for w in winnings])
         profit = round(total_winnings - total_wager, 2)
-        yesterday_recap = f"Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}"
+        total_record = (
+            sum(record[0] for record in sports_records.values()),
+            sum(record[1] for record in sports_records.values()),
+            sum(record[2] for record in sports_records.values()),
+        )
+        format_record = lambda x: f"{x[0]} - {x[1]} - {x[2]}" if x[2] > 0 else f"{x[0]} - {x[1]}"
+        sport_records = "\n".join([f"{sport.value}: {format_record(record)}" for sport, record in sports_records.items()])
+        yesterday_recap = f"""\
+Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}.
+TOTAL RECORD: {format_record(total_record)}
+{sport_records}
+"""
 
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
