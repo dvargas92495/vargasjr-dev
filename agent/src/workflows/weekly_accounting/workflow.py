@@ -1,5 +1,6 @@
 import base64
 from datetime import datetime, timedelta, timezone
+import json
 import logging
 import os
 import boto3
@@ -241,12 +242,16 @@ class NormalizeTransactions(BaseNode):
                 if output.type != "STRING" or not output.value:
                     raise ValueError("Output from prompt is not a string")
 
-                if output.value not in PERSONAL_TRANSACTION_CATEGORIES:
-                    logger.error(f"Invalid category: {output.value}")
+                category = json.loads(output.value).get("category")
+                if category not in PERSONAL_TRANSACTION_CATEGORIES:
+                    logger.error(f"Invalid category: {category}")
                     break
 
-                add_transaction_rule(description=transaction.description, category=output.value)
-                transaction.category = output.value
+                add_transaction_rule(
+                    description=transaction.description,
+                    category=category,
+                )
+                transaction.category = category
                 break
 
         return self.Outputs(transactions=sorted_transactions)

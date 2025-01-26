@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Literal, Set, get_args
+from typing import Literal, Set, cast, get_args
 import pydantic
 from vellum.core.pydantic_utilities import UniversalBaseModel
 
@@ -79,6 +79,13 @@ class PersonalTransaction(UniversalBaseModel):
     amount: float
     category: PersonalTransactionCategory
     notes: str
+
+    @pydantic.field_validator("category")
+    @classmethod
+    def validate_category(cls, v: str) -> PersonalTransactionCategory:
+        if v not in PERSONAL_TRANSACTION_CATEGORIES:
+            return "Financial Services"
+        return cast(PersonalTransactionCategory, v)
 
 
 TransactionRuleOperation = Literal["EQUALS", "CONTAINS"]
