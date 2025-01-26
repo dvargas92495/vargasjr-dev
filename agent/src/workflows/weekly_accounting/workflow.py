@@ -40,7 +40,7 @@ class GetVenmoScreenshots(BaseNode):
         attachments = list_attachments_since(cutoff_date)
 
         for attachment in attachments:
-            response = s3.get_object(Bucket="vargas-jr-inbox", Key=f"attachments/{attachment}")
+            response = s3.get_object(Bucket="vargas-jr-inbox", Key=attachment)
             image_data = response["Body"].read()
             content_type = response["ContentType"]
 
