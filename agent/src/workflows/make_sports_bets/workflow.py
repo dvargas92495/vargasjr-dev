@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased
 from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
-from src.models.types import Sport
+from src.models.types import USER, Sport
 from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
@@ -81,7 +81,7 @@ class RecordYesterdaysGames(BaseNode):
             sport = Sport(row[4])
             odds = int(row[2])
             wager = to_dollar_float(row[1])
-            total_wager += wager
+            total_wager = round(total_wager + wager, 2)
             
             recent_game = next((game for game in games if game.sport == sport and f"{game.home_team_location} {game.home_team_name}" in picks and f"{game.away_team_location} {game.away_team_name}" in picks), None)
             if not recent_game:
@@ -126,11 +126,6 @@ class RecordYesterdaysGames(BaseNode):
         )
         format_record = lambda x: f"{x[0]} - {x[1]} - {x[2]}" if x[2] > 0 else f"{x[0]} - {x[1]}"
         sport_records = "\n".join([f"{sport.value}: {format_record(record)}" for sport, record in sports_records.items()])
-        yesterday_recap = f"""\
-Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}.
-TOTAL RECORD: {format_record(total_record)}
-{sport_records}
-"""
 
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
@@ -146,6 +141,11 @@ TOTAL RECORD: {format_record(total_record)}
         # Analytics!B2
         balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!C4").execute()["values"]
         initial_balance = to_dollar_float(balance_data[0][0])
+        yesterday_recap = f"""\
+Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}. Your new balance is ${initial_balance}.
+TOTAL RECORD: {format_record(total_record)}
+{sport_records}
+"""
         return self.Outputs(initial_balance=initial_balance, yesterday_recap=yesterday_recap)
 
 
@@ -458,7 +458,7 @@ Report: {self.wagers['report_md_file']}
 """
 
         try:
-            to_email = "dvargas92495@gmail.com"
+            to_email = USER.email
             send_email(
                 to=to_email,
                 body=summary,

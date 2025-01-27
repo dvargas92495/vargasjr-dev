@@ -6,7 +6,7 @@ import os
 import boto3
 from typing import List
 import requests
-from src.models.types import PERSONAL_TRANSACTION_CATEGORIES, PersonalTransaction
+from src.models.types import PERSONAL_TRANSACTION_CATEGORIES, USER, PersonalTransaction
 from src.services import add_transaction_rule, get_all_transaction_rules, to_dollar_float
 from src.services.aws import list_attachments_since, send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
@@ -392,7 +392,7 @@ class SendFinancesReport(BaseNode):
         logger = getattr(self._context, "logger", logging.getLogger(__name__))
 
         try:
-            to_email = "dvargas92495@gmail.com"
+            to_email = USER.email
             date = datetime.now().strftime("%m/%d/%Y")
             send_email(
                 to=to_email,

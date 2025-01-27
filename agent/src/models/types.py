@@ -89,3 +89,14 @@ class PersonalTransaction(UniversalBaseModel):
 
 
 TransactionRuleOperation = Literal["EQUALS", "CONTAINS"]
+
+
+class User(UniversalBaseModel):
+    name: str
+    email: str
+
+
+USER = User(
+    name="David Vargas",
+    email="dvargas92495@gmail.com",
+)
