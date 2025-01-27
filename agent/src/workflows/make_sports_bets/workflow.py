@@ -479,7 +479,7 @@ class BackupMemory(BaseNode):
 
 
 class MakeSportsBetsWorkflow(BaseWorkflow):
-    graph = RecordYesterdaysGames >> GatherTodaysGames >> PredictOutcomes >> SubmitBets >> BackupMemory
+    graph = RecordYesterdaysGames >> GatherTodaysGames >> PredictOutcomes >> SubmitBets >> SendSummary >> BackupMemory
 
     class Outputs(BaseWorkflow.Outputs):
-        summary = SubmitBets.Outputs.summary
+        summary = SendSummary.Outputs.summary
