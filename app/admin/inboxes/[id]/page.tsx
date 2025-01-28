@@ -7,6 +7,7 @@ import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import { desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 const db = drizzle(sql);
 
@@ -62,6 +63,7 @@ export default async function InboxPage({
       <table className="min-w-full border border-gray-300">
         <thead>
           <tr className="bg-gray-500">
+            <th className="px-6 py-3 border-b text-left">ID</th>
             <th className="px-6 py-3 border-b text-left">Source</th>
             <th className="px-6 py-3 border-b text-left">Created At</th>
             <th className="px-6 py-3 border-b text-left">Content</th>
@@ -74,6 +76,11 @@ export default async function InboxPage({
               key={message.id}
               className="hover:bg-gray-50 hover:cursor-pointer hover:text-black"
             >
+              <td className="px-6 py-4 border-b">
+                <Link href={`/admin/inboxes/${id}/messages/${message.id}`}>
+                  {message.id}
+                </Link>
+              </td>
               <td className="px-6 py-4 border-b">{message.source}</td>
               <td className="px-6 py-4 border-b">
                 {message.createdAt.toLocaleString()}
