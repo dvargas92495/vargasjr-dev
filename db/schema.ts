@@ -55,3 +55,13 @@ export const ContactsTable = pgTable("contacts", {
   fullName: varchar("full_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const OutboxMessagesTable = pgTable("outbox_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  parentInboxMessageId: uuid("parent_inbox_message_id")
+    .notNull()
+    .references(() => InboxMessagesTable.id),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  type: InboxTypesEnum("type").notNull(),
+});

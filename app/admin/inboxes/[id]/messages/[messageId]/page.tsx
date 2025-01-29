@@ -1,4 +1,4 @@
-import { InboxMessageOperationsTable, InboxMessagesTable } from "@/db/schema";
+import { InboxMessageOperationsTable, InboxMessagesTable, OutboxMessagesTable } from "@/db/schema";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import { desc, eq } from "drizzle-orm";
@@ -43,6 +43,11 @@ export default async function InboxMessage({
     ])
   );
 
+  const messageResponses = await db
+    .select()
+    .from(OutboxMessagesTable)
+    .where(eq(OutboxMessagesTable.parentInboxMessageId, message.id));
+
   return (
     <div className="flex flex-col p-4">
       <h1 className="text-2xl font-bold mb-4">Message</h1>
@@ -70,6 +75,48 @@ export default async function InboxMessage({
           </div>
         </div>
       </div>
+      {messageResponses.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Responses</h2>
+
+          <div className="space-y-4">
+            {messageResponses.map((response) => (
+              <details
+                key={response.id}
+                className="bg-gray-800 rounded-lg shadow cursor-pointer group"
+              >
+                <summary className="px-6 py-4 flex items-center justify-between hover:bg-gray-700">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-300 text-sm">
+                      {response.createdAt.toLocaleString()}
+                    </span>
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </summary>
+
+                <div className="px-6 py-4 border-t border-gray-700">
+                  <div className="text-sm text-gray-300">Response</div>
+                  <div className="mt-2 p-4 bg-gray-700 rounded whitespace-pre-wrap text-white">
+                    {response.body.substring(0, 50)}
+                  </div>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
