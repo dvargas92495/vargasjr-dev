@@ -5,6 +5,7 @@ import psycopg
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from src.models.contact import Contact
 from src.models.inbox import Inbox
+from src.models.outbox_message import OutboxMessage
 from src.services import create_contact, get_contact_by_email, get_contact_by_phone_number, postgres_session
 from src.services.aws import send_email
 from vellum import (
@@ -147,7 +148,7 @@ class UpdateCRMNode(BaseNode):
         contact: Optional[Contact] = None
         if self.channel == InboxType.EMAIL or self.channel == InboxType.FORM:
             contact = get_contact_by_email(self.source)
-        elif self.channel == InboxType.TEXT:
+        elif self.channel == InboxType.SMS:
             contact = get_contact_by_phone_number(self.source)
         else:
             raise ValueError(f"Unknown channel {self.channel}")
@@ -218,9 +219,11 @@ class SendEmailNode(BaseNode):
     to: str
     subject: str
     body: str
+    inbox_message_id: UUID
 
     class Outputs(BaseNode.Outputs):
         summary: str
+        outbox_message: OutboxMessage
 
     def run(self) -> BaseNode.Outputs:
         try:
@@ -233,7 +236,14 @@ class SendEmailNode(BaseNode):
             logger.exception("Failed to send email to %s", self.to)
             return self.Outputs(summary=f"Failed to send email to {self.to}.")
 
-        return self.Outputs(summary=f"Sent email to {self.to}.")
+        return self.Outputs(
+            summary=f"Sent email to {self.to}.",
+            outbox_message=OutboxMessage(
+                parent_inbox_message_id=self.inbox_message_id,
+                body=self.body,
+                type=InboxType.EMAIL,
+            ),
+        )
 
 
 class NoActionNode(BaseNode):
@@ -245,23 +255,53 @@ class EmailReplyNode(SendEmailNode):
     to = ReadMessageNode.Outputs.message["source"]
     subject = "RE: "
     body = ParseFunctionCallNode.Outputs.parameters["body"]
+    inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
 
 
 class EmailInitiateNode(SendEmailNode):
     to = ParseFunctionCallNode.Outputs.parameters["to"]
     subject = ParseFunctionCallNode.Outputs.parameters["subject"]
     body = ParseFunctionCallNode.Outputs.parameters["body"]
+    inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
 
 
 class TextReplyNode(BaseNode):
     phone_number = ParseFunctionCallNode.Outputs.parameters["phone_number"]
     message = ParseFunctionCallNode.Outputs.parameters["message"]
+    inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
+
+    class Outputs(BaseNode.Outputs):
+        summary: str
+        outbox_message: OutboxMessage
+
+    def run(self) -> BaseNode.Outputs:
+        return self.Outputs(
+            summary=f"Sent text message to {self.phone_number}.",
+            outbox_message=OutboxMessage(
+                parent_inbox_message_id=self.inbox_message_id,
+                body=self.message,
+                type=InboxType.SMS,
+            ),
+        )
+
+
+class StoreOutboxMessageNode(BaseNode):
+    summary = EmailReplyNode.Outputs.summary.coalesce(EmailInitiateNode.Outputs.summary).coalesce(
+        TextReplyNode.Outputs.summary
+    )
+
+    outbox_message = EmailReplyNode.Outputs.outbox_message.coalesce(EmailInitiateNode.Outputs.outbox_message).coalesce(
+        TextReplyNode.Outputs.outbox_message
+    )
 
     class Outputs(BaseNode.Outputs):
         summary: str
 
     def run(self) -> BaseNode.Outputs:
-        return self.Outputs(summary=f"Sent text message to {self.phone_number}.")
+        with postgres_session() as session:
+            session.add(self.outbox_message)
+            session.commit()
+        return self.Outputs(summary=self.summary)
 
 
 class TriageMessageWorkflow(BaseWorkflow):
@@ -272,15 +312,14 @@ class TriageMessageWorkflow(BaseWorkflow):
         >> TriageMessageNode
         >> {
             ParseFunctionCallNode.Ports.no_action >> NoActionNode,
-            ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
-            ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
-            ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
+            {
+                ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
+                ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
+                ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
+            }
+            >> StoreOutboxMessageNode,
         },
     }
 
     class Outputs(BaseWorkflow.Outputs):
-        summary = (
-            NoActionNode.Outputs.summary.coalesce(EmailReplyNode.Outputs.summary)
-            .coalesce(EmailInitiateNode.Outputs.summary)
-            .coalesce(TextReplyNode.Outputs.summary)
-        )
+        summary = NoActionNode.Outputs.summary.coalesce(StoreOutboxMessageNode.Outputs.summary)

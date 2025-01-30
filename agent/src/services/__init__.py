@@ -63,7 +63,7 @@ def create_contact(channel: InboxType, source: str) -> Contact:
     with postgres_session(expire_on_commit=False) as session:
         if channel == InboxType.EMAIL or channel == InboxType.FORM:
             contact = Contact(email=source)
-        elif channel == InboxType.TEXT:
+        elif channel == InboxType.SMS:
             contact = Contact(phone_number=source)
         else:
             raise ValueError(f"Unknown channel {channel}")

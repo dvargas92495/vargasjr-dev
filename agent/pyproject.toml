@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.38"
+version = "0.0.39"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []

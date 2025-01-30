@@ -8,7 +8,8 @@ from sqlmodel import Session, select
 from src.models.inbox import Inbox
 from src.models.inbox_message import InboxMessage
 from src.models.inbox_message_operation import InboxMessageOperation
-from src.models.types import InboxMessageOperationType
+from src.models.outbox_message import OutboxMessage
+from src.models.types import InboxMessageOperationType, InboxType
 from src.runner import AgentRunner
 from vellum import (
     ExecutePromptEvent,
@@ -155,6 +156,13 @@ def test_agent_runer__triage_message(
         Destination={"ToAddresses": ["test@test.com"]},
         Message={"Subject": {"Data": "RE: "}, "Body": {"Text": {"Data": "Hello there!"}}},
     )
+
+    # AND the outbox message should have been created
+    select_query = select(OutboxMessage).where(OutboxMessage.parent_inbox_message_id == inbox_message.id)
+    result = mock_sql_session.exec(select_query).first()
+    assert result is not None
+    assert result.body == "Hello there!"
+    assert result.type == InboxType.EMAIL
 
 
 @pytest.mark.usefixtures("mock_load_routine_jobs")

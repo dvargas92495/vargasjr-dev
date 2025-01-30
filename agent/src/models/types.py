@@ -8,7 +8,7 @@ from vellum.core.pydantic_utilities import UniversalBaseModel
 class InboxType(str, Enum):
     FORM = "FORM"
     EMAIL = "EMAIL"
-    TEXT = "TEXT"
+    SMS = "SMS"
     NONE = "NONE"
 
 
