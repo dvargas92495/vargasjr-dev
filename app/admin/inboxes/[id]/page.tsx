@@ -58,7 +58,7 @@ export default async function InboxPage({
   );
 
   return (
-    <div className="min-h-screen flex flex-col p-4">
+    <div className="flex flex-col p-4">
       <h1 className="text-2xl font-bold mb-4">{inbox[0].name}</h1>
       <table className="min-w-full border border-gray-300">
         <thead>

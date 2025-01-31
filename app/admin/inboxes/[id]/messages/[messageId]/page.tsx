@@ -1,17 +1,24 @@
-import { InboxMessageOperationsTable, InboxMessagesTable, OutboxMessagesTable } from "@/db/schema";
+import {
+  InboxMessageOperationsTable,
+  InboxMessagesTable,
+  OutboxMessagesTable,
+} from "@/db/schema";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import { desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import DeleteMessageButton from "@/components/delete-message-button";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 const db = drizzle(sql);
 
 export default async function InboxMessage({
   params,
 }: {
-  params: Promise<{ messageId: string }>;
+  params: Promise<{ messageId: string; id: string }>;
 }) {
-  const { messageId } = await params;
+  const { messageId, id: inboxId } = await params;
 
   const messages = await db
     .select({
@@ -50,7 +57,17 @@ export default async function InboxMessage({
 
   return (
     <div className="flex flex-col p-4">
-      <h1 className="text-2xl font-bold mb-4">Message</h1>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-4">
+          <Link href={`/admin/inboxes/${inboxId}`}>
+            <button className="flex items-center gap-2 text-gray-300 hover:text-white">
+              <ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          </Link>
+          <h1 className="text-2xl font-bold">Message</h1>
+        </div>
+        <DeleteMessageButton messageId={message.id} />
+      </div>
 
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
         <div className="mb-4">
