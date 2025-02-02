@@ -35,9 +35,11 @@ class GetVenmoScreenshots(BaseNode):
         image_blocks: list[ImagePromptBlock]
 
     def run(self) -> Outputs:
+        logger: logging.Logger = getattr(self._context, "logger")
+
         s3 = boto3.client("s3")
         image_blocks = []
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=7)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=6)
         attachments = list_attachments_since(cutoff_date)
 
         for attachment in attachments:
@@ -50,6 +52,8 @@ class GetVenmoScreenshots(BaseNode):
 
             # Create image block
             image_blocks.append(ImagePromptBlock(src=data_url))
+
+        logger.info(f"Found {len(image_blocks)} attachments...")
 
         return self.Outputs(image_blocks=image_blocks)
 
@@ -155,7 +159,7 @@ class GetBankTransactions(BaseNode):
         )
 
 
-class NormalizeTransactions(BaseNode):
+class NormalizePersonalTransactions(BaseNode):
     credit_card_transactions = GetCreditCardTransactions.Outputs.transactions
     bank_transactions = GetBankTransactions.Outputs.transactions
 
@@ -260,7 +264,7 @@ class NormalizeTransactions(BaseNode):
 class UpdateFinances(BaseNode):
     credit_card_snapshot = GetCreditCardTransactions.Outputs.snapshot
     bank_snapshot = GetBankTransactions.Outputs.snapshot
-    normalized_transactions = NormalizeTransactions.Outputs.transactions
+    normalized_transactions = NormalizePersonalTransactions.Outputs.transactions
 
     class Outputs(BaseNode.Outputs):
         transactions_added: int
@@ -406,19 +410,28 @@ class SendFinancesReport(BaseNode):
         return self.Outputs(summary=self.message)
 
 
+class GetCapitalOneTransactions(BaseNode):
+    pass
+
+
+class NormalizeFamilyTransactions(BaseNode):
+    pass
+
+
 class WeeklyAccountingWorkflow(BaseWorkflow):
-    graph = (
+    graph = {
         BuildPersonalFinancialContext
         >> {
             GetVenmoScreenshots >> ParseVenmoScreenshots >> GetCreditCardTransactions,
             GetBankTransactions,
         }
-        >> NormalizeTransactions
+        >> NormalizePersonalTransactions
         >> UpdateFinances
         >> GetSummaryData
         >> SummarizeData
-        >> SendFinancesReport
-    )
+        >> SendFinancesReport,
+        GetCapitalOneTransactions >> NormalizeFamilyTransactions,
+    }
 
     class Outputs(BaseWorkflow.Outputs):
         summary = SendFinancesReport.Outputs.summary
