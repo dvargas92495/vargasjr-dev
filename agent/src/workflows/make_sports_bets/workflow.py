@@ -452,7 +452,7 @@ Yesterday's Recap:
 
 Bets submitted for {len(self.wagers['rows'])} games. Remaining balance: ${self.wagers['balance']}{" (ran out of money)" if self.wagers['ran_out_of_money'] else ""}
 ---
-{"\n".join([f"- Bet ${wager:.2f} to {spread} {pick} on {odds} odds. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])}
+{"\n".join([f"- Bet ${wager:.2f} ({odds}) to {spread} {pick}. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])}
 ---
 Report: {self.wagers['report_md_file']}
 """

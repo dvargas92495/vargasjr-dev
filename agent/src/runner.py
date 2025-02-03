@@ -97,10 +97,12 @@ class AgentRunner:
                     if os.system(f"rm -Rf vargasjr_dev_agent-*") != 0:
                         self._logger.error("Failed to remove old agent")
                         continue
+                    self._logger.info("Removed old agent")
 
                     if os.system("yes | rm -rf ~/.cache/pypoetry/virtualenvs/*") != 0:
                         self._logger.error("Failed to remove old virtualenvs")
                         continue
+                    self._logger.info("Removed old virtualenvs")
 
                     if (
                         os.system(
@@ -110,19 +112,33 @@ class AgentRunner:
                     ):
                         self._logger.error("Failed to download new agent")
                         continue
+                    self._logger.info("Downloaded new agent")
 
                     if os.system(f"tar -xzf vargasjr_dev_agent-{latest_version}.tar.gz") != 0:
                         self._logger.error("Failed to extract new agent")
                         continue
+                    self._logger.info("Extracted new agent")
 
                     os.chdir(f"vargasjr_dev_agent-{latest_version}")
                     if os.system("cp ../.env .") != 0:
                         self._logger.error("Failed to copy .env file")
                         continue
+                    self._logger.info("Copied .env file")
 
-                    if os.system("poetry install") != 0:
+                    # If the lock doesn't work, try these next
+                    # if os.system("poetry env remove --all") != 0:
+                    #     self._logger.error("Failed to clean poetry environments")
+                    #     continue
+                        
+                    # if os.system("poetry config virtualenvs.create true") != 0:
+                    #     self._logger.error("Failed to configure poetry virtualenvs")
+                    #     continue
+
+
+                    if os.system("poetry lock && poetry install") != 0:
                         self._logger.error("Failed to install dependencies")
                         continue
+                    self._logger.info("Installed dependencies")
 
                     subprocess.Popen(
                         ["screen", "-dmS", f"agent-{latest_version.replace(".", "-")}", "bash", "-c", "poetry run agent 2> error.log"],

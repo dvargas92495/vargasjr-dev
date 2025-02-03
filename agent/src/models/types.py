@@ -80,12 +80,12 @@ class PersonalTransaction(UniversalBaseModel):
     category: PersonalTransactionCategory
     notes: str
 
-    @pydantic.field_validator("category")
+    @pydantic.model_validator(mode="before")
     @classmethod
-    def validate_category(cls, v: str) -> PersonalTransactionCategory:
-        if v not in PERSONAL_TRANSACTION_CATEGORIES:
-            return "Financial Services"
-        return cast(PersonalTransactionCategory, v)
+    def validate_model(cls, data: dict) -> dict:
+        if data.get("category") not in PERSONAL_TRANSACTION_CATEGORIES:
+            data["category"] = "Financial Services"
+        return data
 
 
 TransactionRuleOperation = Literal["EQUALS", "CONTAINS"]
