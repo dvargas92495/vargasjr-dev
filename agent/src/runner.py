@@ -70,7 +70,12 @@ class AgentRunner:
                 self._logger.info("Checking for updates...")
                 self._last_updated = datetime.now()
                 release_url = "https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest"
-                response = requests.get(release_url)
+                try:
+                    response = requests.get(release_url)
+                except Exception:
+                    self._logger.exception(f"Failed to check for updates: {release_url}")
+                    continue
+
                 if response.status_code != 200:
                     self._logger.error(f"Failed to check for updates: {response.status_code}")
                     continue
