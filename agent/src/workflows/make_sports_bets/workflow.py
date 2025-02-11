@@ -70,6 +70,9 @@ class RecordYesterdaysGames(BaseNode):
         range_max: Optional[int] = None
         sports_records: Dict[Sport, Tuple[int, int, int]] = {}
         for index, row in yesterday_games:
+            if "COVERS" not in row[6]:
+                continue
+
             if range_min is None or index + 2 < range_min:
                 range_min = index + 2
             if range_max is None or index + 2 > range_max:
