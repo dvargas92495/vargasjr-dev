@@ -139,11 +139,18 @@ class RecordYesterdaysGames(BaseNode):
             }
         ).execute()        
 
-        # TODO use games from yesterday's scoreboard to update current broker balances
+        previous_balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Cash Flows!B2:C3").execute()["values"]
+        previous_balance = to_dollar_float(previous_balance_data[0][0])
+        initial_balance = previous_balance - total_wager + total_winnings
+        sheets.values().update(
+            spreadsheetId=SPREADSHEET_ID,
+            range="Cash Flows!B2",
+            valueInputOption='USER_ENTERED',
+            body={
+                "values": [[initial_balance]]
+            }
+        ).execute()  
 
-        # Analytics!B2
-        balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!C4").execute()["values"]
-        initial_balance = to_dollar_float(balance_data[0][0])
         yesterday_recap = f"""\
 Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}. Your new balance is ${initial_balance}.
 TOTAL RECORD: {format_record(total_record)}
