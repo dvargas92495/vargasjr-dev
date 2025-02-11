@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.43"
+version = "0.0.44"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -19,6 +19,7 @@ boto3 = "^1.35.91"
 google-api-python-client = "^2.157.0"
 google-auth-httplib2 = "^0.2.0"
 google-auth-oauthlib = "^1.2.1"
+runwayml = "^2.2.1"
 
 [tool.poetry.scripts]
 agent = "src.cli:main"
