@@ -122,6 +122,7 @@ class GenerateVideo(BaseNode):
             raise Exception("Task failed to complete")
 
         video_url = task.output[0]
+        print(f"Video URL: {video_url}")
         return self.Outputs(video_url=video_url)
 
 

@@ -40,6 +40,16 @@ class RecordYesterdaysGames(BaseNode):
             if row[0] == yesterday_cell
         ]
 
+        previous_balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Cash Flows!B2:C3").execute()["values"]
+        previous_balance = to_dollar_float(previous_balance_data[0][0])
+
+        if not yesterday_games:
+            logger.info("No bets submitted yesterday")
+            return self.Outputs(
+                initial_balance=previous_balance,
+                yesterday_recap=f"No bets submitted yesterday. Your balance is ${previous_balance}.",
+            )
+
         with sqlite_session() as session:
             HomeTeam = aliased(SportTeam, name="home_team")
             AwayTeam = aliased(SportTeam, name="away_team")
@@ -139,8 +149,6 @@ class RecordYesterdaysGames(BaseNode):
             }
         ).execute()        
 
-        previous_balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Cash Flows!B2:C3").execute()["values"]
-        previous_balance = to_dollar_float(previous_balance_data[0][0])
         initial_balance = previous_balance - total_wager + total_winnings
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,

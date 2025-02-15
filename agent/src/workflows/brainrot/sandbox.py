@@ -10,4 +10,4 @@ if __name__ == "__main__":
     if final_event.name != "workflow.execution.fulfilled":
         raise Exception(f"Workflow failed: {final_event}")
 
-    print(final_event.outputs.output)
+    print(final_event.outputs)
