@@ -183,7 +183,8 @@ def backup_memory(logger: Logger):
         logger.info("No memory directory found")
         return
 
-    s3_client = boto3.client("s3")
+    session = boto3.Session()
+    s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
 
     # Walk through all files in MEMORY_DIR
@@ -198,6 +199,9 @@ def backup_memory(logger: Logger):
                 s3_client.upload_file(local_path, bucket_name, s3_key)
             except Exception as e:
                 logger.exception(f"Failed to upload {local_path}: {str(e)}")
+
+    del s3_client
+    del session
 
 
 def create_console_logger(name: str = __name__) -> Logger:

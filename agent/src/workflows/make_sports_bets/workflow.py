@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased
 from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
-from src.models.types import USER, Sport
+from src.models.types import USER, Sport, SportBroker
 from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
 from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
@@ -25,6 +25,7 @@ class RecordYesterdaysGames(BaseNode):
     class Outputs(BaseNode.Outputs):
         initial_balance: float
         yesterday_recap: str
+        active_broker: SportBroker
 
     def run(self) -> Outputs:
         yesterday = datetime.now() - timedelta(days=1)
@@ -32,7 +33,7 @@ class RecordYesterdaysGames(BaseNode):
         fetch_scoreboard_on_date(yesterday, logger)
 
         sheets = get_spreadsheets()
-        recent_bets = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Bets!A2:H100").execute()["values"]
+        recent_bets = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Bets!A2:I100").execute()["values"]
         yesterday_cell = yesterday.strftime("%m/%d/%y")
         yesterday_games = [
             (index, row)
@@ -41,13 +42,19 @@ class RecordYesterdaysGames(BaseNode):
         ]
 
         previous_balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Cash Flows!B2:C3").execute()["values"]
-        previous_balance = to_dollar_float(previous_balance_data[0][0])
+        previous_balance = {
+            SportBroker(row[1]): to_dollar_float(row[0])
+            for row in previous_balance_data
+        }
+        active_broker = SportBroker(sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Analytics!J2").execute()["values"][0][0])
 
         if not yesterday_games:
             logger.info("No bets submitted yesterday")
+            initial_balance = sum(previous_balance.values())
             return self.Outputs(
-                initial_balance=previous_balance,
-                yesterday_recap=f"No bets submitted yesterday. Your balance is ${previous_balance}.",
+                active_broker=active_broker,
+                initial_balance=initial_balance,
+                yesterday_recap=f"No bets submitted yesterday. Your balance is ${initial_balance}.",
             )
 
         with sqlite_session() as session:
@@ -79,9 +86,13 @@ class RecordYesterdaysGames(BaseNode):
         range_min: Optional[int] = None
         range_max: Optional[int] = None
         sports_records: Dict[Sport, Tuple[int, int, int]] = {}
+        yesterday_broker = SportBroker.HARDROCKBET
         for index, row in yesterday_games:
             if "COVERS" not in row[6]:
                 continue
+
+            # TODO: should be winnings by broker
+            yesterday_broker = SportBroker(row[8])
 
             if range_min is None or index + 2 < range_min:
                 range_min = index + 2
@@ -149,22 +160,31 @@ class RecordYesterdaysGames(BaseNode):
             }
         ).execute()        
 
-        initial_balance = previous_balance - total_wager + total_winnings
+        previous_balance[yesterday_broker] = previous_balance[yesterday_broker] - total_wager + total_winnings
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
-            range="Cash Flows!B2",
+            range="Cash Flows!B2:B3",
             valueInputOption='USER_ENTERED',
             body={
-                "values": [[initial_balance]]
+                "values": [
+                    [previous_balance[SportBroker.HARDROCKBET]],
+                    [previous_balance[SportBroker.FANDUEL]],
+                ]
             }
         ).execute()  
 
+        initial_balance = sum(previous_balance.values())
         yesterday_recap = f"""\
-Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}. Your new balance is ${initial_balance}.
+Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}. Your new balance is:
+- ${previous_balance[SportBroker.HARDROCKBET]} on Hard Rock Bet
+- ${previous_balance[SportBroker.FANDUEL]} on FanDuel
+- ${initial_balance} Total
+
 TOTAL RECORD: {format_record(total_record)}
 {sport_records}
 """
-        return self.Outputs(initial_balance=initial_balance, yesterday_recap=yesterday_recap)
+        
+        return self.Outputs(initial_balance=initial_balance, yesterday_recap=yesterday_recap, active_broker=active_broker)
 
 
 OddsAPISport = Literal[
@@ -221,6 +241,12 @@ class TodaysGame(UniversalBaseModel):
     bookmaker: str
 
 
+ODDS_API_BROKER_MAP = {
+    SportBroker.FANDUEL: "fanduel",
+    SportBroker.HARDROCKBET: "hardrockbet",
+}
+
+
 class GatherTodaysGames(BaseNode):
     sports = [
         "baseball_mlb",
@@ -228,6 +254,7 @@ class GatherTodaysGames(BaseNode):
         "americanfootball_nfl",
         "basketball_ncaab",
     ]
+    active_broker = RecordYesterdaysGames.Outputs.active_broker
 
     class Outputs(BaseNode.Outputs):
         odds: List[TodaysGame]
@@ -256,7 +283,7 @@ class GatherTodaysGames(BaseNode):
                 "apiKey": api_key,
                 "markets": "spreads",
                 "oddsFormat": "american",
-                "bookmakers": ["hardrockbet", "fanduel"],
+                "bookmakers": [ODDS_API_BROKER_MAP[self.active_broker]],
                 "commenceTimeFrom": today_start,
                 "commenceTimeTo": today_end,
             }

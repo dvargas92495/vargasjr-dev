@@ -23,6 +23,10 @@ class Sport(str, Enum):
     NFL = "NFL"
     NCAAB = "NCAAB"
 
+class SportBroker(str, Enum):
+    FANDUEL = "FanDuel"
+    HARDROCKBET = "Hard Rock Bet"
+
 
 PersonalTransactionSource = Literal[
     "Mercury Checking",

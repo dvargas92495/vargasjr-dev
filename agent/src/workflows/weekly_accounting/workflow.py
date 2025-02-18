@@ -37,7 +37,8 @@ class GetVenmoScreenshots(BaseNode):
     def run(self) -> Outputs:
         logger: logging.Logger = getattr(self._context, "logger")
 
-        s3 = boto3.client("s3")
+        session = boto3.Session()
+        s3 = session.client("s3")
         image_blocks = []
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=6)
         attachments = list_attachments_since(cutoff_date)
@@ -54,6 +55,9 @@ class GetVenmoScreenshots(BaseNode):
             image_blocks.append(ImagePromptBlock(src=data_url))
 
         logger.info(f"Found {len(image_blocks)} attachments...")
+
+        del s3
+        del session
 
         return self.Outputs(image_blocks=image_blocks)
 

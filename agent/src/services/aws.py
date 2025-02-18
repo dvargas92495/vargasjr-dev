@@ -6,7 +6,8 @@ from email.utils import formataddr
 
 
 def download_memory(logger: Logger):
-    s3_client = boto3.client("s3")
+    session = boto3.Session()
+    s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
     if not MEMORY_DIR.exists():
         MEMORY_DIR.mkdir(parents=True)
@@ -29,6 +30,9 @@ def download_memory(logger: Logger):
         except Exception:
             logger.exception(f"Failed to download {key} from S3")
 
+    del s3_client
+    del session
+
 
 def send_email(to: str, body: str, subject: str) -> None:
     ses_client = boto3.client("ses")
@@ -43,7 +47,8 @@ def send_email(to: str, body: str, subject: str) -> None:
 
 
 def list_attachments_since(cutoff_date: datetime) -> list[str]:
-    s3 = boto3.client("s3")
+    session = boto3.Session()
+    s3 = session.client("s3")
 
     # List objects
     recent_objects = []
@@ -59,5 +64,8 @@ def list_attachments_since(cutoff_date: datetime) -> list[str]:
         for obj in page["Contents"]:
             if obj["LastModified"] >= cutoff_date:
                 recent_objects.append(obj["Key"])
+
+    del s3
+    del session
 
     return recent_objects

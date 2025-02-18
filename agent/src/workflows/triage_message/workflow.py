@@ -22,7 +22,6 @@ from src.models.inbox_message_operation import InboxMessageOperation
 from src.models.types import InboxMessageOperationType, InboxType
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
-import boto3
 
 logger = logging.getLogger(__name__)
 
