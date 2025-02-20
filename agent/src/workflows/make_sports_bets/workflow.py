@@ -413,8 +413,8 @@ class PredictOutcomes(BaseNode):
         ]
 
 BROKER_MAP = {
-    "fanduel": "Fanduel",
-    "hardrockbet": "Hard Rock Bet",
+    "fanduel": SportBroker.FANDUEL,
+    "hardrockbet": SportBroker.HARDROCKBET,
 }
 
 class SubmitBets(BaseNode):
@@ -452,7 +452,7 @@ class SubmitBets(BaseNode):
                     f"Spread {spread}", # TYPE
                     pick, # PICK
                     date, # Event Date
-                    BROKER_MAP[outcome.game.bookmaker], # BROKER
+                    BROKER_MAP[outcome.game.bookmaker].value, # BROKER
                     None, # External ID
                 ]
             )
