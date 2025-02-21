@@ -173,17 +173,18 @@ class RecordYesterdaysGames(BaseNode):
             }
         ).execute()  
 
-        initial_balance = sum(previous_balance.values())
+        total_balance = sum(previous_balance.values())
         yesterday_recap = f"""\
 Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}. Your new balance is:
 - ${previous_balance[SportBroker.HARDROCKBET]} on Hard Rock Bet
 - ${previous_balance[SportBroker.FANDUEL]} on FanDuel
-- ${initial_balance} Total
+- ${total_balance} Total
 
 TOTAL RECORD: {format_record(total_record)}
 {sport_records}
 """
-        
+
+        initial_balance = previous_balance[active_broker]
         return self.Outputs(initial_balance=initial_balance, yesterday_recap=yesterday_recap, active_broker=active_broker)
 
 
