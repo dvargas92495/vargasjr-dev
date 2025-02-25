@@ -140,12 +140,14 @@ def fetch_scoreboard_on_date(date: datetime, logger: Logger) -> list[SportGame]:
                 None,
             )
             if not espn_home_team or not espn_away_team:
-                raise ValueError(f"No home or away team found for {espn_event['name']}")
+                logger.error(f"No home or away team found for {espn_event['name']}")
+                continue
             if not espn_competition["status"]["type"]["completed"]:
                 if espn_competition["status"]["type"]["name"] == "STATUS_POSTPONED":
                     logger.info(f"Game {espn_event['name']} was postponed. Skipping...")
                     continue
-                raise ValueError(f"Game {espn_event['name']} is not completed")
+                logger.error(f"Game {espn_event['name']} is not completed")
+                continue
 
             try:
                 home_team_id = get_sport_team_by_espn_id(sport, espn_home_team["id"]).id
