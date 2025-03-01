@@ -13,3 +13,9 @@ class SportGame(SQLModel, table=True):
     away_team_score: int
     start_time: datetime
     end_time: datetime
+
+    class Config:
+        table = True
+        schema_extra = {
+            "unique_together": [("start_time", "home_team_id", "away_team_id")]
+        }
