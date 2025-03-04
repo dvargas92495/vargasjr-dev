@@ -16,6 +16,6 @@ class SportGame(SQLModel, table=True):
 
     class Config:
         table = True
-        schema_extra = {
+        json_schema_extra = {
             "unique_together": [("start_time", "home_team_id", "away_team_id")]
         }

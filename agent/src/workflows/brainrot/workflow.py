@@ -1,10 +1,12 @@
+from logging import Logger
 import os
 import random
 import time
 import requests
 from runwayml import RunwayML
 from pydantic import BaseModel
-from vellum import ChatMessagePromptBlock, JinjaPromptBlock
+from src.services.aws import send_email
+from vellum import ChatMessagePromptBlock, JinjaPromptBlock, PromptParameters
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode, InlinePromptNode
 
@@ -12,7 +14,7 @@ from vellum.workflows.nodes import BaseNode, InlinePromptNode
 class VideoPrompt(BaseModel):
     title: str
     description: str
-    prompt: str
+    hashtags: list[str]
 
 
 def generate_videos(videos: list[VideoPrompt]) -> None:
@@ -27,13 +29,14 @@ class BrainstormContent(InlinePromptNode):
             blocks=[
                 JinjaPromptBlock(
                     template="""\
-You are making absolute brainrot content. These should be 10 second videos of nonsensical silly fun and esoteric phenomena. Our
-goal is to go VIRAL.
+Our end goal is to generate a short, highly engaging and adorable video concept featuring either a baby or an animal that has the potential to go viral on Instagram. 
+The concept should include a unique, heartwarming, or funny scenario that resonates with a broad audience. Keep the idea simple, relatable, and visually appealing. 
+Details such as the setting, the key action or reaction, and any special elements that enhance cuteness and engagement will be essential.
 
 Come up with 3 videos, and for each, give me:
 - Title
 - Description
-- Prompt that we will feed into another model to generate the video
+- Hashtags (list 5-10 viral hashtags)
 """
                 )
             ],
@@ -42,6 +45,10 @@ Come up with 3 videos, and for each, give me:
     functions = [
         generate_videos,
     ]
+    parameters = PromptParameters(
+        temperature=0.8,
+        max_tokens=8000,
+    )
 
 
 class SelectVideo(BaseNode):
@@ -67,19 +74,20 @@ class GenerateImage(BaseNode):
             "https://api.openai.com/v1/images/generations",
             json={
                 "prompt": f"""\
-You are making absolute brainrot content. Each video will be a 10 second video of nonsensical silly fun and esoteric phenomena. Our
-goal is to go VIRAL.
+Our end goal is to generate a short, highly engaging and adorable video concept featuring either a baby or an animal that has the potential to go viral on Instagram. 
+The concept should include a unique, heartwarming, or funny scenario that resonates with a broad audience. Keep the idea simple, relatable, and visually appealing. 
+Details such as the setting, the key action or reaction, and any special elements that enhance cuteness and engagement will be key.
 
 Here is some data about the video:
 
 Title: {self.selected_video.title}
 Description: {self.selected_video.description}
-Prompt: {self.selected_video.prompt}
 
-Generate an image that captures the essence of the video.
+Generate an image that captures the essence of the video and would serve as the thumbnail.
 """,
                 "model": "dall-e-3",
                 "response_format": "url",
+                "size": "1024x1792",
             },
             headers={
                 "Authorization": f"Bearer {os.getenv('BRAINROT_OPENAI_API_KEY')}",
@@ -101,10 +109,19 @@ class GenerateVideo(BaseNode):
 
     def run(self) -> Outputs:
         client = RunwayML()
+        prompt = f"""\
+Generate a short, highly engaging and adorable video concept featuring either a baby or an animal that has the potential to go viral on Instagram. 
+The concept should include a unique, heartwarming, or funny scenario that resonates with a broad audience. Keep the idea simple, relatable, and visually appealing. 
+Provide details such as the setting, the key action or reaction, and any special elements that enhance cuteness and engagement.
+
+Here is some information about the video:
+- Title: {self.selected_video.title}
+- Description: {self.selected_video.description}
+"""
         first_task = client.image_to_video.create(
             model="gen3a_turbo",
             prompt_image=self.image_url,
-            prompt_text=self.selected_video.prompt,
+            prompt_text=prompt,
         )
         task_id = first_task.id
         sleep_time = 1
@@ -142,11 +159,47 @@ class PostToInstagram(BaseNode):
     pass
 
 
+class EmailSummary(BaseNode):
+    selected_video = SelectVideo.Outputs.selected_video
+    image_url = GenerateImage.Outputs.url
+    video_url = GenerateVideo.Outputs.video_url
+
+    class Outputs(BaseNode.Outputs):
+        summary: str
+
+    def run(self) -> Outputs:
+        summary = f"""\
+Hey there! I just generated a new video for you.
+
+Title: {self.selected_video.title}
+Description: {self.selected_video.description}
+
+Image URL: {self.image_url}
+Video URL: {self.video_url}
+"""
+        try:
+            to_email = os.getenv("BRAINROT_EMAIL")
+            send_email(
+                to=to_email,
+                body=summary,
+                subject=f"New Video: {self.selected_video.title}",
+            )
+            return self.Outputs(summary=f"Sent video to {to_email}.")
+        except Exception:
+            logger: Logger = getattr(self._context, "logger")
+            logger.exception("Failed to send email")
+
+        return self.Outputs(summary=summary)
+
+
 class BrainrotWorkflow(BaseWorkflow):
     graph = (
+        # FetchFavoriteVideosFromBurnerAccount
+        # >> ForEachVideoPullDataAboutWhatItsAbout
         BrainstormContent
         >> SelectVideo
         >> GenerateImage
+        # >> ResizeImage to 1080x1920
         >> GenerateVideo
         >> UploadVideo
         >> {
@@ -154,6 +207,7 @@ class BrainrotWorkflow(BaseWorkflow):
             PostToTiktok,
             PostToInstagram,
         }
+        >> EmailSummary
     )
 
     class Outputs(BaseWorkflow.Outputs):

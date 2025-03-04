@@ -190,6 +190,11 @@ class AgentRunner:
                 logger=self._logger,
             ),
             RoutineJob(
+                name="brainrot",
+                cron_expression="0 13 * * *",
+                logger=self._logger,
+            ),
+            RoutineJob(
                 name="weekly_accounting",
                 cron_expression="0 12 * * 0",
                 logger=self._logger,
