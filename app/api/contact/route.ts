@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
-import { InboxesTable, InboxMessagesTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
-
-const db = drizzle(sql);
+import { addInboxMessage } from "@/server";
+import { NotFoundError } from "@/server/errors";
 
 export async function POST(request: Request) {
   try {
@@ -18,20 +14,11 @@ export async function POST(request: Request) {
       })
       .parse(body);
 
-    const inbox = await db
-      .select({ id: InboxesTable.id })
-      .from(InboxesTable)
-      .where(eq(InboxesTable.name, "landing-page"))
-      .limit(1)
-      .execute();
-
-    if (!inbox.length) {
-      return NextResponse.json({ error: "Inbox not found" }, { status: 404 });
-    }
-
-    await db
-      .insert(InboxMessagesTable)
-      .values({ source: email, body: message, inboxId: inbox[0].id });
+    await addInboxMessage({
+      body: message,
+      source: email,
+      inboxName: "landing-page",
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -42,8 +29,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (error instanceof NotFoundError) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+
+    console.error("Failed to process contact form", error);
     return NextResponse.json(
-      { error: "Failed to process contact form" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
