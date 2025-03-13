@@ -163,12 +163,13 @@ class RecordYesterdaysGames(BaseNode):
         previous_balance[yesterday_broker] = previous_balance[yesterday_broker] - total_wager + total_winnings
         sheets.values().update(
             spreadsheetId=SPREADSHEET_ID,
-            range="Cash Flows!B2:B3",
+            range="Cash Flows!B2:B4",
             valueInputOption='USER_ENTERED',
             body={
                 "values": [
                     [previous_balance[SportBroker.HARDROCKBET]],
                     [previous_balance[SportBroker.FANDUEL]],
+                    [previous_balance[SportBroker.PARLAYPARTAY]]
                 ]
             }
         ).execute()  
@@ -178,6 +179,7 @@ class RecordYesterdaysGames(BaseNode):
 Won ${total_winnings} on ${total_wager} wagered for a profit of ${profit}. Your new balance is:
 - ${previous_balance[SportBroker.HARDROCKBET]} on Hard Rock Bet
 - ${previous_balance[SportBroker.FANDUEL]} on FanDuel
+- ${previous_balance[SportBroker.PARLAYPARTAY]} on Parlay Partay
 - ${total_balance} Total
 
 TOTAL RECORD: {format_record(total_record)}
@@ -239,12 +241,13 @@ class TodaysGame(UniversalBaseModel):
     home_price: int
     away_price: int
     spread: float
-    bookmaker: str
+    bookmaker: SportBroker
 
 
 ODDS_API_BROKER_MAP = {
     SportBroker.FANDUEL: "fanduel",
     SportBroker.HARDROCKBET: "hardrockbet",
+    SportBroker.PARLAYPARTAY: "hardrockbet",
 }
 
 
@@ -342,7 +345,7 @@ class GatherTodaysGames(BaseNode):
             home_price=home_outcome.price,
             away_price=away_outcome.price,
             spread=home_outcome.point,
-            bookmaker=bookmaker.key,
+            bookmaker=self.active_broker,
         )
 
 class TeamRecentGame(UniversalBaseModel):
@@ -413,10 +416,6 @@ class PredictOutcomes(BaseNode):
             for game in sport_games
         ]
 
-BROKER_MAP = {
-    "fanduel": SportBroker.FANDUEL,
-    "hardrockbet": SportBroker.HARDROCKBET,
-}
 
 class SubmitBets(BaseNode):
     outcomes = PredictOutcomes.Outputs.outcomes
@@ -453,7 +452,7 @@ class SubmitBets(BaseNode):
                     f"Spread {spread}", # TYPE
                     pick, # PICK
                     date, # Event Date
-                    BROKER_MAP[outcome.game.bookmaker].value, # BROKER
+                    outcome.game.bookmaker.value, # BROKER
                     None, # External ID
                 ]
             )

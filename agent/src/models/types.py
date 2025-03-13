@@ -26,6 +26,7 @@ class Sport(str, Enum):
 class SportBroker(str, Enum):
     FANDUEL = "FanDuel"
     HARDROCKBET = "Hard Rock Bet"
+    PARLAYPARTAY = "Parlay Partay"
 
 
 PersonalTransactionSource = Literal[
