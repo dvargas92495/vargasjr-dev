@@ -41,7 +41,7 @@ class RecordYesterdaysGames(BaseNode):
             if row[0] == yesterday_cell
         ]
 
-        previous_balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Cash Flows!B2:C3").execute()["values"]
+        previous_balance_data = sheets.values().get(spreadsheetId=SPREADSHEET_ID, range="Cash Flows!B2:C4").execute()["values"]
         previous_balance = {
             SportBroker(row[1]): to_dollar_float(row[0])
             for row in previous_balance_data
