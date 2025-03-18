@@ -298,6 +298,7 @@ class GatherTodaysGames(BaseNode):
 
         today_start = now.strftime("%Y-%m-%dT%H:%M:%SZ")
         today_end = (now + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
 
         for sport in self.sports:
             url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
@@ -320,7 +321,6 @@ class GatherTodaysGames(BaseNode):
                 try:
                     odd = self._parse_odds(entry, is_neutral)
                 except Exception:
-                    logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
                     logger.exception(f"Failed to parse odds for {entry.home_team} vs {entry.away_team}")
                     continue
 
