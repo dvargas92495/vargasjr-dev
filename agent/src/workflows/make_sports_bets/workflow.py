@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import json
 from logging import Logger
+import logging
 from math import floor
 import os
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -10,7 +11,7 @@ from sqlmodel import or_, select
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.types import USER, Sport, SportBroker
-from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_team_name, sqlite_session
+from src.services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_espn_team_name, normalize_team_name, sqlite_session
 from src.services.aws import send_email
 from src.services.google_sheets import get_spreadsheets, prepend_rows
 from src.services import to_dollar_float
@@ -242,6 +243,7 @@ class TodaysGame(UniversalBaseModel):
     away_price: int
     spread: float
     bookmaker: SportBroker
+    is_neutral: bool
 
 
 ODDS_API_BROKER_MAP = {
@@ -272,7 +274,23 @@ class GatherTodaysGames(BaseNode):
         if not poll:
             raise ValueError("AP Poll not found")
         
-        ncaab_top_25 = [normalize_team_name(f"{rank['team']['location']} {rank['team']['name']}") for rank in poll['ranks']]
+        ncaab_top_25 = {normalize_espn_team_name(rank) for rank in poll['ranks']}
+
+        ncaab_today_url = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard"
+        ncaab_today_response = requests.get(ncaab_today_url)
+        ncaab_today_response.raise_for_status()
+        ncaab_today_data = ncaab_today_response.json()
+
+        is_neutral: Dict[str, bool] = {}
+        ncaab_game_map = {}
+        for event in ncaab_today_data["events"]:
+            competition = event['competitions'][0]
+            is_tournament = competition.get("type", {}).get("abbreviation") == "TRNMNT"
+            home_team = next(normalize_espn_team_name(c) for c in competition['competitors'] if c['homeAway'] == 'home')
+            away_team = next(normalize_espn_team_name(c) for c in competition['competitors'] if c['homeAway'] == 'away')
+            game_key = f"{away_team} @ {home_team}"
+            ncaab_game_map[game_key] = {"is_tournament": is_tournament, "is_top_25": home_team in ncaab_top_25 or away_team in ncaab_top_25}
+            is_neutral[game_key] = competition.get('neutralSite') == True
 
         api_key = os.getenv("ODDS_API_KEY")
         odds = []
@@ -295,28 +313,24 @@ class GatherTodaysGames(BaseNode):
             response.raise_for_status()
             entries = [OddsAPIResponseEntry.model_validate(entry) for entry in response.json()]
             for entry in entries:
+                if not entry.bookmakers:
+                    logger.info(f"No bookmakers for {entry.home_team} vs. {entry.away_team}. Skipping...")
+                    continue
+
                 try:
-                    odd = self._parse_odds(entry)
-                except Exception as e:
-                    logger: Logger = getattr(self._context, "logger")
-                    logger.error(f"Failed to parse odds for {entry.home_team} vs {entry.away_team}")
+                    odd = self._parse_odds(entry, is_neutral)
+                except Exception:
+                    logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
+                    logger.exception(f"Failed to parse odds for {entry.home_team} vs {entry.away_team}")
                     continue
 
-                if odd.sport != Sport.NCAAB:
+                game_key = f"{odd.away_team.full_name} @ {odd.home_team.full_name}"
+                if odd.sport != Sport.NCAAB or game_key not in ncaab_game_map or ncaab_game_map[game_key]["is_tournament"] or ncaab_game_map[game_key]["is_top_25"]:
                     odds.append(odd)
-                    continue
-
-                if not any(team == odd.home_team.full_name or team == odd.away_team.full_name for team in ncaab_top_25):
-                    continue
-                
-                odds.append(odd)
 
         return self.Outputs(odds=odds)
 
-    def _parse_odds(self, entry: OddsAPIResponseEntry) -> TodaysGame:
-        if not entry.bookmakers:
-            raise ValueError(f"No bookmakers found for {entry.home_team} vs {entry.away_team}")
-
+    def _parse_odds(self, entry: OddsAPIResponseEntry, is_neutral: Dict[str, bool]) -> TodaysGame:
         bookmaker = entry.bookmakers[0]
         market = next((market for market in bookmaker.markets if market.key == "spreads"), None)
         if not market:
@@ -346,6 +360,7 @@ class GatherTodaysGames(BaseNode):
             away_price=away_outcome.price,
             spread=home_outcome.point,
             bookmaker=self.active_broker,
+            is_neutral=is_neutral.get(f"{away_team.full_name} @ {home_team.full_name}", False)
         )
 
 class TeamRecentGame(UniversalBaseModel):
@@ -377,8 +392,10 @@ class PredictOutcomes(BaseNode):
             home_team_last_5_games = self._get_team_last_5_games(game.home_team)
             away_team_last_5_games = self._get_team_last_5_games(game.away_team)
 
-            home_recency_score = sum(game.score_diff * (0.9 if game.was_home else 1.1) for game in home_team_last_5_games) * 1.1
-            away_recency_score = sum(game.score_diff * (0.9 if not game.was_home else 1.1) for game in away_team_last_5_games) * 0.9
+            home_multiplier = 1.0 if game.is_neutral else 1.1
+            away_multiplier = 1.0 if game.is_neutral else 0.9
+            home_recency_score = sum(game.score_diff * (0.9 if game.was_home else 1.1) for game in home_team_last_5_games) * home_multiplier
+            away_recency_score = sum(game.score_diff * (0.9 if not game.was_home else 1.1) for game in away_team_last_5_games) * away_multiplier
 
             calculated_spread = (away_recency_score - home_recency_score) / 5
             outcome = "home" if calculated_spread < game.spread else "away"

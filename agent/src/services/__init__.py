@@ -114,6 +114,10 @@ def normalize_team_name(team_name: str) -> str:
     return team_name.replace(" St ", " State ").replace("LA Clippers", "Los Angeles Clippers")
 
 
+def normalize_espn_team_name(competitor: dict) -> str:
+    return normalize_team_name(f"{competitor['team']['location']} {competitor['team']['name']}")
+
+
 def fetch_scoreboard_on_date(date: datetime, logger: Logger) -> list[SportGame]:
     logger.info(f"Fetching games for {date}")
     sports = [
