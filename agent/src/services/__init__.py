@@ -111,7 +111,12 @@ def list_sport_teams(sport: Optional[Sport] = None) -> list[SportTeam]:
 
 
 def normalize_team_name(team_name: str) -> str:
-    return team_name.replace(" St ", " State ").replace("LA Clippers", "Los Angeles Clippers")
+    return (
+        team_name.replace("Mt. ", "Mount ")
+        .replace(" St ", " State ")
+        .replace("LA Clippers", "Los Angeles Clippers")
+        .replace("American Eagles", "American University Eagles")
+    )
 
 
 def normalize_espn_team_name(competitor: dict) -> str:
@@ -120,16 +125,21 @@ def normalize_espn_team_name(competitor: dict) -> str:
 
 def fetch_scoreboard_on_date(date: datetime, logger: Logger) -> list[SportGame]:
     logger.info(f"Fetching games for {date}")
-    sports = [
-        (Sport.MLB, "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"),
-        (Sport.NBA, "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"),
-        (Sport.NCAAB, "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard"),
-        (Sport.NFL, "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"),
+    sports: list[tuple[Sport, str, dict]] = [
+        (Sport.MLB, "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard", {}),
+        (Sport.NBA, "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard", {}),
+        (
+            Sport.NCAAB,
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",
+            {"groups": "50"},
+        ),
+        (Sport.NFL, "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard", {}),
     ]
     games: list[SportGame] = []
-    for sport, url in sports:
+    for sport, url, extra_params in sports:
         params = {
             "dates": date.strftime("%Y%m%d"),
+            **extra_params,
         }
         response = requests.get(url, params=params)
         data = response.json()
