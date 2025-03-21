@@ -117,6 +117,7 @@ def normalize_team_name(team_name: str) -> str:
         .replace("LA Clippers", "Los Angeles Clippers")
         .replace("American Eagles", "American University Eagles")
         .replace("SIU-Edwardsville", "SIU Edwardsville")
+        .replace(" Lopes", " Antelopes")
     )
 
 
