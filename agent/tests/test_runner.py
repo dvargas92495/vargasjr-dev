@@ -158,11 +158,11 @@ def test_agent_runer__triage_message(
     )
 
     # AND the outbox message should have been created
-    select_query = select(OutboxMessage).where(OutboxMessage.parent_inbox_message_id == inbox_message.id)
-    result = mock_sql_session.exec(select_query).first()
-    assert result is not None
-    assert result.body == "Hello there!"
-    assert result.type == InboxType.EMAIL
+    outbox_select_query = select(OutboxMessage).where(OutboxMessage.parent_inbox_message_id == inbox_message.id)
+    outbox_result = mock_sql_session.exec(outbox_select_query).first()
+    assert outbox_result is not None
+    assert outbox_result.body == "Hello there!"
+    assert outbox_result.type == InboxType.EMAIL
 
 
 @pytest.mark.usefixtures("mock_load_routine_jobs")

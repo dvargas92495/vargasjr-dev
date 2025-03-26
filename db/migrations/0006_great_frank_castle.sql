@@ -1,0 +1,1 @@
+ALTER TYPE "public"."inbox_type" ADD VALUE 'SLACK' BEFORE 'NONE';

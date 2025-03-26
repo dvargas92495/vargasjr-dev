@@ -1,7 +1,9 @@
 import logging
+import os
 from typing import Optional
 from uuid import UUID, uuid4
 import psycopg
+import requests
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from src.models.contact import Contact
 from src.models.inbox import Inbox
@@ -31,6 +33,7 @@ class SlimMessage(UniversalBaseModel):
     body: str
     source: str
     channel: InboxType
+    inbox_name: str
 
 
 class ReadMessageNode(BaseNode):
@@ -47,7 +50,7 @@ class ReadMessageNode(BaseNode):
         try:
             with postgres_session() as session:
                 statement = (
-                    select(InboxMessage, Inbox.type)
+                    select(InboxMessage, Inbox.type, Inbox.name)
                     .join(
                         InboxMessageOperation, InboxMessageOperation.inbox_message_id == InboxMessage.id, isouter=True
                     )
@@ -65,10 +68,11 @@ class ReadMessageNode(BaseNode):
                             body="No messages found",
                             source="",
                             channel=InboxType.NONE,
+                            inbox_name="",
                         )
                     )
 
-                inbox_message, inbox_type = result
+                inbox_message, inbox_type, inbox_name = result
                 session.add(
                     InboxMessageOperation(
                         inbox_message_id=inbox_message.id,
@@ -81,6 +85,7 @@ class ReadMessageNode(BaseNode):
                     body=inbox_message.body,
                     source=inbox_message.source,
                     channel=inbox_type,
+                    inbox_name=inbox_name,
                 )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
             # I suppose the agent could spin down while the agent is running, so we need to cancel this case.
@@ -90,6 +95,7 @@ class ReadMessageNode(BaseNode):
                     body="No messages found",
                     source="",
                     channel=InboxType.NONE,
+                    inbox_name="",
                 )
             )
 
@@ -136,6 +142,29 @@ def text_reply(
     pass
 
 
+def slack_reply(
+    channel: str,
+    to: str,
+    message: str,
+):
+    """
+    Reply to the message by sending a Slack message to the sender. Because this is Slack,
+    the message should be somewhat informal. You do not need to say things like "I've received
+    your message" because that is implicit in your reply.
+    """
+    requests.post(
+        "https://slack.com/api/chat.postMessage",
+        headers={
+            "Authorization": f"Bearer {os.environ['SLACK_BOT_TOKEN']}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "channel": f"#{channel}",
+            "text": f"<@{to}> {message}",
+        },
+    )
+
+
 class UpdateCRMNode(BaseNode):
     channel = ReadMessageNode.Outputs.message["channel"]
     source = ReadMessageNode.Outputs.message["source"]
@@ -145,7 +174,7 @@ class UpdateCRMNode(BaseNode):
 
     def run(self) -> BaseNode.Outputs:
         contact: Optional[Contact] = None
-        if self.channel == InboxType.EMAIL or self.channel == InboxType.FORM:
+        if self.channel == InboxType.EMAIL or self.channel == InboxType.FORM or self.channel == InboxType.SLACK:
             contact = get_contact_by_email(self.source)
         elif self.channel == InboxType.SMS:
             contact = get_contact_by_phone_number(self.source)
@@ -166,7 +195,8 @@ class TriageMessageNode(BaseInlinePromptNode):
             blocks=[
                 JinjaPromptBlock(
                     template="""You are triaging the latest unread message from your inbox. It was from \
-{{ contact }} and was submitted via {{ channel }}. Pick the most relevant action.""",
+{{ contact }} and was submitted via {{ channel }}. Pick the most relevant action. Your message should \
+give the recipient confidence that you will be tending to their request and that you are working on it now.""",
                 ),
             ],
         ),
@@ -191,6 +221,7 @@ class TriageMessageNode(BaseInlinePromptNode):
         email_reply,
         email_initiate,
         text_reply,
+        slack_reply,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
@@ -208,6 +239,7 @@ class ParseFunctionCallNode(BaseNode):
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))
         )
         text_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("text_reply")))
+        slack_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("slack_reply")))
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]
@@ -284,13 +316,43 @@ class TextReplyNode(BaseNode):
         )
 
 
+class SlackReplyNode(BaseNode):
+    to = ReadMessageNode.Outputs.message["source"]
+    channel = ReadMessageNode.Outputs.message["inbox_name"]
+    message = ParseFunctionCallNode.Outputs.parameters["message"]
+    inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
+
+    class Outputs(BaseNode.Outputs):
+        summary: str
+        outbox_message: OutboxMessage
+
+    def run(self) -> BaseNode.Outputs:
+        slack_reply(
+            channel=self.channel,
+            message=self.message,
+            to=self.to,
+        )
+        return self.Outputs(
+            summary=f"Sent Slack reply to {self.to} at #{self.channel}.",
+            outbox_message=OutboxMessage(
+                parent_inbox_message_id=self.inbox_message_id,
+                body=self.message,
+                type=InboxType.SLACK,
+            ),
+        )
+
+
 class StoreOutboxMessageNode(BaseNode):
-    summary = EmailReplyNode.Outputs.summary.coalesce(EmailInitiateNode.Outputs.summary).coalesce(
-        TextReplyNode.Outputs.summary
+    summary = (
+        EmailReplyNode.Outputs.summary.coalesce(EmailInitiateNode.Outputs.summary)
+        .coalesce(TextReplyNode.Outputs.summary)
+        .coalesce(SlackReplyNode.Outputs.summary)
     )
 
-    outbox_message = EmailReplyNode.Outputs.outbox_message.coalesce(EmailInitiateNode.Outputs.outbox_message).coalesce(
-        TextReplyNode.Outputs.outbox_message
+    outbox_message = (
+        EmailReplyNode.Outputs.outbox_message.coalesce(EmailInitiateNode.Outputs.outbox_message)
+        .coalesce(TextReplyNode.Outputs.outbox_message)
+        .coalesce(SlackReplyNode.Outputs.outbox_message)
     )
 
     class Outputs(BaseNode.Outputs):
@@ -315,6 +377,7 @@ class TriageMessageWorkflow(BaseWorkflow):
                 ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
                 ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
                 ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
+                ParseFunctionCallNode.Ports.slack_reply >> SlackReplyNode,
             }
             >> StoreOutboxMessageNode,
         },

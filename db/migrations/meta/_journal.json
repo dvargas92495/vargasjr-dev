@@ -43,6 +43,13 @@
       "when": 1738243675009,
       "tag": "0005_mighty_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1742996180791,
+      "tag": "0006_great_frank_castle",
+      "breakpoints": true
     }
   ]
 }
