@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'agent/pyproject.toml'
+  workflow_dispatch:
+
 jobs:
   test-agent:
     runs-on: ubuntu-latest
