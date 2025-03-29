@@ -190,7 +190,8 @@ def fetch_scoreboard_on_date(date: datetime, logger: Logger) -> list[SportGame]:
 
     logger.info(f"Recording {len(games)} games")
     with sqlite_session() as session:
-        session.add_all(games)
+        for game in games:
+            session.merge(game)
         session.commit()
 
     return games
