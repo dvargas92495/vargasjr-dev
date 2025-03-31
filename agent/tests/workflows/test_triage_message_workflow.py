@@ -47,7 +47,7 @@ def test_triage_message_workflow(
     final_event = workflow.run()
 
     # THEN the outputs are as expected
-    assert final_event.name == "workflow.execution.fulfilled", final_event
+    assert final_event.name == "workflow.execution.fulfilled", final_event.model_dump_json()
     assert (
         final_event.outputs["summary"]
         == """\
