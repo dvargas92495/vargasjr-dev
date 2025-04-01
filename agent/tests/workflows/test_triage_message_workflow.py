@@ -1,3 +1,4 @@
+import os
 from uuid import uuid4
 from sqlmodel import Session, select
 from src.models.contact import Contact
@@ -42,6 +43,7 @@ def test_triage_message_workflow(
         "https://slack.com/api/chat.postMessage",
         json={"ok": True},
     )
+    os.environ["SLACK_BOT_TOKEN"] = "xoxb-1234567890"
 
     # WHEN it is run
     final_event = workflow.run()
