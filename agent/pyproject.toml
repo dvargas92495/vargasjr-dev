@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.62"
+version = "0.0.63"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-vellum-ai = "0.14.22"
+vellum-ai = "0.14.26"
 sqlmodel = "^0.0.22"
 psycopg = {extras = ["binary"], version = "^3.2.3"}
 boto3 = "^1.35.91"
