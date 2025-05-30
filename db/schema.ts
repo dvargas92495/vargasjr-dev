@@ -56,6 +56,8 @@ export const ContactsTable = pgTable("contacts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export type Contact = typeof ContactsTable.$inferSelect;
+
 export const OutboxMessagesTable = pgTable("outbox_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   parentInboxMessageId: uuid("parent_inbox_message_id")
