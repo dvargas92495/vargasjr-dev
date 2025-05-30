@@ -1,10 +1,8 @@
 "use client";
 
-import type { ContactsTable } from "@/db/schema";
+import type { Contact } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
-
-type Contact = typeof ContactsTable.$inferSelect;
 
 const ContactRow = ({ contact }: { contact: Contact }) => {
   const router = useRouter();

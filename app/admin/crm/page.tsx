@@ -3,7 +3,6 @@ import { desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import ContactRow from "@/components/contact-row";
-import Link from "next/link";
 
 const db = drizzle(sql);
 
