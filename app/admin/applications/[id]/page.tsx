@@ -9,12 +9,13 @@ const db = drizzle(sql);
 export default async function ApplicationDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const application = await db
     .select()
     .from(ApplicationsTable)
-    .where(eq(ApplicationsTable.id, params.id))
+    .where(eq(ApplicationsTable.id, id))
     .then((results) => results[0]);
 
   if (!application) {
