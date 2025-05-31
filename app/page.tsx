@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
@@ -136,6 +137,18 @@ export default function Home() {
           />
           Repo
         </a>
+        <Link
+          className="hover:underline hover:underline-offset-4"
+          href="/how-to-work-with-me"
+        >
+          How to Work With Me
+        </Link>
+        <Link
+          className="hover:underline hover:underline-offset-4"
+          href="/how-i-handle-your-data"
+        >
+          How I Handle Your Data
+        </Link>
       </footer>
     </div>
   );
