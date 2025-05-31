@@ -67,3 +67,14 @@ export const OutboxMessagesTable = pgTable("outbox_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   type: InboxTypesEnum("type").notNull(),
 });
+
+export const ApplicationsTable = pgTable("applications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name").notNull(),
+  clientId: varchar("client_id"),
+  clientSecret: varchar("client_secret"),
+  apiEndpoint: varchar("api_endpoint"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Application = typeof ApplicationsTable.$inferSelect;

@@ -2,15 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-/**
- * TODO: Add an applications tab for connecting apps and personal tokens like:
- * curl -k --tlsv1.2 \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -X POST https://api-sandbox.capitalone.com/oauth2/token \
-  -d client_id=YOUR_CLIENT_ID \
-  -d client_secret=YOUR_CLIENT_SECRET \
-  -d grant_type=client_credentials
- */
+
 
 export default async function AdminLayout({
   children,
@@ -44,6 +36,14 @@ export default async function AdminLayout({
                 className="block p-2 hover:bg-gray-200 hover:text-black rounded"
               >
                 Inboxes
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/applications"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+              >
+                Applications
               </Link>
             </li>
             <li>
