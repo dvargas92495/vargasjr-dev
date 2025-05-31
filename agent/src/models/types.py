@@ -10,6 +10,7 @@ class InboxType(str, Enum):
     EMAIL = "EMAIL"
     SMS = "SMS"
     SLACK = "SLACK"
+    CHAT_SESSION = "CHAT_SESSION"
     NONE = "NONE"
 
 
