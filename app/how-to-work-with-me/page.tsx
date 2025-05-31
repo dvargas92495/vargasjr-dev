@@ -29,7 +29,7 @@ export default function HowToWorkWithMe() {
               <li>Payment terms are net 30 days unless otherwise agreed</li>
               <li>Source code and deliverables become your property upon full payment</li>
               <li>I maintain the right to showcase completed work in my portfolio</li>
-              <li>Either party may terminate the agreement with 7 days written notice</li>
+              <li>Either party may terminate the agreement with 30 days written notice</li>
             </ul>
           </section>
 

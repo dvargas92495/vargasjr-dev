@@ -138,15 +138,29 @@ export default function Home() {
           Repo
         </a>
         <Link
-          className="hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
           href="/how-to-work-with-me"
         >
+          <Image
+            aria-hidden
+            src="/document.svg"
+            alt="Document icon"
+            width={16}
+            height={16}
+          />
           How to Work With Me
         </Link>
         <Link
-          className="hover:underline hover:underline-offset-4"
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
           href="/how-i-handle-your-data"
         >
+          <Image
+            aria-hidden
+            src="/shield.svg"
+            alt="Shield icon"
+            width={16}
+            height={16}
+          />
           How I Handle Your Data
         </Link>
       </footer>
