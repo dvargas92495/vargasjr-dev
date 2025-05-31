@@ -16,7 +16,7 @@ export default function Home() {
       const formData = new FormData(e.currentTarget);
 
       try {
-        const response = await fetch("/api/contact", {
+        const response = await fetch("/api/chat", {
           method: "POST",
           body: JSON.stringify({
             email: formData.get("email"),
@@ -28,12 +28,13 @@ export default function Home() {
         });
 
         if (response.ok) {
-          router.push("/thank-you");
+          const { id } = await response.json();
+          router.push(`/chat/${id}`);
         } else {
           throw new Error(await response.text());
         }
       } catch (error) {
-        setError("Error submitting form: " + error);
+        setError("Error creating chat session: " + error);
       }
     },
     [router]
@@ -102,7 +103,7 @@ export default function Home() {
             type="submit"
             className="bg-gradient-to-r from-secondary to-primary text-gray-100 py-2 px-6 rounded-lg hover:opacity-90 transition-opacity"
           >
-            Let&apos;s Talk!
+            Let&apos;s Chat!
           </button>
           {error && <p className="text-red-500">{error}</p>}
         </form>
