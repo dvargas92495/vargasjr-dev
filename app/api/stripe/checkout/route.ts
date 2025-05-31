@@ -67,7 +67,7 @@ export async function POST() {
           quantity: 1,
         },
       ],
-      mode: "payment",
+      mode: "subscription",
       success_url: `${baseUrl}/thank-you`,
       cancel_url: baseUrl,
     });
