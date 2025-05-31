@@ -74,6 +74,7 @@ export const ApplicationsTable = pgTable("applications", {
   clientId: varchar("client_id"),
   clientSecret: varchar("client_secret"),
   apiEndpoint: varchar("api_endpoint"),
+  oauthConfig: jsonb("oauth_config"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
