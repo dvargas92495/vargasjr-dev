@@ -6,6 +6,8 @@ import { useCallback, useState } from "react";
 export default function Home() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isHiring, setIsHiring] = useState(false);
+  const [hireError, setHireError] = useState<string | null>(null);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,6 +37,31 @@ export default function Home() {
     },
     [router]
   );
+
+  const handleHireMe = useCallback(async () => {
+    setIsHiring(true);
+    setHireError(null);
+    
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        window.location.href = url;
+      } else {
+        throw new Error(await response.text());
+      }
+    } catch (error) {
+      setHireError("Error starting checkout: " + error);
+    } finally {
+      setIsHiring(false);
+    }
+  }, []);
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center">
@@ -78,6 +105,20 @@ export default function Home() {
           </button>
           {error && <p className="text-red-500">{error}</p>}
         </form>
+        
+        <div className="w-full max-w-md">
+          <div className="text-center mb-4">
+            <p className="text-sm text-gray-600">Or hire me directly:</p>
+          </div>
+          <button
+            onClick={handleHireMe}
+            disabled={isHiring}
+            className="w-full bg-gradient-to-r from-primary to-secondary text-gray-100 py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {isHiring ? "Processing..." : "💼 Hire Me Now"}
+          </button>
+          {hireError && <p className="text-red-500 text-sm mt-2">{hireError}</p>}
+        </div>
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
         <a
