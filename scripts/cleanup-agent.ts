@@ -1,6 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { EC2 } from "@aws-sdk/client-ec2";
+import { EC2Utils } from "./utils";
 
 interface CleanupConfig {
   prNumber: string;
@@ -9,6 +10,7 @@ interface CleanupConfig {
 
 class VargasJRAgentCleanup {
   private ec2: EC2;
+  private ec2Utils: EC2Utils;
   private config: CleanupConfig;
 
   constructor(config: CleanupConfig) {
@@ -17,23 +19,35 @@ class VargasJRAgentCleanup {
       ...config
     };
     this.ec2 = new EC2({ region: this.config.region });
+    this.ec2Utils = new EC2Utils(this.config.region);
   }
 
   async cleanupAgent(): Promise<void> {
     console.log(`Cleaning up Vargas JR agent for PR: ${this.config.prNumber}`);
     
     try {
-      const instances = await this.findPRInstances();
+      const instances = await this.ec2Utils.findInstancesByFilters([
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "tag:PRNumber", Values: [this.config.prNumber] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+      ]);
       
       if (instances.length === 0) {
         console.log(`No instances found for PR ${this.config.prNumber}`);
         return;
       }
       
-      for (const instance of instances) {
-        await this.terminateInstance(instance.InstanceId!);
-        await this.deleteKeyPair(`pr-${this.config.prNumber}-key`);
+      const instanceIds = instances
+        .map(instance => instance.InstanceId)
+        .filter((id): id is string => !!id);
+
+      if (instanceIds.length > 0) {
+        console.log(`Terminating instances: ${instanceIds.join(", ")}`);
+        await this.ec2Utils.terminateInstances(instanceIds);
+        console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
       }
+
+      await this.ec2Utils.deleteKeyPair(`pr-${this.config.prNumber}-key`);
       
       console.log(`✅ Cleanup completed for PR ${this.config.prNumber}`);
       
@@ -43,45 +57,7 @@ class VargasJRAgentCleanup {
     }
   }
 
-  private async findPRInstances() {
-    const result = await this.ec2.describeInstances({
-      Filters: [
-        { Name: "tag:Project", Values: ["VargasJR"] },
-        { Name: "tag:PRNumber", Values: [this.config.prNumber] },
-        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-      ]
-    });
 
-    return result.Reservations?.flatMap(r => r.Instances || []) || [];
-  }
-
-  private async terminateInstance(instanceId: string): Promise<void> {
-    console.log(`Terminating instance: ${instanceId}`);
-    
-    await this.ec2.terminateInstances({
-      InstanceIds: [instanceId]
-    });
-    
-    console.log(`✅ Instance ${instanceId} terminated`);
-  }
-
-  private async deleteKeyPair(keyPairName: string): Promise<void> {
-    try {
-      console.log(`Deleting key pair: ${keyPairName}`);
-      
-      await this.ec2.deleteKeyPair({
-        KeyName: keyPairName
-      });
-      
-      console.log(`✅ Key pair ${keyPairName} deleted`);
-    } catch (error: any) {
-      if (error.name === "InvalidKeyPair.NotFound") {
-        console.log(`⚠️  Key pair ${keyPairName} not found, skipping deletion`);
-      } else {
-        throw error;
-      }
-    }
-  }
 }
 
 async function main() {

@@ -3,6 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
+import { EC2Utils } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -13,6 +14,7 @@ interface AgentConfig {
 
 class VargasJRAgentCreator {
   private ec2: EC2;
+  private ec2Utils: EC2Utils;
   private config: AgentConfig;
 
   constructor(config: AgentConfig) {
@@ -22,11 +24,12 @@ class VargasJRAgentCreator {
       ...config
     };
     this.ec2 = new EC2({ region: this.config.region });
+    this.ec2Utils = new EC2Utils(this.config.region);
   }
 
   async createAgent(): Promise<void> {
     const agentName = this.config.prNumber ? `pr-${this.config.prNumber}` : this.config.name;
-    const instanceName = this.config.prNumber ? `vargas-jr-pr-${this.config.prNumber}` : `vargas-jr-${this.config.name}`;
+    const instanceName = `vargas-jr-${agentName}`;
     console.log(`Creating Vargas JR agent: ${agentName}`);
     
     try {
@@ -57,20 +60,12 @@ class VargasJRAgentCreator {
     }
   }
 
-  private async findExistingInstances(instanceName: string) {
-    const result = await this.ec2.describeInstances({
-      Filters: [
-        { Name: "tag:Name", Values: [instanceName] },
-        { Name: "tag:Project", Values: ["VargasJR"] },
-        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-      ]
-    });
-
-    return result.Reservations?.flatMap(r => r.Instances || []) || [];
-  }
-
   private async deleteExistingInstances(instanceName: string): Promise<void> {
-    const existingInstances = await this.findExistingInstances(instanceName);
+    const existingInstances = await this.ec2Utils.findInstancesByFilters([
+      { Name: "tag:Name", Values: [instanceName] },
+      { Name: "tag:Project", Values: ["VargasJR"] },
+      { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+    ]);
     
     if (existingInstances.length === 0) {
       console.log(`No existing instances found with name: ${instanceName}`);
@@ -79,18 +74,17 @@ class VargasJRAgentCreator {
 
     console.log(`Found ${existingInstances.length} existing instance(s) with name: ${instanceName}`);
     
-    for (const instance of existingInstances) {
-      if (instance.InstanceId) {
-        console.log(`Terminating existing instance: ${instance.InstanceId}`);
-        await this.ec2.terminateInstances({
-          InstanceIds: [instance.InstanceId]
-        });
-        console.log(`✅ Instance ${instance.InstanceId} terminated`);
-      }
-    }
+    const instanceIds = existingInstances
+      .map(instance => instance.InstanceId)
+      .filter((id): id is string => !!id);
 
-    console.log("Waiting for instances to be terminated...");
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    if (instanceIds.length > 0) {
+      console.log(`Terminating instances: ${instanceIds.join(", ")}`);
+      await this.ec2Utils.terminateInstances(instanceIds);
+      console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
+      
+      await this.ec2Utils.waitForInstancesTerminated(instanceIds);
+    }
   }
 
   private async createKeyPair(keyPairName: string): Promise<void> {
