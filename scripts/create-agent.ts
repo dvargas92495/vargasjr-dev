@@ -285,26 +285,28 @@ AWS_DEFAULT_REGION=us-east-1`;
   
   private async waitForSSHReady(publicDns: string, keyPairName: string): Promise<void> {
     const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
-    const maxAttempts = 20;
+    const maxAttempts = 40;
     let attempts = 0;
     
     console.log("Waiting for SSH service to be ready...");
+    console.log("Note: Amazon Linux AMI 1 (deprecated) may take longer to boot than modern AMIs");
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes ubuntu@${publicDns} "echo 'SSH Ready'"`, {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "exit 0"`, {
           stdio: 'pipe'
         });
         console.log("✅ SSH is ready");
         return;
       } catch (error) {
         attempts++;
-        console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting 15 seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        const waitTime = attempts < 10 ? 10 : 15;
+        console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       }
     }
     
-    throw new Error("SSH failed to become ready within timeout");
+    throw new Error("SSH failed to become ready within timeout (10 minutes). Consider updating to Amazon Linux 2023 AMI for faster boot times.");
   }
 
   private async executeSSHCommand(keyPath: string, publicDns: string, command: string): Promise<void> {
@@ -313,13 +315,14 @@ AWS_DEFAULT_REGION=us-east-1`;
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 ubuntu@${publicDns} "${command}"`, {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${command}"`, {
           stdio: 'inherit'
         });
         return;
       } catch (error) {
         attempts++;
         if (attempts >= maxAttempts) {
+          console.error(`❌ SSH command failed after ${maxAttempts} attempts: ${command}`);
           throw error;
         }
         console.log(`SSH command failed, retrying... (${attempts}/${maxAttempts})`);
@@ -334,13 +337,14 @@ AWS_DEFAULT_REGION=us-east-1`;
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${localPath} ubuntu@${publicDns}:${remotePath}`, {
+        execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o UserKnownHostsFile=/dev/null ${localPath} ubuntu@${publicDns}:${remotePath}`, {
           stdio: 'inherit'
         });
         return;
       } catch (error) {
         attempts++;
         if (attempts >= maxAttempts) {
+          console.error(`❌ SCP command failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
           throw error;
         }
         console.log(`SCP command failed, retrying... (${attempts}/${maxAttempts})`);
