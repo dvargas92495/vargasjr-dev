@@ -231,7 +231,7 @@ class VargasJRAgentCreator {
     
     
     console.log("Waiting for SSH to be ready...");
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await this.waitForSSHReady(instanceDetails.publicDns, keyPairName);
     
     const envVars = this.getEnvironmentVariables();
     
@@ -262,15 +262,11 @@ AWS_DEFAULT_REGION=us-east-1`;
       
       for (const command of setupCommands) {
         console.log(`Executing: ${command}`);
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no ubuntu@${instanceDetails.publicDns} "${command}"`, {
-          stdio: 'inherit'
-        });
+        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, command);
       }
       
       console.log("Copying .env file to instance...");
-      execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no /tmp/agent.env ubuntu@${instanceDetails.publicDns}:~/.env`, {
-        stdio: 'inherit'
-      });
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
       
       console.log("✅ Instance setup complete!");
       
@@ -280,6 +276,72 @@ AWS_DEFAULT_REGION=us-east-1`;
     }
   }
   
+  private async waitForSSHReady(publicDns: string, keyPairName: string): Promise<void> {
+    const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
+    const maxAttempts = 20;
+    let attempts = 0;
+    
+    console.log("Waiting for SSH service to be ready...");
+    
+    while (attempts < maxAttempts) {
+      try {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes ubuntu@${publicDns} "echo 'SSH Ready'"`, {
+          stdio: 'pipe'
+        });
+        console.log("✅ SSH is ready");
+        return;
+      } catch (error) {
+        attempts++;
+        console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting 15 seconds...`);
+        await new Promise(resolve => setTimeout(resolve, 15000));
+      }
+    }
+    
+    throw new Error("SSH failed to become ready within timeout");
+  }
+
+  private async executeSSHCommand(keyPath: string, publicDns: string, command: string): Promise<void> {
+    const maxAttempts = 3;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 ubuntu@${publicDns} "${command}"`, {
+          stdio: 'inherit'
+        });
+        return;
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw error;
+        }
+        console.log(`SSH command failed, retrying... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
+  private async executeSCPCommand(keyPath: string, publicDns: string, localPath: string, remotePath: string): Promise<void> {
+    const maxAttempts = 3;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${localPath} ubuntu@${publicDns}:${remotePath}`, {
+          stdio: 'inherit'
+        });
+        return;
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw error;
+        }
+        console.log(`SCP command failed, retrying... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
   private getEnvironmentVariables() {
     const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY'];
     const envVars: Record<string, string> = {};
