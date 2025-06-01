@@ -78,3 +78,16 @@ export const ApplicationsTable = pgTable("applications", {
 });
 
 export type Application = typeof ApplicationsTable.$inferSelect;
+
+export const ChatSessionsTable = pgTable("chat_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  inboxId: uuid("inbox_id")
+    .notNull()
+    .references(() => InboxesTable.id),
+  contactId: uuid("contact_id")
+    .notNull()
+    .references(() => ContactsTable.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ChatSession = typeof ChatSessionsTable.$inferSelect;
