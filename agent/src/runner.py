@@ -199,9 +199,5 @@ class AgentRunner:
                 cron_expression="0 12 * * 0",
                 logger=self._logger,
             ),
-            RoutineJob(
-                name="post_twitter",
-                cron_expression="0 9,12,18 * * *",
-                logger=self._logger,
-            ),
+
         ]

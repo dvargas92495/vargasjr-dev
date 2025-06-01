@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from vellum import ChatMessagePromptBlock, JinjaPromptBlock, PromptParameters
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode, InlinePromptNode
+from src.services import get_application_by_name
 
 
 class TweetContent(BaseModel):
@@ -77,13 +78,17 @@ class PostToTwitter(BaseNode):
     def run(self) -> Outputs:
         logger: Logger = getattr(self._context, "logger")
         
-        api_key = os.getenv("TWITTER_API_KEY")
-        api_secret = os.getenv("TWITTER_API_SECRET")
+        twitter_app = get_application_by_name("Twitter")
+        if not twitter_app:
+            raise ValueError("Twitter application not found in database")
+        
+        api_key = twitter_app.client_id
+        api_secret = twitter_app.client_secret
         access_token = os.getenv("TWITTER_ACCESS_TOKEN")
         access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
         
         if not all([api_key, api_secret, access_token, access_token_secret]):
-            raise ValueError("Twitter API credentials not found in environment variables")
+            raise ValueError("Twitter API credentials not complete")
 
         auth = tweepy.OAuthHandler(api_key, api_secret)
         auth.set_access_token(access_token, access_token_secret)

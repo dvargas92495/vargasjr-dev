@@ -7,6 +7,7 @@ from typing import Optional
 import requests
 from src.models.contact import Contact
 from src.models.inbox import Inbox
+from src.models.application import Application
 import boto3
 
 import os
@@ -260,3 +261,10 @@ def add_transaction_rule(description: str, category: PersonalTransactionCategory
             )
         )
         session.commit()
+
+
+def get_application_by_name(name: str) -> Optional[Application]:
+    """Get application credentials by name from the database"""
+    with postgres_session() as session:
+        statement = select(Application).where(Application.name == name)
+        return session.exec(statement).one_or_none()
