@@ -26,9 +26,12 @@ class VargasJRAgentCreator {
 
   async createAgent(): Promise<void> {
     const agentName = this.config.prNumber ? `pr-${this.config.prNumber}` : this.config.name;
+    const instanceName = this.config.prNumber ? `vargas-jr-pr-${this.config.prNumber}` : `vargas-jr-${this.config.name}`;
     console.log(`Creating Vargas JR agent: ${agentName}`);
     
     try {
+      await this.deleteExistingInstances(instanceName);
+      
       const keyPairName = `${agentName}-key`;
       await this.createKeyPair(keyPairName);
       
@@ -52,6 +55,42 @@ class VargasJRAgentCreator {
       console.error(`❌ Failed to create agent: ${error}`);
       process.exit(1);
     }
+  }
+
+  private async findExistingInstances(instanceName: string) {
+    const result = await this.ec2.describeInstances({
+      Filters: [
+        { Name: "tag:Name", Values: [instanceName] },
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+      ]
+    });
+
+    return result.Reservations?.flatMap(r => r.Instances || []) || [];
+  }
+
+  private async deleteExistingInstances(instanceName: string): Promise<void> {
+    const existingInstances = await this.findExistingInstances(instanceName);
+    
+    if (existingInstances.length === 0) {
+      console.log(`No existing instances found with name: ${instanceName}`);
+      return;
+    }
+
+    console.log(`Found ${existingInstances.length} existing instance(s) with name: ${instanceName}`);
+    
+    for (const instance of existingInstances) {
+      if (instance.InstanceId) {
+        console.log(`Terminating existing instance: ${instance.InstanceId}`);
+        await this.ec2.terminateInstances({
+          InstanceIds: [instance.InstanceId]
+        });
+        console.log(`✅ Instance ${instance.InstanceId} terminated`);
+      }
+    }
+
+    console.log("Waiting for instances to be terminated...");
+    await new Promise(resolve => setTimeout(resolve, 10000));
   }
 
   private async createKeyPair(keyPairName: string): Promise<void> {
