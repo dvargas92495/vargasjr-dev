@@ -2,6 +2,7 @@
 
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync } from "fs";
+import { execSync } from "child_process";
 
 interface AgentConfig {
   name: string;
@@ -35,12 +36,11 @@ class VargasJRAgentCreator {
       
       const instanceDetails = await this.getInstanceDetails(instanceId);
       
-      this.generateSetupScript(instanceDetails, keyPairName);
+      await this.setupInstance(instanceDetails, keyPairName);
       
       console.log(`✅ Agent ${this.config.name} created successfully!`);
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
-      console.log(`Setup script generated: ./scripts/setup-${this.config.name}.sh`);
       
     } catch (error) {
       console.error(`❌ Failed to create agent: ${error}`);
@@ -143,53 +143,68 @@ class VargasJRAgentCreator {
     };
   }
 
-  private generateSetupScript(instanceDetails: any, keyPairName: string): void {
-    const setupScript = `#!/bin/bash
-# Setup script for Vargas JR agent: ${this.config.name}
-# Generated automatically by create-agent.ts
-
-set -e
-
-echo "Setting up Vargas JR agent on ${instanceDetails.publicDns}"
-
-# Connect to instance and run setup commands
-ssh -i ~/.ssh/${keyPairName}.pem ubuntu@${instanceDetails.publicDns} << 'EOF'
-
-# Update system
-sudo apt update
-
-# Install Python 3.12 and dependencies
-sudo apt install -y python3.12 python3.12-venv python3-pip
-
-# Set Python alternatives
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
-
-# Install Poetry
-curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
-source ~/.profile
-
-# Create .env file (you'll need to populate this manually)
-cat > ~/.env << 'ENVEOF'
-POSTGRES_URL=your_postgres_url_here
-LOG_LEVEL=INFO
-VELLUM_API_KEY=your_vellum_api_key_here
-AWS_ACCESS_KEY_ID=your_aws_access_key_here
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key_here
-AWS_DEFAULT_REGION=us-east-1
-# Add other Vargas Jr specific env vars here
-ENVEOF
-
-echo "✅ Basic setup complete. Please:"
-echo "1. Update ~/.env with your actual credentials"
-echo "2. Copy run_agent.sh to the instance"
-echo "3. Make run_agent.sh executable: chmod u+x ~/run_agent.sh"
-echo "4. Run the agent: ./run_agent.sh"
-
-EOF
-`;
+  private async setupInstance(instanceDetails: any, keyPairName: string): Promise<void> {
+    console.log(`Setting up Vargas JR agent on ${instanceDetails.publicDns}`);
     
-    writeFileSync(`./scripts/setup-${this.config.name}.sh`, setupScript, { mode: 0o755 });
+    console.log("Waiting for SSH to be ready...");
+    await new Promise(resolve => setTimeout(resolve, 30000));
+    
+    const envVars = this.getEnvironmentVariables();
+    
+    try {
+      const envContent = `POSTGRES_URL=${envVars.POSTGRES_URL}
+LOG_LEVEL=INFO
+VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
+AWS_ACCESS_KEY_ID=${envVars.AWS_ACCESS_KEY_ID}
+AWS_SECRET_ACCESS_KEY=${envVars.AWS_SECRET_ACCESS_KEY}
+AWS_DEFAULT_REGION=us-east-1`;
+
+      writeFileSync('/tmp/agent.env', envContent);
+      
+      // Setup commands
+      const setupCommands = [
+        'sudo apt update',
+        'sudo apt install -y python3.12 python3.12-venv python3-pip',
+        'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
+        'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
+        'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
+        'source ~/.profile'
+      ];
+      
+      // Execute setup commands
+      for (const command of setupCommands) {
+        console.log(`Executing: ${command}`);
+        execSync(`ssh -i ~/.ssh/${keyPairName}.pem -o StrictHostKeyChecking=no ubuntu@${instanceDetails.publicDns} "${command}"`, {
+          stdio: 'inherit'
+        });
+      }
+      
+      console.log("Copying .env file to instance...");
+      execSync(`scp -i ~/.ssh/${keyPairName}.pem -o StrictHostKeyChecking=no /tmp/agent.env ubuntu@${instanceDetails.publicDns}:~/.env`, {
+        stdio: 'inherit'
+      });
+      
+      console.log("✅ Instance setup complete!");
+      
+    } catch (error) {
+      console.error(`❌ Failed to setup instance: ${error}`);
+      throw error;
+    }
+  }
+  
+  private getEnvironmentVariables() {
+    const requiredVars = ['POSTGRES_URL', 'VELLUM_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
+    const envVars: Record<string, string> = {};
+    
+    for (const varName of requiredVars) {
+      const value = process.env[varName];
+      if (!value) {
+        throw new Error(`Required environment variable ${varName} is not set`);
+      }
+      envVars[varName] = value;
+    }
+    
+    return envVars;
   }
 }
 
