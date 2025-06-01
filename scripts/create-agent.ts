@@ -8,6 +8,7 @@ interface AgentConfig {
   name: string;
   instanceType?: string;
   region?: string;
+  prNumber?: string;
 }
 
 class VargasJRAgentCreator {
@@ -24,10 +25,11 @@ class VargasJRAgentCreator {
   }
 
   async createAgent(): Promise<void> {
-    console.log(`Creating Vargas JR agent: ${this.config.name}`);
+    const agentName = this.config.prNumber ? `pr-${this.config.prNumber}` : this.config.name;
+    console.log(`Creating Vargas JR agent: ${agentName}`);
     
     try {
-      const keyPairName = `${this.config.name}-key`;
+      const keyPairName = `${agentName}-key`;
       await this.createKeyPair(keyPairName);
       
       const instanceId = await this.createEC2Instance(keyPairName);
@@ -38,7 +40,7 @@ class VargasJRAgentCreator {
       
       await this.setupInstance(instanceDetails, keyPairName);
       
-      console.log(`✅ Agent ${this.config.name} created successfully!`);
+      console.log(`✅ Agent ${agentName} created successfully!`);
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
       
@@ -84,9 +86,11 @@ class VargasJRAgentCreator {
         {
           ResourceType: "instance",
           Tags: [
-            { Key: "Name", Value: `vargas-jr-${this.config.name}` },
+            { Key: "Name", Value: this.config.prNumber ? `vargas-jr-pr-${this.config.prNumber}` : `vargas-jr-${this.config.name}` },
             { Key: "Project", Value: "VargasJR" },
-            { Key: "CreatedBy", Value: "create-agent-script" }
+            { Key: "CreatedBy", Value: "create-agent-script" },
+            { Key: "PRNumber", Value: this.config.prNumber || "" },
+            { Key: "Type", Value: this.config.prNumber ? "preview" : "main" }
           ]
         }
       ]
@@ -211,20 +215,40 @@ AWS_DEFAULT_REGION=us-east-1`;
 async function main() {
   const args = process.argv.slice(2);
   
-  if (args.length === 0) {
-    console.error("Usage: npx tsx scripts/create-agent.ts <agent-name>");
+  let agentName = "";
+  let prNumber = "";
+  
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--pr" && i + 1 < args.length) {
+      prNumber = args[i + 1];
+      i++;
+    } else if (!agentName) {
+      agentName = args[i];
+    }
+  }
+  
+  if (!agentName && !prNumber) {
+    console.error("Usage: npx tsx scripts/create-agent.ts <agent-name> [--pr <pr-number>]");
     console.error("Example: npx tsx scripts/create-agent.ts my-agent");
+    console.error("Example: npx tsx scripts/create-agent.ts --pr 123");
     process.exit(1);
   }
-
-  const agentName = args[0];
   
-  if (!/^[a-zA-Z0-9-]+$/.test(agentName)) {
+  if (prNumber) {
+    if (!/^\d+$/.test(prNumber)) {
+      console.error("PR number must be a valid number");
+      process.exit(1);
+    }
+    agentName = `pr-${prNumber}`;
+  } else if (!/^[a-zA-Z0-9-]+$/.test(agentName)) {
     console.error("Agent name must contain only letters, numbers, and hyphens");
     process.exit(1);
   }
 
-  const creator = new VargasJRAgentCreator({ name: agentName });
+  const creator = new VargasJRAgentCreator({ 
+    name: agentName,
+    prNumber: prNumber || undefined
+  });
   await creator.createAgent();
 }
 
