@@ -67,3 +67,47 @@ export async function deleteKeyPair(ec2: EC2, keyPairName: string): Promise<void
     }
   }
 }
+
+export async function findOrCreateSecurityGroup(ec2: EC2, groupName: string, description: string): Promise<string> {
+  try {
+    const result = await ec2.describeSecurityGroups({
+      Filters: [
+        { Name: "group-name", Values: [groupName] }
+      ]
+    });
+    
+    if (result.SecurityGroups && result.SecurityGroups.length > 0) {
+      const groupId = result.SecurityGroups[0].GroupId;
+      console.log(`✅ Found existing security group: ${groupId}`);
+      return groupId!;
+    }
+    
+    console.log(`Creating security group: ${groupName}`);
+    const createResult = await ec2.createSecurityGroup({
+      GroupName: groupName,
+      Description: description
+    });
+    
+    const groupId = createResult.GroupId!;
+    console.log(`✅ Created security group: ${groupId}`);
+    
+    await ec2.authorizeSecurityGroupIngress({
+      GroupId: groupId,
+      IpPermissions: [
+        {
+          IpProtocol: "tcp",
+          FromPort: 22,
+          ToPort: 22,
+          IpRanges: [{ CidrIp: "0.0.0.0/0", Description: "SSH access from anywhere" }]
+        }
+      ]
+    });
+    
+    console.log(`✅ Added SSH rule to security group: ${groupId}`);
+    return groupId;
+    
+  } catch (error: any) {
+    console.error(`Failed to create/find security group: ${error}`);
+    throw error;
+  }
+}

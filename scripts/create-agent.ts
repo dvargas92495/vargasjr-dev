@@ -3,7 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -140,10 +140,17 @@ class VargasJRAgentCreator {
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
     
+    const securityGroupId = await findOrCreateSecurityGroup(
+      this.ec2,
+      "vargas-jr-ssh-access",
+      "Security group for VargasJR agent SSH access"
+    );
+    
     const result = await this.ec2.runInstances({
       ImageId: "ami-0c02fb55956c7d316",
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
+      SecurityGroupIds: [securityGroupId],
       MinCount: 1,
       MaxCount: 1,
       TagSpecifications: [
