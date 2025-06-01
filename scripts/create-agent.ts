@@ -113,23 +113,36 @@ class VargasJRAgentCreator {
   private async waitForInstanceRunning(instanceId: string): Promise<void> {
     console.log("Waiting for instance to be running...");
     
+    console.log("Waiting for instance to be available in AWS API...");
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
     let attempts = 0;
     const maxAttempts = 40;
     
     while (attempts < maxAttempts) {
-      const result = await this.ec2.describeInstances({
-        InstanceIds: [instanceId]
-      });
-      
-      const instance = result.Reservations?.[0]?.Instances?.[0];
-      if (instance?.State?.Name === "running") {
-        console.log("✅ Instance is running");
-        return;
+      try {
+        const result = await this.ec2.describeInstances({
+          InstanceIds: [instanceId]
+        });
+        
+        const instance = result.Reservations?.[0]?.Instances?.[0];
+        if (instance?.State?.Name === "running") {
+          console.log("✅ Instance is running");
+          return;
+        }
+        
+        attempts++;
+        console.log(`Instance state: ${instance?.State?.Name}, waiting... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 15000));
+      } catch (error: any) {
+        if (error.name === "InvalidInstanceID.NotFound" && attempts < 5) {
+          console.log(`Instance not yet available in API, retrying... (${attempts + 1}/5)`);
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          continue;
+        }
+        throw error;
       }
-      
-      attempts++;
-      console.log(`Instance state: ${instance?.State?.Name}, waiting... (${attempts}/${maxAttempts})`);
-      await new Promise(resolve => setTimeout(resolve, 15000));
     }
     
     throw new Error("Instance failed to reach running state within timeout");
