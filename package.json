@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "ssh": "ssh -i ~/.ssh/vargasjr-dev.pem ubuntu@ec2-34-239-127-55.compute-1.amazonaws.com",
     "test": "vitest run",
-    "create-agent": "npx tsx scripts/create-agent.ts"
+    "create-agent": "npx tsx scripts/create-agent.ts",
+    "cleanup-agent": "npx tsx scripts/cleanup-agent.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",

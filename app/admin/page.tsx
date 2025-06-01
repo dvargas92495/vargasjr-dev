@@ -31,45 +31,76 @@ import CopyableText from "@/components/copyable-text";
 
 export default async function AdminPage() {
   const ec2 = new EC2({});
-  const instance = await ec2
-    .describeInstances()
-    .then((data) => data.Reservations?.[0]?.Instances?.[0]);
+  const instances = await ec2
+    .describeInstances({
+      Filters: [
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+      ]
+    })
+    .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
 
-  if (!instance) {
+  if (instances.length === 0) {
     notFound();
   }
 
-  const instanceState = instance.State?.Name;
-  const instanceId = instance.InstanceId;
-  const command = `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`;
-
   return (
-    <div className="flex flex-col gap-2 justify-start items-start">
+    <div className="flex flex-col gap-4 justify-start items-start">
       <h1 className="text-2xl font-bold">Vargas JR</h1>
       <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
-      <p>
-        Instance ID: <span className="font-mono">{instance.InstanceId}</span>
-      </p>
-      <p>
-        Instance Type:{" "}
-        <span className="font-mono">{instance.InstanceType}</span>
-      </p>
-      <p>
-        State: <span className="font-mono">{instanceState}</span>
-      </p>
-      <p>
-        ImageID: <span className="font-mono">{instance.ImageId}</span>
-      </p>
-      <p>
-        Connect: <CopyableText className="font-mono" text={command} />
-      </p>
-      {instanceState === "running" && instanceId && (
-        <StopInstanceButton id={instanceId} />
-      )}
-      {instanceState === "stopped" && instanceId && (
-        <StartInstanceButton id={instanceId} />
-      )}
-      {instanceState === "pending" && <PendingInstanceRefresh />}
+      
+      {instances.map((instance) => {
+        const instanceState = instance.State?.Name;
+        const instanceId = instance.InstanceId;
+        const command = `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`;
+        const instanceName = instance.Tags?.find(tag => tag.Key === "Name")?.Value || "Unknown";
+        const instanceType = instance.Tags?.find(tag => tag.Key === "Type")?.Value || "main";
+        const prNumber = instance.Tags?.find(tag => tag.Key === "PRNumber")?.Value;
+        
+        return (
+          <div key={instanceId} className="border p-4 rounded-lg w-full max-w-2xl">
+            <h2 className="text-lg font-semibold mb-2">
+              {instanceName} 
+              {instanceType === "preview" && prNumber && (
+                <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  PR #{prNumber}
+                </span>
+              )}
+              {instanceType === "main" && (
+                <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Main
+                </span>
+              )}
+            </h2>
+            <div className="space-y-1 text-sm">
+              <p>
+                Instance ID: <span className="font-mono">{instance.InstanceId}</span>
+              </p>
+              <p>
+                Instance Type: <span className="font-mono">{instance.InstanceType}</span>
+              </p>
+              <p>
+                State: <span className="font-mono">{instanceState}</span>
+              </p>
+              <p>
+                ImageID: <span className="font-mono">{instance.ImageId}</span>
+              </p>
+              <p>
+                Connect: <CopyableText className="font-mono" text={command} />
+              </p>
+            </div>
+            <div className="mt-3 flex gap-2">
+              {instanceState === "running" && instanceId && (
+                <StopInstanceButton id={instanceId} />
+              )}
+              {instanceState === "stopped" && instanceId && (
+                <StartInstanceButton id={instanceId} />
+              )}
+              {instanceState === "pending" && <PendingInstanceRefresh />}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
