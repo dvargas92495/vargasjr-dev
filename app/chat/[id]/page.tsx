@@ -1,4 +1,4 @@
-import { ChatSessionsTable, InboxesTable } from "@/db/schema";
+import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
 import { eq } from "drizzle-orm";
@@ -18,9 +18,12 @@ export default async function ChatSessionPage({
       id: ChatSessionsTable.id,
       createdAt: ChatSessionsTable.createdAt,
       inboxName: InboxesTable.name,
+      contactEmail: ContactsTable.email,
+      contactName: ContactsTable.fullName,
     })
     .from(ChatSessionsTable)
     .innerJoin(InboxesTable, eq(ChatSessionsTable.inboxId, InboxesTable.id))
+    .innerJoin(ContactsTable, eq(ChatSessionsTable.contactId, ContactsTable.id))
     .where(eq(ChatSessionsTable.id, id))
     .limit(1);
 
@@ -41,6 +44,10 @@ export default async function ChatSessionPage({
         <div className="mb-4">
           <div className="text-sm text-gray-300">Created At</div>
           <div className="text-lg">{session.createdAt.toLocaleString()}</div>
+        </div>
+        <div className="mb-4">
+          <div className="text-sm text-gray-300">Contact</div>
+          <div className="text-lg">{session.contactName || session.contactEmail}</div>
         </div>
         <div className="text-center text-gray-300">
           Chat functionality will be implemented here.

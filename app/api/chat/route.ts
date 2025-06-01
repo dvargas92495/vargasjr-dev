@@ -3,7 +3,7 @@ import { z, ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
-import { ChatSessionsTable, InboxesTable } from "@/db/schema";
+import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NotFoundError } from "@/server/errors";
 
@@ -12,7 +12,7 @@ const db = drizzle(sql);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    z
+    const { email } = z
       .object({
         email: z.string().email(),
         message: z.string(),
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     let inbox = await db
       .select({ id: InboxesTable.id })
       .from(InboxesTable)
-      .where(eq(InboxesTable.name, "chat-sessions"))
+      .where(eq(InboxesTable.type, "CHAT_SESSION"))
       .limit(1)
       .execute();
 
@@ -38,9 +38,27 @@ export async function POST(request: Request) {
       inbox = newInbox;
     }
 
+    let contact = await db
+      .select({ id: ContactsTable.id })
+      .from(ContactsTable)
+      .where(eq(ContactsTable.email, email))
+      .limit(1)
+      .execute();
+
+    if (!contact.length) {
+      const newContact = await db
+        .insert(ContactsTable)
+        .values({ email })
+        .returning({ id: ContactsTable.id });
+      contact = newContact;
+    }
+
     const chatSession = await db
       .insert(ChatSessionsTable)
-      .values({ inboxId: inbox[0].id })
+      .values({ 
+        inboxId: inbox[0].id,
+        contactId: contact[0].id
+      })
       .returning({ id: ChatSessionsTable.id });
 
     return NextResponse.json({ id: chatSession[0].id });

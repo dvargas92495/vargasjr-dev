@@ -84,6 +84,9 @@ export const ChatSessionsTable = pgTable("chat_sessions", {
   inboxId: uuid("inbox_id")
     .notNull()
     .references(() => InboxesTable.id),
+  contactId: uuid("contact_id")
+    .notNull()
+    .references(() => ContactsTable.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
