@@ -161,7 +161,8 @@ class VargasJRAgentCreator {
     const envVars = this.getEnvironmentVariables();
     
     try {
-      const envContent = `POSTGRES_URL=${envVars.POSTGRES_URL}
+      const dbName = this.config.name.replace('-', '_');
+      const envContent = `POSTGRES_URL=postgresql://postgres:password@localhost:5432/vargasjr_${dbName}
 LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
 AWS_ACCESS_KEY_ID=${envVars.AWS_ACCESS_KEY_ID}
@@ -169,13 +170,15 @@ AWS_SECRET_ACCESS_KEY=${envVars.AWS_SECRET_ACCESS_KEY}
 AWS_DEFAULT_REGION=us-east-1`;
 
       writeFileSync('/tmp/agent.env', envContent);
-      
-      // Setup commands
       const setupCommands = [
         'sudo apt update',
-        'sudo apt install -y python3.12 python3.12-venv python3-pip',
+        'sudo apt install -y python3.12 python3.12-venv python3-pip postgresql postgresql-contrib',
         'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
         'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
+        'sudo systemctl start postgresql',
+        'sudo systemctl enable postgresql',
+        `sudo -u postgres createdb vargasjr_${dbName}`,
+        'sudo -u postgres psql -c "ALTER USER postgres PASSWORD \'password\';"',
         'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
         'source ~/.profile'
       ];
@@ -204,7 +207,7 @@ AWS_DEFAULT_REGION=us-east-1`;
   }
   
   private getEnvironmentVariables() {
-    const requiredVars = ['POSTGRES_URL', 'VELLUM_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
+    const requiredVars = ['VELLUM_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
@@ -222,39 +225,26 @@ AWS_DEFAULT_REGION=us-east-1`;
 async function main() {
   const args = process.argv.slice(2);
   
-  let agentName = "";
-  let prNumber = "";
-  
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--pr" && i + 1 < args.length) {
-      prNumber = args[i + 1];
-      i++;
-    } else if (!agentName) {
-      agentName = args[i];
-    }
-  }
-  
-  if (!agentName && !prNumber) {
-    console.error("Usage: npx tsx scripts/create-agent.ts <agent-name> [--pr <pr-number>]");
+  if (args.length !== 1) {
+    console.error("Usage: npx tsx scripts/create-agent.ts <agent-name>");
     console.error("Example: npx tsx scripts/create-agent.ts my-agent");
-    console.error("Example: npx tsx scripts/create-agent.ts --pr 123");
+    console.error("Example: npx tsx scripts/create-agent.ts pr-123");
     process.exit(1);
   }
+
+  const agentName = args[0];
   
-  if (prNumber) {
-    if (!/^\d+$/.test(prNumber)) {
-      console.error("PR number must be a valid number");
-      process.exit(1);
-    }
-    agentName = `pr-${prNumber}`;
-  } else if (!/^[a-zA-Z0-9-]+$/.test(agentName)) {
+  if (!/^[a-zA-Z0-9-]+$/.test(agentName)) {
     console.error("Agent name must contain only letters, numbers, and hyphens");
     process.exit(1);
   }
 
+  const prMatch = agentName.match(/^pr-(\d+)$/);
+  const prNumber = prMatch ? prMatch[1] : undefined;
+
   const creator = new VargasJRAgentCreator({ 
     name: agentName,
-    prNumber: prNumber || undefined
+    prNumber: prNumber
   });
   await creator.createAgent();
 }
