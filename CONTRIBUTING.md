@@ -28,12 +28,6 @@ poetry install
 poetry run pytest  # Run tests
 ```
 
-### Database
-```bash
-npm run db:generate  # Generate migrations
-npm run db:migrate   # Apply migrations
-```
-
 ## Testing
 
 - Frontend tests: `npm t`
