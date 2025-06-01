@@ -72,6 +72,31 @@ class VargasJRAgentCreator {
     } catch (error: any) {
       if (error.name === "InvalidKeyPair.Duplicate") {
         console.log(`⚠️  Key pair ${keyPairName} already exists, skipping creation`);
+        
+        console.log(`Deleting existing key pair to recreate with new material...`);
+        try {
+          await this.ec2.deleteKeyPair({ KeyName: keyPairName });
+          console.log(`✅ Deleted existing key pair: ${keyPairName}`);
+          
+          const newResult = await this.ec2.createKeyPair({
+            KeyName: keyPairName,
+            KeyType: "rsa",
+            KeyFormat: "pem"
+          });
+          
+          if (newResult.KeyMaterial) {
+            const sshDir = `${process.env.HOME}/.ssh`;
+            const keyPath = `${sshDir}/${keyPairName}.pem`;
+            
+            mkdirSync(sshDir, { recursive: true, mode: 0o700 });
+            
+            writeFileSync(keyPath, newResult.KeyMaterial, { mode: 0o600 });
+            console.log(`✅ Key pair recreated and saved to ${keyPath}`);
+          }
+        } catch (deleteError) {
+          console.error(`Failed to delete/recreate key pair: ${deleteError}`);
+          throw deleteError;
+        }
       } else {
         throw error;
       }
