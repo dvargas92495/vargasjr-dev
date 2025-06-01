@@ -47,10 +47,9 @@ class VargasJRAgentCreator {
       
       await this.setupInstance(instanceDetails, keyPairName);
       
-      console.log(`✅ Agent ${agentName} infrastructure created successfully!`);
+      console.log(`✅ Agent ${agentName} infrastructure and SSH setup completed successfully!`);
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
-      console.log(`Note: SSH setup and agent installation will be added in future tasks`);
       
     } catch (error) {
       console.error(`❌ Failed to create agent: ${error}`);
@@ -231,7 +230,6 @@ class VargasJRAgentCreator {
     console.log(`SSH key available at: ${process.env.HOME}/.ssh/${keyPairName}.pem`);
     
     
-    /* COMMENTED OUT: SSH setup causing CI failures - will be restored in future tasks
     console.log("Waiting for SSH to be ready...");
     await new Promise(resolve => setTimeout(resolve, 30000));
     
@@ -262,7 +260,6 @@ AWS_DEFAULT_REGION=us-east-1`;
       
       const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
       
-      // Execute setup commands
       for (const command of setupCommands) {
         console.log(`Executing: ${command}`);
         execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no ubuntu@${instanceDetails.publicDns} "${command}"`, {
@@ -281,14 +278,10 @@ AWS_DEFAULT_REGION=us-east-1`;
       console.error(`❌ Failed to setup instance: ${error}`);
       throw error;
     }
-    */
-    
-    console.log("✅ Basic instance setup complete! SSH setup will be added in future tasks.");
   }
   
   private getEnvironmentVariables() {
-    // Simplified for basic instance creation - SSH setup env vars will be added back in future tasks
-    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
+    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
