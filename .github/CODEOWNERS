@@ -1,0 +1,5 @@
+# This file defines code owners who will be automatically requested for review on PRs
+# Learn more about CODEOWNERS: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-features/customizing-your-repository/about-code-owners
+
+# These owners will be requested for review on all files in the repo
+* @dvargas92495
