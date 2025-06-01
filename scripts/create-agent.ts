@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { EC2 } from "@aws-sdk/client-ec2";
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 
 interface AgentConfig {
@@ -61,8 +61,13 @@ class VargasJRAgentCreator {
       });
       
       if (result.KeyMaterial) {
-        writeFileSync(`~/.ssh/${keyPairName}.pem`, result.KeyMaterial, { mode: 0o600 });
-        console.log(`✅ Key pair saved to ~/.ssh/${keyPairName}.pem`);
+        const sshDir = `${process.env.HOME}/.ssh`;
+        const keyPath = `${sshDir}/${keyPairName}.pem`;
+        
+        mkdirSync(sshDir, { recursive: true, mode: 0o700 });
+        
+        writeFileSync(keyPath, result.KeyMaterial, { mode: 0o600 });
+        console.log(`✅ Key pair saved to ${keyPath}`);
       }
     } catch (error: any) {
       if (error.name === "InvalidKeyPair.Duplicate") {
@@ -175,16 +180,18 @@ AWS_DEFAULT_REGION=us-east-1`;
         'source ~/.profile'
       ];
       
+      const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
+      
       // Execute setup commands
       for (const command of setupCommands) {
         console.log(`Executing: ${command}`);
-        execSync(`ssh -i ~/.ssh/${keyPairName}.pem -o StrictHostKeyChecking=no ubuntu@${instanceDetails.publicDns} "${command}"`, {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no ubuntu@${instanceDetails.publicDns} "${command}"`, {
           stdio: 'inherit'
         });
       }
       
       console.log("Copying .env file to instance...");
-      execSync(`scp -i ~/.ssh/${keyPairName}.pem -o StrictHostKeyChecking=no /tmp/agent.env ubuntu@${instanceDetails.publicDns}:~/.env`, {
+      execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no /tmp/agent.env ubuntu@${instanceDetails.publicDns}:~/.env`, {
         stdio: 'inherit'
       });
       
