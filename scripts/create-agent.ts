@@ -3,7 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
-import { EC2Utils } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -14,7 +14,6 @@ interface AgentConfig {
 
 class VargasJRAgentCreator {
   private ec2: EC2;
-  private ec2Utils: EC2Utils;
   private config: AgentConfig;
 
   constructor(config: AgentConfig) {
@@ -24,7 +23,6 @@ class VargasJRAgentCreator {
       ...config
     };
     this.ec2 = new EC2({ region: this.config.region });
-    this.ec2Utils = new EC2Utils(this.config.region);
   }
 
   async createAgent(): Promise<void> {
@@ -61,7 +59,7 @@ class VargasJRAgentCreator {
   }
 
   private async deleteExistingInstances(instanceName: string): Promise<void> {
-    const existingInstances = await this.ec2Utils.findInstancesByFilters([
+    const existingInstances = await findInstancesByFilters(this.ec2, [
       { Name: "tag:Name", Values: [instanceName] },
       { Name: "tag:Project", Values: ["VargasJR"] },
       { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
@@ -80,10 +78,10 @@ class VargasJRAgentCreator {
 
     if (instanceIds.length > 0) {
       console.log(`Terminating instances: ${instanceIds.join(", ")}`);
-      await this.ec2Utils.terminateInstances(instanceIds);
+      await terminateInstances(this.ec2, instanceIds);
       console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
       
-      await this.ec2Utils.waitForInstancesTerminated(instanceIds);
+      await waitForInstancesTerminated(this.ec2, instanceIds);
     }
   }
 

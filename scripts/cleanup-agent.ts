@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { EC2 } from "@aws-sdk/client-ec2";
-import { EC2Utils } from "./utils";
+import { findInstancesByFilters, terminateInstances, deleteKeyPair } from "./utils";
 
 interface CleanupConfig {
   prNumber: string;
@@ -10,7 +10,6 @@ interface CleanupConfig {
 
 class VargasJRAgentCleanup {
   private ec2: EC2;
-  private ec2Utils: EC2Utils;
   private config: CleanupConfig;
 
   constructor(config: CleanupConfig) {
@@ -19,14 +18,13 @@ class VargasJRAgentCleanup {
       ...config
     };
     this.ec2 = new EC2({ region: this.config.region });
-    this.ec2Utils = new EC2Utils(this.config.region);
   }
 
   async cleanupAgent(): Promise<void> {
     console.log(`Cleaning up Vargas JR agent for PR: ${this.config.prNumber}`);
     
     try {
-      const instances = await this.ec2Utils.findInstancesByFilters([
+      const instances = await findInstancesByFilters(this.ec2, [
         { Name: "tag:Project", Values: ["VargasJR"] },
         { Name: "tag:PRNumber", Values: [this.config.prNumber] },
         { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
@@ -43,11 +41,11 @@ class VargasJRAgentCleanup {
 
       if (instanceIds.length > 0) {
         console.log(`Terminating instances: ${instanceIds.join(", ")}`);
-        await this.ec2Utils.terminateInstances(instanceIds);
+        await terminateInstances(this.ec2, instanceIds);
         console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
       }
 
-      await this.ec2Utils.deleteKeyPair(`pr-${this.config.prNumber}-key`);
+      await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
       
       console.log(`✅ Cleanup completed for PR ${this.config.prNumber}`);
       
