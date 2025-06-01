@@ -32,6 +32,9 @@ class VargasJRAgentCreator {
       const keyPairName = `${agentName}-key`;
       await this.createKeyPair(keyPairName);
       
+      console.log("Waiting for key pair to propagate in AWS...");
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
       const instanceId = await this.createEC2Instance(keyPairName);
       
       await this.waitForInstanceRunning(instanceId);
