@@ -1,6 +1,7 @@
 import logging
 import os
 import pytest
+import shutil
 import subprocess
 import tempfile
 from pytest_postgresql import factories
@@ -81,7 +82,6 @@ def mock_sql_session(mock_sql_engine):
 
 def pytest_sessionfinish(session, exitstatus):
     """Clean up temporary migrations directory after all tests."""
-    import shutil
     if 'temp_migrations_dir' in globals():
         shutil.rmtree(temp_migrations_dir, ignore_errors=True)
         logger.info(f"Cleaned up temporary migrations directory: {temp_migrations_dir}")
