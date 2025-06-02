@@ -147,7 +147,7 @@ class VargasJRAgentCreator {
     );
     
     const result = await this.ec2.runInstances({
-      ImageId: "ami-0c02fb55956c7d316",
+      ImageId: "resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
       SecurityGroupIds: [securityGroupId],
