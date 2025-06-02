@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getBaseUrl } from "@/db/constants";
+import { getBaseUrl } from "@/app/api/constants";
 
 export async function POST() {
   try {
