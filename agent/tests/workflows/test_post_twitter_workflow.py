@@ -20,7 +20,8 @@ def test_tweet_content_validation():
 
 @patch('src.workflows.post_twitter.workflow.tweepy.API')
 @patch('src.workflows.post_twitter.workflow.tweepy.OAuthHandler')
-def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql_session: Session):
+@patch('src.services.postgres_session')
+def test_post_to_twitter_with_mocked_tweepy(mock_postgres_session, mock_oauth, mock_api_class, mock_sql_session: Session):
     twitter_app = Application(
         name="Twitter",
         client_id="test_key",
@@ -28,6 +29,8 @@ def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql
     )
     mock_sql_session.add(twitter_app)
     mock_sql_session.commit()
+    
+    mock_postgres_session.return_value.__enter__.return_value = mock_sql_session
     
     mock_auth = Mock()
     mock_oauth.return_value = mock_auth
