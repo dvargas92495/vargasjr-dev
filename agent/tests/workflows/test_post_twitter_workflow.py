@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import Mock, patch
-from vellum.workflows.state.context import WorkflowContext
 from sqlmodel import Session
+from vellum.workflows.state.context import WorkflowContext
+
 from src.workflows.post_twitter.workflow import PostTwitterWorkflow, TweetContent, PostToTwitter
 from src.models.application import Application
 

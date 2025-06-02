@@ -84,8 +84,8 @@ class PostToTwitter(BaseNode):
         
         api_key = twitter_app.client_id
         api_secret = twitter_app.client_secret
-        # access_token = os.getenv("TWITTER_ACCESS_TOKEN")
-        # access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
+        # TODO: access_token = os.getenv("TWITTER_ACCESS_TOKEN")
+        # TODO: access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
         
         # if not all([api_key, api_secret, access_token, access_token_secret]):
         #     raise ValueError("Twitter API credentials not complete")
