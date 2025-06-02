@@ -56,7 +56,8 @@ export async function POST() {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-      (process.env.NODE_ENV === 'production' ? 'https://vargasjr.dev' : 'http://localhost:3000');
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+      (process.env.NODE_ENV === 'production' ? 'https://vargasjr.dev' : 'http://localhost:3000'));
     console.log("Using base URL:", baseUrl);
     
     console.log("Creating checkout session...");
