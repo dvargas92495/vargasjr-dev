@@ -20,8 +20,7 @@ def test_tweet_content_validation():
 
 @patch('src.workflows.post_twitter.workflow.tweepy.API')
 @patch('src.workflows.post_twitter.workflow.tweepy.OAuthHandler')
-@patch('src.services.postgres_session')
-def test_post_to_twitter_with_mocked_tweepy(mock_postgres_session, mock_oauth, mock_api_class, mock_sql_session: Session):
+def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql_session: Session):
     twitter_app = Application(
         name="Twitter",
         client_id="test_key",
@@ -30,35 +29,36 @@ def test_post_to_twitter_with_mocked_tweepy(mock_postgres_session, mock_oauth, m
     mock_sql_session.add(twitter_app)
     mock_sql_session.commit()
     
-    mock_postgres_session.return_value.__enter__.return_value = mock_sql_session
-    
-    mock_auth = Mock()
-    mock_oauth.return_value = mock_auth
-    
-    mock_api = Mock()
-    mock_api_class.return_value = mock_api
-    mock_api.verify_credentials.return_value = True
-    
-    mock_tweet = Mock()
-    mock_tweet.id = 12345
-    mock_api.update_status.return_value = mock_tweet
+    with patch('src.services.postgres_session') as mock_postgres_session:
+        mock_postgres_session.return_value.__enter__.return_value = mock_sql_session
+        
+        mock_auth = Mock()
+        mock_oauth.return_value = mock_auth
+        
+        mock_api = Mock()
+        mock_api_class.return_value = mock_api
+        mock_api.verify_credentials.return_value = True
+        
+        mock_tweet = Mock()
+        mock_tweet.id = 12345
+        mock_api.update_status.return_value = mock_tweet
 
-    context = WorkflowContext()
-    context.logger = Mock()
-    
-    node = PostToTwitter(context=context)
-    node.selected_tweet = TweetContent(
-        text="Test tweet content",
-        hashtags=["test", "automation"]
-    )
-    
-    with patch('src.workflows.post_twitter.workflow.os.getenv') as mock_getenv:
-        mock_getenv.side_effect = lambda key: {
-            'TWITTER_ACCESS_TOKEN': 'test_token',
-            'TWITTER_ACCESS_TOKEN_SECRET': 'test_token_secret'
-        }.get(key)
+        context = WorkflowContext()
+        context.logger = Mock()
         
-        result = node.run()
+        node = PostToTwitter(context=context)
+        node.selected_tweet = TweetContent(
+            text="Test tweet content",
+            hashtags=["test", "automation"]
+        )
         
-        assert result.tweet_id == "mock_tweet_id"
-        assert "Mock tweet prepared" in result.summary
+        with patch('src.workflows.post_twitter.workflow.os.getenv') as mock_getenv:
+            mock_getenv.side_effect = lambda key: {
+                'TWITTER_ACCESS_TOKEN': 'test_token',
+                'TWITTER_ACCESS_TOKEN_SECRET': 'test_token_secret'
+            }.get(key)
+            
+            result = node.run()
+            
+            assert result.tweet_id == "mock_tweet_id"
+            assert "Mock tweet prepared" in result.summary
