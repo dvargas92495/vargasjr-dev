@@ -237,7 +237,6 @@ class VargasJRAgentCreator {
     console.log(`SSH key available at: ${process.env.HOME}/.ssh/${keyPairName}.pem`);
     
     
-    console.log("Waiting for SSH to be ready...");
     await this.waitForSSHReady(instanceDetails.publicDns, keyPairName);
     
     const envVars = this.getEnvironmentVariables();
@@ -288,12 +287,13 @@ AWS_DEFAULT_REGION=us-east-1`;
     const maxAttempts = 40;
     let attempts = 0;
     
-    console.log("Waiting for SSH service to be ready...");
+    const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "exit 0"`;
+    console.log(`Attempting SSH connection with command: ${sshCommand}`);
     console.log("Note: Amazon Linux AMI 1 (deprecated) may take longer to boot than modern AMIs");
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "exit 0"`, {
+        execSync(sshCommand, {
           stdio: 'pipe'
         });
         console.log("✅ SSH is ready");
@@ -302,6 +302,7 @@ AWS_DEFAULT_REGION=us-east-1`;
         attempts++;
         const waitTime = attempts < 10 ? 10 : 15;
         console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        console.log(`SSH error: ${error instanceof Error ? error.message : String(error)}`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       }
     }
