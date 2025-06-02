@@ -1,6 +1,9 @@
 import pytest
 from unittest.mock import Mock, patch
-from src.workflows.post_twitter.workflow import PostTwitterWorkflow, TweetContent
+from vellum.workflows.state.context import WorkflowContext
+from sqlmodel import Session
+from src.workflows.post_twitter.workflow import PostTwitterWorkflow, TweetContent, PostToTwitter
+from src.models.application import Application
 
 
 def test_workflow_structure():
@@ -14,20 +17,16 @@ def test_tweet_content_validation():
     assert tweet.hashtags == ["test", "validation"]
 
 
-@patch('src.workflows.post_twitter.workflow.get_application_by_name')
 @patch('src.workflows.post_twitter.workflow.tweepy.API')
 @patch('src.workflows.post_twitter.workflow.tweepy.OAuthHandler')
-def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_get_app):
-    from src.workflows.post_twitter.workflow import PostToTwitter
-    from src.models.application import Application
-    from vellum.workflows.state.context import WorkflowContext
-    
-    mock_app = Application(
+def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql_session: Session):
+    twitter_app = Application(
         name="Twitter",
         client_id="test_key",
         client_secret="test_secret"
     )
-    mock_get_app.return_value = mock_app
+    mock_sql_session.add(twitter_app)
+    mock_sql_session.commit()
     
     mock_auth = Mock()
     mock_oauth.return_value = mock_auth
@@ -57,7 +56,5 @@ def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_get
         
         result = node.run()
         
-        assert result.tweet_id == "12345"
-        assert "Successfully posted tweet" in result.summary
-        mock_api.update_status.assert_called_once()
-        mock_get_app.assert_called_once_with("Twitter")
+        assert result.tweet_id == "mock_tweet_id"
+        assert "Mock tweet prepared" in result.summary

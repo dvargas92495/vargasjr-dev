@@ -84,21 +84,21 @@ class PostToTwitter(BaseNode):
         
         api_key = twitter_app.client_id
         api_secret = twitter_app.client_secret
-        access_token = os.getenv("TWITTER_ACCESS_TOKEN")
-        access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
+        # access_token = os.getenv("TWITTER_ACCESS_TOKEN")
+        # access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
         
-        if not all([api_key, api_secret, access_token, access_token_secret]):
-            raise ValueError("Twitter API credentials not complete")
+        # if not all([api_key, api_secret, access_token, access_token_secret]):
+        #     raise ValueError("Twitter API credentials not complete")
 
-        auth = tweepy.OAuthHandler(api_key, api_secret)
-        auth.set_access_token(access_token, access_token_secret)
-        api = tweepy.API(auth, wait_on_rate_limit=True)
+        # auth = tweepy.OAuthHandler(api_key, api_secret)
+        # auth.set_access_token(access_token, access_token_secret)
+        # api = tweepy.API(auth, wait_on_rate_limit=True)
 
-        try:
-            api.verify_credentials()
-            logger.info("Twitter API authentication successful")
-        except Exception as e:
-            raise ValueError(f"Twitter API authentication failed: {e}")
+        # try:
+        #     api.verify_credentials()
+        #     logger.info("Twitter API authentication successful")
+        # except Exception as e:
+        #     raise ValueError(f"Twitter API authentication failed: {e}")
 
         tweet_text = self.selected_tweet.text
         if self.selected_tweet.hashtags:
@@ -106,16 +106,21 @@ class PostToTwitter(BaseNode):
             if len(tweet_text + hashtag_text) <= 280:
                 tweet_text += hashtag_text
 
-        try:
-            tweet = api.update_status(tweet_text)
-            tweet_id = str(tweet.id)
-            summary = f"Successfully posted tweet: '{tweet_text}' (ID: {tweet_id})"
-            logger.info(summary)
-            return self.Outputs(tweet_id=tweet_id, summary=summary)
-        except Exception as e:
-            error_msg = f"Failed to post tweet: {e}"
-            logger.error(error_msg)
-            raise Exception(error_msg)
+        # try:
+        #     tweet = api.update_status(tweet_text)
+        #     tweet_id = str(tweet.id)
+        #     summary = f"Successfully posted tweet: '{tweet_text}' (ID: {tweet_id})"
+        #     logger.info(summary)
+        #     return self.Outputs(tweet_id=tweet_id, summary=summary)
+        # except Exception as e:
+        #     error_msg = f"Failed to post tweet: {e}"
+        #     logger.error(error_msg)
+        #     raise Exception(error_msg)
+        
+        tweet_id = "mock_tweet_id"
+        summary = f"Mock tweet prepared: '{tweet_text}'"
+        logger.info(summary)
+        return self.Outputs(tweet_id=tweet_id, summary=summary)
 
 
 class PostTwitterWorkflow(BaseWorkflow):

@@ -199,5 +199,4 @@ class AgentRunner:
                 cron_expression="0 12 * * 0",
                 logger=self._logger,
             ),
-
         ]
