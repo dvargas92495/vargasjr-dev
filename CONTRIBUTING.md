@@ -1,5 +1,19 @@
 # Contributing to Vargas JR
 
+## Version Management
+
+### Agent Directory Changes
+Always bump the patch version in `agent/pyproject.toml` whenever making changes in the `/agent` directory. This ensures proper versioning for agent releases.
+
+Example:
+```toml
+# Before changes
+version = "0.0.63"
+
+# After changes
+version = "0.0.64"
+```
+
 ## Style Guide
 
 ### Python Code Style
@@ -28,7 +42,32 @@ poetry install
 poetry run pytest  # Run tests
 ```
 
-## Testing
+## Testing Guidelines
+
+### Mocking Best Practices
+We should never mock our own source code in tests. Instead, use database fixtures and mock external dependencies only.
+
+**❌ Don't do this:**
+```python
+@patch('src.services.get_application_by_name')
+def test_something(mock_get_app):
+    # Mocking our own code
+```
+
+**✅ Do this instead:**
+```python
+def test_something(mock_sql_session: Session):
+    # Create real data in test database
+    app = Application(name="Twitter", client_id="test")
+    mock_sql_session.add(app)
+    mock_sql_session.commit()
+    
+    # Test with real database interactions
+```
+
+Use `mock_sql_session` fixture to create test data in the database rather than mocking internal service functions.
+
+### Test Categories
 
 - Frontend tests: `npm t`
 - Python tests: `npm run test:agent`
