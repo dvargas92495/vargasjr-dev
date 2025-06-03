@@ -27,23 +27,6 @@ jobs:
         working-directory: agent
         
       - name: Push workflows to Vellum
-        run: |
-          echo "Pushing workflows to Vellum..."
-          
-          WORKFLOW_DIRS=$(find src/workflows -maxdepth 1 -type d -not -path "src/workflows" | sort)
-          
-          for dir in $WORKFLOW_DIRS; do
-            workflow_name=$(basename "$dir")
-            echo "Pushing workflow: $workflow_name"
-            poetry run vellum workflows push "src.workflows.$workflow_name"
-          done
-          
-          if [ -f "vellum.lock.json" ]; then
-            echo "Generated vellum.lock.json:"
-            cat vellum.lock.json
-          else
-            echo "No vellum.lock.json file found"
-          fi
-        working-directory: agent
+        run: npm run push-vellum-workflows
         env:
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
