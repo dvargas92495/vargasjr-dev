@@ -72,8 +72,8 @@ class VargasJRAgentCreator {
     console.log(`Found ${existingInstances.length} existing instance(s) with name: ${instanceName}`);
     
     const instanceIds = existingInstances
-      .map(instance => instance.InstanceId)
-      .filter((id): id is string => !!id);
+      .map((instance: any) => instance.InstanceId)
+      .filter((id: any): id is string => !!id);
 
     if (instanceIds.length > 0) {
       console.log(`Terminating instances: ${instanceIds.join(", ")}`);
@@ -137,36 +137,6 @@ class VargasJRAgentCreator {
     }
   }
 
-  private async getProductionImageId(): Promise<string> {
-    console.log("Fetching ImageId from existing production VargasJR instances...");
-    
-    let productionInstances = await findInstancesByFilters(this.ec2, [
-      { Name: "tag:Project", Values: ["VargasJR"] },
-      { Name: "tag:Type", Values: ["main"] },
-      { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-    ]);
-    
-    if (productionInstances.length === 0) {
-      console.log("No instances with Type=main found, checking all VargasJR instances...");
-      productionInstances = await findInstancesByFilters(this.ec2, [
-        { Name: "tag:Project", Values: ["VargasJR"] },
-        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-      ]);
-    }
-    
-    if (productionInstances.length === 0) {
-      throw new Error("No VargasJR instances found to copy ImageId from. Please ensure at least one instance exists.");
-    }
-    
-    const imageId = productionInstances[0].ImageId;
-    if (!imageId) {
-      throw new Error("Production instance found but ImageId is not available");
-    }
-    
-    console.log(`✅ Using ImageId from production instance: ${imageId} (found ${productionInstances.length} instances)`);
-    return imageId;
-  }
-
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
     
@@ -176,10 +146,8 @@ class VargasJRAgentCreator {
       "Security group for VargasJR agent SSH access"
     );
     
-    const imageId = await this.getProductionImageId();
-    
     const result = await this.ec2.runInstances({
-      ImageId: imageId,
+      ImageId: "ami-0e2c8caa4b6378d8c",
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
       SecurityGroupIds: [securityGroupId],
