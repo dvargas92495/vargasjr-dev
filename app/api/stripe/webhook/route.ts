@@ -70,7 +70,71 @@ export async function POST(request: Request) {
 }
 
 async function handleVargasJrHired(event: Stripe.Event) {
-  console.log("Handling Vargas Jr hired event:", event.id);
+  console.log("Processing checkout.session.completed event:", event.id);
+  
+  try {
+    const session = event.data.object as Stripe.Checkout.Session;
+    
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      console.error("STRIPE_SECRET_KEY not available for session retrieval");
+      return;
+    }
+    
+    const stripe = new Stripe(stripeSecretKey);
+    const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['customer']
+    });
+    
+    const customerEmail = fullSession.customer_email;
+    if (!customerEmail) {
+      console.error("No customer email found in checkout session");
+      return;
+    }
+    
+    const { ContactsTable } = await import("@/db/schema");
+    const { drizzle } = await import("drizzle-orm/vercel-postgres");
+    const { sql } = await import("@vercel/postgres");
+    const { eq } = await import("drizzle-orm");
+    const { getEnvironmentPrefix, getBaseUrl } = await import("@/app/api/constants");
+    const { postSlackMessage } = await import("@/server");
+    
+    const db = drizzle(sql);
+    
+    let contact = await db
+      .select()
+      .from(ContactsTable)
+      .where(eq(ContactsTable.email, customerEmail))
+      .limit(1)
+      .execute();
+    
+    if (contact.length === 0) {
+      const newContact = await db
+        .insert(ContactsTable)
+        .values({ email: customerEmail })
+        .returning()
+        .execute();
+      contact = newContact;
+    }
+    
+    const contactId = contact[0].id;
+    const baseUrl = getBaseUrl();
+    const environmentPrefix = getEnvironmentPrefix();
+    const crmUrl = `${baseUrl}/admin/crm/${contactId}`;
+    
+    const prefix = environmentPrefix ? `${environmentPrefix}: ` : '';
+    const message = `${prefix}🎉 New customer signed up!\n\nContact: ${customerEmail}\nView details: ${crmUrl}`;
+    
+    await postSlackMessage({
+      channel: "#sales-alert",
+      message: message,
+    });
+    
+    console.log("Successfully posted Slack notification for checkout:", session.id);
+    
+  } catch (error) {
+    console.error("Error handling checkout completion:", error);
+  }
 }
 
 async function handleCheckoutCanceled(event: Stripe.Event) {

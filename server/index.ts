@@ -31,3 +31,29 @@ export const addInboxMessage = async ({
     .insert(InboxMessagesTable)
     .values({ source, body: body, inboxId: inbox[0].id, createdAt });
 };
+
+export const postSlackMessage = async ({
+  channel,
+  message,
+}: {
+  channel: string;
+  message: string;
+}) => {
+  const response = await fetch("https://slack.com/api/chat.postMessage", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      channel,
+      text: message,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Slack API error: ${response.statusText}`);
+  }
+  
+  return response.json();
+};
