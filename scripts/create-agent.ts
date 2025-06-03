@@ -137,6 +137,28 @@ class VargasJRAgentCreator {
     }
   }
 
+  private async getProductionImageId(): Promise<string> {
+    console.log("Fetching ImageId from existing production VargasJR instances...");
+    
+    const productionInstances = await findInstancesByFilters(this.ec2, [
+      { Name: "tag:Project", Values: ["VargasJR"] },
+      { Name: "tag:Type", Values: ["main"] },
+      { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+    ]);
+    
+    if (productionInstances.length === 0) {
+      throw new Error("No production VargasJR instances found to copy ImageId from. Please ensure at least one main instance exists.");
+    }
+    
+    const imageId = productionInstances[0].ImageId;
+    if (!imageId) {
+      throw new Error("Production instance found but ImageId is not available");
+    }
+    
+    console.log(`✅ Using ImageId from production instance: ${imageId}`);
+    return imageId;
+  }
+
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
     
@@ -146,8 +168,10 @@ class VargasJRAgentCreator {
       "Security group for VargasJR agent SSH access"
     );
     
+    const imageId = await this.getProductionImageId();
+    
     const result = await this.ec2.runInstances({
-      ImageId: "resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+      ImageId: imageId,
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
       SecurityGroupIds: [securityGroupId],
@@ -289,7 +313,6 @@ AWS_DEFAULT_REGION=us-east-1`;
     
     const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "exit 0"`;
     console.log(`Attempting SSH connection with command: ${sshCommand}`);
-    console.log("Note: Amazon Linux AMI 1 (deprecated) may take longer to boot than modern AMIs");
     
     while (attempts < maxAttempts) {
       try {

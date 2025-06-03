@@ -4,6 +4,7 @@ export interface EC2Instance {
   InstanceId?: string;
   State?: { Name?: string };
   Tags?: Array<{ Key?: string; Value?: string }>;
+  ImageId?: string;
 }
 
 export async function findInstancesByFilters(ec2: EC2, filters: Array<{ Name: string; Values: string[] }>): Promise<EC2Instance[]> {
