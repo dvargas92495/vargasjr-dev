@@ -26,38 +26,7 @@ jobs:
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
-      - name: Introspect production database
-        run: |
-          echo "=== Introspecting production database schema ==="
-          npx drizzle-kit introspect --out ./production-schema --url ${{ secrets.POSTGRES_URL }}
-          
-      - name: Compare schemas and show migration diff
-        run: |
-          echo "=== Generating migration diff ==="
-          
-          mkdir -p ./temp-migrations
-          
-          echo "Checking what migrations would be applied..."
-          
-          npx drizzle-kit check --dialect postgresql --out ./db/migrations
-          
-          echo "=== Local migration files ==="
-          ls -la db/migrations/*.sql
-          
-          echo "=== SQL statements that would be applied ==="
-          echo "The following migration files exist and would be applied to production:"
-          
-          for migration_file in db/migrations/*.sql; do
-            if [ -f "$migration_file" ]; then
-              echo ""
-              echo "--- $(basename $migration_file) ---"
-              cat "$migration_file"
-              echo ""
-            fi
-          done
-          
-          echo "=== End of migration preview ==="
-          echo "⚠️  NOTE: These migrations were NOT applied to production database"
-          echo "This is a preview-only run as requested in issue #72"
+      - name: Preview database migrations
+        run: npm run preview-migrations
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
