@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getBaseUrl } from "@/app/api/constants";
 
 export async function POST() {
   try {
@@ -55,8 +56,7 @@ export async function POST() {
       );
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-      (process.env.NODE_ENV === 'production' ? 'https://vargasjr.dev' : 'http://localhost:3000');
+    const baseUrl = getBaseUrl();
     console.log("Using base URL:", baseUrl);
     
     console.log("Creating checkout session...");
