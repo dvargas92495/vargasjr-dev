@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:agent": "cd agent && poetry run pytest",
     "create-agent": "npx tsx scripts/create-agent.ts",
-    "cleanup-agent": "npx tsx scripts/cleanup-agent.ts"
+    "cleanup-agent": "npx tsx scripts/cleanup-agent.ts",
+    "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
