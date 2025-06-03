@@ -4,26 +4,37 @@ import { execSync } from "child_process";
 import { existsSync, readdirSync } from "fs";
 import { join } from "path";
 
-class MigrationPreviewer {
+class MigrationRunner {
   private dbDir: string;
   private migrationsDir: string;
+  private isPreviewMode: boolean;
 
-  constructor() {
+  constructor(isPreviewMode: boolean = false) {
     this.dbDir = join(process.cwd(), "db");
     this.migrationsDir = join(this.dbDir, "migrations");
+    this.isPreviewMode = isPreviewMode;
   }
 
-  async previewMigrations(): Promise<void> {
-    console.log("🔍 Previewing database migrations...");
+  async runMigrations(): Promise<void> {
+    if (this.isPreviewMode) {
+      console.log("🔍 Previewing database migrations...");
+    } else {
+      console.log("🚀 Running database migrations...");
+    }
     
     try {
       await this.introspectProductionDatabase();
       await this.generateMigrationDiff();
       
-      console.log("✅ Migration preview completed successfully!");
+      if (this.isPreviewMode) {
+        console.log("✅ Migration preview completed successfully!");
+      } else {
+        console.log("✅ Migration execution completed successfully!");
+      }
       
     } catch (error) {
-      console.error(`❌ Failed to preview migrations: ${error}`);
+      const action = this.isPreviewMode ? "preview" : "run";
+      console.error(`❌ Failed to ${action} migrations: ${error}`);
       process.exit(1);
     }
   }
@@ -98,14 +109,21 @@ class MigrationPreviewer {
     }
 
     console.log("=== End of migration preview ===");
-    console.log("⚠️  NOTE: These migrations were NOT applied to production database");
-    console.log("This is a preview-only run as requested in issue #72");
+    if (this.isPreviewMode) {
+      console.log("⚠️  NOTE: These migrations were NOT applied to production database");
+      console.log("This is a preview-only run as requested in issue #72");
+    } else {
+      console.log("✅ These migrations have been applied to production database");
+    }
   }
 }
 
 async function main() {
-  const previewer = new MigrationPreviewer();
-  await previewer.previewMigrations();
+  const args = process.argv.slice(2);
+  const isPreviewMode = args.includes('--preview');
+  
+  const runner = new MigrationRunner(isPreviewMode);
+  await runner.runMigrations();
 }
 
 if (require.main === module) {

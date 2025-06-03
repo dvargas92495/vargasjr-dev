@@ -27,6 +27,6 @@ jobs:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
       - name: Preview database migrations
-        run: npm run preview-migrations
+        run: npm run run-migrations -- --preview
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
