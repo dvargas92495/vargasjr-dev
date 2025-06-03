@@ -140,14 +140,22 @@ class VargasJRAgentCreator {
   private async getProductionImageId(): Promise<string> {
     console.log("Fetching ImageId from existing production VargasJR instances...");
     
-    const productionInstances = await findInstancesByFilters(this.ec2, [
+    let productionInstances = await findInstancesByFilters(this.ec2, [
       { Name: "tag:Project", Values: ["VargasJR"] },
       { Name: "tag:Type", Values: ["main"] },
       { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
     ]);
     
     if (productionInstances.length === 0) {
-      throw new Error("No production VargasJR instances found to copy ImageId from. Please ensure at least one main instance exists.");
+      console.log("No instances with Type=main found, checking all VargasJR instances...");
+      productionInstances = await findInstancesByFilters(this.ec2, [
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+      ]);
+    }
+    
+    if (productionInstances.length === 0) {
+      throw new Error("No VargasJR instances found to copy ImageId from. Please ensure at least one instance exists.");
     }
     
     const imageId = productionInstances[0].ImageId;
@@ -155,7 +163,7 @@ class VargasJRAgentCreator {
       throw new Error("Production instance found but ImageId is not available");
     }
     
-    console.log(`✅ Using ImageId from production instance: ${imageId}`);
+    console.log(`✅ Using ImageId from production instance: ${imageId} (found ${productionInstances.length} instances)`);
     return imageId;
   }
 
