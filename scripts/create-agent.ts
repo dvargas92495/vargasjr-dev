@@ -259,7 +259,7 @@ AWS_DEFAULT_REGION=us-east-1`;
         'sudo systemctl start postgresql',
         'sudo systemctl enable postgresql',
         `sudo -u postgres createdb vargasjr_${dbName}`,
-        'sudo -u postgres psql -c "ALTER USER postgres PASSWORD \'password\';"',
+        "sudo -u postgres psql -c \"ALTER USER postgres PASSWORD 'password';\"",
         'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
         'source ~/.profile'
       ];
