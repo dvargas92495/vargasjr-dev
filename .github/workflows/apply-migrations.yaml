@@ -1,0 +1,32 @@
+name: Apply Database Migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'db/schema.ts'
+
+jobs:
+  check-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Generate local migrations
+        run: npm run db:generate
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          
+      - name: Preview database migrations
+        run: npm run run-migrations -- --preview
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
