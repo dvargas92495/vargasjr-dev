@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'agent/src/workflows/**'
+      - '.github/workflows/push-vellum-workflows.yaml'
 
 jobs:
   push-workflows:
