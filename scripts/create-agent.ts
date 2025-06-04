@@ -3,7 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -47,10 +47,9 @@ class VargasJRAgentCreator {
       
       await this.setupInstance(instanceDetails, keyPairName);
       
-      console.log(`✅ Agent ${agentName} infrastructure created successfully!`);
+      console.log(`✅ Agent ${agentName} infrastructure and SSH setup completed successfully!`);
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
-      console.log(`Note: SSH setup and agent installation will be added in future tasks`);
       
     } catch (error) {
       console.error(`❌ Failed to create agent: ${error}`);
@@ -73,8 +72,8 @@ class VargasJRAgentCreator {
     console.log(`Found ${existingInstances.length} existing instance(s) with name: ${instanceName}`);
     
     const instanceIds = existingInstances
-      .map(instance => instance.InstanceId)
-      .filter((id): id is string => !!id);
+      .map((instance: any) => instance.InstanceId)
+      .filter((id: any): id is string => !!id);
 
     if (instanceIds.length > 0) {
       console.log(`Terminating instances: ${instanceIds.join(", ")}`);
@@ -141,10 +140,17 @@ class VargasJRAgentCreator {
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
     
+    const securityGroupId = await findOrCreateSecurityGroup(
+      this.ec2,
+      "vargas-jr-ssh-access",
+      "Security group for VargasJR agent SSH access"
+    );
+    
     const result = await this.ec2.runInstances({
-      ImageId: "ami-0c02fb55956c7d316",
+      ImageId: "ami-0e2c8caa4b6378d8c",
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
+      SecurityGroupIds: [securityGroupId],
       MinCount: 1,
       MaxCount: 1,
       TagSpecifications: [
@@ -231,9 +237,7 @@ class VargasJRAgentCreator {
     console.log(`SSH key available at: ${process.env.HOME}/.ssh/${keyPairName}.pem`);
     
     
-    /* COMMENTED OUT: SSH setup causing CI failures - will be restored in future tasks
-    console.log("Waiting for SSH to be ready...");
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await this.waitForSSHReady(instanceDetails.publicDns, keyPairName);
     
     const envVars = this.getEnvironmentVariables();
     
@@ -249,31 +253,27 @@ AWS_DEFAULT_REGION=us-east-1`;
       writeFileSync('/tmp/agent.env', envContent);
       const setupCommands = [
         'sudo apt update',
-        'sudo apt install -y python3.12 python3.12-venv python3-pip postgresql postgresql-contrib',
+        'sudo apt install -y python3.12 python3.12-venv python3-pip',
         'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
         'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        'sudo systemctl start postgresql',
-        'sudo systemctl enable postgresql',
-        `sudo -u postgres createdb vargasjr_${dbName}`,
-        'sudo -u postgres psql -c "ALTER USER postgres PASSWORD \'password\';"',
+        // 'sudo apt install -y postgresql postgresql-contrib',
+        // 'sudo systemctl start postgresql',
+        // 'sudo systemctl enable postgresql',
+        // `sudo -u postgres createdb vargasjr_${dbName}`,
+        // 'PGPASSWORD=password sudo -u postgres psql -c "ALTER USER postgres PASSWORD \\$PGPASSWORD;"',
         'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
         'source ~/.profile'
       ];
       
       const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
       
-      // Execute setup commands
       for (const command of setupCommands) {
         console.log(`Executing: ${command}`);
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no ubuntu@${instanceDetails.publicDns} "${command}"`, {
-          stdio: 'inherit'
-        });
+        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, command);
       }
       
       console.log("Copying .env file to instance...");
-      execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no /tmp/agent.env ubuntu@${instanceDetails.publicDns}:~/.env`, {
-        stdio: 'inherit'
-      });
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
       
       console.log("✅ Instance setup complete!");
       
@@ -281,14 +281,81 @@ AWS_DEFAULT_REGION=us-east-1`;
       console.error(`❌ Failed to setup instance: ${error}`);
       throw error;
     }
-    */
-    
-    console.log("✅ Basic instance setup complete! SSH setup will be added in future tasks.");
   }
   
+  private async waitForSSHReady(publicDns: string, keyPairName: string): Promise<void> {
+    const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
+    const maxAttempts = 40;
+    let attempts = 0;
+    
+    const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "exit 0"`;
+    console.log(`Attempting SSH connection with command: ${sshCommand}`);
+    
+    while (attempts < maxAttempts) {
+      try {
+        execSync(sshCommand, {
+          stdio: 'pipe'
+        });
+        console.log("✅ SSH is ready");
+        return;
+      } catch (error) {
+        attempts++;
+        const waitTime = attempts < 10 ? 10 : 15;
+        console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        console.log(`SSH error: ${error instanceof Error ? error.message : String(error)}`);
+        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+      }
+    }
+    
+    throw new Error("SSH failed to become ready within timeout (10 minutes). Consider updating to Amazon Linux 2023 AMI for faster boot times.");
+  }
+
+  private async executeSSHCommand(keyPath: string, publicDns: string, command: string): Promise<void> {
+    const maxAttempts = 3;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${command}"`, {
+          stdio: 'inherit'
+        });
+        return;
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          console.error(`❌ SSH command failed after ${maxAttempts} attempts: ${command}`);
+          throw error;
+        }
+        console.log(`SSH command failed, retrying... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
+  private async executeSCPCommand(keyPath: string, publicDns: string, localPath: string, remotePath: string): Promise<void> {
+    const maxAttempts = 3;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o UserKnownHostsFile=/dev/null ${localPath} ubuntu@${publicDns}:${remotePath}`, {
+          stdio: 'inherit'
+        });
+        return;
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          console.error(`❌ SCP command failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
+          throw error;
+        }
+        console.log(`SCP command failed, retrying... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
   private getEnvironmentVariables() {
-    // Simplified for basic instance creation - SSH setup env vars will be added back in future tasks
-    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
+    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
