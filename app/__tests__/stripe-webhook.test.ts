@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../api/stripe/webhook/route";
 
+const mockConstructEvent = vi.fn();
+const mockRetrieve = vi.fn();
 const {
-  mockConstructEvent,
-  mockRetrieve,
   mockSelect,
   mockFrom,
   mockWhere,
@@ -16,8 +16,6 @@ const {
   mockGetEnvironmentPrefix,
   mockGetBaseUrl
 } = vi.hoisted(() => ({
-  mockConstructEvent: vi.fn(),
-  mockRetrieve: vi.fn(),
   mockSelect: vi.fn(),
   mockFrom: vi.fn(),
   mockWhere: vi.fn(),
