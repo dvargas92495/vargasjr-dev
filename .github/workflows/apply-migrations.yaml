@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'db/schema.ts'
+      - 'scripts/run-migrations.ts'
       - '.github/workflows/apply-migrations.yaml'
 
 jobs:
