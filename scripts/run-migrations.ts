@@ -47,7 +47,7 @@ class MigrationRunner {
     }
 
     try {
-      execSync(`npx drizzle-kit introspect --out ./production-schema --url "${process.env.POSTGRES_URL}"`, {
+      execSync(`npx drizzle-kit introspect --dialect postgresql --out ./production-schema --url "${process.env.POSTGRES_URL}"`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
