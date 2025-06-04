@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { ContactsTable } from "@/db/schema";
+import { drizzle } from "drizzle-orm/vercel-postgres";
+import { sql } from "@vercel/postgres";
+import { eq } from "drizzle-orm";
+import { getEnvironmentPrefix, getBaseUrl } from "@/app/api/constants";
+import { postSlackMessage } from "@/server";
 
 export async function POST(request: Request) {
   try {
@@ -91,13 +97,6 @@ async function handleVargasJrHired(event: Stripe.Event) {
       console.error("No customer email found in checkout session");
       return;
     }
-    
-    const { ContactsTable } = await import("@/db/schema");
-    const { drizzle } = await import("drizzle-orm/vercel-postgres");
-    const { sql } = await import("@vercel/postgres");
-    const { eq } = await import("drizzle-orm");
-    const { getEnvironmentPrefix, getBaseUrl } = await import("@/app/api/constants");
-    const { postSlackMessage } = await import("@/server");
     
     const db = drizzle(sql);
     
