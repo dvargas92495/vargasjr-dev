@@ -253,13 +253,14 @@ AWS_DEFAULT_REGION=us-east-1`;
       writeFileSync('/tmp/agent.env', envContent);
       const setupCommands = [
         'sudo apt update',
-        'sudo apt install -y python3.12 python3.12-venv python3-pip postgresql postgresql-contrib',
+        'sudo apt install -y python3.12 python3.12-venv python3-pip',
         'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
         'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        'sudo systemctl start postgresql',
-        'sudo systemctl enable postgresql',
-        `sudo -u postgres createdb vargasjr_${dbName}`,
-        'PGPASSWORD=password sudo -u postgres psql -c "ALTER USER postgres PASSWORD \\$PGPASSWORD;"',
+        // 'sudo apt install -y postgresql postgresql-contrib',
+        // 'sudo systemctl start postgresql',
+        // 'sudo systemctl enable postgresql',
+        // `sudo -u postgres createdb vargasjr_${dbName}`,
+        // 'PGPASSWORD=password sudo -u postgres psql -c "ALTER USER postgres PASSWORD \\$PGPASSWORD;"',
         'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
         'source ~/.profile'
       ];
