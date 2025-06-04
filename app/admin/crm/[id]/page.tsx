@@ -58,7 +58,7 @@ export default async function ContactPage({
               expand: ['product'],
             });
             
-            if (price.product && typeof price.product === 'object' && price.product.name === 'Vargas JR Salary') {
+            if (price.product && typeof price.product === 'object' && 'name' in price.product && price.product.name === 'Vargas JR Salary') {
               isClient = true;
               clientSince = new Date(subscription.created * 1000);
               clientDurationText = dayjs(clientSince).fromNow();
