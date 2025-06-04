@@ -48,25 +48,6 @@ astroid = ["astroid (>=2,<4)"]
 test = ["astroid (>=2,<4)", "pytest", "pytest-cov", "pytest-xdist"]
 
 [[package]]
-name = "attrs"
-version = "25.3.0"
-description = "Classes Without Boilerplate"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "attrs-25.3.0-py3-none-any.whl", hash = "sha256:427318ce031701fea540783410126f03899a97ffc6f61596ad581ac2e40e3bc3"},
-    {file = "attrs-25.3.0.tar.gz", hash = "sha256:75d7cefc7fb576747b2c81b4442d4d4a1ce0900973527c011d1030fd3bf4af1b"},
-]
-
-[package.extras]
-benchmark = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-codspeed", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-cov = ["cloudpickle", "coverage[toml] (>=5.3)", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-dev = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pre-commit-uv", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-docs = ["cogapp", "furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier"]
-tests = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
-
-[[package]]
 name = "boto3"
 version = "1.37.24"
 description = "The AWS SDK for Python"
@@ -114,47 +95,6 @@ files = [
     {file = "cachetools-5.5.2-py3-none-any.whl", hash = "sha256:d26a22bcc62eb95c3beabd9f1ee5e820d3d2704fe2967cbe350e20c8ffcd3f0a"},
     {file = "cachetools-5.5.2.tar.gz", hash = "sha256:1a661caa9175d26759571b2e19580f9d6393969e5dfca11fdb1f947a23e640d4"},
 ]
-
-[[package]]
-name = "cattrs"
-version = "24.1.3"
-description = "Composable complex class support for attrs and dataclasses."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "cattrs-24.1.3-py3-none-any.whl", hash = "sha256:adf957dddd26840f27ffbd060a6c4dd3b2192c5b7c2c0525ef1bd8131d8a83f5"},
-    {file = "cattrs-24.1.3.tar.gz", hash = "sha256:981a6ef05875b5bb0c7fb68885546186d306f10f0f6718fe9b96c226e68821ff"},
-]
-
-[package.dependencies]
-attrs = ">=23.1.0"
-
-[package.extras]
-bson = ["pymongo (>=4.4.0)"]
-cbor2 = ["cbor2 (>=5.4.6)"]
-msgpack = ["msgpack (>=1.0.5)"]
-msgspec = ["msgspec (>=0.18.5)"]
-orjson = ["orjson (>=3.9.2)"]
-pyyaml = ["pyyaml (>=6.0)"]
-tomlkit = ["tomlkit (>=0.11.8)"]
-ujson = ["ujson (>=5.7.0)"]
-
-[[package]]
-name = "cdktf"
-version = "0.20.11"
-description = "Cloud Development Kit for Terraform"
-optional = false
-python-versions = "~=3.8"
-files = [
-    {file = "cdktf-0.20.11-py3-none-any.whl", hash = "sha256:98f607dd50506c1c85bc8b47c6b8f4b5607a9d87ad2f99f6819709a29abce101"},
-    {file = "cdktf-0.20.11.tar.gz", hash = "sha256:d25ed9d7a68d482a314da0096fcf67cc55765488777b75be69f359ed99c956d3"},
-]
-
-[package.dependencies]
-constructs = ">=10.3.0,<11.0.0"
-jsii = ">=1.102.0,<2.0.0"
-publication = ">=0.0.3"
-typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "certifi"
@@ -292,22 +232,6 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-
-[[package]]
-name = "constructs"
-version = "10.4.2"
-description = "A programming model for software-defined state"
-optional = false
-python-versions = "~=3.8"
-files = [
-    {file = "constructs-10.4.2-py3-none-any.whl", hash = "sha256:1f0f59b004edebfde0f826340698b8c34611f57848139b7954904c61645f13c1"},
-    {file = "constructs-10.4.2.tar.gz", hash = "sha256:ce54724360fffe10bab27d8a081844eb81f5ace7d7c62c84b719c49f164d5307"},
-]
-
-[package.dependencies]
-jsii = ">=1.102.0,<2.0.0"
-publication = ">=0.0.3"
-typeguard = ">=2.13.3,<2.14.0"
 
 [[package]]
 name = "decorator"
@@ -673,25 +597,6 @@ files = [
 all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2)"]
 
 [[package]]
-name = "importlib-resources"
-version = "6.5.2"
-description = "Read resources from Python packages"
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "importlib_resources-6.5.2-py3-none-any.whl", hash = "sha256:789cfdc3ed28c78b67a06acb8126751ced69a3d5f79c095a98298cd8a760ccec"},
-    {file = "importlib_resources-6.5.2.tar.gz", hash = "sha256:185f87adef5bcc288449d98fb4fba07cea78bc036455dd44c5fc4a2fe78fed2c"},
-]
-
-[package.extras]
-check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1)"]
-cover = ["pytest-cov"]
-doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
-enabler = ["pytest-enabler (>=2.2)"]
-test = ["jaraco.test (>=5.4)", "pytest (>=6,!=8.1.*)", "zipp (>=3.17)"]
-type = ["pytest-mypy"]
-
-[[package]]
 name = "iniconfig"
 version = "2.1.0"
 description = "brain-dead simple config-ini parsing"
@@ -893,26 +798,6 @@ files = [
     {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
     {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
 ]
-
-[[package]]
-name = "jsii"
-version = "1.110.0"
-description = "Python client for jsii runtime"
-optional = false
-python-versions = "~=3.9"
-files = [
-    {file = "jsii-1.110.0-py3-none-any.whl", hash = "sha256:b46fcc9f6c80e4a3d92c883138194b7311da43b9f954f8473fba8829bb3efaa1"},
-    {file = "jsii-1.110.0.tar.gz", hash = "sha256:d7b323ca66ea9260d210d96b1406671fe399ea62d075ade6374d6bf2b7a5ad33"},
-]
-
-[package.dependencies]
-attrs = ">=21.2,<26.0"
-cattrs = ">=1.8,<24.2"
-importlib-resources = ">=5.2.0"
-publication = ">=0.0.3"
-python-dateutil = "*"
-typeguard = ">=2.13.3,<4.5.0"
-typing-extensions = ">=3.8,<5.0"
 
 [[package]]
 name = "markupsafe"
@@ -2125,21 +2010,6 @@ socks = ["requests[socks] (>=2.27.0,<3)"]
 test = ["urllib3 (<2)", "vcrpy (>=1.10.3)"]
 
 [[package]]
-name = "typeguard"
-version = "2.13.3"
-description = "Run-time type checker for Python"
-optional = false
-python-versions = ">=3.5.3"
-files = [
-    {file = "typeguard-2.13.3-py3-none-any.whl", hash = "sha256:5e3e3be01e887e7eafae5af63d1f36c849aaa94e3a0112097312aabfa16284f1"},
-    {file = "typeguard-2.13.3.tar.gz", hash = "sha256:00edaa8da3a133674796cf5ea87d9f4b4c367d77476e185e80251cc13dfbb8c4"},
-]
-
-[package.extras]
-doc = ["sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
-test = ["mypy", "pytest", "typing-extensions"]
-
-[[package]]
 name = "types-httplib2"
 version = "0.22.0.20250401"
 description = "Typing stubs for httplib2"
@@ -2230,32 +2100,32 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "vellum-ai"
-version = "0.14.26"
+version = "0.14.66"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "vellum_ai-0.14.26-py3-none-any.whl", hash = "sha256:21ae5edc90045ce265f67d146c2c28e33039f0299b020da36eb3ff068f2d128e"},
-    {file = "vellum_ai-0.14.26.tar.gz", hash = "sha256:40f29004c8d2dc840f61cf127bdbbab24c8a686d3480e22e23be163252908692"},
+    {file = "vellum_ai-0.14.66-py3-none-any.whl", hash = "sha256:9c648c5b0d227379fd5d9b263085755f29e6e7007304f8153ffa563171370d78"},
+    {file = "vellum_ai-0.14.66.tar.gz", hash = "sha256:a5e39d6ed8950844f0d28a6238076bf01bf2795f20ebf562b7c0acce4b90ca66"},
 ]
 
 [package.dependencies]
-cdktf = ">=0.20.5,<0.21.0"
-click = "8.1.7"
-docker = "7.1.0"
+click = ">=8.1.7,<9.0.0"
+docker = ">=7.1.0,<8.0.0"
 httpx = ">=0.21.2"
-Jinja2 = ">=3.1.2,<4.0.0"
-openai = ">=1.0.0"
+Jinja2 = ">=3.1.0,<4.0.0"
+openai = ">=1.0.0,<2.0.0"
 orderly-set = ">=5.2.2,<6.0.0"
 publication = "0.0.3"
 pydantic = ">=1.9.2"
 pydantic-core = ">=2.18.2,<3.0.0"
-pydash = "7.0.6"
-python-dotenv = "1.0.1"
-pytz = "2025.1"
-pyyaml = "6.0.2"
-requests = "2.32.3"
-tomli = "2.0.2"
+pydash = ">=7.0.0,<8.0.0"
+python-dateutil = ">=2.8.0,<3.0.0"
+python-dotenv = ">=1.0.0,<2.0.0"
+pytz = ">=2022.0,<2026.0"
+pyyaml = ">=6.0.0,<7.0.0"
+requests = ">=2.31.0,<3.0.0"
+tomli = ">=2.0.0,<3.0.0"
 typing_extensions = ">=4.0.0"
 
 [[package]]
@@ -2272,4 +2142,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "392a4545c8dd265166c2f56f653363454abab6920961289c820af965e03aae42"
+content-hash = "a7c5335d1f51e43d4aabbaf42a69785cce1437fed93ce8c804c97580806c70d8"
