@@ -108,12 +108,3 @@ export const ChatSessionsTable = pgTable("chat_sessions", {
 });
 
 export type ChatSession = typeof ChatSessionsTable.$inferSelect;
-
-export const CheckoutSessionsTable = pgTable("checkout_sessions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  stripeSessionId: varchar("stripe_session_id").notNull().unique(),
-  contractPdfUuid: varchar("contract_pdf_uuid").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export type CheckoutSession = typeof CheckoutSessionsTable.$inferSelect;
