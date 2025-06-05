@@ -47,6 +47,8 @@ poetry run pytest  # Run tests
 ### Mocking Best Practices
 We should never mock our own source code in tests. Instead, use database fixtures and mock external dependencies only.
 
+**This rule is automatically enforced by ESLint for test files.**
+
 **❌ Don't do this:**
 ```python
 @patch('src.services.get_application_by_name')
