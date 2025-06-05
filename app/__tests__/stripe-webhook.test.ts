@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "../api/stripe/webhook/route";
 
 const mockConstructEvent = vi.fn();
 const mockRetrieve = vi.fn();
+const mockSend = vi.fn();
+const mockUpdate = vi.fn();
 const {
   mockSelect,
   mockFrom,
@@ -35,14 +36,33 @@ vi.mock("stripe", () => {
       webhooks: {
         constructEvent: mockConstructEvent
       },
+      subscriptions: {
+        retrieve: mockRetrieve
+      },
       checkout: {
         sessions: {
-          retrieve: mockRetrieve
+          retrieve: mockRetrieve,
+          update: mockUpdate
         }
       }
     }))
   };
 });
+
+vi.mock("@aws-sdk/client-s3", () => ({
+  S3Client: vi.fn().mockImplementation(() => ({
+    send: mockSend
+  })),
+  PutObjectCommand: vi.fn()
+}));
+
+vi.mock("@/app/lib/pdf-generator", () => ({
+  generateContractorAgreementPDF: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3]))
+}));
+
+vi.mock("@/app/lib/s3-client", () => ({
+  uploadPDFToS3: vi.fn().mockResolvedValue("test-uuid-123")
+}));
 
 vi.mock("drizzle-orm/vercel-postgres", () => ({
   drizzle: vi.fn(() => ({
@@ -68,6 +88,7 @@ vi.mock("@/server", () => ({
   postSlackMessage: mockPostSlackMessage
 }));
 
+import { POST } from "../api/stripe/webhook/route";
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
   STRIPE_SECRET_KEY: "sk_test_key"
@@ -78,6 +99,8 @@ describe("Stripe Webhook", () => {
     vi.clearAllMocks();
     mockConstructEvent.mockClear();
     mockRetrieve.mockClear();
+    mockSend.mockClear();
+    mockUpdate.mockClear();
     mockSelect.mockClear();
     mockFrom.mockClear();
     mockWhere.mockClear();
@@ -91,6 +114,14 @@ describe("Stripe Webhook", () => {
     mockGetBaseUrl.mockClear();
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
+    
+    mockSend.mockResolvedValue({});
+    mockUpdate.mockResolvedValue({});
+    mockRetrieve.mockResolvedValue({
+      items: {
+        data: [{ price: { unit_amount: 15000000 } }]
+      }
+    });
   });
 
   it("should return 500 when STRIPE_WEBHOOK_SECRET is missing", async () => {
@@ -160,7 +191,13 @@ describe("Stripe Webhook", () => {
     const mockEvent = {
       type: "checkout.session.completed",
       id: "evt_test_123",
-      data: { object: { id: "cs_test_123" } }
+      data: { 
+        object: { 
+          id: "cs_test_123",
+          customer_details: { name: "John Doe" },
+          subscription: "sub_test_123"
+        } 
+      }
     };
 
     mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);

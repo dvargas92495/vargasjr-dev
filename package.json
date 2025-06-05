@@ -19,18 +19,22 @@
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
+    "@aws-sdk/client-s3": "^3.824.0",
     "@heroicons/react": "^2.2.0",
     "@stripe/stripe-js": "^7.3.1",
+    "@types/uuid": "^10.0.0",
     "@vercel/postgres": "^0.10.0",
     "cookies-next": "^5.0.2",
     "dayjs": "^1.11.13",
     "drizzle-orm": "^0.38.2",
     "next": "15.1.2",
+    "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^18.2.0",
     "tsscmp": "^1.0.6",
     "twilio": "^5.4.0",
+    "uuid": "^11.1.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { generateContractorAgreementPDF } from "@/app/lib/pdf-generator";
+import { uploadPDFToS3 } from "@/app/lib/s3-client";
 import { ContactsTable } from "@/db/schema";
 import { drizzle } from "drizzle-orm/vercel-postgres";
 import { sql } from "@vercel/postgres";
@@ -56,7 +58,15 @@ export async function POST(request: Request) {
 
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleVargasJrHired(event);
+        try {
+          await handleVargasJrHired(event);
+        } catch (error) {
+          console.error("Failed to process checkout session:", error);
+          return NextResponse.json(
+            { error: "Failed to process checkout session" },
+            { status: 500 }
+          );
+        }
         break;
       case 'checkout.session.expired':
         await handleCheckoutCanceled(event);
@@ -73,6 +83,20 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function getSubscriptionRate(stripe: Stripe, session: Stripe.Checkout.Session): Promise<string> {
+  if (!session.subscription) {
+    throw new Error("No subscription found on checkout session");
+  }
+  
+  const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+  if (!subscription.items.data[0]?.price.unit_amount) {
+    throw new Error("No pricing information found on subscription");
+  }
+  
+  const amount = subscription.items.data[0].price.unit_amount / 100;
+  return `$${amount.toLocaleString()} USD`;
 }
 
 async function handleVargasJrHired(event: Stripe.Event) {
@@ -131,8 +155,33 @@ async function handleVargasJrHired(event: Stripe.Event) {
     
     console.log("Successfully posted Slack notification for checkout:", session.id);
     
+    const rate = await getSubscriptionRate(stripe, fullSession);
+    
+    console.log("Generating contractor agreement PDF...");
+    const pdfBuffer = await generateContractorAgreementPDF({
+      contractorName: "Vargas JR",
+      position: "Senior Software Developer",
+      startDate: new Date().toLocaleDateString(),
+      rate: rate,
+      companyName: fullSession.customer_details?.name || "Client Company",
+    });
+    
+    console.log("Uploading PDF to S3...");
+    const contractPdfUuid = await uploadPDFToS3(pdfBuffer);
+    console.log("PDF uploaded with UUID:", contractPdfUuid);
+    
+    console.log("Storing contract UUID in Stripe metadata...");
+    await stripe.checkout.sessions.update(fullSession.id, {
+      metadata: {
+        contract_pdf_uuid: contractPdfUuid,
+      },
+    });
+    
+    console.log("Successfully processed hiring event for session:", session.id);
+    
   } catch (error) {
     console.error("Error handling checkout completion:", error);
+    throw error;
   }
 }
 
