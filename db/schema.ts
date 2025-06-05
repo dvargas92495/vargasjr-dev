@@ -79,6 +79,23 @@ export const ApplicationsTable = pgTable("applications", {
 
 export type Application = typeof ApplicationsTable.$inferSelect;
 
+export const ApplicationWorkspacesTable = pgTable("application_workspaces", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  applicationId: uuid("application_id")
+    .notNull()
+    .references(() => ApplicationsTable.id),
+  name: varchar("name").notNull(),
+  workspaceId: varchar("workspace_id"),
+  clientId: varchar("client_id"),
+  clientSecret: varchar("client_secret"),
+  apiEndpoint: varchar("api_endpoint"),
+  accessToken: varchar("access_token"),
+  refreshToken: varchar("refresh_token"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ApplicationWorkspace = typeof ApplicationWorkspacesTable.$inferSelect;
+
 export const ChatSessionsTable = pgTable("chat_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
   inboxId: uuid("inbox_id")
