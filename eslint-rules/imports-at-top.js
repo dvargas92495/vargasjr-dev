@@ -14,27 +14,21 @@ export default {
   },
   create(context) {
     let hasSeenNonImportStatement = false;
-    let lastNonImportNode = null;
+    let lastNonImportNodeType = null;
     
     return {
-      Program(node) {
+      Program() {
         hasSeenNonImportStatement = false;
-        lastNonImportNode = null;
+        lastNonImportNodeType = null;
       },
       
       ImportDeclaration(node) {
-        if (hasSeenNonImportStatement && lastNonImportNode) {
+        if (hasSeenNonImportStatement) {
           context.report({
             node,
             messageId: "importNotAtTop",
             data: {
-              nodeType: lastNonImportNode.type === "ExpressionStatement" && 
-                       lastNonImportNode.expression?.type === "Literal" &&
-                       typeof lastNonImportNode.expression.value === "string" &&
-                       (lastNonImportNode.expression.value === "use client" || 
-                        lastNonImportNode.expression.value === "use server")
-                ? "directive" 
-                : lastNonImportNode.type.toLowerCase().replace(/([A-Z])/g, ' $1').trim()
+              nodeType: lastNonImportNodeType || "statement"
             },
           });
         }
@@ -55,7 +49,11 @@ export default {
         }
         
         hasSeenNonImportStatement = true;
-        lastNonImportNode = node;
+        lastNonImportNodeType = node.type === "VariableDeclaration" ? "variable declaration" :
+                               node.type === "FunctionDeclaration" ? "function declaration" :
+                               node.type === "ExportNamedDeclaration" ? "export statement" :
+                               node.type === "ExportDefaultDeclaration" ? "export statement" :
+                               "statement";
       },
     };
   },
