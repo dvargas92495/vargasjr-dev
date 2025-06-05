@@ -44,10 +44,6 @@ vi.mock("stripe", () => {
   };
 });
 
-vi.mock("@/db/schema", () => ({
-  ContactsTable: {}
-}));
-
 vi.mock("drizzle-orm/vercel-postgres", () => ({
   drizzle: vi.fn(() => ({
     select: mockSelect,
