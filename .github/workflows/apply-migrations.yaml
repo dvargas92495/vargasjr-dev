@@ -7,10 +7,20 @@ on:
       - 'db/schema.ts'
       - 'scripts/run-migrations.ts'
       - '.github/workflows/apply-migrations.yaml'
+  pull_request:
+    paths:
+      - 'db/schema.ts'
+      - 'scripts/run-migrations.ts'
+      - '.github/workflows/apply-migrations.yaml'
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  check-migrations:
+  preview-migrations:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -23,12 +33,43 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Generate local migrations
+      - name: Generate migration preview
         run: npm run db:generate
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
-      - name: Preview database migrations
-        run: npm run run-migrations -- --preview
+      - name: Run migration preview
+        run: npm run run-migrations -- --preview > migration-preview.txt 2>&1
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          
+      - name: Comment PR with migration preview
+        uses: JoseThen/comment-pr@v1.2.0
+        with:
+          file_path: migration-preview.txt
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  apply-migrations:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Generate and apply migrations
+        run: npm run db:generate
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          
+      - name: Apply database migrations
+        run: npm run run-migrations
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}

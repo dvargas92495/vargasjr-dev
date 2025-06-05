@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
     "ssh": "ssh -i ~/.ssh/vargasjr-dev.pem ubuntu@ec2-34-239-127-55.compute-1.amazonaws.com",
     "test": "vitest run",
     "test:agent": "cd agent && poetry run pytest",

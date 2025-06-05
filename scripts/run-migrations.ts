@@ -6,12 +6,10 @@ import { join } from "path";
 
 class MigrationRunner {
   private dbDir: string;
-  private migrationsDir: string;
   private isPreviewMode: boolean;
 
   constructor(isPreviewMode: boolean = false) {
     this.dbDir = join(process.cwd(), "db");
-    this.migrationsDir = join(this.dbDir, "migrations");
     this.isPreviewMode = isPreviewMode;
   }
 
@@ -61,44 +59,46 @@ class MigrationRunner {
     
     execSync("mkdir -p ./temp-migrations", { cwd: process.cwd() });
     
-    console.log("Checking what migrations would be applied...");
+    console.log("Generating new migrations from schema...");
     
     try {
-      execSync("npx drizzle-kit check --dialect postgresql --out ./db/migrations", {
+      execSync("npx drizzle-kit generate --dialect postgresql --out ./temp-migrations", {
         stdio: 'inherit',
         cwd: process.cwd()
       });
     } catch (error) {
-      console.log("Note: drizzle-kit check completed with warnings (this is normal)");
+      console.log("Note: drizzle-kit generate completed with warnings (this is normal)");
     }
 
     await this.displayMigrationFiles();
   }
 
   private async displayMigrationFiles(): Promise<void> {
-    console.log("=== Local migration files ===");
+    console.log("=== Generated migration files ===");
     
-    if (!existsSync(this.migrationsDir)) {
-      console.log("⚠️  No migrations directory found");
+    const tempMigrationsDir = join(process.cwd(), "temp-migrations");
+    
+    if (!existsSync(tempMigrationsDir)) {
+      console.log("⚠️  No new migrations generated - schema is up to date");
       return;
     }
 
     try {
-      execSync(`ls -la ${this.migrationsDir}/*.sql`, { stdio: 'inherit' });
+      execSync(`ls -la ${tempMigrationsDir}/*.sql`, { stdio: 'inherit' });
     } catch (error) {
-      console.log("⚠️  No SQL migration files found");
+      console.log("⚠️  No SQL migration files generated - schema is up to date");
       return;
     }
 
     console.log("\n=== SQL statements that would be applied ===");
-    console.log("The following migration files exist and would be applied to production:");
+    console.log("The following migrations would be generated and applied to production:");
 
-    const migrationFiles = readdirSync(this.migrationsDir)
+    const migrationFiles = readdirSync(tempMigrationsDir)
       .filter(file => file.endsWith('.sql'))
       .sort();
 
     for (const migrationFile of migrationFiles) {
-      const filePath = join(this.migrationsDir, migrationFile);
+      const filePath = join(tempMigrationsDir, migrationFile);
       console.log(`\n--- ${migrationFile} ---`);
       try {
         execSync(`cat "${filePath}"`, { stdio: 'inherit' });
@@ -111,10 +111,12 @@ class MigrationRunner {
     console.log("=== End of migration preview ===");
     if (this.isPreviewMode) {
       console.log("⚠️  NOTE: These migrations were NOT applied to production database");
-      console.log("This is a preview-only run as requested in issue #72");
+      console.log("This is a preview-only run for pull request review");
     } else {
-      console.log("✅ These migrations have been applied to production database");
+      console.log("✅ These migrations would be applied to production database");
     }
+    
+    execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
   }
 }
 
