@@ -20,6 +20,10 @@ version = "0.0.64"
 
 - **Import Organization**: All imports should be placed at the top of the file where possible. Avoid inline imports within functions unless absolutely necessary for lazy loading or conditional imports.
 
+### TypeScript Code Style
+
+- **Dynamic Imports**: Prefer static imports at the top of the file over dynamic `await import()` calls within functions. Dynamic imports should only be used when truly necessary for code splitting or conditional loading.
+
 ## General Guidelines
 
 - Follow existing code patterns and conventions in the codebase
