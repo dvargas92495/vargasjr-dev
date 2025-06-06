@@ -11,9 +11,7 @@ const s3Client = new S3Client({
   },
 });
 
-function generateS3Key(uuid: string): string {
-  const baseKey = `contracts/${uuid}.pdf`;
-  
+export function generateS3Key(baseKey: string): string {
   if (process.env.VERCEL_ENV === 'production') {
     return baseKey;
   }
@@ -25,7 +23,8 @@ function generateS3Key(uuid: string): string {
 export async function uploadPDFToS3(pdfBuffer: Uint8Array): Promise<string> {
   const uuid = uuidv4();
   const bucketName = process.env.S3_BUCKET_NAME || 'vargas-jr-memory';
-  const key = generateS3Key(uuid);
+  const baseKey = `contracts/${uuid}.pdf`;
+  const key = generateS3Key(baseKey);
   
   const command = new PutObjectCommand({
     Bucket: bucketName,

@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "../api/stripe/webhook/route";
 
 const mockConstructEvent = vi.fn();
-<<<<<<< HEAD
 const mockRetrieve = vi.fn();
 const mockSend = vi.fn();
 const mockUpdate = vi.fn();
@@ -31,19 +29,12 @@ const {
   mockGetEnvironmentPrefix: vi.fn(),
   mockGetBaseUrl: vi.fn()
 }));
-||||||| parent of c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
-=======
-const mockSend = vi.fn();
-const mockUpdate = vi.fn();
-const mockRetrieve = vi.fn();
->>>>>>> c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
 
 vi.mock("stripe", () => {
   return {
     default: vi.fn().mockImplementation(() => ({
       webhooks: {
         constructEvent: mockConstructEvent
-<<<<<<< HEAD
       },
       subscriptions: {
         retrieve: mockRetrieve
@@ -53,23 +44,11 @@ vi.mock("stripe", () => {
           retrieve: mockRetrieve,
           update: mockUpdate
         }
-||||||| parent of c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
-=======
-      },
-      subscriptions: {
-        retrieve: mockRetrieve
-      },
-      checkout: {
-        sessions: {
-          update: mockUpdate
-        }
->>>>>>> c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
       }
     }))
   };
 });
 
-<<<<<<< HEAD
 vi.mock("@aws-sdk/client-s3", () => ({
   S3Client: vi.fn().mockImplementation(() => ({
     send: mockSend
@@ -79,19 +58,8 @@ vi.mock("@aws-sdk/client-s3", () => ({
 
 vi.mock("@/app/lib/pdf-generator", () => ({
   generateContractorAgreementPDF: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3]))
-||||||| parent of c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
-vi.mock("@/app/lib/pdf-generator", () => ({
-  generateHiringAgreementPDF: vi.fn()
-=======
-vi.mock("@aws-sdk/client-s3", () => ({
-  S3Client: vi.fn().mockImplementation(() => ({
-    send: mockSend
-  })),
-  PutObjectCommand: vi.fn()
->>>>>>> c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
 }));
 
-<<<<<<< HEAD
 vi.mock("@/app/lib/s3-client", () => ({
   uploadPDFToS3: vi.fn().mockResolvedValue("test-uuid-123")
 }));
@@ -119,33 +87,8 @@ vi.mock("@/app/api/constants", () => ({
 vi.mock("@/server", () => ({
   postSlackMessage: mockPostSlackMessage
 }));
-
-import { POST } from "../api/stripe/webhook/route";
-||||||| parent of c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
-vi.mock("@/app/lib/s3-client", () => ({
-  uploadPDFToS3: vi.fn()
-}));
-
-vi.mock("drizzle-orm/vercel-postgres", () => ({
-  drizzle: vi.fn(() => ({
-    insert: vi.fn(() => ({
-      values: vi.fn()
-    }))
-  }))
-}));
-
-vi.mock("@vercel/postgres", () => ({
-  sql: {}
-}));
-
-vi.mock("@/db/schema", () => ({
-  CheckoutSessionsTable: {}
-}));
-
 import { POST } from "../api/stripe/webhook/route";
 
-=======
->>>>>>> c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
   STRIPE_SECRET_KEY: "sk_test_key"
@@ -155,7 +98,6 @@ describe("Stripe Webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConstructEvent.mockClear();
-<<<<<<< HEAD
     mockRetrieve.mockClear();
     mockSend.mockClear();
     mockUpdate.mockClear();
@@ -170,12 +112,6 @@ describe("Stripe Webhook", () => {
     mockPostSlackMessage.mockClear();
     mockGetEnvironmentPrefix.mockClear();
     mockGetBaseUrl.mockClear();
-||||||| parent of c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
-=======
-    mockSend.mockClear();
-    mockUpdate.mockClear();
-    mockRetrieve.mockClear();
->>>>>>> c6409fb (Address PR review comments: refactor to contractor agreement, use Stripe metadata, fix test mocking)
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
     
