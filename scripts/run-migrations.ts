@@ -62,7 +62,7 @@ class MigrationRunner {
     console.log("Generating new migrations from schema...");
     
     try {
-      execSync("npx drizzle-kit generate --dialect postgresql --out ./temp-migrations", {
+      execSync("npx drizzle-kit generate --schema ./db/schema.ts --dialect postgresql --out ./temp-migrations", {
         stdio: 'inherit',
         cwd: process.cwd()
       });
