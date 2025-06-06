@@ -41,11 +41,7 @@ jobs:
       - name: Run migration preview
         run: |
           npm run run-migrations -- --preview > migration-preview-full.txt 2>&1
-          grep -A 1000 "=== Generated migration files ===" migration-preview-full.txt | \
-          grep -v "^\[" | \
-          grep -v "tables fetching\|columns fetching\|enums fetching\|indexes fetching\|foreign keys fetching\|policies fetching\|check constraints fetching\|views fetching" | \
-          grep -v "Using '@vercel/postgres' driver" | \
-          grep -v "Warning.*can only connect to remote" > migration-preview.txt || cp migration-preview-full.txt migration-preview.txt
+          sed -n '/=== Generated migration files ===/,$p' migration-preview-full.txt > migration-preview.txt
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
