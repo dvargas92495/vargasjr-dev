@@ -1,9 +1,9 @@
 import type { Config } from "drizzle-kit";
 
-const databaseUrl = process.env.POSTGRES_URL;
+const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL;
 
 if (!databaseUrl) {
-  throw new Error("POSTGRES_URL is not set");
+  throw new Error("DATABASE_URL, DATABASE_URL_UNPOOLED, or POSTGRES_URL environment variable is required");
 }
 
 export default {

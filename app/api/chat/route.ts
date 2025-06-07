@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NotFoundError } from "@/server/errors";
-
-const db = drizzle(sql);
+import { db } from "@/db/connection";
 
 export async function POST(request: Request) {
   try {

@@ -36,6 +36,7 @@ jobs:
       - name: Generate migration preview
         run: npm run db:generate
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.POSTGRES_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
       - name: Run migration preview
@@ -43,6 +44,7 @@ jobs:
           npm run run-migrations -- --preview > migration-preview-full.txt 2>&1
           sed -n '/=== Generated migration files ===/,$p' migration-preview-full.txt > migration-preview.txt
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.POSTGRES_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
       - name: Comment PR with migration preview
@@ -69,9 +71,11 @@ jobs:
       - name: Generate and apply migrations
         run: npm run db:generate
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.POSTGRES_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
       - name: Apply database migrations
         run: npm run run-migrations
         env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.POSTGRES_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}

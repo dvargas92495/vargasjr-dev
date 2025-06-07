@@ -40,12 +40,13 @@ class MigrationRunner {
   private async introspectProductionDatabase(): Promise<void> {
     console.log("=== Introspecting production database schema ===");
     
-    if (!process.env.POSTGRES_URL) {
-      throw new Error("POSTGRES_URL environment variable is required");
+    const databaseUrl = process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL;
+    if (!databaseUrl) {
+      throw new Error("DATABASE_URL, DATABASE_URL_UNPOOLED, or POSTGRES_URL environment variable is required");
     }
 
     try {
-      execSync(`npx drizzle-kit introspect --dialect postgresql --out ./production-schema --url "${process.env.POSTGRES_URL}"`, {
+      execSync(`npx drizzle-kit introspect --dialect postgresql --out ./production-schema --url "${databaseUrl}"`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
