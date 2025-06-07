@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../api/stripe/webhook/route";
 import * as constants from "@/app/api/constants";
 import * as server from "@/server";
+import * as pdfGenerator from "@/app/lib/pdf-generator";
+import * as s3Client from "@/app/lib/s3-client";
 
 const {
   mockSelect,
@@ -69,13 +71,7 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
 }));
 
-vi.mock("@/app/lib/pdf-generator", () => ({
-  generateContractorAgreementPDF: vi.fn().mockResolvedValue(Buffer.from("mock pdf"))
-}));
 
-vi.mock("@/app/lib/s3-client", () => ({
-  uploadPDFToS3: vi.fn().mockResolvedValue("mock-uuid-123")
-}));
 
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
@@ -120,6 +116,8 @@ describe("Stripe Webhook", () => {
     vi.spyOn(constants, 'getEnvironmentPrefix').mockImplementation(mockGetEnvironmentPrefix);
     vi.spyOn(constants, 'getBaseUrl').mockImplementation(mockGetBaseUrl);
     vi.spyOn(server, 'postSlackMessage').mockImplementation(mockPostSlackMessage);
+    vi.spyOn(pdfGenerator, 'generateContractorAgreementPDF').mockResolvedValue(Buffer.from("mock pdf"));
+    vi.spyOn(s3Client, 'uploadPDFToS3').mockResolvedValue("mock-uuid-123");
   });
 
   it("should return 500 when STRIPE_WEBHOOK_SECRET is missing", async () => {
