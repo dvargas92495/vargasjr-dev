@@ -50,8 +50,6 @@ vi.mock("@aws-sdk/client-s3", () => ({
   PutObjectCommand: vi.fn()
 }));
 
-
-
 vi.mock("drizzle-orm/vercel-postgres", () => ({
   drizzle: vi.fn(() => ({
     select: mockSelect,
