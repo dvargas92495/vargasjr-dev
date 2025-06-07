@@ -199,4 +199,9 @@ class AgentRunner:
                 cron_expression="0 12 * * 0",
                 logger=self._logger,
             ),
+            RoutineJob(
+                name="daily_routine_notion",
+                cron_expression="0 8 * * *",
+                logger=self._logger,
+            ),
         ]
