@@ -4,6 +4,8 @@ import InboxRow from "@/components/inbox-row";
 import Link from "next/link";
 import { db } from "@/db/connection";
 
+export const dynamic = 'force-dynamic';
+
 export default async function InboxesPage() {
   const allInboxes = await db
     .select()

@@ -3,6 +3,8 @@ import { desc } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { db } from "@/db/connection";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CRMPage() {
   const allContacts = await db
     .select()

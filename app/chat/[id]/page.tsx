@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db/connection";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ChatSessionPage({
   params,
 }: {

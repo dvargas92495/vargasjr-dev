@@ -6,6 +6,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import Stripe from "stripe";
 import { db } from "@/db/connection";
 
+export const dynamic = 'force-dynamic';
+
 dayjs.extend(relativeTime);
 
 export default async function ContactPage({

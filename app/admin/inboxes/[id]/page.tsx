@@ -10,7 +10,8 @@ import Link from "next/link";
 
 import { db } from "@/db/connection";
 
-// params will contain the dynamic [id] value
+export const dynamic = 'force-dynamic';
+
 export default async function InboxPage({
   params,
 }: {

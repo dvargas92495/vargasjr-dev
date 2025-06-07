@@ -4,6 +4,8 @@ import ApplicationRow from "@/components/application-row";
 import Link from "next/link";
 import { db } from "@/db/connection";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ApplicationsPage() {
   const allApplications = await db
     .select()
