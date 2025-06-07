@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "../api/stripe/webhook/route";
 
 const mockConstructEvent = vi.fn();
 const mockRetrieve = vi.fn();
+const mockUpdate = vi.fn();
 const {
   mockSelect,
   mockFrom,
@@ -11,10 +11,7 @@ const {
   mockExecute,
   mockInsert,
   mockValues,
-  mockReturning,
-  mockPostSlackMessage,
-  mockGetEnvironmentPrefix,
-  mockGetBaseUrl
+  mockReturning
 } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockFrom: vi.fn(),
@@ -23,10 +20,7 @@ const {
   mockExecute: vi.fn(),
   mockInsert: vi.fn(),
   mockValues: vi.fn(),
-  mockReturning: vi.fn(),
-  mockPostSlackMessage: vi.fn(),
-  mockGetEnvironmentPrefix: vi.fn(),
-  mockGetBaseUrl: vi.fn()
+  mockReturning: vi.fn()
 }));
 
 vi.mock("stripe", () => {
@@ -35,14 +29,27 @@ vi.mock("stripe", () => {
       webhooks: {
         constructEvent: mockConstructEvent
       },
+      subscriptions: {
+        retrieve: mockRetrieve
+      },
       checkout: {
         sessions: {
-          retrieve: mockRetrieve
+          retrieve: mockRetrieve,
+          update: mockUpdate
         }
       }
     }))
   };
 });
+
+vi.mock("@aws-sdk/client-s3", () => ({
+  S3Client: vi.fn().mockImplementation(() => ({
+    send: vi.fn()
+  })),
+  PutObjectCommand: vi.fn()
+}));
+
+
 
 vi.mock("drizzle-orm/vercel-postgres", () => ({
   drizzle: vi.fn(() => ({
@@ -59,14 +66,8 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
 }));
 
-vi.mock("@/app/api/constants", () => ({
-  getEnvironmentPrefix: mockGetEnvironmentPrefix,
-  getBaseUrl: mockGetBaseUrl
-}));
 
-vi.mock("@/server", () => ({
-  postSlackMessage: mockPostSlackMessage
-}));
+import { POST } from "../api/stripe/webhook/route";
 
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
@@ -78,6 +79,7 @@ describe("Stripe Webhook", () => {
     vi.clearAllMocks();
     mockConstructEvent.mockClear();
     mockRetrieve.mockClear();
+    mockUpdate.mockClear();
     mockSelect.mockClear();
     mockFrom.mockClear();
     mockWhere.mockClear();
@@ -86,11 +88,15 @@ describe("Stripe Webhook", () => {
     mockInsert.mockClear();
     mockValues.mockClear();
     mockReturning.mockClear();
-    mockPostSlackMessage.mockClear();
-    mockGetEnvironmentPrefix.mockClear();
-    mockGetBaseUrl.mockClear();
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
+    
+    mockUpdate.mockResolvedValue({});
+    mockRetrieve.mockResolvedValue({
+      items: {
+        data: [{ price: { unit_amount: 15000000 } }]
+      }
+    });
   });
 
   it("should return 500 when STRIPE_WEBHOOK_SECRET is missing", async () => {
@@ -160,7 +166,13 @@ describe("Stripe Webhook", () => {
     const mockEvent = {
       type: "checkout.session.completed",
       id: "evt_test_123",
-      data: { object: { id: "cs_test_123" } }
+      data: { 
+        object: { 
+          id: "cs_test_123",
+          customer_details: { name: "John Doe" },
+          subscription: "sub_test_123"
+        } 
+      }
     };
 
     mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
@@ -228,7 +240,7 @@ describe("Stripe Webhook", () => {
   });
 
   describe("handleVargasJrHired", () => {
-    it("should create new contact and send Slack notification for new customer", async () => {
+    it("should process checkout.session.completed event with customer email", async () => {
       const mockEvent = {
         type: "checkout.session.completed",
         id: "evt_test_123",
@@ -237,11 +249,18 @@ describe("Stripe Webhook", () => {
 
       const mockSession = {
         id: "cs_test_123",
-        customer_email: "test@example.com"
+        customer_email: "test@example.com",
+        subscription: "sub_test_123"
+      };
+
+      const mockSubscription = {
+        items: {
+          data: [{ price: { unit_amount: 15000000 } }]
+        }
       };
 
       mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
-      mockRetrieve.mockResolvedValue(mockSession);
+      mockRetrieve.mockResolvedValueOnce(mockSession).mockResolvedValueOnce(mockSubscription);
       mockSelect.mockReturnValue({ from: mockFrom });
       mockFrom.mockReturnValue({ where: mockWhere });
       mockWhere.mockReturnValue({ limit: mockLimit });
@@ -251,9 +270,6 @@ describe("Stripe Webhook", () => {
       mockValues.mockReturnValue({ returning: mockReturning });
       mockReturning.mockReturnValue({ execute: mockExecute });
       mockExecute.mockResolvedValueOnce([{ id: 1, email: "test@example.com" }]);
-      mockGetEnvironmentPrefix.mockReturnValue("DEV");
-      mockGetBaseUrl.mockReturnValue("http://localhost:3000");
-      mockPostSlackMessage.mockResolvedValue({ ok: true });
 
       const request = new Request("http://localhost/webhook", {
         method: "POST",
@@ -267,51 +283,6 @@ describe("Stripe Webhook", () => {
       expect(response.status).toBe(200);
       expect(data.received).toBe(true);
       expect(mockRetrieve).toHaveBeenCalledWith("cs_test_123", { expand: ['customer'] });
-      expect(mockPostSlackMessage).toHaveBeenCalledWith({
-        channel: "#sales-alert",
-        message: "DEV: 🎉 New customer signed up!\n\nContact: test@example.com\nView details: http://localhost:3000/admin/crm/1"
-      });
-    });
-
-    it("should find existing contact and send Slack notification", async () => {
-      const mockEvent = {
-        type: "checkout.session.completed",
-        id: "evt_test_456",
-        data: { object: { id: "cs_test_456" } }
-      };
-
-      const mockSession = {
-        id: "cs_test_456",
-        customer_email: "existing@example.com"
-      };
-
-      mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
-      mockRetrieve.mockResolvedValue(mockSession);
-      mockSelect.mockReturnValue({ from: mockFrom });
-      mockFrom.mockReturnValue({ where: mockWhere });
-      mockWhere.mockReturnValue({ limit: mockLimit });
-      mockLimit.mockReturnValue({ execute: mockExecute });
-      mockExecute.mockResolvedValue([{ id: 2, email: "existing@example.com" }]);
-      mockGetEnvironmentPrefix.mockReturnValue("");
-      mockGetBaseUrl.mockReturnValue("https://vargasjr.dev");
-      mockPostSlackMessage.mockResolvedValue({ ok: true });
-
-      const request = new Request("http://localhost/webhook", {
-        method: "POST",
-        body: JSON.stringify(mockEvent),
-        headers: { "stripe-signature": "valid_signature" }
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.received).toBe(true);
-      expect(mockInsert).not.toHaveBeenCalled();
-      expect(mockPostSlackMessage).toHaveBeenCalledWith({
-        channel: "#sales-alert",
-        message: "🎉 New customer signed up!\n\nContact: existing@example.com\nView details: https://vargasjr.dev/admin/crm/2"
-      });
     });
 
     it("should handle missing customer email gracefully", async () => {
@@ -340,94 +311,6 @@ describe("Stripe Webhook", () => {
 
       expect(response.status).toBe(200);
       expect(data.received).toBe(true);
-      expect(mockPostSlackMessage).not.toHaveBeenCalled();
-    });
-
-    it("should handle Slack API failure gracefully", async () => {
-      const mockEvent = {
-        type: "checkout.session.completed",
-        id: "evt_test_error",
-        data: { object: { id: "cs_test_error" } }
-      };
-
-      const mockSession = {
-        id: "cs_test_error",
-        customer_email: "error@example.com"
-      };
-
-      mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
-      mockRetrieve.mockResolvedValue(mockSession);
-      mockSelect.mockReturnValue({ from: mockFrom });
-      mockFrom.mockReturnValue({ where: mockWhere });
-      mockWhere.mockReturnValue({ limit: mockLimit });
-      mockLimit.mockReturnValue({ execute: mockExecute });
-      mockExecute.mockResolvedValue([{ id: 3, email: "error@example.com" }]);
-      mockGetEnvironmentPrefix.mockReturnValue("PREVIEW");
-      mockGetBaseUrl.mockReturnValue("https://preview.vargasjr.dev");
-      mockPostSlackMessage.mockRejectedValue(new Error("Slack API error"));
-
-      const request = new Request("http://localhost/webhook", {
-        method: "POST",
-        body: JSON.stringify(mockEvent),
-        headers: { "stripe-signature": "valid_signature" }
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.received).toBe(true);
-      expect(mockPostSlackMessage).toHaveBeenCalledWith({
-        channel: "#sales-alert",
-        message: "PREVIEW: 🎉 New customer signed up!\n\nContact: error@example.com\nView details: https://preview.vargasjr.dev/admin/crm/3"
-      });
-    });
-
-    it("should handle different environment prefixes correctly", async () => {
-      const testCases = [
-        { env: "DEV", expected: "DEV: " },
-        { env: "PREVIEW", expected: "PREVIEW: " },
-        { env: "", expected: "" }
-      ];
-
-      for (const testCase of testCases) {
-        const mockEvent = {
-          type: "checkout.session.completed",
-          id: `evt_test_${testCase.env}`,
-          data: { object: { id: `cs_test_${testCase.env}` } }
-        };
-
-        const mockSession = {
-          id: `cs_test_${testCase.env}`,
-          customer_email: `${testCase.env.toLowerCase()}@example.com`
-        };
-
-        mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
-        mockRetrieve.mockResolvedValue(mockSession);
-        mockSelect.mockReturnValue({ from: mockFrom });
-        mockFrom.mockReturnValue({ where: mockWhere });
-        mockWhere.mockReturnValue({ limit: mockLimit });
-        mockLimit.mockReturnValue({ execute: mockExecute });
-        mockExecute.mockResolvedValue([{ id: 4, email: `${testCase.env.toLowerCase()}@example.com` }]);
-        mockGetEnvironmentPrefix.mockReturnValue(testCase.env);
-        mockGetBaseUrl.mockReturnValue("https://test.com");
-        mockPostSlackMessage.mockResolvedValue({ ok: true });
-
-        const request = new Request("http://localhost/webhook", {
-          method: "POST",
-          body: JSON.stringify(mockEvent),
-          headers: { "stripe-signature": "valid_signature" }
-        });
-
-        await POST(request);
-
-        expect(mockPostSlackMessage).toHaveBeenCalledWith({
-          channel: "#sales-alert",
-          message: `${testCase.expected}🎉 New customer signed up!\n\nContact: ${testCase.env.toLowerCase()}@example.com\nView details: https://test.com/admin/crm/4`
-        });
-
-        vi.clearAllMocks();
-      }
     });
   });
 });
