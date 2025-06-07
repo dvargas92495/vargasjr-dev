@@ -20,4 +20,13 @@ export function getDb() {
   return createDatabaseConnection();
 }
 
-export const db = getDb();
+let _db: ReturnType<typeof createDatabaseConnection> | null = null;
+
+export const db = new Proxy({} as ReturnType<typeof createDatabaseConnection>, {
+  get(target, prop) {
+    if (!_db) {
+      _db = createDatabaseConnection();
+    }
+    return (_db as any)[prop];
+  }
+});
