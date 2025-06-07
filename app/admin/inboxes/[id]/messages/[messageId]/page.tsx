@@ -3,15 +3,16 @@ import {
   InboxMessagesTable,
   OutboxMessagesTable,
 } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
+
 import { desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
-const db = drizzle(sql);
+import { db } from "@/db/connection";
+
+export const dynamic = 'force-dynamic';
 
 export default async function InboxMessage({
   params,

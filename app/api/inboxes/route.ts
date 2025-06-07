@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { InboxesTable } from "@/db/schema";
 import { z, ZodError } from "zod";
 import { InboxTypes } from "@/db/constants";
-
-const db = drizzle(sql);
+import { db } from "@/db/connection";
 
 const inboxSchema = z.object({
   name: z.string(),
