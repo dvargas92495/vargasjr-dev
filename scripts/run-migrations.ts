@@ -1,16 +1,18 @@
 #!/usr/bin/env npx tsx
 
 import { execSync } from "child_process";
-import { existsSync, readdirSync } from "fs";
+import { existsSync, readdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
 class MigrationRunner {
   private dbDir: string;
   private isPreviewMode: boolean;
+  private outputFile: string | null;
 
-  constructor(isPreviewMode: boolean = false) {
+  constructor(isPreviewMode: boolean = false, outputFile: string | null = null) {
     this.dbDir = join(process.cwd(), "db");
     this.isPreviewMode = isPreviewMode;
+    this.outputFile = outputFile;
   }
 
   async runMigrations(): Promise<void> {
@@ -22,6 +24,11 @@ class MigrationRunner {
     
     try {
       await this.introspectProductionDatabase();
+      
+      if (this.outputFile) {
+        this.captureFilteredOutput();
+      }
+      
       await this.generateMigrationDiff();
       
       if (this.isPreviewMode) {
@@ -118,13 +125,41 @@ class MigrationRunner {
     
     execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
   }
+
+  private captureFilteredOutput(): void {
+    if (!this.outputFile) return;
+    
+    const originalLog = console.log;
+    let capturedOutput = '';
+    let capturing = false;
+    
+    console.log = (...args: any[]) => {
+      const message = args.join(' ');
+      if (message.includes('=== Generated migration files ===')) {
+        capturing = true;
+      }
+      if (capturing) {
+        capturedOutput += message + '\n';
+      }
+      originalLog(...args);
+    };
+    
+    process.on('beforeExit', () => {
+      console.log = originalLog;
+      if (capturedOutput) {
+        writeFileSync(this.outputFile!, capturedOutput);
+      }
+    });
+  }
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const isPreviewMode = args.includes('--preview');
+  const outputFileIndex = args.indexOf('--output-file');
+  const outputFile = outputFileIndex !== -1 && args[outputFileIndex + 1] ? args[outputFileIndex + 1] : null;
   
-  const runner = new MigrationRunner(isPreviewMode);
+  const runner = new MigrationRunner(isPreviewMode, outputFile);
   await runner.runMigrations();
 }
 
