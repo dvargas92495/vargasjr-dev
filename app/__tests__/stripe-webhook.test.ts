@@ -1,3 +1,4 @@
+/* eslint-disable custom/no-mock-internal-modules */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../api/stripe/webhook/route";
 
