@@ -397,6 +397,6 @@ async function main() {
   await creator.createAgent();
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }

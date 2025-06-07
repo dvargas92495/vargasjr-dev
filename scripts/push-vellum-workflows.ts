@@ -106,6 +106,6 @@ async function main() {
   await pusher.pushWorkflows();
 }
 
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
