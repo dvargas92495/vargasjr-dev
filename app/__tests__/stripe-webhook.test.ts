@@ -1,6 +1,5 @@
 /* eslint-disable custom/no-mock-internal-modules */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "../api/stripe/webhook/route";
 
 const mockConstructEvent = vi.fn();
 const mockRetrieve = vi.fn();
@@ -67,6 +66,8 @@ vi.mock("@vercel/postgres", () => ({
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
 }));
+
+import { POST } from "../api/stripe/webhook/route";
 
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
