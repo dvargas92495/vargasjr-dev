@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockConstructEvent = vi.fn();
 const mockRetrieve = vi.fn();
-const mockSend = vi.fn();
 const mockUpdate = vi.fn();
 const {
   mockSelect,
