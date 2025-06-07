@@ -14,6 +14,7 @@ const {
   mockReturning,
   mockConstructEvent,
   mockRetrieve,
+  mockSubscriptionsRetrieve,
   mockPostSlackMessage,
   mockGetEnvironmentPrefix,
   mockGetBaseUrl
@@ -28,6 +29,7 @@ const {
   mockReturning: vi.fn(),
   mockConstructEvent: vi.fn(),
   mockRetrieve: vi.fn(),
+  mockSubscriptionsRetrieve: vi.fn(),
   mockPostSlackMessage: vi.fn(),
   mockGetEnvironmentPrefix: vi.fn(),
   mockGetBaseUrl: vi.fn()
@@ -41,8 +43,12 @@ vi.mock("stripe", () => {
       },
       checkout: {
         sessions: {
-          retrieve: mockRetrieve
+          retrieve: mockRetrieve,
+          update: vi.fn()
         }
+      },
+      subscriptions: {
+        retrieve: mockSubscriptionsRetrieve
       }
     }))
   };
@@ -63,6 +69,14 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
 }));
 
+vi.mock("@/app/lib/pdf-generator", () => ({
+  generateContractorAgreementPDF: vi.fn().mockResolvedValue(Buffer.from("mock pdf"))
+}));
+
+vi.mock("@/app/lib/s3-client", () => ({
+  uploadPDFToS3: vi.fn().mockResolvedValue("mock-uuid-123")
+}));
+
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
   STRIPE_SECRET_KEY: "sk_test_key",
@@ -78,6 +92,7 @@ describe("Stripe Webhook", () => {
     vi.clearAllMocks();
     mockConstructEvent.mockClear();
     mockRetrieve.mockClear();
+    mockSubscriptionsRetrieve.mockClear();
     mockSelect.mockClear();
     mockFrom.mockClear();
     mockWhere.mockClear();
@@ -91,6 +106,16 @@ describe("Stripe Webhook", () => {
     mockGetBaseUrl.mockClear();
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
+    
+    mockSubscriptionsRetrieve.mockResolvedValue({
+      items: {
+        data: [{
+          price: {
+            unit_amount: 500000
+          }
+        }]
+      }
+    });
     
     vi.spyOn(constants, 'getEnvironmentPrefix').mockImplementation(mockGetEnvironmentPrefix);
     vi.spyOn(constants, 'getBaseUrl').mockImplementation(mockGetBaseUrl);
@@ -167,7 +192,22 @@ describe("Stripe Webhook", () => {
       data: { object: { id: "cs_test_123" } }
     };
 
+    const mockSession = {
+      id: "cs_test_123",
+      customer_email: "test@example.com",
+      subscription: "sub_test_123"
+    };
+
     mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
+    mockRetrieve.mockResolvedValue(mockSession);
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockResolvedValue([{ id: 1, email: "test@example.com" }]);
+    mockGetEnvironmentPrefix.mockReturnValue("");
+    mockGetBaseUrl.mockReturnValue("https://vargasjr.dev");
+    mockPostSlackMessage.mockResolvedValue({ ok: true });
 
     const request = new Request("http://localhost/webhook", {
       method: "POST",
@@ -241,7 +281,8 @@ describe("Stripe Webhook", () => {
 
       const mockSession = {
         id: "cs_test_123",
-        customer_email: "test@example.com"
+        customer_email: "test@example.com",
+        subscription: "sub_test_123"
       };
 
       mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
@@ -286,7 +327,8 @@ describe("Stripe Webhook", () => {
 
       const mockSession = {
         id: "cs_test_456",
-        customer_email: "existing@example.com"
+        customer_email: "existing@example.com",
+        subscription: "sub_test_456"
       };
 
       mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
@@ -356,7 +398,8 @@ describe("Stripe Webhook", () => {
 
       const mockSession = {
         id: "cs_test_error",
-        customer_email: "error@example.com"
+        customer_email: "error@example.com",
+        subscription: "sub_test_error"
       };
 
       mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
@@ -379,12 +422,8 @@ describe("Stripe Webhook", () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.received).toBe(true);
-      expect(mockPostSlackMessage).toHaveBeenCalledWith({
-        channel: "#sales-alert",
-        message: "PREVIEW: 🎉 New customer signed up!\n\nContact: error@example.com\nView details: https://preview.vargasjr.dev/admin/crm/3"
-      });
+      expect(response.status).toBe(500);
+      expect(data.error).toBe("Failed to process checkout session");
     });
 
     it("should handle different environment prefixes correctly", async () => {
@@ -403,7 +442,8 @@ describe("Stripe Webhook", () => {
 
         const mockSession = {
           id: `cs_test_${testCase.env}`,
-          customer_email: `${testCase.env.toLowerCase()}@example.com`
+          customer_email: `${testCase.env.toLowerCase()}@example.com`,
+          subscription: `sub_test_${testCase.env}`
         };
 
         mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
