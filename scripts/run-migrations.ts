@@ -143,10 +143,20 @@ class MigrationRunner {
       console.log("Note: drizzle-kit generate completed with warnings (this is normal)");
     }
 
-    await this.displayMigrationFiles();
+    let postgresUrl = process.env.POSTGRES_URL;
+    
+    if (this.isPreviewMode && !postgresUrl) {
+      postgresUrl = await this.getNeonPreviewDatabaseUrl();
+    }
+    
+    if (!postgresUrl) {
+      throw new Error("POSTGRES_URL environment variable is required or Neon API credentials must be provided for preview mode");
+    }
+
+    await this.displayMigrationFiles(postgresUrl);
   }
 
-  private async displayMigrationFiles(): Promise<void> {
+  private async displayMigrationFiles(postgresUrl: string): Promise<void> {
     let migrationContent = "=== Generated migration files ===\n\n";
     
     const tempMigrationsDir = join(process.cwd(), "temp-migrations");
@@ -208,7 +218,16 @@ class MigrationRunner {
       
       await this.postGitHubComment(migrationContent);
     } else {
-      console.log("✅ These migrations would be applied to production database");
+      console.log("🚀 Applying migrations to production database...");
+      try {
+        execSync(`npx drizzle-kit push --url "${postgresUrl}"`, {
+          stdio: 'inherit',
+          cwd: process.cwd()
+        });
+        console.log("✅ Migrations applied successfully to production database");
+      } catch (error) {
+        throw new Error(`Failed to apply migrations: ${error}`);
+      }
     }
     
     execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
