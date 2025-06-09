@@ -4,8 +4,6 @@ import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 const bodySchema = z.object({
   ToCountry: z.string(),
   ToState: z.string(),
@@ -42,6 +40,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const db = getDb();
     const inbox = await db
       .select({ id: InboxesTable.id })
       .from(InboxesTable)

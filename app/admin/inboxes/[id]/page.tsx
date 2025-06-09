@@ -8,8 +8,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 // params will contain the dynamic [id] value
 export default async function InboxPage({
   params,
@@ -17,6 +15,7 @@ export default async function InboxPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const db = getDb();
   const inbox = await db
     .select()
     .from(InboxesTable)

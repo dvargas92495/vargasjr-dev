@@ -3,9 +3,8 @@ import { desc } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export default async function CRMPage() {
+  const db = getDb();
   const allContacts = await db
     .select()
     .from(ContactsTable)

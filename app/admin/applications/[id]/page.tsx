@@ -3,14 +3,13 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export default async function ApplicationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const db = getDb();
   const application = await db
     .select()
     .from(ApplicationsTable)

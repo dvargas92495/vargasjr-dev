@@ -10,8 +10,6 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export default async function InboxMessage({
   params,
 }: {
@@ -19,6 +17,7 @@ export default async function InboxMessage({
 }) {
   const { messageId, id: inboxId } = await params;
 
+  const db = getDb();
   const messages = await db
     .select({
       id: InboxMessagesTable.id,

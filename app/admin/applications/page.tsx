@@ -4,9 +4,8 @@ import ApplicationRow from "@/components/application-row";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export default async function ApplicationsPage() {
+  const db = getDb();
   const allApplications = await db
     .select()
     .from(ApplicationsTable)

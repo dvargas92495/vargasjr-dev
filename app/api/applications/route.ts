@@ -3,8 +3,6 @@ import { ApplicationsTable } from "@/db/schema";
 import { z, ZodError } from "zod";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 const applicationSchema = z.object({
   name: z.string(),
   clientId: z.string().optional(),
@@ -17,6 +15,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, clientId, clientSecret, apiEndpoint } = applicationSchema.parse(body);
 
+    const db = getDb();
     const [application] = await db
       .insert(ApplicationsTable)
       .values({ name, clientId, clientSecret, apiEndpoint })

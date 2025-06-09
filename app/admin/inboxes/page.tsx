@@ -4,9 +4,8 @@ import InboxRow from "@/components/inbox-row";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export default async function InboxesPage() {
+  const db = getDb();
   const allInboxes = await db
     .select()
     .from(InboxesTable)

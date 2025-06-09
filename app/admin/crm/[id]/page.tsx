@@ -8,14 +8,13 @@ import { getDb } from "@/db/connection";
 
 dayjs.extend(relativeTime);
 
-const db = getDb();
-
 export default async function ContactPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const db = getDb();
   const contact = await db
     .select()
     .from(ContactsTable)

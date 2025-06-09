@@ -6,8 +6,6 @@ import { eq } from "drizzle-orm";
 import { NotFoundError } from "@/server/errors";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -18,6 +16,7 @@ export async function POST(request: Request) {
       })
       .parse(body);
 
+    const db = getDb();
     let inbox = await db
       .select({ id: InboxesTable.id })
       .from(InboxesTable)

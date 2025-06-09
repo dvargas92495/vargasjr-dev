@@ -4,8 +4,6 @@ import { z, ZodError } from "zod";
 import { InboxTypes } from "@/db/constants";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 const inboxSchema = z.object({
   name: z.string(),
   type: z.enum(InboxTypes),
@@ -16,6 +14,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, type } = inboxSchema.parse(body);
 
+    const db = getDb();
     const [inbox] = await db
       .insert(InboxesTable)
       .values({ name, type, config: {} })

@@ -3,8 +3,6 @@ import { NotFoundError } from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export const addInboxMessage = async ({
   body,
   source,
@@ -16,6 +14,7 @@ export const addInboxMessage = async ({
   inboxName: string;
   createdAt?: Date;
 }) => {
+  const db = getDb();
   const inbox = await db
     .select({ id: InboxesTable.id })
     .from(InboxesTable)

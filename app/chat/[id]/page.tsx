@@ -3,8 +3,6 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 
-const db = getDb();
-
 export default async function ChatSessionPage({
   params,
 }: {
@@ -12,6 +10,7 @@ export default async function ChatSessionPage({
 }) {
   const { id } = await params;
   
+  const db = getDb();
   const chatSession = await db
     .select({
       id: ChatSessionsTable.id,
