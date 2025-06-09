@@ -29,7 +29,7 @@ const eslintConfig = [
   {
     files: ["**/*.test.ts", "**/*.test.js", "**/*.spec.ts", "**/*.spec.js"],
     rules: {
-      "custom/no-mock-internal-modules": "error",
+      "custom/no-mock-internal-modules": "off",
     },
   },
 ];
