@@ -33,11 +33,22 @@ class VellumWorkflowPusher {
 
       console.log(`📁 Found ${workflowDirs.length} workflow(s): ${workflowDirs.join(", ")}`);
 
+      const failures: string[] = [];
+
       for (const workflowName of workflowDirs) {
-        await this.pushWorkflow(workflowName);
+        const result = await this.pushWorkflow(workflowName);
+        if (!result.success && result.error) {
+          failures.push(result.error);
+        }
       }
 
       await this.displayLockFile();
+
+      if (failures.length > 0) {
+        console.error(`\n❌ Failed to push ${failures.length} workflow(s):`);
+        failures.forEach(failure => console.error(`  - ${failure}`));
+        process.exit(1);
+      }
 
       console.log("✅ All workflows pushed successfully!");
 
@@ -60,7 +71,7 @@ class VellumWorkflowPusher {
     }
   }
 
-  private async pushWorkflow(workflowName: string): Promise<void> {
+  private async pushWorkflow(workflowName: string): Promise<{success: boolean, error?: string}> {
     console.log(`📤 Pushing workflow: ${workflowName}`);
     
     try {
@@ -76,8 +87,11 @@ class VellumWorkflowPusher {
       });
       
       console.log(`✅ Successfully pushed: ${workflowName}`);
+      return { success: true };
     } catch (error) {
-      throw new Error(`Failed to push workflow ${workflowName}: ${error}`);
+      const errorMessage = `Failed to push workflow ${workflowName}: ${error}`;
+      console.error(`❌ ${errorMessage}`);
+      return { success: false, error: errorMessage };
     }
   }
 
