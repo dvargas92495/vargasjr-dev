@@ -23,7 +23,12 @@ class MigrationRunner {
     
     try {
       await this.introspectProductionDatabase();
-      await this.generateMigrationDiff();
+      
+      if (this.isPreviewMode) {
+        await this.displayIntrospectionFiles();
+      } else {
+        await this.generateMigrationDiff();
+      }
       
       if (this.isPreviewMode) {
         console.log("✅ Migration preview completed successfully!");
@@ -210,6 +215,72 @@ class MigrationRunner {
       await this.postGitHubComment(migrationContent);
     } else {
       console.log("✅ These migrations would be applied to production database");
+    }
+    
+    execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
+  }
+
+  private async displayIntrospectionFiles(): Promise<void> {
+    let migrationContent = "=== Database Introspection Results ===\n\n";
+    
+    const tempMigrationsDir = join(process.cwd(), this.TEMP_DIR.replace('./', ''));
+    
+    if (!existsSync(tempMigrationsDir)) {
+      migrationContent += "⚠️  No introspection files found - unable to analyze current database schema\n";
+      console.log("⚠️  No introspection files found - unable to analyze current database schema");
+      if (this.isPreviewMode) {
+        await this.postGitHubComment(migrationContent + "\n⚠️  NOTE: This is a preview-only run for pull request review\n✅ Migration preview completed successfully!");
+      }
+      return;
+    }
+
+    try {
+      execSync(`ls -la ${tempMigrationsDir}/*.sql`, { stdio: 'inherit' });
+    } catch (error) {
+      migrationContent += "⚠️  No SQL introspection files found - unable to analyze current database schema\n";
+      console.log("⚠️  No SQL introspection files found - unable to analyze current database schema");
+      if (this.isPreviewMode) {
+        await this.postGitHubComment(migrationContent + "\n⚠️  NOTE: This is a preview-only run for pull request review\n✅ Migration preview completed successfully!");
+      }
+      return;
+    }
+
+    migrationContent += "=== Current Production Database Schema ===\n";
+    migrationContent += "The following represents the current state of the production database:\n\n";
+    console.log("\n=== Current Production Database Schema ===");
+    console.log("The following represents the current state of the production database:");
+
+    const migrationFiles = readdirSync(tempMigrationsDir)
+      .filter(file => file.endsWith('.sql'))
+      .sort();
+
+    for (const migrationFile of migrationFiles) {
+      const filePath = join(tempMigrationsDir, migrationFile);
+      migrationContent += `--- ${migrationFile} ---\n`;
+      console.log(`\n--- ${migrationFile} ---`);
+      try {
+        const fileContent = readFileSync(filePath, 'utf8');
+        migrationContent += fileContent + "\n\n";
+        execSync(`cat "${filePath}"`, { stdio: 'inherit' });
+      } catch (error) {
+        const errorMsg = `Failed to read introspection file ${migrationFile}: ${error}`;
+        migrationContent += errorMsg + "\n\n";
+        console.error(errorMsg);
+      }
+      console.log("");
+    }
+
+    migrationContent += "=== End of introspection results ===\n";
+    console.log("=== End of introspection results ===");
+    
+    if (this.isPreviewMode) {
+      migrationContent += "⚠️  NOTE: This shows the current production database schema\n";
+      migrationContent += "This is a preview-only run for pull request review\n";
+      migrationContent += "✅ Migration preview completed successfully!";
+      console.log("⚠️  NOTE: This shows the current production database schema");
+      console.log("This is a preview-only run for pull request review");
+      
+      await this.postGitHubComment(migrationContent);
     }
     
     execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
