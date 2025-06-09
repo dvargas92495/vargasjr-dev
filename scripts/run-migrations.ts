@@ -7,6 +7,7 @@ import { join } from "path";
 class MigrationRunner {
   private dbDir: string;
   private isPreviewMode: boolean;
+  private readonly TEMP_DIR = "./migrations-temp";
 
   constructor(isPreviewMode: boolean = false) {
     this.dbDir = join(process.cwd(), "db");
@@ -51,7 +52,7 @@ class MigrationRunner {
     }
 
     try {
-      execSync(`npx drizzle-kit introspect --dialect postgresql --out ./production-schema --url "${postgresUrl}"`, {
+      execSync(`npx drizzle-kit introspect --dialect postgresql --out ${this.TEMP_DIR} --url "${postgresUrl}"`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
@@ -130,12 +131,12 @@ class MigrationRunner {
   private async generateMigrationDiff(): Promise<void> {
     console.log("=== Generating migration diff ===");
     
-    execSync("mkdir -p ./temp-migrations", { cwd: process.cwd() });
+    execSync(`mkdir -p ${this.TEMP_DIR}`, { cwd: process.cwd() });
     
     console.log("Generating new migrations from schema...");
     
     try {
-      execSync("npx drizzle-kit generate --schema ./db/schema.ts --dialect postgresql --out ./temp-migrations", {
+      execSync(`npx drizzle-kit generate --schema ./db/schema.ts --dialect postgresql --out ${this.TEMP_DIR}`, {
         stdio: 'inherit',
         cwd: process.cwd()
       });
@@ -149,7 +150,7 @@ class MigrationRunner {
   private async displayMigrationFiles(): Promise<void> {
     let migrationContent = "=== Generated migration files ===\n\n";
     
-    const tempMigrationsDir = join(process.cwd(), "temp-migrations");
+    const tempMigrationsDir = join(process.cwd(), this.TEMP_DIR.replace('./', ''));
     
     if (!existsSync(tempMigrationsDir)) {
       migrationContent += "⚠️  No new migrations generated - schema is up to date\n";
