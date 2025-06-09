@@ -192,6 +192,6 @@ async function main() {
   await runner.runMigrations();
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   main().catch(console.error);
 }

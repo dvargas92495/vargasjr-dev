@@ -160,6 +160,6 @@ async function main() {
   await cleanup.cleanupAgent();
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   main().catch(console.error);
 }
