@@ -33,23 +33,42 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-        
-      - name: Link to Vercel project
-        run: vercel link --yes --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        
-      - name: Pull environment variables from Vercel
+      - name: Get database URL from Neon API
         run: |
-          vercel env pull .env.vercel --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --yes
-          POSTGRES_URL=$(grep NEON_URL .env.vercel | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
+          BRANCH_NAME="preview/${{ github.head_ref }}"
+          PROJECT_ID="fancy-sky-34733112"
+          
+          BRANCH_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches")
+          
+          BRANCH_ID=$(echo "$BRANCH_RESPONSE" | jq -r ".branches[] | select(.name == \"$BRANCH_NAME\") | .id")
+          
+          if [ "$BRANCH_ID" = "null" ] || [ -z "$BRANCH_ID" ]; then
+            echo "Error: Branch '$BRANCH_NAME' not found"
+            exit 1
+          fi
+          
+          ENDPOINT_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches/${BRANCH_ID}/endpoints")
+          
+          HOST=$(echo "$ENDPOINT_RESPONSE" | jq -r ".endpoints[0].host")
+          
+          if [ "$HOST" = "null" ] || [ -z "$HOST" ]; then
+            echo "Error: No endpoint found for branch '$BRANCH_NAME'"
+            exit 1
+          fi
+          
+          PROJECT_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}")
+          
+          DATABASE_NAME=$(echo "$PROJECT_RESPONSE" | jq -r ".project.default_branch_database.name")
+          DATABASE_USER=$(echo "$PROJECT_RESPONSE" | jq -r ".project.default_branch_database.owner_name")
+          
+          POSTGRES_URL="postgresql://${DATABASE_USER}@${HOST}/${DATABASE_NAME}?sslmode=require"
+          
           echo "POSTGRES_URL<<EOF" >> $GITHUB_ENV
           echo "$POSTGRES_URL" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         
       - name: Run migration preview
         run: npm run run-migrations -- --preview
@@ -75,30 +94,14 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-        
-      - name: Link to Vercel project
-        run: vercel link --yes --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        
-      - name: Pull environment variables from Vercel
-        run: |
-          vercel env pull .env.vercel --environment=production --token=${{ secrets.VERCEL_TOKEN }} --yes
-          POSTGRES_URL=$(grep NEON_URL .env.vercel | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
-          echo "POSTGRES_URL<<EOF" >> $GITHUB_ENV
-          echo "$POSTGRES_URL" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
           
       - name: Generate and apply migrations
         run: npm run db:generate
         env:
-          POSTGRES_URL: ${{ env.POSTGRES_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
       - name: Apply database migrations
         run: npm run run-migrations
         env:
-          POSTGRES_URL: ${{ env.POSTGRES_URL }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
