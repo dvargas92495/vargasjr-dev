@@ -36,7 +36,7 @@ jobs:
       - name: Run migration preview
         run: npm run run-migrations -- --preview
         env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          POSTGRES_URL: ${{ secrets.NEON_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
