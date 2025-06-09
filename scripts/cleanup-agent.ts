@@ -47,6 +47,8 @@ class VargasJRAgentCleanup {
 
       await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
       
+      await this.deleteBranch();
+      
       console.log(`✅ Cleanup completed for PR ${this.config.prNumber}`);
       
     } catch (error) {
@@ -55,6 +57,78 @@ class VargasJRAgentCleanup {
     }
   }
 
+  async getPRDetails(): Promise<{ repository: string; branch: string } | null> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepository = process.env.GITHUB_REPOSITORY;
+    
+    if (!githubToken || !githubRepository) {
+      console.log("⚠️  Missing GITHUB_TOKEN or GITHUB_REPOSITORY environment variables");
+      return null;
+    }
+
+    try {
+      const response = await fetch(`https://api.github.com/repos/${githubRepository}/pulls/${this.config.prNumber}`, {
+        headers: {
+          'Authorization': `Bearer ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'VargasJR-Cleanup-Agent'
+        }
+      });
+
+      if (!response.ok) {
+        console.error(`❌ Failed to fetch PR details: ${response.status}`);
+        return null;
+      }
+
+      const prData = await response.json();
+      return {
+        repository: githubRepository,
+        branch: prData.head.ref
+      };
+    } catch (error) {
+      console.error(`❌ Error fetching PR details: ${error}`);
+      return null;
+    }
+  }
+
+  async deleteBranch(): Promise<void> {
+    const prDetails = await this.getPRDetails();
+    
+    if (!prDetails) {
+      console.log("⚠️  Skipping branch deletion - unable to fetch PR details");
+      return;
+    }
+
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+      console.log("⚠️  Skipping branch deletion - missing GitHub token");
+      return;
+    }
+
+    console.log(`Deleting branch: ${prDetails.branch} from repository: ${prDetails.repository}`);
+    
+    try {
+      const response = await fetch(`https://api.github.com/repos/${prDetails.repository}/git/refs/heads/${prDetails.branch}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'VargasJR-Cleanup-Agent'
+        }
+      });
+
+      if (response.ok) {
+        console.log(`✅ Branch ${prDetails.branch} deleted successfully`);
+      } else if (response.status === 404) {
+        console.log(`⚠️  Branch ${prDetails.branch} not found (may have been already deleted)`);
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Failed to delete branch ${prDetails.branch}: ${response.status} ${errorText}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error deleting branch ${prDetails.branch}: ${error}`);
+    }
+  }
 
 }
 
@@ -73,6 +147,7 @@ async function main() {
   if (!prNumber) {
     console.error("Usage: npx tsx scripts/cleanup-agent.ts --pr <pr-number>");
     console.error("Example: npx tsx scripts/cleanup-agent.ts --pr 123");
+    console.error("Note: Requires GITHUB_TOKEN and GITHUB_REPOSITORY environment variables");
     process.exit(1);
   }
   
