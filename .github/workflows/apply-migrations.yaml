@@ -45,7 +45,9 @@ jobs:
         run: |
           vercel env pull .env.vercel --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --yes
           POSTGRES_URL=$(grep NEON_URL .env.vercel | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
-          echo "POSTGRES_URL=$POSTGRES_URL" >> $GITHUB_ENV
+          echo "POSTGRES_URL<<EOF" >> $GITHUB_ENV
+          echo "$POSTGRES_URL" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         
@@ -85,7 +87,9 @@ jobs:
         run: |
           vercel env pull .env.vercel --environment=production --token=${{ secrets.VERCEL_TOKEN }} --yes
           POSTGRES_URL=$(grep NEON_URL .env.vercel | cut -d '=' -f2- | sed 's/^"//' | sed 's/"$//')
-          echo "POSTGRES_URL=$POSTGRES_URL" >> $GITHUB_ENV
+          echo "POSTGRES_URL<<EOF" >> $GITHUB_ENV
+          echo "$POSTGRES_URL" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           
