@@ -69,7 +69,7 @@ export async function POST() {
         },
       ],
       mode: "subscription",
-      success_url: `${baseUrl}/thank-you`,
+      success_url: `${baseUrl}/api/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: baseUrl,
     });
 
