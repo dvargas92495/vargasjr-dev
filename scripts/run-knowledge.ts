@@ -30,7 +30,7 @@ class KnowledgeRunner {
   private isPreviewMode: boolean;
 
   constructor(isPreviewMode: boolean = false) {
-    this.knowledgeDir = join(process.cwd(), "knowledge");
+    this.knowledgeDir = join(process.cwd(), "docs");
     this.isPreviewMode = isPreviewMode;
   }
 
@@ -91,7 +91,7 @@ class KnowledgeRunner {
     console.log("=== Loading local knowledge files ===");
     
     if (!existsSync(this.knowledgeDir)) {
-      console.log("⚠️  No knowledge directory found - no local knowledge to process");
+      console.log("⚠️  No docs directory found - no local knowledge to process");
       return [];
     }
 
@@ -100,7 +100,7 @@ class KnowledgeRunner {
       .sort();
 
     if (knowledgeFiles.length === 0) {
-      console.log("⚠️  No JSON files found in knowledge directory");
+      console.log("⚠️  No JSON files found in docs directory");
       return [];
     }
 

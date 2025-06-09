@@ -1,0 +1,6 @@
+{
+  "name": "Example Knowledge",
+  "body": "This is example knowledge content that demonstrates the declarative knowledge management system. This knowledge will be available to Devin when triggered by the specified conditions.",
+  "trigger_description": "When the user asks about example knowledge or declarative knowledge management",
+  "parent_folder_id": null
+}
