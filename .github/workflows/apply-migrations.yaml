@@ -58,11 +58,16 @@ jobs:
             exit 1
           fi
           
-          PROJECT_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
-            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}")
+          DATABASE_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches/${BRANCH_ID}/databases")
           
-          DATABASE_NAME=$(echo "$PROJECT_RESPONSE" | jq -r ".project.default_branch_database.name")
-          DATABASE_USER=$(echo "$PROJECT_RESPONSE" | jq -r ".project.default_branch_database.owner_name")
+          echo "Database response: $DATABASE_RESPONSE"
+          
+          DATABASE_NAME=$(echo "$DATABASE_RESPONSE" | jq -r ".databases[0].name")
+          DATABASE_USER=$(echo "$DATABASE_RESPONSE" | jq -r ".databases[0].owner_name")
+          
+          echo "Database name: $DATABASE_NAME"
+          echo "Database user: $DATABASE_USER"
           
           POSTGRES_URL="postgresql://${DATABASE_USER}@${HOST}/${DATABASE_NAME}?sslmode=require"
           
