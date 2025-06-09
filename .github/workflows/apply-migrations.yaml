@@ -36,6 +36,11 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
         
+      - name: Link to Vercel project
+        run: vercel link --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        
       - name: Pull environment variables from Vercel
         run: |
           vercel env pull .env.vercel --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --yes
@@ -70,6 +75,11 @@ jobs:
         
       - name: Install Vercel CLI
         run: npm install -g vercel
+        
+      - name: Link to Vercel project
+        run: vercel link --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         
       - name: Pull environment variables from Vercel
         run: |
