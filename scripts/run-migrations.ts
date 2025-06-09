@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { execSync } from "child_process";
-import { existsSync, readdirSync } from "fs";
+import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 class MigrationRunner {
@@ -74,22 +74,32 @@ class MigrationRunner {
   }
 
   private async displayMigrationFiles(): Promise<void> {
-    console.log("=== Generated migration files ===");
+    let migrationContent = "=== Generated migration files ===\n\n";
     
     const tempMigrationsDir = join(process.cwd(), "temp-migrations");
     
     if (!existsSync(tempMigrationsDir)) {
+      migrationContent += "⚠️  No new migrations generated - schema is up to date\n";
       console.log("⚠️  No new migrations generated - schema is up to date");
+      if (this.isPreviewMode) {
+        await this.postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!");
+      }
       return;
     }
 
     try {
       execSync(`ls -la ${tempMigrationsDir}/*.sql`, { stdio: 'inherit' });
     } catch (error) {
+      migrationContent += "⚠️  No SQL migration files generated - schema is up to date\n";
       console.log("⚠️  No SQL migration files generated - schema is up to date");
+      if (this.isPreviewMode) {
+        await this.postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!");
+      }
       return;
     }
 
+    migrationContent += "=== SQL statements that would be applied ===\n";
+    migrationContent += "The following migrations would be generated and applied to production:\n\n";
     console.log("\n=== SQL statements that would be applied ===");
     console.log("The following migrations would be generated and applied to production:");
 
@@ -99,24 +109,78 @@ class MigrationRunner {
 
     for (const migrationFile of migrationFiles) {
       const filePath = join(tempMigrationsDir, migrationFile);
+      migrationContent += `--- ${migrationFile} ---\n`;
       console.log(`\n--- ${migrationFile} ---`);
       try {
+        const fileContent = readFileSync(filePath, 'utf8');
+        migrationContent += fileContent + "\n\n";
         execSync(`cat "${filePath}"`, { stdio: 'inherit' });
       } catch (error) {
-        console.error(`Failed to read migration file ${migrationFile}: ${error}`);
+        const errorMsg = `Failed to read migration file ${migrationFile}: ${error}`;
+        migrationContent += errorMsg + "\n\n";
+        console.error(errorMsg);
       }
       console.log("");
     }
 
+    migrationContent += "=== End of migration preview ===\n";
     console.log("=== End of migration preview ===");
+    
     if (this.isPreviewMode) {
+      migrationContent += "⚠️  NOTE: These migrations were NOT applied to production database\n";
+      migrationContent += "This is a preview-only run for pull request review\n";
+      migrationContent += "✅ Migration preview completed successfully!";
       console.log("⚠️  NOTE: These migrations were NOT applied to production database");
       console.log("This is a preview-only run for pull request review");
+      
+      await this.postGitHubComment(migrationContent);
     } else {
       console.log("✅ These migrations would be applied to production database");
     }
     
     execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
+  }
+
+  private async postGitHubComment(content: string): Promise<void> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPOSITORY;
+    const eventName = process.env.GITHUB_EVENT_NAME;
+    const eventPath = process.env.GITHUB_EVENT_PATH;
+
+    if (!githubToken || !githubRepo || eventName !== 'pull_request' || !eventPath) {
+      console.log("Not in PR context or missing GitHub environment variables, skipping comment");
+      return;
+    }
+
+    try {
+      const eventData = JSON.parse(readFileSync(eventPath, 'utf8'));
+      const prNumber = eventData.number;
+
+      if (!prNumber) {
+        console.log("No PR number found in event data");
+        return;
+      }
+
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "Content-Type": "application/json",
+          "User-Agent": "vargasjr-dev-migration-script"
+        },
+        body: JSON.stringify({
+          body: content
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.statusText}`);
+      }
+
+      console.log("✅ Posted migration preview comment to PR");
+    } catch (error) {
+      console.error("Failed to post GitHub comment:", error);
+    }
   }
 }
 

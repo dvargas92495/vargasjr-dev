@@ -33,23 +33,52 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Generate migration preview
-        run: npm run db:generate
-        env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-          
-      - name: Run migration preview
+      - name: Get database URL from Neon API
         run: |
-          npm run run-migrations -- --preview > migration-preview-full.txt 2>&1
-          sed -n '/=== Generated migration files ===/,$p' migration-preview-full.txt > migration-preview.txt
-        env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          BRANCH_NAME="preview/${{ github.head_ref }}"
+          PROJECT_ID="fancy-sky-34733112"
           
-      - name: Comment PR with migration preview
-        uses: JoseThen/comment-pr@v1.2.0
-        with:
-          file_path: migration-preview.txt
+          BRANCH_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches")
+          
+          BRANCH_ID=$(echo "$BRANCH_RESPONSE" | jq -r ".branches[] | select(.name == \"$BRANCH_NAME\") | .id")
+          
+          if [ "$BRANCH_ID" = "null" ] || [ -z "$BRANCH_ID" ]; then
+            echo "Error: Branch '$BRANCH_NAME' not found"
+            exit 1
+          fi
+          
+          ENDPOINT_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches/${BRANCH_ID}/endpoints")
+          
+          HOST=$(echo "$ENDPOINT_RESPONSE" | jq -r ".endpoints[0].host")
+          
+          if [ "$HOST" = "null" ] || [ -z "$HOST" ]; then
+            echo "Error: No endpoint found for branch '$BRANCH_NAME'"
+            exit 1
+          fi
+          
+          CONNECTION_URI_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            "https://console.neon.tech/api/v2/projects/${PROJECT_ID}/connection_uri?branch_id=${BRANCH_ID}&database_name=verceldb&role_name=default")
+          
+          echo "Connection URI response: $CONNECTION_URI_RESPONSE"
+          
+          POSTGRES_URL=$(echo "$CONNECTION_URI_RESPONSE" | jq -r ".uri")
+          
+          echo "Extracted PostgreSQL URL: $POSTGRES_URL"
+          
+          echo "POSTGRES_URL<<EOF" >> $GITHUB_ENV
+          echo "$POSTGRES_URL" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        
+      - name: Run migration preview
+        run: npm run run-migrations -- --preview
+        env:
+          POSTGRES_URL: ${{ env.POSTGRES_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
 
   apply-migrations:
     runs-on: ubuntu-latest
@@ -66,6 +95,8 @@ jobs:
       - name: Install dependencies
         run: npm install
         
+
+          
       - name: Generate and apply migrations
         run: npm run db:generate
         env:
