@@ -1,10 +1,7 @@
 import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-
-const db = drizzle(sql);
+import { getDb } from "@/db/connection";
 
 export default async function ChatSessionPage({
   params,
@@ -13,6 +10,7 @@ export default async function ChatSessionPage({
 }) {
   const { id } = await params;
   
+  const db = getDb();
   const chatSession = await db
     .select({
       id: ChatSessionsTable.id,

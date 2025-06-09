@@ -3,13 +3,10 @@ import {
   InboxMessagesTable,
   InboxesTable,
 } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-
-const db = drizzle(sql);
+import { getDb } from "@/db/connection";
 
 // params will contain the dynamic [id] value
 export default async function InboxPage({
@@ -18,6 +15,7 @@ export default async function InboxPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const db = getDb();
   const inbox = await db
     .select()
     .from(InboxesTable)

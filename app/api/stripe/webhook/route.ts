@@ -3,11 +3,10 @@ import Stripe from "stripe";
 import { generateContractorAgreementPDF } from "@/app/lib/pdf-generator";
 import { uploadPDFToS3 } from "@/app/lib/s3-client";
 import { ContactsTable } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { eq } from "drizzle-orm";
 import { getEnvironmentPrefix, getBaseUrl } from "@/app/api/constants";
 import { postSlackMessage } from "@/server";
+import { getDb } from "@/db/connection";
 
 export async function POST(request: Request) {
   try {
@@ -122,7 +121,7 @@ async function handleVargasJrHired(event: Stripe.Event) {
       return;
     }
     
-    const db = drizzle(sql);
+    const db = getDb();
     
     let contact = await db
       .select()

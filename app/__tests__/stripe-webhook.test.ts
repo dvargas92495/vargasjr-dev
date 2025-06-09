@@ -60,7 +60,7 @@ vi.mock("drizzle-orm/vercel-postgres", () => ({
 }));
 
 vi.mock("@vercel/postgres", () => ({
-  sql: {}
+  sql: vi.fn()
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -88,6 +88,7 @@ describe("Stripe Webhook", () => {
     mockReturning.mockClear();
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
+    process.env.POSTGRES_URL = "postgresql://test:test@localhost:5432/test";
     
     mockUpdate.mockResolvedValue({});
     mockRetrieve.mockResolvedValue({

@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { ApplicationsTable } from "@/db/schema";
 import { z, ZodError } from "zod";
-
-const db = drizzle(sql);
+import { getDb } from "@/db/connection";
 
 const applicationSchema = z.object({
   name: z.string(),
@@ -18,6 +15,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, clientId, clientSecret, apiEndpoint } = applicationSchema.parse(body);
 
+    const db = getDb();
     const [application] = await db
       .insert(ApplicationsTable)
       .values({ name, clientId, clientSecret, apiEndpoint })

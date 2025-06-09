@@ -1,10 +1,7 @@
 import { ApplicationsTable } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-
-const db = drizzle(sql);
+import { getDb } from "@/db/connection";
 
 export default async function ApplicationDetailPage({
   params,
@@ -12,6 +9,7 @@ export default async function ApplicationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const db = getDb();
   const application = await db
     .select()
     .from(ApplicationsTable)

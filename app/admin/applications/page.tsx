@@ -1,13 +1,11 @@
 import { ApplicationsTable } from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import ApplicationRow from "@/components/application-row";
 import Link from "next/link";
-
-const db = drizzle(sql);
+import { getDb } from "@/db/connection";
 
 export default async function ApplicationsPage() {
+  const db = getDb();
   const allApplications = await db
     .select()
     .from(ApplicationsTable)

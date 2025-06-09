@@ -1,9 +1,7 @@
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { InboxesTable, InboxMessagesTable } from "@/db/schema";
 import { NotFoundError } from "./errors";
 import { eq } from "drizzle-orm";
-const db = drizzle(sql);
+import { getDb } from "@/db/connection";
 
 export const addInboxMessage = async ({
   body,
@@ -16,6 +14,7 @@ export const addInboxMessage = async ({
   inboxName: string;
   createdAt?: Date;
 }) => {
+  const db = getDb();
   const inbox = await db
     .select({ id: InboxesTable.id })
     .from(InboxesTable)

@@ -1,15 +1,12 @@
 import { ContactsTable } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Stripe from "stripe";
+import { getDb } from "@/db/connection";
 
 dayjs.extend(relativeTime);
-
-const db = drizzle(sql);
 
 export default async function ContactPage({
   params,
@@ -17,6 +14,7 @@ export default async function ContactPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const db = getDb();
   const contact = await db
     .select()
     .from(ContactsTable)
