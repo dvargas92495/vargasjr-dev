@@ -1,11 +1,10 @@
 import { ApplicationsTable } from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import ApplicationRow from "@/components/application-row";
 import Link from "next/link";
+import { db } from "@/db/connection";
 
-const db = drizzle(sql);
+export const dynamic = 'force-dynamic';
 
 export default async function ApplicationsPage() {
   const allApplications = await db

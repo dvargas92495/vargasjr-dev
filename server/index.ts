@@ -1,9 +1,7 @@
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { InboxesTable, InboxMessagesTable } from "@/db/schema";
 import { NotFoundError } from "./errors";
 import { eq } from "drizzle-orm";
-const db = drizzle(sql);
+import { db } from "@/db/connection";
 
 export const addInboxMessage = async ({
   body,

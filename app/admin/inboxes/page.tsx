@@ -1,11 +1,10 @@
 import { InboxesTable } from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import InboxRow from "@/components/inbox-row";
 import Link from "next/link";
+import { db } from "@/db/connection";
 
-const db = drizzle(sql);
+export const dynamic = 'force-dynamic';
 
 export default async function InboxesPage() {
   const allInboxes = await db
