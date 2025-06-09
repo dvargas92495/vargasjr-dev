@@ -6,6 +6,9 @@ import { findInstancesByFilters, terminateInstances, deleteKeyPair } from "./uti
 interface CleanupConfig {
   prNumber: string;
   region?: string;
+  repository?: string;
+  branch?: string;
+  githubToken?: string;
 }
 
 class VargasJRAgentCleanup {
@@ -47,6 +50,8 @@ class VargasJRAgentCleanup {
 
       await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
       
+      await this.deleteBranch();
+      
       console.log(`✅ Cleanup completed for PR ${this.config.prNumber}`);
       
     } catch (error) {
@@ -55,6 +60,36 @@ class VargasJRAgentCleanup {
     }
   }
 
+  async deleteBranch(): Promise<void> {
+    if (!this.config.repository || !this.config.branch || !this.config.githubToken) {
+      console.log("⚠️  Skipping branch deletion - missing repository, branch, or GitHub token");
+      return;
+    }
+
+    console.log(`Deleting branch: ${this.config.branch} from repository: ${this.config.repository}`);
+    
+    try {
+      const response = await fetch(`https://api.github.com/repos/${this.config.repository}/git/refs/heads/${this.config.branch}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.config.githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'VargasJR-Cleanup-Agent'
+        }
+      });
+
+      if (response.ok) {
+        console.log(`✅ Branch ${this.config.branch} deleted successfully`);
+      } else if (response.status === 404) {
+        console.log(`⚠️  Branch ${this.config.branch} not found (may have been already deleted)`);
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Failed to delete branch ${this.config.branch}: ${response.status} ${errorText}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error deleting branch ${this.config.branch}: ${error}`);
+    }
+  }
 
 }
 
@@ -62,17 +97,34 @@ async function main() {
   const args = process.argv.slice(2);
   
   let prNumber = "";
+  let repository = "";
+  let branch = "";
+  let githubToken = "";
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--pr" && i + 1 < args.length) {
       prNumber = args[i + 1];
       i++;
+    } else if (args[i] === "--repository" && i + 1 < args.length) {
+      repository = args[i + 1];
+      i++;
+    } else if (args[i] === "--branch" && i + 1 < args.length) {
+      branch = args[i + 1];
+      i++;
+    } else if (args[i] === "--github-token" && i + 1 < args.length) {
+      githubToken = args[i + 1];
+      i++;
     }
   }
   
+  if (!githubToken) {
+    githubToken = process.env.GITHUB_TOKEN || "";
+  }
+  
   if (!prNumber) {
-    console.error("Usage: npx tsx scripts/cleanup-agent.ts --pr <pr-number>");
-    console.error("Example: npx tsx scripts/cleanup-agent.ts --pr 123");
+    console.error("Usage: npx tsx scripts/cleanup-agent.ts --pr <pr-number> [--repository <owner/repo>] [--branch <branch-name>] [--github-token <token>]");
+    console.error("Example: npx tsx scripts/cleanup-agent.ts --pr 123 --repository owner/repo --branch feature-branch");
+    console.error("Note: GitHub token can be provided via --github-token or GITHUB_TOKEN environment variable");
     process.exit(1);
   }
   
@@ -81,7 +133,12 @@ async function main() {
     process.exit(1);
   }
 
-  const cleanup = new VargasJRAgentCleanup({ prNumber });
+  const cleanup = new VargasJRAgentCleanup({ 
+    prNumber,
+    repository,
+    branch,
+    githubToken
+  });
   await cleanup.cleanupAgent();
 }
 
