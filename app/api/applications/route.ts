@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { ApplicationsTable } from "@/db/schema";
 import { z, ZodError } from "zod";
+import { getDb } from "@/db/connection";
 
-const db = drizzle(sql);
+const db = getDb();
 
 const applicationSchema = z.object({
   name: z.string(),

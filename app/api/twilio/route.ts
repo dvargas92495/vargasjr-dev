@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { InboxesTable, InboxMessagesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
+import { getDb } from "@/db/connection";
 
-const db = drizzle(sql);
+const db = getDb();
 
 const bodySchema = z.object({
   ToCountry: z.string(),

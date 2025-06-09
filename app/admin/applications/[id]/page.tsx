@@ -1,10 +1,9 @@
 import { ApplicationsTable } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { getDb } from "@/db/connection";
 
-const db = drizzle(sql);
+const db = getDb();
 
 export default async function ApplicationDetailPage({
   params,

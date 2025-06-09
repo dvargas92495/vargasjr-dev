@@ -3,13 +3,12 @@ import {
   InboxMessagesTable,
   InboxesTable,
 } from "@/db/schema";
-import { drizzle } from "drizzle-orm/vercel-postgres";
-import { sql } from "@vercel/postgres";
 import { desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { getDb } from "@/db/connection";
 
-const db = drizzle(sql);
+const db = getDb();
 
 // params will contain the dynamic [id] value
 export default async function InboxPage({

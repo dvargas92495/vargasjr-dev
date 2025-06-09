@@ -52,8 +52,8 @@ vi.mock("@aws-sdk/client-s3", () => ({
 
 
 
-vi.mock("drizzle-orm/vercel-postgres", () => ({
-  drizzle: vi.fn(() => ({
+vi.mock("@/db/connection", () => ({
+  getDb: vi.fn(() => ({
     select: mockSelect,
     insert: mockInsert
   }))
