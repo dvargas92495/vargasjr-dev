@@ -585,6 +585,7 @@ class WeeklyAccountingWorkflow(BaseWorkflow):
         >> GetSummaryData
         >> SummarizeData
         >> SendFinancesReport,
+        GetCapitalOneTransactions >> NormalizeFamilyTransactions,
     }
 
     class Outputs(BaseWorkflow.Outputs):
