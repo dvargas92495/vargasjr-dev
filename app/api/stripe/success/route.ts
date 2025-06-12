@@ -9,10 +9,10 @@ import { addInboxMessage } from "@/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const sessionId = searchParams.get('session_id');
+    const sessionId = searchParams.get('checkout_session_id');
     
     if (!sessionId) {
-      console.error("No session_id provided in success URL");
+      console.error("No checkout_session_id provided in success URL");
       return NextResponse.redirect(new URL('/thank-you', request.url));
     }
 
