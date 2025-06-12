@@ -34,6 +34,7 @@ class SlimMessage(UniversalBaseModel):
     source: str
     channel: InboxType
     inbox_name: str
+    thread_id: Optional[str] = None
 
 
 class ReadMessageNode(BaseNode):
@@ -69,6 +70,7 @@ class ReadMessageNode(BaseNode):
                             source="",
                             channel=InboxType.NONE,
                             inbox_name="",
+                            thread_id=None,
                         )
                     )
 
@@ -86,6 +88,7 @@ class ReadMessageNode(BaseNode):
                     source=inbox_message.source,
                     channel=inbox_type,
                     inbox_name=inbox_name,
+                    thread_id=inbox_message.thread_id,
                 )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
             # I suppose the agent could spin down while the agent is running, so we need to cancel this case.
@@ -96,6 +99,7 @@ class ReadMessageNode(BaseNode):
                     source="",
                     channel=InboxType.NONE,
                     inbox_name="",
+                    thread_id=None,
                 )
             )
 
@@ -251,6 +255,7 @@ class SendEmailNode(BaseNode):
     subject: str
     body: str
     inbox_message_id: UUID
+    thread_id: Optional[str] = None
 
     class Outputs(BaseNode.Outputs):
         summary: str
@@ -273,6 +278,7 @@ class SendEmailNode(BaseNode):
                 parent_inbox_message_id=self.inbox_message_id,
                 body=self.body,
                 type=InboxType.EMAIL,
+                thread_id=self.thread_id,
             ),
         )
 
@@ -287,6 +293,7 @@ class EmailReplyNode(SendEmailNode):
     subject = "RE: "
     body = ParseFunctionCallNode.Outputs.parameters["body"]
     inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
+    thread_id = ReadMessageNode.Outputs.message["thread_id"]
 
 
 class EmailInitiateNode(SendEmailNode):
@@ -294,12 +301,14 @@ class EmailInitiateNode(SendEmailNode):
     subject = ParseFunctionCallNode.Outputs.parameters["subject"]
     body = ParseFunctionCallNode.Outputs.parameters["body"]
     inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
+    thread_id = ReadMessageNode.Outputs.message["thread_id"]
 
 
 class TextReplyNode(BaseNode):
     phone_number = ParseFunctionCallNode.Outputs.parameters["phone_number"]
     message = ParseFunctionCallNode.Outputs.parameters["message"]
     inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
+    thread_id = ReadMessageNode.Outputs.message["thread_id"]
 
     class Outputs(BaseNode.Outputs):
         summary: str
@@ -312,6 +321,7 @@ class TextReplyNode(BaseNode):
                 parent_inbox_message_id=self.inbox_message_id,
                 body=self.message,
                 type=InboxType.SMS,
+                thread_id=self.thread_id,
             ),
         )
 
@@ -321,6 +331,7 @@ class SlackReplyNode(BaseNode):
     channel = ReadMessageNode.Outputs.message["inbox_name"]
     message = ParseFunctionCallNode.Outputs.parameters["message"]
     inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
+    thread_id = ReadMessageNode.Outputs.message["thread_id"]
 
     class Outputs(BaseNode.Outputs):
         summary: str
@@ -338,6 +349,7 @@ class SlackReplyNode(BaseNode):
                 parent_inbox_message_id=self.inbox_message_id,
                 body=self.message,
                 type=InboxType.SLACK,
+                thread_id=self.thread_id,
             ),
         )
 

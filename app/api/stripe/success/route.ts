@@ -89,6 +89,7 @@ What would you like me to work on first?`;
       body: initialMessage,
       source: "Vargas JR",
       inboxName: "chat-sessions",
+      threadId: chatSession[0].id,
     });
 
     return NextResponse.redirect(new URL(`/chat/${chatSession[0].id}`, request.url));
