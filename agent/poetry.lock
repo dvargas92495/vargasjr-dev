@@ -2100,13 +2100,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "vellum-ai"
-version = "0.14.66"
+version = "0.14.70"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "vellum_ai-0.14.66-py3-none-any.whl", hash = "sha256:9c648c5b0d227379fd5d9b263085755f29e6e7007304f8153ffa563171370d78"},
-    {file = "vellum_ai-0.14.66.tar.gz", hash = "sha256:a5e39d6ed8950844f0d28a6238076bf01bf2795f20ebf562b7c0acce4b90ca66"},
+    {file = "vellum_ai-0.14.70-py3-none-any.whl", hash = "sha256:8e223259ece50e0a968cc932cd5db8919c8cab63cb260f824682f07860640e6d"},
+    {file = "vellum_ai-0.14.70.tar.gz", hash = "sha256:b285737dda772990976030a80d39e84dddd75925b10662b7022e62002fde1187"},
 ]
 
 [package.dependencies]
@@ -2142,4 +2142,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a7c5335d1f51e43d4aabbaf42a69785cce1437fed93ce8c804c97580806c70d8"
+content-hash = "741cf83705b10a181c56da9d99ca7c08060c9a52a97612ac94a8b51ee5748d94"
