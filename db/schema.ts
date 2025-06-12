@@ -29,6 +29,7 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
     .references(() => InboxesTable.id),
   source: varchar("source").notNull(),
   body: text("body").notNull(),
+  threadId: varchar("thread_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -64,6 +65,7 @@ export const OutboxMessagesTable = pgTable("outbox_messages", {
     .notNull()
     .references(() => InboxMessagesTable.id),
   body: text("body").notNull(),
+  threadId: varchar("thread_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   type: InboxTypesEnum("type").notNull(),
 });
