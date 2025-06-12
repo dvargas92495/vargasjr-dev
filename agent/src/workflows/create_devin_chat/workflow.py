@@ -4,6 +4,7 @@ from typing import Optional
 from src.services import get_application_by_name
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
+from vellum.workflows.state import BaseState
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from .inputs import CreateDevinChatInputs
 
@@ -76,7 +77,7 @@ Once the PR is merged, you may archive this session"""
             )
 
 
-class CreateDevinChatWorkflow(BaseWorkflow):
+class CreateDevinChatWorkflow(BaseWorkflow[CreateDevinChatInputs, BaseState]):
     graph = CreateDevinChatSessionNode
 
     class Outputs(BaseWorkflow.Outputs):
