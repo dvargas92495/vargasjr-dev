@@ -1,4 +1,5 @@
 import {
+  boolean,
   jsonb,
   pgEnum,
   pgTable,
@@ -110,3 +111,13 @@ export const ChatSessionsTable = pgTable("chat_sessions", {
 });
 
 export type ChatSession = typeof ChatSessionsTable.$inferSelect;
+
+export const RoutineJobsTable = pgTable("routine_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name").notNull(),
+  cronExpression: varchar("cron_expression").notNull(),
+  enabled: boolean("enabled").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type RoutineJob = typeof RoutineJobsTable.$inferSelect;

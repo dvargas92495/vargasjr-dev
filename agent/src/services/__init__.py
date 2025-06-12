@@ -17,6 +17,7 @@ from src.models.inbox_message import InboxMessage
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.pkm.transaction_rule import TransactionRule
+from src.models.routine_job import RoutineJob
 from src.models.types import InboxType, PersonalTransactionCategory, Sport
 
 
@@ -268,3 +269,28 @@ def get_application_by_name(name: str) -> Optional[Application]:
     with postgres_session() as session:
         statement = select(Application).where(Application.name == name)
         return session.exec(statement).one_or_none()
+
+
+def get_enabled_routine_jobs() -> list[RoutineJob]:
+    """Get all enabled routine jobs from the database"""
+    with postgres_session() as session:
+        statement = select(RoutineJob).where(RoutineJob.enabled == True)
+        return session.exec(statement).all()
+
+
+def seed_routine_jobs() -> None:
+    """Seed the routine jobs table with default jobs if empty"""
+    with postgres_session() as session:
+        statement = select(RoutineJob)
+        existing_jobs = session.exec(statement).all()
+        
+        if not existing_jobs:
+            default_jobs = [
+                RoutineJob(name="make_sports_bets", cron_expression="0 9 * * *"),
+                RoutineJob(name="brainrot", cron_expression="0 13 * * *"),
+                RoutineJob(name="weekly_accounting", cron_expression="0 12 * * 0"),
+            ]
+            
+            for job in default_jobs:
+                session.add(job)
+            session.commit()
