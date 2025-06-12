@@ -32,3 +32,4 @@ jobs:
         run: npm run push-vellum-workflows
         env:
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
