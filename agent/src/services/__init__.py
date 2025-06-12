@@ -271,13 +271,6 @@ def get_application_by_name(name: str) -> Optional[Application]:
         return session.exec(statement).one_or_none()
 
 
-def get_enabled_routine_jobs() -> list[RoutineJob]:
-    """Get all enabled routine jobs from the database"""
-    with postgres_session() as session:
-        statement = select(RoutineJob).where(RoutineJob.enabled == True)
-        return session.exec(statement).all()
-
-
 def seed_routine_jobs() -> None:
     """Seed the routine jobs table with default jobs if empty"""
     with postgres_session() as session:
