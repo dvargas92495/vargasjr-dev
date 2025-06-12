@@ -2,11 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { AppTypes } from "@/db/constants";
+import { AppTypes, AppType } from "@/db/constants";
+import TwitterForm from "@/components/TwitterForm";
+import DefaultApplicationForm from "@/components/DefaultApplicationForm";
 
 export default function NewApplicationPage() {
   const router = useRouter();
-  const [selectedAppType, setSelectedAppType] = useState<string>("");
+  const [selectedAppType, setSelectedAppType] = useState<AppType | "">("");
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,7 +73,7 @@ export default function NewApplicationPage() {
             name="appType"
             required
             value={selectedAppType}
-            onChange={(e) => setSelectedAppType(e.target.value)}
+            onChange={(e) => setSelectedAppType(e.target.value as AppType | "")}
             className="w-full p-2 border rounded text-black"
           >
             <option value="">Select an application type...</option>
@@ -83,96 +85,16 @@ export default function NewApplicationPage() {
           </select>
         </div>
 
-        {selectedAppType === "TWITTER" && (
-          <>
-            <div>
-              <label htmlFor="clientId" className="block mb-1">
-                API Key
-              </label>
-              <input
-                type="text"
-                id="clientId"
-                name="clientId"
-                required
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-            <div>
-              <label htmlFor="clientSecret" className="block mb-1">
-                API Secret
-              </label>
-              <input
-                type="password"
-                id="clientSecret"
-                name="clientSecret"
-                required
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-            <div>
-              <label htmlFor="accessToken" className="block mb-1">
-                Access Token
-              </label>
-              <input
-                type="password"
-                id="accessToken"
-                name="accessToken"
-                required
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-            <div>
-              <label htmlFor="refreshToken" className="block mb-1">
-                Refresh Token
-              </label>
-              <input
-                type="password"
-                id="refreshToken"
-                name="refreshToken"
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-          </>
-        )}
-
-        {selectedAppType && selectedAppType !== "TWITTER" && (
-          <>
-            <div>
-              <label htmlFor="clientId" className="block mb-1">
-                Client ID
-              </label>
-              <input
-                type="text"
-                id="clientId"
-                name="clientId"
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-            <div>
-              <label htmlFor="clientSecret" className="block mb-1">
-                Client Secret
-              </label>
-              <input
-                type="password"
-                id="clientSecret"
-                name="clientSecret"
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-            <div>
-              <label htmlFor="apiEndpoint" className="block mb-1">
-                API Endpoint
-              </label>
-              <input
-                type="url"
-                id="apiEndpoint"
-                name="apiEndpoint"
-                placeholder="https://api.example.com"
-                className="w-full p-2 border rounded text-black"
-              />
-            </div>
-          </>
-        )}
+        {(() => {
+          switch (selectedAppType) {
+            case "TWITTER":
+              return <TwitterForm />;
+            case "NOTION":
+            case "DEVIN":
+            default:
+              return selectedAppType ? <DefaultApplicationForm /> : null;
+          }
+        })()}
 
         <button
           type="submit"
