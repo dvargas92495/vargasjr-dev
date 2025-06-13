@@ -17,7 +17,6 @@ from src.models.inbox_message import InboxMessage
 from src.models.pkm.sport_game import SportGame
 from src.models.pkm.sport_team import SportTeam
 from src.models.pkm.transaction_rule import TransactionRule
-from src.models.routine_job import RoutineJob
 from src.models.types import InboxType, PersonalTransactionCategory, Sport
 
 
