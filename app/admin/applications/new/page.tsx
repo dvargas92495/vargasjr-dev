@@ -19,8 +19,6 @@ export default function NewApplicationPage() {
       const clientId = formData.get("clientId");
       const clientSecret = formData.get("clientSecret");
       const apiEndpoint = formData.get("apiEndpoint");
-      const accessToken = formData.get("accessToken");
-      const refreshToken = formData.get("refreshToken");
 
       if (name && appType) {
         const response = await fetch("/api/applications", {
@@ -34,8 +32,6 @@ export default function NewApplicationPage() {
             clientId: clientId?.toString(),
             clientSecret: clientSecret?.toString(),
             apiEndpoint: apiEndpoint?.toString(),
-            accessToken: accessToken?.toString(),
-            refreshToken: refreshToken?.toString(),
           }),
         });
 
@@ -98,7 +94,7 @@ export default function NewApplicationPage() {
 
         <button
           type="submit"
-          className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+          className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 cursor-pointer"
           disabled={!selectedAppType}
         >
           Create Application
