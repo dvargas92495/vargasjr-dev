@@ -1,4 +1,5 @@
 import { EC2 } from "@aws-sdk/client-ec2";
+import { readFileSync } from "fs";
 
 export interface EC2Instance {
   InstanceId?: string;
@@ -110,5 +111,51 @@ export async function findOrCreateSecurityGroup(ec2: EC2, groupName: string, des
   } catch (error: any) {
     console.error(`Failed to create/find security group: ${error}`);
     throw error;
+  }
+}
+
+export async function postGitHubComment(
+  content: string, 
+  userAgent: string, 
+  successMessage: string = "Posted comment to PR"
+): Promise<void> {
+  const githubToken = process.env.GITHUB_TOKEN;
+  const githubRepo = process.env.GITHUB_REPOSITORY;
+  const eventName = process.env.GITHUB_EVENT_NAME;
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+
+  if (!githubToken || !githubRepo || eventName !== 'pull_request' || !eventPath) {
+    console.log("Not in PR context or missing GitHub environment variables, skipping comment");
+    return;
+  }
+
+  try {
+    const eventData = JSON.parse(readFileSync(eventPath, 'utf8'));
+    const prNumber = eventData.number;
+
+    if (!prNumber) {
+      console.log("No PR number found in event data");
+      return;
+    }
+
+    const response = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${githubToken}`,
+        "Content-Type": "application/json",
+        "User-Agent": userAgent
+      },
+      body: JSON.stringify({
+        body: content
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.statusText}`);
+    }
+
+    console.log(`✅ ${successMessage}`);
+  } catch (error) {
+    console.error("Failed to post GitHub comment:", error);
   }
 }

@@ -3,6 +3,7 @@
 import { execSync } from "child_process";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
+import { postGitHubComment } from "./utils";
 
 class MigrationRunner {
   private dbDir: string;
@@ -166,7 +167,7 @@ class MigrationRunner {
       migrationContent += "⚠️  No new migrations generated - schema is up to date\n";
       console.log("⚠️  No new migrations generated - schema is up to date");
       if (this.isPreviewMode) {
-        await this.postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!");
+        await postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!", "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
       }
       return;
     }
@@ -177,7 +178,7 @@ class MigrationRunner {
       migrationContent += "⚠️  No SQL migration files generated - schema is up to date\n";
       console.log("⚠️  No SQL migration files generated - schema is up to date");
       if (this.isPreviewMode) {
-        await this.postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!");
+        await postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!", "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
       }
       return;
     }
@@ -222,7 +223,7 @@ class MigrationRunner {
       console.log("⚠️  NOTE: These migrations were NOT applied to production database");
       console.log("This is a preview-only run for pull request review");
       
-      await this.postGitHubComment(migrationContent);
+      await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
     } else {
       console.log("🚀 Applying migrations to production database...");
       try {
@@ -239,47 +240,7 @@ class MigrationRunner {
     execSync(`rm -rf ${tempMigrationsDir}`, { cwd: process.cwd() });
   }
 
-  private async postGitHubComment(content: string): Promise<void> {
-    const githubToken = process.env.GITHUB_TOKEN;
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-    const eventName = process.env.GITHUB_EVENT_NAME;
-    const eventPath = process.env.GITHUB_EVENT_PATH;
 
-    if (!githubToken || !githubRepo || eventName !== 'pull_request' || !eventPath) {
-      console.log("Not in PR context or missing GitHub environment variables, skipping comment");
-      return;
-    }
-
-    try {
-      const eventData = JSON.parse(readFileSync(eventPath, 'utf8'));
-      const prNumber = eventData.number;
-
-      if (!prNumber) {
-        console.log("No PR number found in event data");
-        return;
-      }
-
-      const response = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${githubToken}`,
-          "Content-Type": "application/json",
-          "User-Agent": "vargasjr-dev-migration-script"
-        },
-        body: JSON.stringify({
-          body: content
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
-      }
-
-      console.log("✅ Posted migration preview comment to PR");
-    } catch (error) {
-      console.error("Failed to post GitHub comment:", error);
-    }
-  }
 }
 
 async function main() {

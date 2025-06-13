@@ -1,8 +1,9 @@
 #!/usr/bin/env npx tsx
 
 import { execSync } from "child_process";
-import { readdirSync, statSync, existsSync, readFileSync } from "fs";
+import { readdirSync, statSync, existsSync } from "fs";
 import { join } from "path";
+import { postGitHubComment } from "./utils";
 
 class VellumWorkflowPusher {
   private agentDir: string;
@@ -80,7 +81,7 @@ class VellumWorkflowPusher {
         commentContent += "This is a preview-only run for pull request review\n";
         commentContent += "✅ Workflow preview completed successfully!";
         
-        await this.postGitHubComment(commentContent);
+        await postGitHubComment(commentContent, "vargasjr-dev-vellum-script", "Posted Vellum workflow preview comment to PR");
       } else {
         console.log("✅ All workflows pushed successfully!");
       }
@@ -152,47 +153,7 @@ class VellumWorkflowPusher {
     }
   }
 
-  private async postGitHubComment(content: string): Promise<void> {
-    const githubToken = process.env.GITHUB_TOKEN;
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-    const eventName = process.env.GITHUB_EVENT_NAME;
-    const eventPath = process.env.GITHUB_EVENT_PATH;
 
-    if (!githubToken || !githubRepo || eventName !== 'pull_request' || !eventPath) {
-      console.log("Not in PR context or missing GitHub environment variables, skipping comment");
-      return;
-    }
-
-    try {
-      const eventData = JSON.parse(readFileSync(eventPath, 'utf8'));
-      const prNumber = eventData.number;
-
-      if (!prNumber) {
-        console.log("No PR number found in event data");
-        return;
-      }
-
-      const response = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${githubToken}`,
-          "Content-Type": "application/json",
-          "User-Agent": "vargasjr-dev-vellum-script"
-        },
-        body: JSON.stringify({
-          body: content
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
-      }
-
-      console.log("✅ Posted Vellum workflow preview comment to PR");
-    } catch (error) {
-      console.error("Failed to post GitHub comment:", error);
-    }
-  }
 }
 
 async function main() {
