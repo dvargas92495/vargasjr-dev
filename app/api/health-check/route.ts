@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     } catch (error) {
       return NextResponse.json({
         instanceId,
-        status: "unhealthy", 
+        status: "offline", 
         error: error instanceof Error ? error.message : "SSH connection failed"
       });
     }

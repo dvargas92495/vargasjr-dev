@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 interface HealthStatus {
-  status: "healthy" | "unhealthy" | "loading" | "error";
+  status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
   error?: string;
 }
 
@@ -59,6 +59,7 @@ const HealthStatusIndicator = ({
     switch (healthStatus.status) {
       case "healthy": return "bg-green-500";
       case "unhealthy": return "bg-red-500";
+      case "offline": return "bg-gray-500";
       case "loading": return "bg-gray-400";
       case "error": return "bg-yellow-500";
       default: return "bg-gray-400";
@@ -69,6 +70,7 @@ const HealthStatusIndicator = ({
     switch (healthStatus.status) {
       case "healthy": return "Agent Running";
       case "unhealthy": return `Agent Not Running${healthStatus.error ? `: ${healthStatus.error}` : ""}`;
+      case "offline": return `Instance Offline${healthStatus.error ? `: ${healthStatus.error}` : ""}`;
       case "loading": return "Checking...";
       case "error": return `Health Check Error${healthStatus.error ? `: ${healthStatus.error}` : ""}`;
       default: return "Unknown";
@@ -83,7 +85,8 @@ const HealthStatusIndicator = ({
       />
       <span className="text-sm text-gray-600">
         {healthStatus.status === "loading" ? "Checking..." : 
-         healthStatus.status === "healthy" ? "Healthy" : "Unhealthy"}
+         healthStatus.status === "healthy" ? "Healthy" : 
+         healthStatus.status === "offline" ? "Offline" : "Unhealthy"}
       </span>
     </div>
   );
