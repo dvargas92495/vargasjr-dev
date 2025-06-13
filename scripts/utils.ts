@@ -1,4 +1,5 @@
 import { EC2 } from "@aws-sdk/client-ec2";
+import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 
 export interface EC2Instance {
@@ -111,6 +112,77 @@ export async function findOrCreateSecurityGroup(ec2: EC2, groupName: string, des
   } catch (error: any) {
     console.error(`Failed to create/find security group: ${error}`);
     throw error;
+  }
+}
+
+export async function createSecret(secretName: string, secretValue: string, region: string = "us-east-1"): Promise<void> {
+  const secretsManager = new SecretsManager({ region });
+  
+  try {
+    console.log(`Creating secret: ${secretName}`);
+    
+    await secretsManager.createSecret({
+      Name: secretName,
+      SecretString: secretValue,
+      Description: `SSH key for VargasJR agent: ${secretName}`
+    });
+    
+    console.log(`✅ Secret created: ${secretName}`);
+  } catch (error: any) {
+    if (error.name === "ResourceExistsException") {
+      console.log(`⚠️  Secret ${secretName} already exists, updating...`);
+      
+      await secretsManager.updateSecret({
+        SecretId: secretName,
+        SecretString: secretValue
+      });
+      
+      console.log(`✅ Secret updated: ${secretName}`);
+    } else {
+      throw error;
+    }
+  }
+}
+
+export async function getSecret(secretName: string, region: string = "us-east-1"): Promise<string> {
+  const secretsManager = new SecretsManager({ region });
+  
+  try {
+    const result = await secretsManager.getSecretValue({
+      SecretId: secretName
+    });
+    
+    if (!result.SecretString) {
+      throw new Error("No secret string returned from Secrets Manager");
+    }
+    
+    return result.SecretString;
+  } catch (error: any) {
+    if (error.name === "ResourceNotFoundException") {
+      throw new Error(`Secret not found: ${secretName}`);
+    }
+    throw error;
+  }
+}
+
+export async function deleteSecret(secretName: string, region: string = "us-east-1"): Promise<void> {
+  const secretsManager = new SecretsManager({ region });
+  
+  try {
+    console.log(`Deleting secret: ${secretName}`);
+    
+    await secretsManager.deleteSecret({
+      SecretId: secretName,
+      ForceDeleteWithoutRecovery: true
+    });
+    
+    console.log(`✅ Secret deleted: ${secretName}`);
+  } catch (error: any) {
+    if (error.name === "ResourceNotFoundException") {
+      console.log(`⚠️  Secret ${secretName} not found, skipping deletion`);
+    } else {
+      throw error;
+    }
   }
 }
 

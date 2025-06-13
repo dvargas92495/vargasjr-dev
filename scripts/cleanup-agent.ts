@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { EC2 } from "@aws-sdk/client-ec2";
-import { findInstancesByFilters, terminateInstances, deleteKeyPair } from "./utils";
+import { findInstancesByFilters, terminateInstances, deleteKeyPair, deleteSecret } from "./utils";
 
 interface CleanupConfig {
   prNumber: string;
@@ -46,6 +46,9 @@ class VargasJRAgentCleanup {
       }
 
       await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
+      
+      const secretName = `vargasjr-pr-${this.config.prNumber}-pr-${this.config.prNumber}-key-pem`;
+      await deleteSecret(secretName, this.config.region);
       
       await this.deleteBranch();
       
