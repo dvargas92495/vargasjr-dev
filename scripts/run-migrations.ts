@@ -189,6 +189,11 @@ class MigrationRunner {
 
     const migrationFiles = readdirSync(tempMigrationsDir)
       .filter(file => file.endsWith('.sql'))
+      .filter(file => {
+        const filePath = join(tempMigrationsDir, file);
+        const fileContent = readFileSync(filePath, 'utf8');
+        return !fileContent.includes('-- Current sql file was generated after introspecting');
+      })
       .sort();
 
     for (const migrationFile of migrationFiles) {
