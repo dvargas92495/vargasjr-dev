@@ -1,5 +1,6 @@
 import StopInstanceButton from "@/components/stop-instance-button";
 import StartInstanceButton from "@/components/start-instance-button";
+import HealthStatusIndicator from "@/components/health-status-indicator";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
 import PendingInstanceRefresh from "@/components/pending-instance-refresh";
@@ -30,7 +31,9 @@ import CopyableText from "@/components/copyable-text";
  */
 
 export default async function AdminPage() {
-  const ec2 = new EC2({});
+  const ec2 = new EC2({
+    region: "us-east-1",
+  });
   const instances = await ec2
     .describeInstances({
       Filters: [
@@ -81,6 +84,15 @@ export default async function AdminPage() {
               </p>
               <p>
                 State: <span className="font-mono">{instanceState}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                Health: 
+                <HealthStatusIndicator 
+                  instanceId={instanceId!}
+                  publicDns={instance.PublicDnsName || ""}
+                  keyName={instance.KeyName || ""}
+                  instanceState={instanceState || ""}
+                />
               </p>
               <p>
                 ImageID: <span className="font-mono">{instance.ImageId}</span>
