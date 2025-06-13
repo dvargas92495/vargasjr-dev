@@ -2,6 +2,7 @@ import { ApplicationsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
+import DeleteApplicationButton from "@/components/delete-application-button";
 
 export default async function ApplicationDetailPage({
   params,
@@ -22,7 +23,13 @@ export default async function ApplicationDetailPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-bold">Application Details</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Application Details</h2>
+        <DeleteApplicationButton 
+          applicationId={application.id} 
+          applicationName={application.name}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Name</label>
