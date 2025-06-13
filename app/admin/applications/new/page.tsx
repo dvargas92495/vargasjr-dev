@@ -18,7 +18,8 @@ export default function NewApplicationPage() {
       const appType = formData.get("appType");
       const clientId = formData.get("clientId");
       const clientSecret = formData.get("clientSecret");
-      const apiEndpoint = formData.get("apiEndpoint");
+      const accessToken = formData.get("accessToken");
+      const refreshToken = formData.get("refreshToken");
 
       if (name && appType) {
         const response = await fetch("/api/applications", {
@@ -31,7 +32,8 @@ export default function NewApplicationPage() {
             appType: appType.toString(),
             clientId: clientId?.toString(),
             clientSecret: clientSecret?.toString(),
-            apiEndpoint: apiEndpoint?.toString(),
+            accessToken: accessToken?.toString(),
+            refreshToken: refreshToken?.toString(),
           }),
         });
 

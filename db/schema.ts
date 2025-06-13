@@ -76,7 +76,6 @@ export const ApplicationsTable = pgTable("applications", {
   name: varchar("name").notNull(),
   clientId: varchar("client_id"),
   clientSecret: varchar("client_secret"),
-  apiEndpoint: varchar("api_endpoint"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -91,7 +90,6 @@ export const ApplicationWorkspacesTable = pgTable("application_workspaces", {
   workspaceId: varchar("workspace_id"),
   clientId: varchar("client_id"),
   clientSecret: varchar("client_secret"),
-  apiEndpoint: varchar("api_endpoint"),
   accessToken: varchar("access_token"),
   refreshToken: varchar("refresh_token"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

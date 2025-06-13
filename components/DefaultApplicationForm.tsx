@@ -27,18 +27,6 @@ export default function DefaultApplicationForm() {
           className="w-full p-2 border rounded text-black"
         />
       </div>
-      <div>
-        <label htmlFor="apiEndpoint" className="block mb-1">
-          API Endpoint
-        </label>
-        <input
-          type="url"
-          id="apiEndpoint"
-          name="apiEndpoint"
-          placeholder="https://api.example.com"
-          className="w-full p-2 border rounded text-black"
-        />
-      </div>
     </>
   );
 }

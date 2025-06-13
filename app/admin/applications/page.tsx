@@ -18,7 +18,6 @@ export default async function ApplicationsPage() {
           <thead>
             <tr className="bg-gray-500">
               <th className="px-6 py-3 border-b text-left">Name</th>
-              <th className="px-6 py-3 border-b text-left">API Endpoint</th>
               <th className="px-6 py-3 border-b text-left">Created At</th>
             </tr>
           </thead>
