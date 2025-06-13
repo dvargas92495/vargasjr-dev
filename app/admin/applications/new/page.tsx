@@ -1,21 +1,28 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { AppTypes, AppType } from "@/db/constants";
+import TwitterForm from "@/components/TwitterForm";
+import DefaultApplicationForm from "@/components/DefaultApplicationForm";
 
 export default function NewApplicationPage() {
   const router = useRouter();
+  const [selectedAppType, setSelectedAppType] = useState<AppType | "">("");
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name");
+      const appType = formData.get("appType");
       const clientId = formData.get("clientId");
       const clientSecret = formData.get("clientSecret");
       const apiEndpoint = formData.get("apiEndpoint");
+      const accessToken = formData.get("accessToken");
+      const refreshToken = formData.get("refreshToken");
 
-      if (name) {
+      if (name && appType) {
         const response = await fetch("/api/applications", {
           method: "POST",
           headers: {
@@ -23,9 +30,12 @@ export default function NewApplicationPage() {
           },
           body: JSON.stringify({
             name: name.toString(),
+            appType: appType.toString(),
             clientId: clientId?.toString(),
             clientSecret: clientSecret?.toString(),
             apiEndpoint: apiEndpoint?.toString(),
+            accessToken: accessToken?.toString(),
+            refreshToken: refreshToken?.toString(),
           }),
         });
 
@@ -55,42 +65,41 @@ export default function NewApplicationPage() {
           />
         </div>
         <div>
-          <label htmlFor="clientId" className="block mb-1">
-            Client ID
+          <label htmlFor="appType" className="block mb-1">
+            Application Type
           </label>
-          <input
-            type="text"
-            id="clientId"
-            name="clientId"
+          <select
+            id="appType"
+            name="appType"
+            required
+            value={selectedAppType}
+            onChange={(e) => setSelectedAppType(e.target.value as AppType | "")}
             className="w-full p-2 border rounded text-black"
-          />
+          >
+            <option value="">Select an application type...</option>
+            {AppTypes.map((type) => (
+              <option key={type} value={type} className="capitalize">
+                {type.toLowerCase().replace(/_/g, ' ')}
+              </option>
+            ))}
+          </select>
         </div>
-        <div>
-          <label htmlFor="clientSecret" className="block mb-1">
-            Client Secret
-          </label>
-          <input
-            type="password"
-            id="clientSecret"
-            name="clientSecret"
-            className="w-full p-2 border rounded text-black"
-          />
-        </div>
-        <div>
-          <label htmlFor="apiEndpoint" className="block mb-1">
-            API Endpoint
-          </label>
-          <input
-            type="url"
-            id="apiEndpoint"
-            name="apiEndpoint"
-            placeholder="https://api.example.com"
-            className="w-full p-2 border rounded text-black"
-          />
-        </div>
+
+        {(() => {
+          switch (selectedAppType) {
+            case "TWITTER":
+              return <TwitterForm />;
+            case "NOTION":
+            case "DEVIN":
+            default:
+              return selectedAppType ? <DefaultApplicationForm /> : null;
+          }
+        })()}
+
         <button
           type="submit"
           className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+          disabled={!selectedAppType}
         >
           Create Application
         </button>
