@@ -11,6 +11,9 @@ from typing import Optional
 from dotenv import load_dotenv
 import requests
 from src.routine_job import RoutineJob
+from src.services import postgres_session
+from src.models.routine_job import RoutineJob as RoutineJobModel
+from sqlmodel import select
 from src.workflows.triage_message.workflow import TriageMessageWorkflow
 
 
@@ -183,15 +186,18 @@ class AgentRunner:
         return not self._cancel_signal.is_set()
 
     def _load_routine_jobs(self) -> list[RoutineJob]:
-        return [
-            RoutineJob(
-                name="make_sports_bets",
-                cron_expression="0 9 * * *",
-                logger=self._logger,
-            ),
-            RoutineJob(
-                name="brainrot",
-                cron_expression="0 13 * * *",
-                logger=self._logger,
-            ),
-        ]
+        with postgres_session() as session:
+            statement = select(RoutineJobModel).where(RoutineJobModel.enabled == True)
+            db_jobs = session.exec(statement).all()
+        
+        routine_jobs = []
+        for db_job in db_jobs:
+            routine_jobs.append(
+                RoutineJob(
+                    name=db_job.name,
+                    cron_expression=db_job.cron_expression,
+                    logger=self._logger,
+                )
+            )
+        
+        return routine_jobs
