@@ -269,21 +269,3 @@ def get_application_by_name(name: str) -> Optional[Application]:
     with postgres_session() as session:
         statement = select(Application).where(Application.name == name)
         return session.exec(statement).one_or_none()
-
-
-def seed_routine_jobs() -> None:
-    """Seed the routine jobs table with default jobs if empty"""
-    with postgres_session() as session:
-        statement = select(RoutineJob)
-        existing_jobs = session.exec(statement).all()
-        
-        if not existing_jobs:
-            default_jobs = [
-                RoutineJob(name="make_sports_bets", cron_expression="0 9 * * *"),
-                RoutineJob(name="brainrot", cron_expression="0 13 * * *"),
-                RoutineJob(name="weekly_accounting", cron_expression="0 12 * * 0"),
-            ]
-            
-            for job in default_jobs:
-                session.add(job)
-            session.commit()
