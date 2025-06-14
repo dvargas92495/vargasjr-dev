@@ -29,14 +29,6 @@ export default async function ApplicationDetailPage({
           <p className="mt-1 text-sm text-gray-900">{application.name}</p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Client ID</label>
-          <p className="mt-1 text-sm text-gray-900">{application.clientId || 'N/A'}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">API Endpoint</label>
-          <p className="mt-1 text-sm text-gray-900">{application.apiEndpoint || 'N/A'}</p>
-        </div>
-        <div>
           <label className="block text-sm font-medium text-gray-700">Created At</label>
           <p className="mt-1 text-sm text-gray-900">
             {application.createdAt.toLocaleDateString()}

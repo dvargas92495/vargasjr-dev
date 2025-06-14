@@ -10,7 +10,7 @@ export default function TwitterForm() {
           API Key
         </label>
         <input
-          type="text"
+          type="password"
           id="clientId"
           name="clientId"
           required
@@ -26,29 +26,6 @@ export default function TwitterForm() {
           id="clientSecret"
           name="clientSecret"
           required
-          className="w-full p-2 border rounded text-black"
-        />
-      </div>
-      <div>
-        <label htmlFor="accessToken" className="block mb-1">
-          Access Token
-        </label>
-        <input
-          type="password"
-          id="accessToken"
-          name="accessToken"
-          required
-          className="w-full p-2 border rounded text-black"
-        />
-      </div>
-      <div>
-        <label htmlFor="refreshToken" className="block mb-1">
-          Refresh Token
-        </label>
-        <input
-          type="password"
-          id="refreshToken"
-          name="refreshToken"
           className="w-full p-2 border rounded text-black"
         />
       </div>
