@@ -23,13 +23,7 @@ export default async function ApplicationDetailPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Application Details</h2>
-        <DeleteApplicationButton 
-          applicationId={application.id} 
-          applicationName={application.name}
-        />
-      </div>
+      <h2 className="text-xl font-bold">Application Details</h2>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -49,6 +43,12 @@ export default async function ApplicationDetailPage({
             {application.createdAt.toLocaleDateString()}
           </p>
         </div>
+      </div>
+      <div className="mt-4">
+        <DeleteApplicationButton 
+          applicationId={application.id} 
+          applicationName={application.name}
+        />
       </div>
     </div>
   );
