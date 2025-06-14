@@ -2,6 +2,7 @@ import { ApplicationsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
+import DeleteApplicationButton from "@/components/delete-application-button";
 
 export default async function ApplicationDetailPage({
   params,
@@ -34,6 +35,12 @@ export default async function ApplicationDetailPage({
             {application.createdAt.toLocaleDateString()}
           </p>
         </div>
+      </div>
+      <div className="mt-4">
+        <DeleteApplicationButton 
+          applicationId={application.id} 
+          applicationName={application.name}
+        />
       </div>
     </div>
   );
