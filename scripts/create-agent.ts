@@ -3,7 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -102,6 +102,10 @@ class VargasJRAgentCreator {
         
         writeFileSync(keyPath, result.KeyMaterial, { mode: 0o600 });
         console.log(`✅ Key pair saved to ${keyPath}`);
+        
+        const env = this.config.prNumber ? `pr-${this.config.prNumber}` : "prod";
+        const secretName = `vargasjr-${env}-${keyPairName}-pem`;
+        await createSecret(secretName, result.KeyMaterial, this.config.region);
       }
     } catch (error: any) {
       if (error.name === "InvalidKeyPair.Duplicate") {
@@ -126,6 +130,10 @@ class VargasJRAgentCreator {
             
             writeFileSync(keyPath, newResult.KeyMaterial, { mode: 0o600 });
             console.log(`✅ Key pair recreated and saved to ${keyPath}`);
+            
+            const env = this.config.prNumber ? `pr-${this.config.prNumber}` : "prod";
+            const secretName = `vargasjr-${env}-${keyPairName}-pem`;
+            await createSecret(secretName, newResult.KeyMaterial, this.config.region);
           }
         } catch (deleteError) {
           console.error(`Failed to delete/recreate key pair: ${deleteError}`);
