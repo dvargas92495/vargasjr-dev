@@ -8,7 +8,6 @@ const applicationSchema = z.object({
   appType: z.string(),
   clientId: z.string().optional(),
   clientSecret: z.string().optional(),
-  apiEndpoint: z.string().optional(),
   accessToken: z.string().optional(),
   refreshToken: z.string().optional(),
 });
@@ -16,13 +15,13 @@ const applicationSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, appType, clientId, clientSecret, apiEndpoint, accessToken, refreshToken } = applicationSchema.parse(body);
+    const { name, appType, clientId, clientSecret, accessToken, refreshToken } = applicationSchema.parse(body);
 
     const db = getDb();
     
     const [application] = await db
       .insert(ApplicationsTable)
-      .values({ name, clientId, clientSecret, apiEndpoint })
+      .values({ name, clientId, clientSecret })
       .returning({ id: ApplicationsTable.id });
 
     if (appType === "TWITTER" && (accessToken || refreshToken)) {
@@ -33,7 +32,6 @@ export async function POST(request: Request) {
           name: `${name} Workspace`,
           clientId,
           clientSecret,
-          apiEndpoint,
           accessToken,
           refreshToken,
         });

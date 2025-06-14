@@ -17,7 +17,6 @@ const ApplicationRow = ({ application }: { application: Application }) => {
       onClick={handleClick}
     >
       <td className="px-6 py-4 border-b">{application.name}</td>
-      <td className="px-6 py-4 border-b">{application.apiEndpoint || 'N/A'}</td>
       <td className="px-6 py-4 border-b">
         {application.createdAt.toLocaleDateString()}
       </td>

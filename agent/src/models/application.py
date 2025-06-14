@@ -11,5 +11,4 @@ class Application(SQLModel, table=True):
     name: str
     client_id: Optional[str] = None
     client_secret: Optional[str] = None
-    api_endpoint: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
