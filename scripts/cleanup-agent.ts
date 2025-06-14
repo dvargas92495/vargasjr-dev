@@ -47,7 +47,7 @@ class VargasJRAgentCleanup {
 
       await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
       
-      const secretName = `vargasjr-pr-${this.config.prNumber}-pr-${this.config.prNumber}-key-pem`;
+      const secretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
       await deleteSecret(secretName, this.config.region);
       
       await this.deleteBranch();
