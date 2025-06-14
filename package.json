@@ -15,7 +15,8 @@
     "cleanup-agent": "npx tsx scripts/cleanup-agent.ts",
     "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts",
     "run-migrations": "npx tsx scripts/run-migrations.ts",
-    "run-knowledge": "npx tsx scripts/run-knowledge.ts"
+    "run-knowledge": "npx tsx scripts/run-knowledge.ts",
+    "setup:local": "npx tsx scripts/setup-local.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
