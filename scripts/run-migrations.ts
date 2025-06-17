@@ -227,7 +227,7 @@ class MigrationRunner {
     } else {
       console.log("🚀 Applying migrations to production database...");
       try {
-        execSync(`npx drizzle-kit push --dialect postgresql --schema ./db/schema.ts --url "${postgresUrl}"`, {
+        execSync(`npx drizzle-kit push --dialect postgresql --schema ./db/schema.ts --url "${postgresUrl}" --force`, {
           stdio: 'inherit',
           cwd: process.cwd()
         });
