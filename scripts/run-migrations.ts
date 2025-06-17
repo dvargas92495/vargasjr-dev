@@ -159,15 +159,17 @@ class MigrationRunner {
   }
 
   private async displayMigrationFiles(postgresUrl: string): Promise<void> {
-    let migrationContent = "=== Generated migration files ===\n\n";
+    let migrationContent = "";
     
     const tempMigrationsDir = join(process.cwd(), this.TEMP_DIR.replace('./', ''));
     
     if (!existsSync(tempMigrationsDir)) {
+      migrationContent += "=== SQL statements that would be applied ===\n";
       migrationContent += "⚠️  No new migrations generated - schema is up to date\n";
+      migrationContent += "=== End of migration preview ===";
       console.log("⚠️  No new migrations generated - schema is up to date");
       if (this.isPreviewMode) {
-        await postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!", "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
+        await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
       }
       return;
     }
@@ -175,18 +177,18 @@ class MigrationRunner {
     try {
       execSync(`ls -la ${tempMigrationsDir}/*.sql`, { stdio: 'inherit' });
     } catch (error) {
+      migrationContent += "=== SQL statements that would be applied ===\n";
       migrationContent += "⚠️  No SQL migration files generated - schema is up to date\n";
+      migrationContent += "=== End of migration preview ===";
       console.log("⚠️  No SQL migration files generated - schema is up to date");
       if (this.isPreviewMode) {
-        await postGitHubComment(migrationContent + "\n⚠️  NOTE: These migrations were NOT applied to production database\nThis is a preview-only run for pull request review\n✅ Migration preview completed successfully!", "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
+        await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
       }
       return;
     }
 
     migrationContent += "=== SQL statements that would be applied ===\n";
-    migrationContent += "The following migrations would be generated and applied to production:\n\n";
     console.log("\n=== SQL statements that would be applied ===");
-    console.log("The following migrations would be generated and applied to production:");
 
     const migrationFiles = readdirSync(tempMigrationsDir)
       .filter(file => file.endsWith('.sql'))
@@ -199,30 +201,21 @@ class MigrationRunner {
 
     for (const migrationFile of migrationFiles) {
       const filePath = join(tempMigrationsDir, migrationFile);
-      migrationContent += `--- ${migrationFile} ---\n`;
-      console.log(`\n--- ${migrationFile} ---`);
       try {
         const fileContent = readFileSync(filePath, 'utf8');
-        migrationContent += fileContent + "\n\n";
+        migrationContent += fileContent;
         execSync(`cat "${filePath}"`, { stdio: 'inherit' });
       } catch (error) {
         const errorMsg = `Failed to read migration file ${migrationFile}: ${error}`;
-        migrationContent += errorMsg + "\n\n";
+        migrationContent += errorMsg + "\n";
         console.error(errorMsg);
       }
-      console.log("");
     }
 
-    migrationContent += "=== End of migration preview ===\n";
+    migrationContent += "\n=== End of migration preview ===";
     console.log("=== End of migration preview ===");
     
     if (this.isPreviewMode) {
-      migrationContent += "⚠️  NOTE: These migrations were NOT applied to production database\n";
-      migrationContent += "This is a preview-only run for pull request review\n";
-      migrationContent += "✅ Migration preview completed successfully!";
-      console.log("⚠️  NOTE: These migrations were NOT applied to production database");
-      console.log("This is a preview-only run for pull request review");
-      
       await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
     } else {
       console.log("🚀 Applying migrations to production database...");
