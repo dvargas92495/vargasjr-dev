@@ -18,8 +18,8 @@ def test_tweet_content_validation():
     assert tweet.hashtags == ["test", "validation"]
 
 
-@patch('src.workflows.post_twitter.workflow.tweepy.API')
-@patch('src.workflows.post_twitter.workflow.tweepy.OAuthHandler')
+@patch('src.workflows.post_twitter.nodes.post_to_twitter.tweepy.API')
+@patch('src.workflows.post_twitter.nodes.post_to_twitter.tweepy.OAuthHandler')
 def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql_session: Session):
     twitter_app = Application(
         name="Twitter",
@@ -52,13 +52,7 @@ def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql
             hashtags=["test", "automation"]
         )
         
-        with patch('src.workflows.post_twitter.workflow.os.getenv') as mock_getenv:
-            mock_getenv.side_effect = lambda key: {
-                'TWITTER_ACCESS_TOKEN': 'test_token',
-                'TWITTER_ACCESS_TOKEN_SECRET': 'test_token_secret'
-            }.get(key)
-            
-            result = node.run()
-            
-            assert result.tweet_id == "mock_tweet_id"
-            assert "Mock tweet prepared" in result.summary
+        result = node.run()
+        
+        assert result.tweet_id == "mock_tweet_id"
+        assert "Mock tweet prepared" in result.summary
