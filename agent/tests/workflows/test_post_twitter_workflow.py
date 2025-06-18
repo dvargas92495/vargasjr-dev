@@ -52,13 +52,7 @@ def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql
             hashtags=["test", "automation"]
         )
         
-        with patch('src.workflows.post_twitter.workflow.os.getenv') as mock_getenv:
-            mock_getenv.side_effect = lambda key: {
-                'TWITTER_ACCESS_TOKEN': 'test_token',
-                'TWITTER_ACCESS_TOKEN_SECRET': 'test_token_secret'
-            }.get(key)
-            
-            result = node.run()
-            
-            assert result.tweet_id == "mock_tweet_id"
-            assert "Mock tweet prepared" in result.summary
+        result = node.run()
+        
+        assert result.tweet_id == "mock_tweet_id"
+        assert "Mock tweet prepared" in result.summary
