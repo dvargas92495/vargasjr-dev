@@ -72,10 +72,12 @@ class ParseVenmoScreenshots(BaseNode):
 
     class Outputs(BaseNode.Outputs):
         parsed_data: ParseVenmoOutput
+        text: str
 
     def run(self) -> Outputs:
         import json
         import requests
+        import os
         
         messages = [
             {
@@ -116,8 +118,9 @@ class ParseVenmoScreenshots(BaseNode):
             )
         except (json.JSONDecodeError, KeyError) as e:
             parsed_data = ParseVenmoOutput(transactions=[], credit_balance=0.0)
+            content = '{"transactions": [], "credit_balance": 0.0}'
             
-        return self.Outputs(parsed_data=parsed_data)
+        return self.Outputs(parsed_data=parsed_data, text=content)
 
 
 class GetCreditCardTransactions(BaseNode):
