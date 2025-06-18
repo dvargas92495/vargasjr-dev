@@ -18,8 +18,8 @@ def test_tweet_content_validation():
     assert tweet.hashtags == ["test", "validation"]
 
 
-@patch('src.workflows.post_twitter.workflow.tweepy.API')
-@patch('src.workflows.post_twitter.workflow.tweepy.OAuthHandler')
+@patch('src.workflows.post_twitter.nodes.post_to_twitter.tweepy.API')
+@patch('src.workflows.post_twitter.nodes.post_to_twitter.tweepy.OAuthHandler')
 def test_post_to_twitter_with_mocked_tweepy(mock_oauth, mock_api_class, mock_sql_session: Session):
     twitter_app = Application(
         name="Twitter",
