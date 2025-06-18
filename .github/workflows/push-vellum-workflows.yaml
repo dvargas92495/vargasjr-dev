@@ -8,10 +8,44 @@ on:
       - 'agent/src/workflows/**'
       - '.github/workflows/push-vellum-workflows.yaml'
       - 'scripts/push-vellum-workflows.ts'
+  pull_request:
+    paths:
+      - 'agent/src/workflows/**'
+      - '.github/workflows/push-vellum-workflows.yaml'
+      - 'scripts/push-vellum-workflows.ts'
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
+  preview-workflows:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+          
+      - name: Bootstrap poetry
+        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
+        
+      - name: Install dependencies
+        run: poetry install
+        working-directory: agent
+        
+      - name: Preview workflows
+        run: npm run push-vellum-workflows -- --preview
+        env:
+          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   push-workflows:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
