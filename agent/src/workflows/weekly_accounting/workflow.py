@@ -68,6 +68,7 @@ class ParseVenmoOutput(UniversalBaseModel):
 
 
 class ParseVenmoScreenshots(InlinePromptNode):
+    image_blocks = GetVenmoScreenshots.Outputs.image_blocks
     ml_model = "gpt-4o"
     blocks = [
         ChatMessagePromptBlock(
@@ -84,7 +85,7 @@ class ParseVenmoScreenshots(InlinePromptNode):
         ),
         ChatMessagePromptBlock(
             chat_role="USER",
-            blocks=GetVenmoScreenshots.Outputs.image_blocks,
+            blocks=image_blocks,
         ),
     ]
     parameters = PromptParameters(
