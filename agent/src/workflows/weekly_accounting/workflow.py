@@ -67,60 +67,35 @@ class ParseVenmoOutput(UniversalBaseModel):
     credit_balance: float
 
 
-class ParseVenmoScreenshots(BaseNode):
-    image_blocks = GetVenmoScreenshots.Outputs.image_blocks
-
-    class Outputs(BaseNode.Outputs):
-        parsed_data: ParseVenmoOutput
-        text: str
-
-    def run(self) -> Outputs:
-        import json
-        import requests
-        import os
-        
-        messages = [
-            {
-                "role": "system",
-                "content": "Parse the set of Venmo screenshots and return a list of transactions and the current credit balance. Return the response as JSON with 'transactions' and 'credit_balance' fields."
+class ParseVenmoScreenshots(InlinePromptNode):
+    ml_model = "gpt-4o"
+    blocks = [
+        ChatMessagePromptBlock(
+            chat_role="SYSTEM",
+            blocks=[
+                RichTextPromptBlock(
+                    blocks=[
+                        PlainTextPromptBlock(
+                            text="Parse the set of Venmo screenshots and return a list of transactions and the current credit balance."
+                        ),
+                    ]
+                )
+            ],
+        ),
+        ChatMessagePromptBlock(
+            chat_role="USER",
+            blocks=GetVenmoScreenshots.Outputs.image_blocks,
+        ),
+    ]
+    parameters = PromptParameters(
+        max_tokens=8000,
+        custom_parameters={
+            "json_schema": {
+                "name": "venmo_output",
+                "schema": ParseVenmoOutput.model_json_schema(),
             },
-            {
-                "role": "user", 
-                "content": [{"type": "image_url", "image_url": {"url": block.src}} for block in self.image_blocks]
-            }
-        ]
-        
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4o",
-                "messages": messages,
-                "max_tokens": 8000,
-                "response_format": {"type": "json_object"}
-            }
-        )
-        
-        if response.status_code != 200:
-            raise Exception(f"OpenAI API call failed: {response.text}")
-            
-        result = response.json()
-        content = result["choices"][0]["message"]["content"]
-        
-        try:
-            parsed_json = json.loads(content)
-            parsed_data = ParseVenmoOutput(
-                transactions=parsed_json.get("transactions", []),
-                credit_balance=parsed_json.get("credit_balance", 0.0)
-            )
-        except (json.JSONDecodeError, KeyError) as e:
-            parsed_data = ParseVenmoOutput(transactions=[], credit_balance=0.0)
-            content = '{"transactions": [], "credit_balance": 0.0}'
-            
-        return self.Outputs(parsed_data=parsed_data, text=content)
+        },
+    )
 
 
 class GetCreditCardTransactions(BaseNode):
