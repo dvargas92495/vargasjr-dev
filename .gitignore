@@ -20,6 +20,7 @@
 # production
 /build
 /agent/dist
+/browser/dist
 
 # misc
 .DS_Store

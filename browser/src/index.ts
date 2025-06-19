@@ -39,13 +39,13 @@ async function startServer() {
 }
 
 process.on('SIGTERM', async () => {
-  console.log('Shutting down gracefully...');
+  console.log('Received SIGTERM, shutting down gracefully...');
   await browserManager.cleanup();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('Shutting down gracefully...');
+  console.log('Received SIGINT, shutting down gracefully...');
   await browserManager.cleanup();
   process.exit(0);
 });
