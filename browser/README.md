@@ -38,13 +38,13 @@ Express server with Playwright integration for browser automation and manipulati
 npm install
 
 # Start development server
-npm run dev
+npm run browser:dev
 
 # Build for production
-npm run build
+npm run browser:build
 
 # Start production server
-npm start
+npm run browser:start
 ```
 
 ## Usage Example
