@@ -97,7 +97,7 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : "SSH connection failed"
       });
     } finally {
-      if (keyPath && keyPath.startsWith(tmpdir())) {
+      if (keyPath) {
         try {
           unlinkSync(keyPath);
         } catch (cleanupError) {
