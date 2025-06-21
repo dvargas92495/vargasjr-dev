@@ -95,7 +95,7 @@ class VargasJRAgentCreator {
       });
       
       if (result.KeyMaterial) {
-        const sshDir = `${process.env.HOME}/.ssh`;
+        const sshDir = `${process.env.HOME || '/home/ubuntu'}/.ssh`;
         const keyPath = `${sshDir}/${keyPairName}.pem`;
         
         mkdirSync(sshDir, { recursive: true, mode: 0o700 });
@@ -123,7 +123,7 @@ class VargasJRAgentCreator {
           });
           
           if (newResult.KeyMaterial) {
-            const sshDir = `${process.env.HOME}/.ssh`;
+            const sshDir = `${process.env.HOME || '/home/ubuntu'}/.ssh`;
             const keyPath = `${sshDir}/${keyPairName}.pem`;
             
             mkdirSync(sshDir, { recursive: true, mode: 0o700 });
@@ -242,7 +242,7 @@ class VargasJRAgentCreator {
   private async setupInstance(instanceDetails: any, keyPairName: string): Promise<void> {
     console.log(`Basic setup for Vargas JR agent instance: ${instanceDetails.instanceId}`);
     console.log(`Instance available at: ${instanceDetails.publicDns}`);
-    console.log(`SSH key available at: ${process.env.HOME}/.ssh/${keyPairName}.pem`);
+    console.log(`SSH key available at: ${process.env.HOME || '/home/ubuntu'}/.ssh/${keyPairName}.pem`);
     
     
     await this.waitForSSHReady(instanceDetails.publicDns, keyPairName);
@@ -276,7 +276,7 @@ AWS_DEFAULT_REGION=us-east-1`;
         'source ~/.profile'
       ];
       
-      const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
+      const keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyPairName}.pem`;
       
       for (const command of setupCommands) {
         console.log(`Executing: ${command}`);
@@ -295,7 +295,7 @@ AWS_DEFAULT_REGION=us-east-1`;
   }
   
   private async waitForSSHReady(publicDns: string, keyPairName: string): Promise<void> {
-    const keyPath = `${process.env.HOME}/.ssh/${keyPairName}.pem`;
+    const keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyPairName}.pem`;
     const maxAttempts = 40;
     let attempts = 0;
     

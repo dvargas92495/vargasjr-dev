@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let keyPath = `${process.env.HOME}/.ssh/${keyName}.pem`;
+    let keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyName}.pem`;
     let tempKeyPath: string | null = null;
     
     try {
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         });
         
         if (result.SecretString) {
-          const tempDir = `${process.env.HOME}/.ssh/temp`;
+          const tempDir = `${process.env.HOME || '/home/ubuntu'}/.ssh/temp`;
           mkdirSync(tempDir, { recursive: true, mode: 0o700 });
           
           tempKeyPath = `${tempDir}/${keyName}-${Date.now()}.pem`;
