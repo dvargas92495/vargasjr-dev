@@ -164,10 +164,9 @@ class MigrationRunner {
     const tempMigrationsDir = join(process.cwd(), this.TEMP_DIR.replace('./', ''));
     
     if (!existsSync(tempMigrationsDir)) {
-      migrationContent += "=== SQL statements that would be applied ===\n";
-      migrationContent += "⚠️  No new migrations generated - schema is up to date\n";
-      migrationContent += "=== End of migration preview ===";
-      console.log("⚠️  No new migrations generated - schema is up to date");
+      migrationContent += "✅ **No database migrations needed**\n\n";
+      migrationContent += "Your database schema is already up to date with the latest changes. No SQL statements need to be applied.\n";
+      console.log("✅ No database migrations needed - schema is up to date");
       if (this.isPreviewMode) {
         await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
       }
@@ -177,10 +176,9 @@ class MigrationRunner {
     try {
       execSync(`ls -la ${tempMigrationsDir}/*.sql`, { stdio: 'inherit' });
     } catch (error) {
-      migrationContent += "=== SQL statements that would be applied ===\n";
-      migrationContent += "⚠️  No SQL migration files generated - schema is up to date\n";
-      migrationContent += "=== End of migration preview ===";
-      console.log("⚠️  No SQL migration files generated - schema is up to date");
+      migrationContent += "✅ **No database migrations needed**\n\n";
+      migrationContent += "Your database schema is already up to date with the latest changes. No SQL statements need to be applied.\n";
+      console.log("✅ No database migrations needed - schema is up to date");
       if (this.isPreviewMode) {
         await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
       }
