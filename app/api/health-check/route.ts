@@ -33,8 +33,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let keyPath: string;
-    let tempKeyPath: string | null = null;
+    let keyPath: string | undefined;
     
     try {
       const ec2 = new EC2({ region: "us-east-1" });
@@ -55,17 +54,24 @@ export async function POST(request: Request) {
         });
         
         if (result.SecretString) {
-          tempKeyPath = `${tmpdir()}/${keyName}-${Date.now()}.pem`;
-          writeFileSync(tempKeyPath, result.SecretString, { mode: 0o600 });
-          keyPath = tempKeyPath;
+          keyPath = `${tmpdir()}/${keyName}-${Date.now()}.pem`;
+          writeFileSync(keyPath, result.SecretString, { mode: 0o600 });
           
           console.log(`✅ Retrieved SSH key from Secrets Manager: ${secretName}`);
         } else {
-          keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyName}.pem`;
+          return NextResponse.json({
+            instanceId,
+            status: "offline", 
+            error: "SSH key not available in Secrets Manager"
+          });
         }
       } catch (secretsError) {
-        console.log(`⚠️  Failed to retrieve from Secrets Manager, falling back to local file: ${secretsError}`);
-        keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyName}.pem`;
+        console.log(`⚠️  Failed to retrieve from Secrets Manager: ${secretsError}`);
+        return NextResponse.json({
+          instanceId,
+          status: "offline", 
+          error: "Failed to retrieve SSH key from Secrets Manager"
+        });
       }
       
       const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "screen -ls"`;
@@ -91,9 +97,9 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : "SSH connection failed"
       });
     } finally {
-      if (tempKeyPath) {
+      if (keyPath && keyPath.startsWith(tmpdir())) {
         try {
-          unlinkSync(tempKeyPath);
+          unlinkSync(keyPath);
         } catch (cleanupError) {
           console.error(`Failed to cleanup temp key file: ${cleanupError}`);
         }

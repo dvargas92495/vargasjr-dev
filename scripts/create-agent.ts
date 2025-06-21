@@ -3,6 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
+import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl } from "./utils";
 
 interface AgentConfig {
@@ -95,10 +96,7 @@ class VargasJRAgentCreator {
       });
       
       if (result.KeyMaterial) {
-        const sshDir = `${process.env.HOME || '/home/ubuntu'}/.ssh`;
-        const keyPath = `${sshDir}/${keyPairName}.pem`;
-        
-        mkdirSync(sshDir, { recursive: true, mode: 0o700 });
+        const keyPath = `${tmpdir()}/${keyPairName}.pem`;
         
         writeFileSync(keyPath, result.KeyMaterial, { mode: 0o600 });
         console.log(`✅ Key pair saved to ${keyPath}`);
@@ -123,10 +121,7 @@ class VargasJRAgentCreator {
           });
           
           if (newResult.KeyMaterial) {
-            const sshDir = `${process.env.HOME || '/home/ubuntu'}/.ssh`;
-            const keyPath = `${sshDir}/${keyPairName}.pem`;
-            
-            mkdirSync(sshDir, { recursive: true, mode: 0o700 });
+            const keyPath = `${tmpdir()}/${keyPairName}.pem`;
             
             writeFileSync(keyPath, newResult.KeyMaterial, { mode: 0o600 });
             console.log(`✅ Key pair recreated and saved to ${keyPath}`);
@@ -242,7 +237,7 @@ class VargasJRAgentCreator {
   private async setupInstance(instanceDetails: any, keyPairName: string): Promise<void> {
     console.log(`Basic setup for Vargas JR agent instance: ${instanceDetails.instanceId}`);
     console.log(`Instance available at: ${instanceDetails.publicDns}`);
-    console.log(`SSH key available at: ${process.env.HOME || '/home/ubuntu'}/.ssh/${keyPairName}.pem`);
+    console.log(`SSH key available at: ${tmpdir()}/${keyPairName}.pem`);
     
     
     await this.waitForSSHReady(instanceDetails.publicDns, keyPairName);
@@ -276,7 +271,7 @@ AWS_DEFAULT_REGION=us-east-1`;
         'source ~/.profile'
       ];
       
-      const keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyPairName}.pem`;
+      const keyPath = `${tmpdir()}/${keyPairName}.pem`;
       
       for (const command of setupCommands) {
         console.log(`Executing: ${command}`);
@@ -295,7 +290,7 @@ AWS_DEFAULT_REGION=us-east-1`;
   }
   
   private async waitForSSHReady(publicDns: string, keyPairName: string): Promise<void> {
-    const keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyPairName}.pem`;
+    const keyPath = `${tmpdir()}/${keyPairName}.pem`;
     const maxAttempts = 40;
     let attempts = 0;
     
