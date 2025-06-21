@@ -3,8 +3,9 @@ import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { execSync } from "child_process";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
-import { writeFileSync, unlinkSync, mkdirSync } from "fs";
+import { writeFileSync, unlinkSync } from "fs";
 import { EC2 } from "@aws-sdk/client-ec2";
+import { tmpdir } from "os";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -32,8 +33,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let keyPath = `${process.env.HOME}/.ssh/${keyName}.pem`;
-    let tempKeyPath: string | null = null;
+    let keyPath: string | undefined;
     
     try {
       const ec2 = new EC2({ region: "us-east-1" });
@@ -54,17 +54,24 @@ export async function POST(request: Request) {
         });
         
         if (result.SecretString) {
-          const tempDir = `${process.env.HOME}/.ssh/temp`;
-          mkdirSync(tempDir, { recursive: true, mode: 0o700 });
-          
-          tempKeyPath = `${tempDir}/${keyName}-${Date.now()}.pem`;
-          writeFileSync(tempKeyPath, result.SecretString, { mode: 0o600 });
-          keyPath = tempKeyPath;
+          keyPath = `${tmpdir()}/${keyName}-${Date.now()}.pem`;
+          writeFileSync(keyPath, result.SecretString, { mode: 0o600 });
           
           console.log(`✅ Retrieved SSH key from Secrets Manager: ${secretName}`);
+        } else {
+          return NextResponse.json({
+            instanceId,
+            status: "offline", 
+            error: "SSH key not available in Secrets Manager"
+          });
         }
       } catch (secretsError) {
-        console.log(`⚠️  Failed to retrieve from Secrets Manager, falling back to local file: ${secretsError}`);
+        console.log(`⚠️  Failed to retrieve from Secrets Manager: ${secretsError}`);
+        return NextResponse.json({
+          instanceId,
+          status: "offline", 
+          error: "Failed to retrieve SSH key from Secrets Manager"
+        });
       }
       
       const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "screen -ls"`;
@@ -90,9 +97,9 @@ export async function POST(request: Request) {
         error: error instanceof Error ? error.message : "SSH connection failed"
       });
     } finally {
-      if (tempKeyPath) {
+      if (keyPath) {
         try {
-          unlinkSync(tempKeyPath);
+          unlinkSync(keyPath);
         } catch (cleanupError) {
           console.error(`Failed to cleanup temp key file: ${cleanupError}`);
         }
