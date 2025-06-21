@@ -3,8 +3,9 @@ import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { execSync } from "child_process";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
-import { writeFileSync, unlinkSync, mkdirSync } from "fs";
+import { writeFileSync, unlinkSync } from "fs";
 import { EC2 } from "@aws-sdk/client-ec2";
+import { tmpdir } from "os";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyName}.pem`;
+    let keyPath: string;
     let tempKeyPath: string | null = null;
     
     try {
@@ -54,17 +55,17 @@ export async function POST(request: Request) {
         });
         
         if (result.SecretString) {
-          const tempDir = `${process.env.HOME || '/home/ubuntu'}/.ssh/temp`;
-          mkdirSync(tempDir, { recursive: true, mode: 0o700 });
-          
-          tempKeyPath = `${tempDir}/${keyName}-${Date.now()}.pem`;
+          tempKeyPath = `${tmpdir()}/${keyName}-${Date.now()}.pem`;
           writeFileSync(tempKeyPath, result.SecretString, { mode: 0o600 });
           keyPath = tempKeyPath;
           
           console.log(`✅ Retrieved SSH key from Secrets Manager: ${secretName}`);
+        } else {
+          keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyName}.pem`;
         }
       } catch (secretsError) {
         console.log(`⚠️  Failed to retrieve from Secrets Manager, falling back to local file: ${secretsError}`);
+        keyPath = `${process.env.HOME || '/home/ubuntu'}/.ssh/${keyName}.pem`;
       }
       
       const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "screen -ls"`;
