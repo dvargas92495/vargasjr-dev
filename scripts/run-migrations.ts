@@ -185,8 +185,8 @@ class MigrationRunner {
       return;
     }
 
-    migrationContent += "=== SQL statements that would be applied ===\n";
-    console.log("\n=== SQL statements that would be applied ===");
+    migrationContent += "📋 **Database migrations to be applied:**\n\n";
+    console.log("\n📋 Database migrations to be applied:");
 
     const migrationFiles = readdirSync(tempMigrationsDir)
       .filter(file => file.endsWith('.sql'))
@@ -210,8 +210,8 @@ class MigrationRunner {
       }
     }
 
-    migrationContent += "\n=== End of migration preview ===";
-    console.log("=== End of migration preview ===");
+    migrationContent += "\n✅ **End of migration preview** - The above SQL statements would be applied to update your database schema.\n";
+    console.log("✅ End of migration preview");
     
     if (this.isPreviewMode) {
       await postGitHubComment(migrationContent, "vargasjr-dev-migration-script", "Posted migration preview comment to PR");
