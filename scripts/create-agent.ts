@@ -3,7 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -251,7 +251,15 @@ class VargasJRAgentCreator {
     
     try {
       const dbName = this.config.name.replace('-', '_');
-      const envContent = `POSTGRES_URL=postgresql://postgres:password@localhost:5432/vargasjr_${dbName}
+      
+      let postgresUrl: string;
+      if (this.config.prNumber) {
+        postgresUrl = await getNeonPreviewDatabaseUrl();
+      } else {
+        postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
+      }
+      
+      const envContent = `POSTGRES_URL=${postgresUrl}
 LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
 AWS_ACCESS_KEY_ID=${envVars.AWS_ACCESS_KEY_ID}
@@ -264,11 +272,6 @@ AWS_DEFAULT_REGION=us-east-1`;
         'sudo apt install -y python3.12 python3.12-venv python3-pip',
         'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
         'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        // 'sudo apt install -y postgresql postgresql-contrib',
-        // 'sudo systemctl start postgresql',
-        // 'sudo systemctl enable postgresql',
-        // `sudo -u postgres createdb vargasjr_${dbName}`,
-        // 'PGPASSWORD=password sudo -u postgres psql -c "ALTER USER postgres PASSWORD \\$PGPASSWORD;"',
         'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
         'source ~/.profile'
       ];
@@ -363,7 +366,7 @@ AWS_DEFAULT_REGION=us-east-1`;
   }
 
   private getEnvironmentVariables() {
-    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY'];
+    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY', 'NEON_API_KEY'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
