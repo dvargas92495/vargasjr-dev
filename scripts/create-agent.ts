@@ -254,7 +254,7 @@ class VargasJRAgentCreator {
       
       let postgresUrl: string;
       if (this.config.prNumber) {
-        postgresUrl = await getNeonPreviewDatabaseUrl(this.config.prNumber);
+        postgresUrl = await getNeonPreviewDatabaseUrl();
       } else {
         postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
       }
