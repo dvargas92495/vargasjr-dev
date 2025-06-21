@@ -77,7 +77,7 @@ export default async function AdminPage() {
           <div><strong>VERCEL_GIT_PULL_REQUEST_ID:</strong> {process.env.VERCEL_GIT_PULL_REQUEST_ID || 'undefined'}</div>
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
           <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
-          <div><strong>Preview Condition Result:</strong> {String(environmentPrefix === 'PREVIEW' && currentPRNumber)}</div>
+
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
       </div>
