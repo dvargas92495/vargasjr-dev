@@ -78,16 +78,23 @@ const HealthStatusIndicator = ({
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <div 
-        className={`w-3 h-3 rounded-full ${getStatusColor()}`}
-        title={getStatusText()}
-      />
-      <span className="text-sm text-gray-600">
-        {healthStatus.status === "loading" ? "Checking..." : 
-         healthStatus.status === "healthy" ? "Healthy" : 
-         healthStatus.status === "offline" ? "Offline" : "Unhealthy"}
-      </span>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <div 
+          className={`w-3 h-3 rounded-full ${getStatusColor()}`}
+          title={getStatusText()}
+        />
+        <span className="text-sm text-gray-600">
+          {healthStatus.status === "loading" ? "Checking..." : 
+           healthStatus.status === "healthy" ? "Healthy" : 
+           healthStatus.status === "offline" ? "Offline" : "Unhealthy"}
+        </span>
+      </div>
+      {healthStatus.status !== "healthy" && healthStatus.status !== "loading" && healthStatus.error && (
+        <div className="text-xs text-red-600 ml-5">
+          {healthStatus.error}
+        </div>
+      )}
     </div>
   );
 };
