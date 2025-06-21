@@ -3,7 +3,7 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -251,7 +251,21 @@ class VargasJRAgentCreator {
     
     try {
       const dbName = this.config.name.replace('-', '_');
-      const envContent = `POSTGRES_URL=postgresql://postgres:password@localhost:5432/vargasjr_${dbName}
+      
+      let postgresUrl: string;
+      if (this.config.prNumber) {
+        try {
+          postgresUrl = await getNeonPreviewDatabaseUrl(this.config.prNumber);
+        } catch (error) {
+          console.warn(`⚠️  Failed to get Neon database URL for preview agent: ${error}`);
+          console.log("Falling back to local PostgreSQL setup");
+          postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
+        }
+      } else {
+        postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
+      }
+      
+      const envContent = `POSTGRES_URL=${postgresUrl}
 LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
 AWS_ACCESS_KEY_ID=${envVars.AWS_ACCESS_KEY_ID}
@@ -364,6 +378,7 @@ AWS_DEFAULT_REGION=us-east-1`;
 
   private getEnvironmentVariables() {
     const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY'];
+    const optionalVars = ['NEON_API_KEY'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
@@ -372,6 +387,17 @@ AWS_DEFAULT_REGION=us-east-1`;
         throw new Error(`Required environment variable ${varName} is not set`);
       }
       envVars[varName] = value;
+    }
+    
+    for (const varName of optionalVars) {
+      const value = process.env[varName];
+      if (value) {
+        envVars[varName] = value;
+      }
+    }
+    
+    if (this.config.prNumber && !envVars.NEON_API_KEY) {
+      console.warn(`⚠️  NEON_API_KEY not found for preview agent. Preview agents will fall back to local PostgreSQL.`);
     }
     
     return envVars;

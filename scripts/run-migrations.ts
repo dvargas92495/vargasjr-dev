@@ -3,7 +3,7 @@
 import { execSync } from "child_process";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import { postGitHubComment } from "./utils";
+import { postGitHubComment, getNeonPreviewDatabaseUrl } from "./utils";
 
 class MigrationRunner {
   private dbDir: string;
@@ -45,7 +45,7 @@ class MigrationRunner {
     let postgresUrl = process.env.POSTGRES_URL;
     
     if (this.isPreviewMode && !postgresUrl) {
-      postgresUrl = await this.getNeonPreviewDatabaseUrl();
+      postgresUrl = await getNeonPreviewDatabaseUrl();
     }
     
     if (!postgresUrl) {
@@ -62,72 +62,7 @@ class MigrationRunner {
     }
   }
 
-  private async getNeonPreviewDatabaseUrl(): Promise<string> {
-    const neonApiKey = process.env.NEON_API_KEY;
-    const branchName = process.env.GITHUB_HEAD_REF || process.env.BRANCH_NAME;
-    const projectId = "fancy-sky-34733112";
-    
-    if (!neonApiKey) {
-      throw new Error("NEON_API_KEY environment variable is required for preview mode");
-    }
-    
-    if (!branchName) {
-      throw new Error("GITHUB_HEAD_REF or BRANCH_NAME environment variable is required for preview mode");
-    }
-    
-    const fullBranchName = `preview/${branchName}`;
-    console.log(`🔍 Fetching database URL for branch: ${fullBranchName}`);
-    
-    try {
-      const branchResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/branches`, {
-        headers: {
-          "Authorization": `Bearer ${neonApiKey}`,
-          "Content-Type": "application/json"
-        }
-      });
-      
-      if (!branchResponse.ok) {
-        throw new Error(`Failed to fetch branches: ${branchResponse.statusText}`);
-      }
-      
-      const branchData = await branchResponse.json();
-      const branch = branchData.branches?.find((b: any) => b.name === fullBranchName);
-      
-      if (!branch) {
-        throw new Error(`Branch '${fullBranchName}' not found`);
-      }
-      
-      const branchId = branch.id;
-      console.log(`✅ Found branch ID: ${branchId}`);
-      
-      const connectionResponse = await fetch(
-        `https://console.neon.tech/api/v2/projects/${projectId}/connection_uri?branch_id=${branchId}&database_name=verceldb&role_name=default`,
-        {
-          headers: {
-            "Authorization": `Bearer ${neonApiKey}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-      
-      if (!connectionResponse.ok) {
-        throw new Error(`Failed to fetch connection URI: ${connectionResponse.statusText}`);
-      }
-      
-      const connectionData = await connectionResponse.json();
-      const postgresUrl = connectionData.uri;
-      
-      if (!postgresUrl) {
-        throw new Error("No connection URI found in response");
-      }
-      
-      console.log(`✅ Retrieved database URL for preview branch`);
-      return postgresUrl;
-      
-    } catch (error) {
-      throw new Error(`Failed to get Neon database URL: ${error}`);
-    }
-  }
+
 
   private async generateMigrationDiff(): Promise<void> {
     console.log("=== Generating migration diff ===");
@@ -148,7 +83,7 @@ class MigrationRunner {
     let postgresUrl = process.env.POSTGRES_URL;
     
     if (this.isPreviewMode && !postgresUrl) {
-      postgresUrl = await this.getNeonPreviewDatabaseUrl();
+      postgresUrl = await getNeonPreviewDatabaseUrl();
     }
     
     if (!postgresUrl) {
