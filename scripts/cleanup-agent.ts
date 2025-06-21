@@ -50,6 +50,8 @@ class VargasJRAgentCleanup {
       const secretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
       await deleteSecret(secretName, this.config.region);
       
+      await this.deleteNeonBranch();
+      
       await this.deleteBranch();
       
       console.log(`✅ Cleanup completed for PR ${this.config.prNumber}`);
@@ -91,6 +93,69 @@ class VargasJRAgentCleanup {
     } catch (error) {
       console.error(`❌ Error fetching PR details: ${error}`);
       return null;
+    }
+  }
+
+  async deleteNeonBranch(): Promise<void> {
+    const neonApiKey = process.env.NEON_API_KEY;
+    const projectId = "fancy-sky-34733112";
+    
+    if (!neonApiKey) {
+      console.log("⚠️  Skipping Neon branch deletion - missing NEON_API_KEY");
+      return;
+    }
+
+    const prDetails = await this.getPRDetails();
+    if (!prDetails) {
+      console.log("⚠️  Skipping Neon branch deletion - unable to fetch PR details");
+      return;
+    }
+
+    const fullBranchName = `preview/${prDetails.branch}`;
+    console.log(`Deleting Neon branch: ${fullBranchName}`);
+    
+    try {
+      const branchResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/branches`, {
+        headers: {
+          "Authorization": `Bearer ${neonApiKey}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!branchResponse.ok) {
+        console.error(`❌ Failed to fetch Neon branches: ${branchResponse.status}`);
+        return;
+      }
+      
+      const branchData = await branchResponse.json();
+      const branch = branchData.branches?.find((b: any) => b.name === fullBranchName);
+      
+      if (!branch) {
+        console.log(`⚠️  Neon branch ${fullBranchName} not found (may have been already deleted)`);
+        return;
+      }
+      
+      const branchId = branch.id;
+      console.log(`Found Neon branch ID: ${branchId}`);
+      
+      const deleteResponse = await fetch(`https://console.neon.tech/api/v2/projects/${projectId}/branches/${branchId}`, {
+        method: 'DELETE',
+        headers: {
+          "Authorization": `Bearer ${neonApiKey}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (deleteResponse.ok) {
+        console.log(`✅ Neon branch ${fullBranchName} deleted successfully`);
+      } else if (deleteResponse.status === 204) {
+        console.log(`✅ Neon branch ${fullBranchName} was already deleted`);
+      } else {
+        const errorText = await deleteResponse.text();
+        console.error(`❌ Failed to delete Neon branch ${fullBranchName}: ${deleteResponse.status} ${errorText}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error deleting Neon branch ${fullBranchName}: ${error}`);
     }
   }
 
