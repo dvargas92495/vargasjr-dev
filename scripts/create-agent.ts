@@ -254,13 +254,7 @@ class VargasJRAgentCreator {
       
       let postgresUrl: string;
       if (this.config.prNumber) {
-        try {
-          postgresUrl = await getNeonPreviewDatabaseUrl(this.config.prNumber);
-        } catch (error) {
-          console.warn(`⚠️  Failed to get Neon database URL for preview agent: ${error}`);
-          console.log("Falling back to local PostgreSQL setup");
-          postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
-        }
+        postgresUrl = await getNeonPreviewDatabaseUrl(this.config.prNumber);
       } else {
         postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
       }
@@ -278,11 +272,6 @@ AWS_DEFAULT_REGION=us-east-1`;
         'sudo apt install -y python3.12 python3.12-venv python3-pip',
         'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
         'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        // 'sudo apt install -y postgresql postgresql-contrib',
-        // 'sudo systemctl start postgresql',
-        // 'sudo systemctl enable postgresql',
-        // `sudo -u postgres createdb vargasjr_${dbName}`,
-        // 'PGPASSWORD=password sudo -u postgres psql -c "ALTER USER postgres PASSWORD \\$PGPASSWORD;"',
         'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
         'source ~/.profile'
       ];
@@ -377,8 +366,7 @@ AWS_DEFAULT_REGION=us-east-1`;
   }
 
   private getEnvironmentVariables() {
-    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY'];
-    const optionalVars = ['NEON_API_KEY'];
+    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY', 'NEON_API_KEY'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
@@ -387,17 +375,6 @@ AWS_DEFAULT_REGION=us-east-1`;
         throw new Error(`Required environment variable ${varName} is not set`);
       }
       envVars[varName] = value;
-    }
-    
-    for (const varName of optionalVars) {
-      const value = process.env[varName];
-      if (value) {
-        envVars[varName] = value;
-      }
-    }
-    
-    if (this.config.prNumber && !envVars.NEON_API_KEY) {
-      console.warn(`⚠️  NEON_API_KEY not found for preview agent. Preview agents will fall back to local PostgreSQL.`);
     }
     
     return envVars;
