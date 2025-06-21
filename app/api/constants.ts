@@ -4,10 +4,10 @@ export function getBaseUrl(): string {
 }
 
 export function getEnvironmentPrefix(): string {
-  if (process.env.VERCEL_URL && process.env.VERCEL_URL.includes('preview')) {
+  if (process.env.VERCEL_ENV === 'preview') {
     return 'PREVIEW';
   }
-  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
+  if (process.env.VERCEL_ENV === 'production') {
     return '';
   }
   return 'DEV';
