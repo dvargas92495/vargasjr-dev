@@ -35,13 +35,13 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: "API: Invalid request body" },
+        { error: "Invalid request body" },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: "API: Health check failed" },
+      { error: "Health check failed" },
       { status: 500 }
     );
   }

@@ -292,7 +292,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: "offline",
-        error: "HEALTH: Instance not found"
+        error: "Instance not found"
       };
     }
 
@@ -301,7 +301,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: "offline",
-        error: `HEALTH: Instance is ${instanceState}`
+        error: `Instance is ${instanceState}`
       };
     }
 
@@ -317,7 +317,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
 
       const commandId = commandResult.Command?.CommandId;
       if (!commandId) {
-        throw new Error("HEALTH: Failed to get command ID from SSM");
+        throw new Error("Failed to get command ID from SSM");
       }
 
       let attempts = 0;
@@ -349,7 +349,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       }
 
       if (attempts >= maxAttempts) {
-        throw new Error("HEALTH: SSM command timed out");
+        throw new Error("SSM command timed out");
       }
 
       const hasAgentSession = commandOutput.includes('agent-') || commandOutput.includes('\tagent\t');
@@ -357,7 +357,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: hasAgentSession ? "healthy" : "unhealthy",
-        error: hasAgentSession ? undefined : "HEALTH: No agent screen session found"
+        error: hasAgentSession ? undefined : "No agent screen session found"
       };
 
     } catch (ssmError) {
@@ -368,7 +368,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
         return {
           instanceId,
           status: "offline",
-          error: "HEALTH: Instance not managed by Systems Manager"
+          error: "Instance not managed by Systems Manager"
         };
       }
 
@@ -383,7 +383,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
     return {
       instanceId,
       status: "offline", 
-      error: error instanceof Error ? error.message : "HEALTH: Health check failed"
+      error: error instanceof Error ? `HEALTH: ${error.message}` : "Health check failed"
     };
   }
 }
