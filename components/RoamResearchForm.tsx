@@ -19,26 +19,14 @@ export default function RoamResearchForm() {
       </div>
       <div>
         <label htmlFor="clientId" className="block mb-1">
-          Database Name
+          Graph Name
         </label>
         <input
           type="text"
           id="clientId"
           name="clientId"
           required
-          placeholder="my-roam-database"
-          className="w-full p-2 border rounded text-black"
-        />
-      </div>
-      <div>
-        <label htmlFor="clientSecret" className="block mb-1">
-          Graph URL (Optional)
-        </label>
-        <input
-          type="text"
-          id="clientSecret"
-          name="clientSecret"
-          placeholder="https://roamresearch.com/#/app/..."
+          placeholder="my-roam-graph"
           className="w-full p-2 border rounded text-black"
         />
       </div>
