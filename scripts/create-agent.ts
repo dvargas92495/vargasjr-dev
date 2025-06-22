@@ -285,7 +285,7 @@ AWS_DEFAULT_REGION=us-east-1`;
       
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'chmod +x ~/run_agent.sh');
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'cd ~ && ./run_agent.sh');
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'cd ~ && source ~/.profile && ./run_agent.sh');
       
       console.log("✅ Instance setup complete!");
       
