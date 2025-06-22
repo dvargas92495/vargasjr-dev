@@ -16,6 +16,7 @@ from src.models.routine_job import RoutineJob as RoutineJobModel
 from sqlmodel import select
 from src.workflows.triage_message.workflow import TriageMessageWorkflow
 from src.utils import get_version, create_file_logger
+from src.reboot_manager import check_and_reboot_if_needed
 
 
 class AgentRunner:
@@ -75,7 +76,6 @@ class AgentRunner:
                 self._logger.info("Checking for updates...")
                 self._last_updated = datetime.now()
                 
-                from src.cli import check_and_reboot_if_needed
                 try:
                     check_and_reboot_if_needed(self._logger)
                 except Exception:

@@ -23,7 +23,7 @@ runwayml = "^2.2.1"
 tweepy = "^4.14.0"
 
 [tool.poetry.scripts]
-agent = "src.cli:main"
+agent = "src.cli:agent"
 reboot = "src.cli:reboot"
 
 
