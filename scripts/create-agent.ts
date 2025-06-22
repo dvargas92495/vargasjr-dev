@@ -4,7 +4,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -47,6 +47,14 @@ class VargasJRAgentCreator {
       const instanceDetails = await this.getInstanceDetails(instanceId);
       
       await this.setupInstance(instanceDetails, keyPairName);
+      
+      try {
+        await this.waitForInstanceHealthy(instanceId);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`⚠️  Health check failed: ${errorMessage}`);
+        console.log("Continuing with agent setup despite health check failure...");
+      }
       
       console.log(`✅ Agent ${agentName} infrastructure and SSH setup completed successfully!`);
       console.log(`Instance ID: ${instanceId}`);
@@ -365,6 +373,43 @@ AWS_DEFAULT_REGION=us-east-1`;
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
+  }
+
+  private formatError(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  private async waitForInstanceHealthy(instanceId: string): Promise<void> {
+    console.log("Waiting for agent to be healthy...");
+    
+    const maxAttempts = 40;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const healthResult = await checkInstanceHealth(instanceId, this.config.region);
+        
+        if (healthResult.status === "healthy") {
+          console.log("✅ Agent is healthy and running");
+          return;
+        }
+        
+        attempts++;
+        const waitTime = attempts < 10 ? 5 : 10;
+        console.log(`Agent not healthy yet (${healthResult.status}${healthResult.error ? `: ${healthResult.error}` : ''}), waiting... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+        
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw new Error(`Agent failed to become healthy within timeout: ${this.formatError(error)}`);
+        }
+        console.log(`Health check failed, retrying... (${attempts}/${maxAttempts}): ${this.formatError(error)}`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+    
+    throw new Error("Agent failed to become healthy within timeout (20 minutes)");
   }
 
   private getEnvironmentVariables() {
