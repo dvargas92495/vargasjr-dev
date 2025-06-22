@@ -2,6 +2,7 @@ import { ChatSessionsTable, InboxesTable, ContactsTable, InboxMessagesTable } fr
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
+import ChatInput from "@/components/ChatInput";
 
 export default async function ChatSessionPage({
   params,
@@ -62,7 +63,7 @@ export default async function ChatSessionPage({
         
         <div className="mt-6">
           <div className="text-sm text-gray-300 mb-3">Messages</div>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
+          <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
             {messages.map((message) => (
               <div key={message.id} className="bg-gray-700 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
@@ -76,11 +77,7 @@ export default async function ChatSessionPage({
             ))}
           </div>
           
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <div className="text-gray-300 text-center">
-              Chat functionality will be implemented here.
-            </div>
-          </div>
+          <ChatInput sessionId={session.id} />
         </div>
       </div>
     </div>
