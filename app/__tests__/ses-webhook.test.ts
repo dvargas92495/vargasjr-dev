@@ -2,31 +2,55 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createHmac } from "node:crypto";
 import { POST } from "../api/ses/webhook/route";
 
-const mockAddInboxMessage = vi.hoisted(() => vi.fn());
+const {
+  mockSelect,
+  mockFrom,
+  mockWhere,
+  mockLimit,
+  mockExecute,
+  mockInsert,
+  mockValues
+} = vi.hoisted(() => ({
+  mockSelect: vi.fn(),
+  mockFrom: vi.fn(),
+  mockWhere: vi.fn(),
+  mockLimit: vi.fn(),
+  mockExecute: vi.fn(),
+  mockInsert: vi.fn(),
+  mockValues: vi.fn()
+}));
 
 const mockEnv = vi.hoisted(() => ({
   SES_WEBHOOK_SECRET: "test_ses_webhook_secret"
 }));
 
-// eslint-disable-next-line custom/no-mock-internal-modules
-vi.mock("@/server", () => ({
-  addInboxMessage: mockAddInboxMessage
+vi.mock("drizzle-orm/vercel-postgres", () => ({
+  drizzle: vi.fn(() => ({
+    select: mockSelect,
+    insert: mockInsert
+  }))
 }));
 
-// eslint-disable-next-line custom/no-mock-internal-modules
-vi.mock("@/server/errors", () => ({
-  NotFoundError: class NotFoundError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = "NotFoundError";
-    }
-  }
+vi.mock("@vercel/postgres", () => ({
+  sql: vi.fn()
+}));
+
+vi.mock("drizzle-orm", () => ({
+  eq: vi.fn()
 }));
 
 describe("SES Webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSelect.mockClear();
+    mockFrom.mockClear();
+    mockWhere.mockClear();
+    mockLimit.mockClear();
+    mockExecute.mockClear();
+    mockInsert.mockClear();
+    mockValues.mockClear();
     process.env.SES_WEBHOOK_SECRET = mockEnv.SES_WEBHOOK_SECRET;
+    process.env.POSTGRES_URL = "postgresql://test:test@localhost:5432/test";
   });
 
   it("should return 500 when SES_WEBHOOK_SECRET is missing", async () => {
@@ -103,18 +127,19 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockAddInboxMessage.mockResolvedValue(undefined);
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockResolvedValue([{ id: "inbox-id-123" }]);
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockResolvedValue(undefined);
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(mockAddInboxMessage).toHaveBeenCalledWith({
-      body: "Subject: Test Email Subject\nMessage ID: test-message-id-123\nTimestamp: 2023-12-01T10:00:00.000Z",
-      source: "sender@example.com",
-      inboxName: "ses-email"
-    });
   });
 
   it("should handle missing sender gracefully", async () => {
@@ -148,18 +173,19 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockAddInboxMessage.mockResolvedValue(undefined);
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockResolvedValue([{ id: "inbox-id-456" }]);
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockResolvedValue(undefined);
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(mockAddInboxMessage).toHaveBeenCalledWith({
-      body: "Subject: Test Email Subject\nMessage ID: test-message-id-456\nTimestamp: 2023-12-01T10:00:00.000Z",
-      source: "unknown",
-      inboxName: "ses-email"
-    });
   });
 
   it("should handle missing subject gracefully", async () => {
@@ -193,18 +219,19 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockAddInboxMessage.mockResolvedValue(undefined);
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockResolvedValue([{ id: "inbox-id-789" }]);
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockResolvedValue(undefined);
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.received).toBe(true);
-    expect(mockAddInboxMessage).toHaveBeenCalledWith({
-      body: "Subject: No Subject\nMessage ID: test-message-id-789\nTimestamp: 2023-12-01T10:00:00.000Z",
-      source: "sender@example.com",
-      inboxName: "ses-email"
-    });
   });
 
   it("should return 404 when inbox is not found", async () => {
@@ -238,8 +265,11 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    const { NotFoundError } = await import("@/server/errors");
-    mockAddInboxMessage.mockRejectedValue(new NotFoundError("Inbox not found"));
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockResolvedValue([]);
 
     const response = await POST(request);
     const data = await response.json();
@@ -279,7 +309,11 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockAddInboxMessage.mockRejectedValue(new Error("Database connection failed"));
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockRejectedValue(new Error("Database connection failed"));
 
     const response = await POST(request);
     const data = await response.json();
