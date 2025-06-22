@@ -1,3 +1,5 @@
+source ~/.profile
+
 rm -Rf vargasjr_dev_agent-*
 yes | rm -rf ~/.cache/pypoetry/virtualenvs/*
 VERSION=$(curl -s https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | sed 's/^v//')
