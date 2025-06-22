@@ -337,7 +337,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
             commandOutput = outputResult.StandardOutputContent || "";
             break;
           } else if (outputResult.Status === "Failed") {
-            throw new Error(`HEALTH: SSM command failed: ${outputResult.StandardErrorContent}`);
+            throw new Error(`SSM command failed: ${outputResult.StandardErrorContent}`);
           }
         } catch (outputError) {
           if (attempts === maxAttempts - 1) {

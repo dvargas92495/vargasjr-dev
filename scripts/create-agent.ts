@@ -346,7 +346,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
     while (attempts < maxAttempts) {
       try {
         execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${commandObj.command}"`, {
-          stdio: ['inherit', 'pipe', 'pipe']
+          stdio: 'inherit'
         });
         return;
       } catch (error) {
