@@ -1,13 +1,17 @@
-"use client";
-
-import StopInstanceButton from "@/components/stop-instance-button";
-import StartInstanceButton from "@/components/start-instance-button";
-import RebootInstanceButton from "@/components/reboot-instance-button";
-import HealthStatusIndicator from "@/components/health-status-indicator";
+import InstanceCard from "@/components/instance-card";
+import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
-import PendingInstanceRefresh from "@/components/pending-instance-refresh";
-import CopyableText from "@/components/copyable-text";
-import { useState, useEffect } from "react";
+
+function getEnvironmentPrefix(): string {
+  if (process.env.VERCEL_ENV === 'preview') {
+    return 'PREVIEW';
+  }
+  return '';
+}
+
+function getCurrentPRNumber(): string | null {
+  return process.env.VERCEL_GIT_PULL_REQUEST_ID || null;
+}
 
 /**
  * Steps takin to create Vargas JR:
@@ -33,45 +37,51 @@ import { useState, useEffect } from "react";
  * - 
  */
 
-export default function AdminPage() {
-  const [instances, setInstances] = useState<Array<{
-    InstanceId?: string;
-    State?: { Name?: string };
-    KeyName?: string;
-    PublicDnsName?: string;
-    InstanceType?: string;
-    ImageId?: string;
-    Tags?: Array<{ Key?: string; Value?: string }>;
-  }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [healthStatuses, setHealthStatuses] = useState<Record<string, {status: string, error?: string}>>({});
-  const [environmentPrefix, setEnvironmentPrefix] = useState('');
-  const [currentPRNumber, setCurrentPRNumber] = useState<string | null>(null);
+export default async function AdminPage() {
+  const environmentPrefix = getEnvironmentPrefix();
+  const currentPRNumber = getCurrentPRNumber();
+  
+  const filters = [
+    { Name: "tag:Project", Values: ["VargasJR"] },
+    { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+  ];
+  
+  if (environmentPrefix === '') {
+    filters.push({ Name: "tag:Type", Values: ["main"] });
+  } else if (environmentPrefix === 'PREVIEW' && currentPRNumber) {
+    filters.push({ Name: "tag:PRNumber", Values: [currentPRNumber] });
+  }
 
-  useEffect(() => {
-    const fetchInstances = async () => {
-      try {
-        const response = await fetch('/api/instances');
-        if (response.ok) {
-          const data = await response.json();
-          setInstances(data.instances);
-          setEnvironmentPrefix(data.environmentPrefix);
-          setCurrentPRNumber(data.currentPRNumber);
-        } else {
-          console.error('Failed to fetch instances:', response.statusText);
+  let instances;
+  try {
+    const ec2 = new EC2({ region: "us-east-1" });
+    instances = await ec2
+      .describeInstances({ Filters: filters })
+      .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
+  } catch (awsError) {
+    const errorMessage = awsError instanceof Error ? awsError.message : "AWS error";
+    
+    if (errorMessage.includes("Could not load credentials")) {
+      console.log("AWS credentials not available - returning mock data for development");
+      
+      instances = [
+        {
+          InstanceId: "i-1234567890abcdef0",
+          State: { Name: "running" },
+          KeyName: "test-key",
+          PublicDnsName: "ec2-test.compute-1.amazonaws.com",
+          InstanceType: "t3.micro",
+          ImageId: "ami-12345678",
+          Tags: [
+            { Key: "Name", Value: "Test Instance" },
+            { Key: "Type", Value: "main" },
+            { Key: "Project", Value: "VargasJR" }
+          ]
         }
-      } catch (error) {
-        console.error('Error fetching instances:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInstances();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
+      ];
+    } else {
+      throw awsError;
+    }
   }
 
   if (instances.length === 0) {
@@ -98,78 +108,9 @@ export default function AdminPage() {
         </div>
       </div>
       
-      {instances.map((instance) => {
-        const instanceState = instance.State?.Name;
-        const instanceId = instance.InstanceId;
-        const command = `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`;
-        const instanceName = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "Name")?.Value || "Unknown";
-        const instanceType = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "Type")?.Value || "main";
-        const prNumber = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "PRNumber")?.Value;
-        
-        const healthStatus = healthStatuses[instanceId || ''] || { status: "loading" };
-        const handleHealthStatusChange = (status: {status: string, error?: string}) => {
-          if (instanceId) {
-            setHealthStatuses(prev => ({ ...prev, [instanceId]: status }));
-          }
-        };
-        
-        return (
-          <div key={instanceId} className="border p-4 rounded-lg w-full max-w-2xl">
-            <h2 className="text-lg font-semibold mb-2">
-              {instanceName} 
-              {instanceType === "preview" && prNumber && (
-                <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  PR #{prNumber}
-                </span>
-              )}
-              {instanceType === "main" && (
-                <span className="ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
-                  Main
-                </span>
-              )}
-            </h2>
-            <div className="space-y-1 text-sm">
-              <p>
-                Instance ID: <span className="font-mono">{instance.InstanceId}</span>
-              </p>
-              <p>
-                Instance Type: <span className="font-mono">{instance.InstanceType}</span>
-              </p>
-              <p>
-                State: <span className="font-mono">{instanceState}</span>
-              </p>
-              <p className="flex items-center gap-2">
-                Health: 
-                <HealthStatusIndicator 
-                  instanceId={instanceId!}
-                  publicDns={instance.PublicDnsName || ""}
-                  keyName={instance.KeyName || ""}
-                  instanceState={instanceState || ""}
-                  onHealthStatusChange={handleHealthStatusChange}
-                />
-              </p>
-              <p>
-                ImageID: <span className="font-mono">{instance.ImageId}</span>
-              </p>
-              <p>
-                Connect: <CopyableText className="font-mono" text={command} />
-              </p>
-            </div>
-            <div className="mt-3 flex gap-2">
-              {instanceState === "running" && instanceId && (
-                <StopInstanceButton id={instanceId} />
-              )}
-              {instanceState === "stopped" && instanceId && (
-                <StartInstanceButton id={instanceId} />
-              )}
-              {instanceState === "running" && instanceId && (healthStatus.status === "unhealthy" || healthStatus.status === "offline") && (
-                <RebootInstanceButton id={instanceId} />
-              )}
-              {instanceState === "pending" && <PendingInstanceRefresh />}
-            </div>
-          </div>
-        );
-      })}
+      {instances.map((instance) => (
+        <InstanceCard key={instance.InstanceId} instance={instance} />
+      ))}
     </div>
   );
 }
