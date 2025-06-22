@@ -5,6 +5,7 @@ export const AppTypes = [
   "TWITTER",
   "NOTION", 
   "DEVIN",
+  "CAPITAL_ONE",
 ] as const;
 
 export type AppType = typeof AppTypes[number];
