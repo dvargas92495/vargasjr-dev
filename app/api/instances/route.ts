@@ -19,20 +19,19 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { id, operation } = instanceSchema.parse(body);
-
-    const ec2 = new EC2({
-      region: "us-east-1",
-    });
-
+    
+    const ec2 = new EC2({ region: "us-east-1" });
+    
     if (operation === "STOP") {
       await ec2.stopInstances({ InstanceIds: [id] });
+      return NextResponse.json({ success: true, message: "Instance stop initiated" });
     } else if (operation === "START") {
       await ec2.startInstances({ InstanceIds: [id] });
-    } else {
-      return NextResponse.json({ error: "Invalid operation" }, { status: 400 });
+      return NextResponse.json({ success: true, message: "Instance start initiated" });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Invalid operation" }, { status: 400 });
+
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -42,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Failed to create inbox" },
+      { error: "Operation failed" },
       { status: 500 }
     );
   }
