@@ -39,17 +39,12 @@ export default async function AdminPage() {
       <h1 className="text-2xl font-bold">Vargas JR</h1>
       <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
       
-      {/* Debug Environment Variables */}
+      {/* Environment Info */}
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
-        <h3 className="font-semibold text-yellow-800 mb-2">🐛 Debug: Environment Variables</h3>
+        <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
         <div className="text-sm font-mono space-y-1 text-gray-700">
-          <div><strong>NODE_ENV:</strong> {process.env.NODE_ENV || 'undefined'}</div>
-          <div><strong>VERCEL_URL:</strong> {process.env.VERCEL_URL || 'undefined'}</div>
-          <div><strong>VERCEL_ENV:</strong> {process.env.VERCEL_ENV || 'undefined'}</div>
-          <div><strong>VERCEL_GIT_PULL_REQUEST_ID:</strong> {process.env.VERCEL_GIT_PULL_REQUEST_ID || 'undefined'}</div>
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
           <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
-
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
       </div>
