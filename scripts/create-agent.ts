@@ -254,12 +254,19 @@ class VargasJRAgentCreator {
         postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
       }
       
-      const envContent = `POSTGRES_URL=${postgresUrl}
+      let envContent = `POSTGRES_URL=${postgresUrl}
 LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
 AWS_ACCESS_KEY_ID=${envVars.AWS_ACCESS_KEY_ID}
 AWS_SECRET_ACCESS_KEY=${envVars.AWS_SECRET_ACCESS_KEY}
 AWS_DEFAULT_REGION=us-east-1`;
+
+      if (this.config.prNumber) {
+        envContent += `
+AGENT_ENVIRONMENT=preview
+PR_NUMBER=${this.config.prNumber}
+GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
+      }
 
       writeFileSync('/tmp/agent.env', envContent);
       const setupCommands = [
@@ -369,6 +376,7 @@ AWS_DEFAULT_REGION=us-east-1`;
 
   private getEnvironmentVariables() {
     const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY', 'NEON_API_KEY'];
+    const optionalVars = ['GITHUB_TOKEN'];
     const envVars: Record<string, string> = {};
     
     for (const varName of requiredVars) {
@@ -377,6 +385,13 @@ AWS_DEFAULT_REGION=us-east-1`;
         throw new Error(`Required environment variable ${varName} is not set`);
       }
       envVars[varName] = value;
+    }
+    
+    for (const varName of optionalVars) {
+      const value = process.env[varName];
+      if (value) {
+        envVars[varName] = value;
+      }
     }
     
     return envVars;

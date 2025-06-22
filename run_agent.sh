@@ -3,12 +3,7 @@
 rm -Rf vargasjr_dev_agent-*
 yes | rm -rf ~/.cache/pypoetry/virtualenvs/*
 
-INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null)
-if [ $? -eq 0 ] && [ -n "$INSTANCE_ID" ]; then
-    INSTANCE_TYPE=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[0].Instances[0].Tags[?Key==`Type`].Value' --output text 2>/dev/null)
-    PR_NUMBER=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[0].Instances[0].Tags[?Key==`PRNumber`].Value' --output text 2>/dev/null)
-    
-    if [ "$INSTANCE_TYPE" = "preview" ] && [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "None" ]; then
+if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         echo "Detected preview environment for PR $PR_NUMBER"
         
         if [ -z "$GITHUB_TOKEN" ]; then
@@ -66,18 +61,8 @@ if [ $? -eq 0 ] && [ -n "$INSTANCE_ID" ]; then
         poetry install
         screen -dmS agent-preview bash -c 'poetry run agent 2> error.log'
         
-    else
-        echo "Detected production environment"
-        VERSION=$(curl -s https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | sed 's/^v//')
-        wget https://github.com/dvargas92495/vargasjr-dev/releases/download/v$VERSION/vargasjr_dev_agent-$VERSION.tar.gz
-        tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
-        cd vargasjr_dev_agent-$VERSION
-        cp ../.env .
-        poetry install
-        screen -dmS agent-${VERSION//./-} bash -c 'poetry run agent 2> error.log'
-    fi
 else
-    echo "Not running on EC2 or cannot detect instance, defaulting to production"
+    echo "Detected production environment"
     VERSION=$(curl -s https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest | grep '"tag_name":' | cut -d'"' -f4 | sed 's/^v//')
     wget https://github.com/dvargas92495/vargasjr-dev/releases/download/v$VERSION/vargasjr_dev_agent-$VERSION.tar.gz
     tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
