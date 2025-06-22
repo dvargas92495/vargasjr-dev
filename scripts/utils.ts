@@ -317,7 +317,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
 
       const commandId = commandResult.Command?.CommandId;
       if (!commandId) {
-        throw new Error("SSM Command Failed to send: Failed to get command ID from SSM");
+        throw new Error("Failed to get command ID from SSM");
       }
 
       let attempts = 0;
@@ -375,7 +375,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: "offline",
-        error: errorMessage
+        error: `SSM Command Failed to send: ${errorMessage}`
       };
     }
 
