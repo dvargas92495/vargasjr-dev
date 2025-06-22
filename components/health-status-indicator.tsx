@@ -12,19 +12,23 @@ interface HealthStatusIndicatorProps {
   publicDns: string;
   keyName: string;
   instanceState: string;
+  onHealthStatusChange?: (status: HealthStatus) => void;
 }
 
 const HealthStatusIndicator = ({ 
   instanceId, 
   publicDns, 
   keyName, 
-  instanceState 
+  instanceState,
+  onHealthStatusChange
 }: HealthStatusIndicatorProps) => {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>({ status: "loading" });
 
   const checkHealth = useCallback(async () => {
     if (instanceState !== "running") {
-      setHealthStatus({ status: "unhealthy", error: "Instance not running" });
+      const status = { status: "unhealthy" as const, error: "Instance not running" };
+      setHealthStatus(status);
+      onHealthStatusChange?.(status);
       return;
     }
 
@@ -37,17 +41,23 @@ const HealthStatusIndicator = ({
 
       if (response.ok) {
         const data = await response.json();
-        setHealthStatus({
+        const status = {
           status: data.status,
           error: data.error
-        });
+        };
+        setHealthStatus(status);
+        onHealthStatusChange?.(status);
       } else {
-        setHealthStatus({ status: "error", error: "Health check failed" });
+        const status = { status: "error" as const, error: "Health check failed" };
+        setHealthStatus(status);
+        onHealthStatusChange?.(status);
       }
     } catch {
-      setHealthStatus({ status: "error", error: "Network error" });
+      const status = { status: "error" as const, error: "Network error" };
+      setHealthStatus(status);
+      onHealthStatusChange?.(status);
     }
-  }, [instanceId, publicDns, keyName, instanceState]);
+  }, [instanceId, publicDns, keyName, instanceState, onHealthStatusChange]);
 
   useEffect(() => {
     checkHealth();

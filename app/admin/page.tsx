@@ -1,11 +1,13 @@
+"use client";
+
 import StopInstanceButton from "@/components/stop-instance-button";
 import StartInstanceButton from "@/components/start-instance-button";
+import RebootInstanceButton from "@/components/reboot-instance-button";
 import HealthStatusIndicator from "@/components/health-status-indicator";
-import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
 import PendingInstanceRefresh from "@/components/pending-instance-refresh";
 import CopyableText from "@/components/copyable-text";
-import { getEnvironmentPrefix } from "@/app/api/constants";
+import { useState, useEffect } from "react";
 
 /**
  * Steps takin to create Vargas JR:
@@ -31,32 +33,46 @@ import { getEnvironmentPrefix } from "@/app/api/constants";
  * - 
  */
 
-function getCurrentPRNumber(): string | null {
-  return process.env.VERCEL_GIT_PULL_REQUEST_ID || null;
-}
+export default function AdminPage() {
+  const [instances, setInstances] = useState<Array<{
+    InstanceId?: string;
+    State?: { Name?: string };
+    KeyName?: string;
+    PublicDnsName?: string;
+    InstanceType?: string;
+    ImageId?: string;
+    Tags?: Array<{ Key?: string; Value?: string }>;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [healthStatuses, setHealthStatuses] = useState<Record<string, {status: string, error?: string}>>({});
+  const [environmentPrefix, setEnvironmentPrefix] = useState('');
+  const [currentPRNumber, setCurrentPRNumber] = useState<string | null>(null);
 
-export default async function AdminPage() {
-  const ec2 = new EC2({
-    region: "us-east-1",
-  });
-  
-  const environmentPrefix = getEnvironmentPrefix();
-  const currentPRNumber = getCurrentPRNumber();
-  
-  const filters = [
-    { Name: "tag:Project", Values: ["VargasJR"] },
-    { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-  ];
-  
-  if (environmentPrefix === '') {
-    filters.push({ Name: "tag:Type", Values: ["main"] });
-  } else if (environmentPrefix === 'PREVIEW' && currentPRNumber) {
-    filters.push({ Name: "tag:PRNumber", Values: [currentPRNumber] });
+  useEffect(() => {
+    const fetchInstances = async () => {
+      try {
+        const response = await fetch('/api/instances');
+        if (response.ok) {
+          const data = await response.json();
+          setInstances(data.instances);
+          setEnvironmentPrefix(data.environmentPrefix);
+          setCurrentPRNumber(data.currentPRNumber);
+        } else {
+          console.error('Failed to fetch instances:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching instances:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInstances();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
-  
-  const instances = await ec2
-    .describeInstances({ Filters: filters })
-    .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
 
   if (instances.length === 0) {
     notFound();
@@ -86,9 +102,16 @@ export default async function AdminPage() {
         const instanceState = instance.State?.Name;
         const instanceId = instance.InstanceId;
         const command = `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`;
-        const instanceName = instance.Tags?.find(tag => tag.Key === "Name")?.Value || "Unknown";
-        const instanceType = instance.Tags?.find(tag => tag.Key === "Type")?.Value || "main";
-        const prNumber = instance.Tags?.find(tag => tag.Key === "PRNumber")?.Value;
+        const instanceName = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "Name")?.Value || "Unknown";
+        const instanceType = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "Type")?.Value || "main";
+        const prNumber = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "PRNumber")?.Value;
+        
+        const healthStatus = healthStatuses[instanceId || ''] || { status: "loading" };
+        const handleHealthStatusChange = (status: {status: string, error?: string}) => {
+          if (instanceId) {
+            setHealthStatuses(prev => ({ ...prev, [instanceId]: status }));
+          }
+        };
         
         return (
           <div key={instanceId} className="border p-4 rounded-lg w-full max-w-2xl">
@@ -122,6 +145,7 @@ export default async function AdminPage() {
                   publicDns={instance.PublicDnsName || ""}
                   keyName={instance.KeyName || ""}
                   instanceState={instanceState || ""}
+                  onHealthStatusChange={handleHealthStatusChange}
                 />
               </p>
               <p>
@@ -137,6 +161,9 @@ export default async function AdminPage() {
               )}
               {instanceState === "stopped" && instanceId && (
                 <StartInstanceButton id={instanceId} />
+              )}
+              {instanceState === "running" && instanceId && (healthStatus.status === "unhealthy" || healthStatus.status === "offline") && (
+                <RebootInstanceButton id={instanceId} />
               )}
               {instanceState === "pending" && <PendingInstanceRefresh />}
             </div>
