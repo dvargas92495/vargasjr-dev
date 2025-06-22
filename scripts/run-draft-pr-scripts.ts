@@ -82,7 +82,15 @@ class DraftPRScriptRunner {
     }
 
     const uniqueScripts = [...new Set(scripts)];
-    return uniqueScripts.filter(script => existsSync(join(this.projectRoot, script)));
+    const filteredScripts = uniqueScripts.filter(script => {
+      const fullPath = join(this.projectRoot, script);
+      if (script.includes('run-draft-pr-scripts.ts')) {
+        return false;
+      }
+      return existsSync(fullPath);
+    });
+    
+    return filteredScripts;
   }
 
   private getChangedFilesInPR(): string[] {
@@ -251,6 +259,18 @@ class DraftPRScriptRunner {
   }
 
   private async postComment(content: string): Promise<void> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPOSITORY;
+    
+    if (!githubToken || !githubRepo) {
+      console.log("⚠️ Not in GitHub Actions environment, skipping comment posting");
+      console.log("📝 Comment content that would be posted:");
+      console.log("=" + "=".repeat(50));
+      console.log(content);
+      console.log("=" + "=".repeat(50));
+      return;
+    }
+    
     process.env.GITHUB_EVENT_NAME = 'pull_request';
     process.env.GITHUB_EVENT_PATH = '/tmp/github_event.json';
     
