@@ -1,0 +1,47 @@
+name: Run Draft PR Scripts
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to run scripts from'
+        required: true
+        type: string
+      script_path:
+        description: 'Optional: Specific script path to run (relative to repo root)'
+        required: false
+        type: string
+        default: '/scripts/temp.ts'
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          
+      - name: Install dependencies
+        run: npm install
+        
+
+      - name: Discover and run scripts
+        id: run_scripts
+        run: npm run one-time-migration -- --pr ${{ inputs.pr_number }} --script-path ${{ inputs.script_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: workflow_dispatch
+          GITHUB_EVENT_PATH: /dev/null
+          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
