@@ -28,9 +28,19 @@ class DraftPRScriptRunner {
     console.log(`🔍 Running scripts for draft PR #${this.prNumber}`);
     
     try {
-      const scripts = this.specificScriptPath 
-        ? [this.specificScriptPath]
-        : await this.discoverScripts();
+      await this.setupPREnvironment();
+      
+      let scripts: string[];
+      if (this.specificScriptPath) {
+        const fullPath = join(this.projectRoot, this.specificScriptPath);
+        if (existsSync(fullPath)) {
+          scripts = [this.specificScriptPath];
+        } else {
+          scripts = [];
+        }
+      } else {
+        scripts = await this.discoverScripts();
+      }
       
       if (scripts.length === 0) {
         const message = this.specificScriptPath 
@@ -91,6 +101,48 @@ class DraftPRScriptRunner {
     });
     
     return filteredScripts;
+  }
+
+  private async setupPREnvironment(): Promise<void> {
+    console.log(`🔍 Validating PR #${this.prNumber} is a draft...`);
+    
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPOSITORY;
+    
+    if (!githubToken || !githubRepo) {
+      console.log("⚠️ Not in GitHub Actions environment, skipping PR validation");
+      return;
+    }
+    
+    try {
+      const prData = execSync(`curl -s -H "Authorization: Bearer ${githubToken}" "https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}"`, {
+        encoding: 'utf8'
+      });
+      
+      const pr = JSON.parse(prData);
+      
+      if (pr.draft !== true) {
+        throw new Error(`PR #${this.prNumber} is not a draft PR`);
+      }
+      
+      console.log(`✅ Confirmed PR #${this.prNumber} is a draft PR`);
+      
+      console.log(`🔄 Checking out PR #${this.prNumber} branch...`);
+      execSync(`git fetch origin pull/${this.prNumber}/head:pr-${this.prNumber}`, {
+        cwd: this.projectRoot,
+        stdio: 'inherit'
+      });
+      
+      execSync(`git checkout pr-${this.prNumber}`, {
+        cwd: this.projectRoot,
+        stdio: 'inherit'
+      });
+      
+      console.log(`✅ Successfully checked out PR #${this.prNumber} branch`);
+      
+    } catch (error) {
+      throw new Error(`Failed to setup PR environment: ${error}`);
+    }
   }
 
   private getChangedFilesInPR(): string[] {
