@@ -1,0 +1,83 @@
+name: Run Draft PR Scripts
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to run scripts from'
+        required: true
+        type: string
+      script_path:
+        description: 'Optional: Specific script path to run (relative to repo root)'
+        required: false
+        type: string
+
+jobs:
+  run-scripts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        
+      - name: Fetch PR information
+        id: pr_info
+        run: |
+          PR_DATA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ inputs.pr_number }}")
+          
+          IS_DRAFT=$(echo "$PR_DATA" | jq -r '.draft')
+          PR_HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha')
+          PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+          
+          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
+          echo "head_sha=$PR_HEAD_SHA" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+          
+          if [ "$IS_DRAFT" != "true" ]; then
+            echo "❌ PR #${{ inputs.pr_number }} is not a draft PR"
+            exit 1
+          fi
+          
+          echo "✅ Confirmed PR #${{ inputs.pr_number }} is a draft PR"
+          
+      - name: Checkout PR branch
+        run: |
+          git fetch origin pull/${{ inputs.pr_number }}/head:pr-${{ inputs.pr_number }}
+          git checkout pr-${{ inputs.pr_number }}
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+          
+      - name: Bootstrap poetry
+        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
+        
+      - name: Install Python dependencies
+        run: poetry install
+        working-directory: agent
+        
+      - name: Discover and run scripts
+        id: run_scripts
+        run: npm run run-draft-pr-scripts -- --pr ${{ inputs.pr_number }} ${{ inputs.script_path && format('--script-path {0}', inputs.script_path) || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: workflow_dispatch
+          GITHUB_EVENT_PATH: /dev/null
+          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}

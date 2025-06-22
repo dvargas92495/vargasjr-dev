@@ -14,6 +14,7 @@
     "create-agent": "npx tsx scripts/create-agent.ts",
     "cleanup-agent": "npx tsx scripts/cleanup-agent.ts",
     "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts",
+    "run-draft-pr-scripts": "npx tsx scripts/run-draft-pr-scripts.ts",
     "run-migrations": "npx tsx scripts/run-migrations.ts",
     "run-knowledge": "npx tsx scripts/run-knowledge.ts",
     "setup:local": "npx tsx scripts/setup-local.ts",
