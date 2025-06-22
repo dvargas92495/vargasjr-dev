@@ -24,6 +24,7 @@ tweepy = "^4.14.0"
 
 [tool.poetry.scripts]
 agent = "src.cli:main"
+reboot = "src.reboot:main"
 
 
 [tool.poetry.group.dev.dependencies]
