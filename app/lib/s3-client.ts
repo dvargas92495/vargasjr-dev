@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
+import { AWS_S3_BUCKETS } from './constants';
 
 const DOCUMENT_TYPE = 'contractor-agreement';
 
@@ -22,7 +23,7 @@ export function generateS3Key(baseKey: string): string {
 
 export async function uploadPDFToS3(pdfBuffer: Uint8Array): Promise<string> {
   const uuid = uuidv4();
-  const bucketName = process.env.S3_BUCKET_NAME || 'vargas-jr-memory';
+  const bucketName = process.env.S3_BUCKET_NAME || AWS_S3_BUCKETS.MEMORY;
   const baseKey = `contracts/${uuid}.pdf`;
   const key = generateS3Key(baseKey);
   

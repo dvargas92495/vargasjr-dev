@@ -48,3 +48,12 @@ __pycache__
 
 # memory
 .memory
+
+# CDKTF generated files
+.gen/
+cdktf.out/
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+*.tfplan

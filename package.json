@@ -48,6 +48,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@cdktf/provider-aws": "^21.0.0",
     "@eslint/eslintrc": "^3",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/cors": "^2.8.17",
@@ -56,6 +57,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/tsscmp": "^1.0.2",
+    "cdktf": "^0.21.0",
+    "cdktf-cli": "^0.21.0",
     "dotenv": "^16.4.7",
     "drizzle-kit": "^0.30.1",
     "eslint": "^9",
