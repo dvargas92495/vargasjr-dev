@@ -267,8 +267,7 @@ AWS_DEFAULT_REGION=us-east-1`;
         'sudo apt install -y python3.12 python3.12-venv python3-pip',
         'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
         'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
-        'source ~/.profile'
+        'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3 && source ~/.profile'
       ];
       
       const keyPath = `${tmpdir()}/${keyPairName}.pem`;
