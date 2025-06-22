@@ -1,13 +1,7 @@
 import InstanceCard from "@/components/instance-card";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
-
-function getEnvironmentPrefix(): string {
-  if (process.env.VERCEL_ENV === 'preview') {
-    return 'PREVIEW';
-  }
-  return '';
-}
+import { getEnvironmentPrefix } from "@/app/api/constants";
 
 function getCurrentPRNumber(): string | null {
   return process.env.VERCEL_GIT_PULL_REQUEST_ID || null;
@@ -38,6 +32,10 @@ function getCurrentPRNumber(): string | null {
  */
 
 export default async function AdminPage() {
+  const ec2 = new EC2({
+    region: "us-east-1",
+  });
+  
   const environmentPrefix = getEnvironmentPrefix();
   const currentPRNumber = getCurrentPRNumber();
   
@@ -51,38 +49,10 @@ export default async function AdminPage() {
   } else if (environmentPrefix === 'PREVIEW' && currentPRNumber) {
     filters.push({ Name: "tag:PRNumber", Values: [currentPRNumber] });
   }
-
-  let instances;
-  try {
-    const ec2 = new EC2({ region: "us-east-1" });
-    instances = await ec2
-      .describeInstances({ Filters: filters })
-      .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
-  } catch (awsError) {
-    const errorMessage = awsError instanceof Error ? awsError.message : "AWS error";
-    
-    if (errorMessage.includes("Could not load credentials")) {
-      console.log("AWS credentials not available - returning mock data for development");
-      
-      instances = [
-        {
-          InstanceId: "i-1234567890abcdef0",
-          State: { Name: "running" },
-          KeyName: "test-key",
-          PublicDnsName: "ec2-test.compute-1.amazonaws.com",
-          InstanceType: "t3.micro",
-          ImageId: "ami-12345678",
-          Tags: [
-            { Key: "Name", Value: "Test Instance" },
-            { Key: "Type", Value: "main" },
-            { Key: "Project", Value: "VargasJR" }
-          ]
-        }
-      ];
-    } else {
-      throw awsError;
-    }
-  }
+  
+  const instances = await ec2
+    .describeInstances({ Filters: filters })
+    .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
 
   if (instances.length === 0) {
     notFound();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import StopInstanceButton from "@/components/stop-instance-button";
 import StartInstanceButton from "@/components/start-instance-button";
 import RebootInstanceButton from "@/components/reboot-instance-button";
@@ -30,9 +30,9 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
   const instanceType = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "Type")?.Value || "main";
   const prNumber = instance.Tags?.find((tag: {Key?: string, Value?: string}) => tag.Key === "PRNumber")?.Value;
 
-  const handleHealthStatusChange = (status: {status: string, error?: string}) => {
+  const handleHealthStatusChange = useCallback((status: {status: string, error?: string}) => {
     setHealthStatus(status);
-  };
+  }, []);
 
   return (
     <div className="border p-4 rounded-lg w-full max-w-2xl">
