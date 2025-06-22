@@ -83,7 +83,7 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
         {instanceState === "stopped" && instanceId && (
           <StartInstanceButton id={instanceId} />
         )}
-        {instanceState === "running" && instanceId && (healthStatus.status === "unhealthy" || healthStatus.status === "offline") && (
+        {instanceState === "running" && instanceId && healthStatus.status === "unhealthy" && (
           <RebootInstanceButton id={instanceId} />
         )}
         {instanceState === "pending" && <PendingInstanceRefresh />}
