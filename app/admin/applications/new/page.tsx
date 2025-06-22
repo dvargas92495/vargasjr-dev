@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { AppTypes, AppType } from "@/db/constants";
 import TwitterForm from "@/components/TwitterForm";
+import CapitalOneForm from "@/components/CapitalOneForm";
 import DefaultApplicationForm from "@/components/DefaultApplicationForm";
 
 export default function NewApplicationPage() {
@@ -87,6 +88,8 @@ export default function NewApplicationPage() {
           switch (selectedAppType) {
             case "TWITTER":
               return <TwitterForm />;
+            case "CAPITAL_ONE":
+              return <CapitalOneForm />;
             case "NOTION":
             case "DEVIN":
             default:
