@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source ~/.profile
 rm -Rf vargasjr_dev_agent-*
 yes | rm -rf ~/.cache/pypoetry/virtualenvs/*
 

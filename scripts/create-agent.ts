@@ -278,19 +278,19 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
 
       writeFileSync('/tmp/agent.env', envContent);
       const setupCommands = [
-        'sudo apt update',
-        'sudo apt install -y python3.12 python3.12-venv python3-pip',
-        'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
-        'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
-        'source ~/.profile'
+        { tag: 'APT', command: 'sudo apt update' },
+        { tag: 'APT', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip' },
+        { tag: 'PYTHON', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
+        { tag: 'PYTHON', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
+        { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
+        { tag: 'SHELL', command: 'source ~/.profile' }
       ];
       
       const keyPath = `${tmpdir()}/${keyPairName}.pem`;
       
-      for (const command of setupCommands) {
-        console.log(`Executing: ${command}`);
-        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, command);
+      for (const commandObj of setupCommands) {
+        console.log(`Executing [${commandObj.tag}]: ${commandObj.command}`);
+        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, commandObj.command, commandObj.tag);
       }
       
       console.log("Copying .env file to instance...");
@@ -300,8 +300,8 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './run_agent.sh', '~/run_agent.sh');
       
       console.log("Making run_agent.sh executable and running it...");
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'chmod +x ~/run_agent.sh');
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'cd ~ && ./run_agent.sh');
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'chmod +x ~/run_agent.sh', 'SETUP');
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'cd ~ && ./run_agent.sh', 'AGENT');
       
       console.log("✅ Instance setup complete!");
       
@@ -338,7 +338,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
     throw new Error("SSH failed to become ready within timeout (10 minutes). Consider updating to Amazon Linux 2023 AMI for faster boot times.");
   }
 
-  private async executeSSHCommand(keyPath: string, publicDns: string, command: string): Promise<void> {
+  private async executeSSHCommand(keyPath: string, publicDns: string, command: string, tag?: string): Promise<void> {
     const maxAttempts = 3;
     let attempts = 0;
     
@@ -351,7 +351,8 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       } catch (error) {
         attempts++;
         if (attempts >= maxAttempts) {
-          console.error(`❌ SSH command failed after ${maxAttempts} attempts: ${command}`);
+          const logPrefix = tag ? `[${tag}] ` : '';
+          console.error(`❌ ${logPrefix}SSH command failed after ${maxAttempts} attempts: ${command}`);
           throw error;
         }
         console.log(`SSH command failed, retrying... (${attempts}/${maxAttempts})`);
