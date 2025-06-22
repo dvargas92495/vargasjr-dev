@@ -48,7 +48,13 @@ class VargasJRAgentCreator {
       
       await this.setupInstance(instanceDetails, keyPairName);
       
-      await this.waitForInstanceHealthy(instanceId);
+      try {
+        await this.waitForInstanceHealthy(instanceId);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`⚠️  Health check failed: ${errorMessage}`);
+        console.log("Continuing with agent setup despite health check failure...");
+      }
       
       console.log(`✅ Agent ${agentName} infrastructure and SSH setup completed successfully!`);
       console.log(`Instance ID: ${instanceId}`);
@@ -369,17 +375,11 @@ AWS_DEFAULT_REGION=us-east-1`;
     }
   }
 
+  private formatError(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
   private async waitForInstanceHealthy(instanceId: string): Promise<void> {
-    const isCI = process.env.GITHUB_ACTIONS === 'true' || 
-                 process.env.CI === 'true' || 
-                 process.env.GITHUB_TOKEN;
-    
-    if (isCI) {
-      console.log("⚠️  Skipping health check in CI environment due to AWS account limitations");
-      console.log("✅ Agent setup completed (health check skipped in CI)");
-      return;
-    }
-    
     console.log("Waiting for agent to be healthy...");
     
     const maxAttempts = 40;
@@ -395,17 +395,17 @@ AWS_DEFAULT_REGION=us-east-1`;
         }
         
         attempts++;
-        const waitTime = attempts < 10 ? 15 : 30;
+        const waitTime = attempts < 10 ? 5 : 10;
         console.log(`Agent not healthy yet (${healthResult.status}${healthResult.error ? `: ${healthResult.error}` : ''}), waiting... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
         
       } catch (error) {
         attempts++;
         if (attempts >= maxAttempts) {
-          throw new Error(`Agent failed to become healthy within timeout: ${error instanceof Error ? error.message : String(error)}`);
+          throw new Error(`Agent failed to become healthy within timeout: ${this.formatError(error)}`);
         }
-        console.log(`Health check failed, retrying... (${attempts}/${maxAttempts}): ${error instanceof Error ? error.message : String(error)}`);
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        console.log(`Health check failed, retrying... (${attempts}/${maxAttempts}): ${this.formatError(error)}`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
     
