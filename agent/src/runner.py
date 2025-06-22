@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
@@ -15,6 +15,7 @@ from src.services import postgres_session
 from src.models.routine_job import RoutineJob as RoutineJobModel
 from sqlmodel import select
 from src.workflows.triage_message.workflow import TriageMessageWorkflow
+from src.utils import get_version, create_file_logger
 
 
 class AgentRunner:
@@ -27,8 +28,8 @@ class AgentRunner:
         max_loops: Optional[int] = None,
     ):
         load_dotenv()
-        self._current_version = self._get_version()
-        self._logger = logger or self._default_logger()
+        self._current_version = get_version()
+        self._logger = logger or create_file_logger(__name__, "agent.log", self._current_version)
         log_level = os.getenv("LOG_LEVEL")
         if log_level:
             self._logger.setLevel(log_level)
@@ -36,6 +37,8 @@ class AgentRunner:
         self._cancel_signal = cancel_signal or Event()
         self._sleep_time = sleep_time
         self._max_loops = max_loops
+        self._last_updated = datetime.now()
+        self._update_interval = timedelta(minutes=1)
 
         self._routine_jobs = self._load_routine_jobs()
 
@@ -68,32 +71,18 @@ class AgentRunner:
                     job.run()
                     break
 
+            if datetime.now() - self._last_updated > self._update_interval:
+                self._logger.info("Checking for updates...")
+                self._last_updated = datetime.now()
+                
+                from src.cli import check_and_reboot_if_needed
+                try:
+                    check_and_reboot_if_needed(self._logger)
+                except Exception:
+                    self._logger.exception("Failed to check for updates")
 
 
-    def _get_version(self) -> str:
-        with open("pyproject.toml", "r") as f:
-            for line in f:
-                if line.startswith("version = "):
-                    return line.split("=")[1].strip().strip('"')
-        return "unknown"
 
-    def _default_logger(self) -> logging.Logger:
-        log_dir = Path.home() / ".local" / "var" / "log" / "vargas-jr" / f"v{self._current_version}"
-        log_dir.mkdir(exist_ok=True, parents=True)
-
-        logger = logging.getLogger(__name__)
-        log_file = log_dir / "agent.log"
-        file_handler = TimedRotatingFileHandler(
-            str(log_file),
-            when="midnight",
-            interval=1,
-            backupCount=30,
-            encoding="utf-8",
-        )
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        return logger
 
     def _should_run(self):
         return not self._cancel_signal.is_set()
