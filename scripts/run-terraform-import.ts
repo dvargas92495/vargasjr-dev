@@ -103,32 +103,25 @@ class TerraformImportRunner {
   }
 
   private buildImportCommands(): string[] {
-    const commands: string[] = [];
+    const commands: string[] = [
+      "terraform import aws_s3_bucket.MemoryBucket vargas-jr-memory",
+      "terraform import aws_s3_bucket.InboxBucket vargas-jr-inbox",
+      
+      "terraform import aws_s3_bucket_versioning.MemoryBucketVersioning vargas-jr-memory",
+      "terraform import aws_s3_bucket_versioning.InboxBucketVersioning vargas-jr-inbox",
+      
+      "terraform import aws_security_group.SSHSecurityGroup sg-xxxxxxxxx",
+      
+      "terraform import aws_security_group_rule.SSHIngressRule sg-xxxxxxxxx_ingress_tcp_22_22_0.0.0.0/0",
+      "terraform import aws_security_group_rule.AllEgressRule sg-xxxxxxxxx_egress_all_0_0_0.0.0.0/0",
+      
+      "terraform import aws_ses_domain_identity.DomainIdentity vargasjr.dev",
+      "terraform import aws_ses_email_identity.EmailIdentity hello@vargasjr.dev",
+      
+      "terraform plan"
+    ];
     
-    commands.push("# S3 Buckets");
-    commands.push("terraform import aws_s3_bucket.MemoryBucket vargas-jr-memory");
-    commands.push("terraform import aws_s3_bucket.InboxBucket vargas-jr-inbox");
-    
-    commands.push("");
-    commands.push("# S3 Bucket Versioning");
-    commands.push("terraform import aws_s3_bucket_versioning.MemoryBucketVersioning vargas-jr-memory");
-    commands.push("terraform import aws_s3_bucket_versioning.InboxBucketVersioning vargas-jr-inbox");
-    
-    commands.push("");
-    commands.push("# Security Group (replace sg-xxxxxxxxx with actual security group ID)");
-    commands.push("terraform import aws_security_group.SSHSecurityGroup sg-xxxxxxxxx");
-    
-    commands.push("");
-    commands.push("# Security Group Rules (replace sg-xxxxxxxxx with actual security group ID)");
-    commands.push("terraform import aws_security_group_rule.SSHIngressRule sg-xxxxxxxxx_ingress_tcp_22_22_0.0.0.0/0");
-    commands.push("terraform import aws_security_group_rule.AllEgressRule sg-xxxxxxxxx_egress_all_0_0_0.0.0.0/0");
-    
-    commands.push("");
-    commands.push("# SES Resources");
-    commands.push("terraform import aws_ses_domain_identity.DomainIdentity vargasjr.dev");
-    commands.push("terraform import aws_ses_email_identity.EmailIdentity hello@vargasjr.dev");
-    
-    return commands.filter(cmd => !cmd.startsWith("#") && cmd.trim() !== "");
+    return commands;
   }
 
   private async handleNoImportsNeeded(): Promise<void> {
@@ -148,10 +141,6 @@ class TerraformImportRunner {
     }
 
     for (const command of commands) {
-      if (command.trim() === "" || command.startsWith("#")) {
-        continue;
-      }
-      
       try {
         console.log(`Executing: ${command}`);
         execSync(command, {
