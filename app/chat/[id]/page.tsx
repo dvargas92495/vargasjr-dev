@@ -48,36 +48,29 @@ export default async function ChatSessionPage({
     <div className="flex flex-col p-4 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Chat Session</h1>
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
-        <div className="mb-4">
-          <div className="text-sm text-gray-300">Session ID</div>
-          <div className="text-lg">{session.id}</div>
-        </div>
-        <div className="mb-4">
-          <div className="text-sm text-gray-300">Created At</div>
-          <div className="text-lg">{session.createdAt.toLocaleString()}</div>
-        </div>
-        <div className="mb-4">
-          <div className="text-sm text-gray-300">Contact</div>
-          <div className="text-lg">{session.contactName || session.contactEmail}</div>
+        <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
+          {messages.map((message) => (
+            <div key={message.id} className="bg-gray-700 rounded-lg p-4">
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-semibold text-blue-300">{message.source}</span>
+                <span className="text-xs text-gray-400">
+                  {message.createdAt.toLocaleString()}
+                </span>
+              </div>
+              <div className="text-gray-100 whitespace-pre-wrap">{message.body}</div>
+            </div>
+          ))}
         </div>
         
-        <div className="mt-6">
-          <div className="text-sm text-gray-300 mb-3">Messages</div>
-          <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
-            {messages.map((message) => (
-              <div key={message.id} className="bg-gray-700 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-semibold text-blue-300">{message.source}</span>
-                  <span className="text-xs text-gray-400">
-                    {message.createdAt.toLocaleString()}
-                  </span>
-                </div>
-                <div className="text-gray-100 whitespace-pre-wrap">{message.body}</div>
-              </div>
-            ))}
+        <ChatInput sessionId={session.id} />
+        
+        <div className="mt-6 pt-4 border-t border-gray-600 flex justify-between items-center text-sm">
+          <div className="text-gray-300">
+            {session.contactName || session.contactEmail}
           </div>
-          
-          <ChatInput sessionId={session.id} />
+          <div className="text-xs text-gray-500">
+            Session: {session.id}
+          </div>
         </div>
       </div>
     </div>
