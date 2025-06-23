@@ -62,11 +62,8 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         poetry install
         
         if [ -d "browser" ]; then
-            echo "Setting up browser service..."
-            cd browser
-            npm install
-            npm run build
             echo "Starting browser service..."
+            cd browser
             screen -dmS browser-service bash -c 'npm run start 2> browser-error.log'
             cd ..
         fi
@@ -83,11 +80,8 @@ else
     poetry install
     
     if [ -d "browser" ]; then
-        echo "Setting up browser service..."
-        cd browser
-        npm install
-        npm run build
         echo "Starting browser service..."
+        cd browser
         screen -dmS browser-service bash -c 'npm run start 2> browser-error.log'
         cd ..
     fi

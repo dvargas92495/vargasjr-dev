@@ -61,6 +61,16 @@ jobs:
         run: |
           VERSION=$(sed -n '3p' agent/pyproject.toml | cut -d'"' -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Set up Node.js for browser service
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+      - name: Build browser service
+        run: |
+          cd browser
+          npm install
+          npm run build
+          cd ..
       - name: Create complete agent package
         run: |
           mkdir -p vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
