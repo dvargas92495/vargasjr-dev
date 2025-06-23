@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { SSM } from "@aws-sdk/client-ssm";
-import { EC2 } from "@aws-sdk/client-ec2";
+import { validateSSMReadiness } from "@/scripts/utils";
 
 const rebootSchema = z.object({
   instanceId: z.string(),
@@ -21,25 +21,12 @@ export async function POST(request: Request) {
     const { instanceId } = rebootSchema.parse(body);
     
     try {
-      const ec2 = new EC2({ region: "us-east-1" });
       const ssm = new SSM({ region: "us-east-1" });
       
-      const instanceResult = await ec2.describeInstances({
-        InstanceIds: [instanceId]
-      });
-      
-      const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
-      
-      if (!instance) {
+      const ssmValidation = await validateSSMReadiness(instanceId);
+      if (!ssmValidation.ready) {
         return NextResponse.json({
-          error: "Instance not found"
-        }, { status: 404 });
-      }
-
-      const instanceState = instance.State?.Name;
-      if (instanceState !== "running") {
-        return NextResponse.json({
-          error: `Instance is ${instanceState}, cannot reboot agent`
+          error: `Cannot reboot agent: ${ssmValidation.error}`
         }, { status: 400 });
       }
 

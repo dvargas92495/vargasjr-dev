@@ -277,31 +277,70 @@ export interface HealthCheckResult {
   error?: string;
 }
 
+export interface SSMReadinessResult {
+  ready: boolean;
+  error?: string;
+}
+
+export async function validateSSMReadiness(
+  instanceId: string, 
+  region: string = "us-east-1"
+): Promise<SSMReadinessResult> {
+  const ec2 = new EC2({ region });
+  const ssm = new SSM({ region });
+  
+  try {
+    const instanceResult = await ec2.describeInstances({ InstanceIds: [instanceId] });
+    const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
+    
+    if (!instance || instance.State?.Name !== "running") {
+      return { 
+        ready: false, 
+        error: `Instance is ${instance?.State?.Name || 'not found'}, must be running for SSM` 
+      };
+    }
+    
+    const ssmInstances = await ssm.describeInstanceInformation({
+      Filters: [{ Key: "InstanceIds", Values: [instanceId] }]
+    });
+    
+    if (!ssmInstances.InstanceInformationList?.length) {
+      return { 
+        ready: false, 
+        error: "Instance not registered with Systems Manager" 
+      };
+    }
+    
+    const ssmInstance = ssmInstances.InstanceInformationList[0];
+    
+    if (ssmInstance.PingStatus !== "Online") {
+      return { 
+        ready: false, 
+        error: `SSM agent is ${ssmInstance.PingStatus}, must be Online` 
+      };
+    }
+    
+    return { ready: true };
+    
+  } catch (error: any) {
+    if (error.name === "InvalidInstanceID.NotFound") {
+      return { ready: false, error: "Instance not found" };
+    }
+    return { ready: false, error: error.message };
+  }
+}
+
 export async function checkInstanceHealth(instanceId: string, region: string = "us-east-1"): Promise<HealthCheckResult> {
   const ec2 = new EC2({ region });
   const ssm = new SSM({ region });
   
   try {
-    const instanceResult = await ec2.describeInstances({
-      InstanceIds: [instanceId]
-    });
-    
-    const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
-    
-    if (!instance) {
+    const ssmValidation = await validateSSMReadiness(instanceId, region);
+    if (!ssmValidation.ready) {
       return {
         instanceId,
         status: "offline",
-        error: "Instance not found"
-      };
-    }
-
-    const instanceState = instance.State?.Name;
-    if (instanceState !== "running") {
-      return {
-        instanceId,
-        status: "offline",
-        error: `Instance is ${instanceState}`
+        error: `Health check failed: ${ssmValidation.error}`
       };
     }
 
