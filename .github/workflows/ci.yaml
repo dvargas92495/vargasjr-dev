@@ -56,22 +56,30 @@ jobs:
       - name: Build package
         run: poetry build
         working-directory: agent
-      - name: Publish package
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.event_name == 'pull_request' && format('dist-pr-{0}', github.event.number) || 'dist' }}
-          path: agent/dist/*
-          retention-days: 5
       - name: Get version from pyproject.toml
         id: get_version
         run: |
           VERSION=$(sed -n '3p' agent/pyproject.toml | cut -d'"' -f2)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Create complete agent package
+        run: |
+          mkdir -p vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
+          cd vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
+          tar -xzf ../agent/dist/vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz --strip-components=1
+          cp -r ../browser ./browser
+          cd ..
+          tar -czf vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
+      - name: Publish package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event_name == 'pull_request' && format('dist-pr-{0}', github.event.number) || 'dist' }}
+          path: vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz
+          retention-days: 5
       - name: Create Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          files: agent/dist/*
+          files: vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz
           tag_name: v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false

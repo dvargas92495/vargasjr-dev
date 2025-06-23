@@ -283,6 +283,8 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
         { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
         { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
         { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
+        { tag: 'NODEJS', command: 'curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -' },
+        { tag: 'NODE_INSTALL', command: 'sudo apt-get install -y nodejs' },
         { tag: 'PROFILE', command: 'source ~/.profile' }
       ];
       

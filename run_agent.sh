@@ -60,6 +60,17 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         cd "$AGENT_DIR"
         cp ../.env .
         poetry install
+        
+        if [ -d "browser" ]; then
+            echo "Setting up browser service..."
+            cd browser
+            npm install
+            npm run build
+            echo "Starting browser service..."
+            screen -dmS browser-service bash -c 'npm run start 2> browser-error.log'
+            cd ..
+        fi
+        
         screen -dmS agent-preview bash -c 'poetry run agent 2> error.log'
         
 else
@@ -70,6 +81,17 @@ else
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
     poetry install
+    
+    if [ -d "browser" ]; then
+        echo "Setting up browser service..."
+        cd browser
+        npm install
+        npm run build
+        echo "Starting browser service..."
+        screen -dmS browser-service bash -c 'npm run start 2> browser-error.log'
+        cd ..
+    fi
+    
     screen -dmS agent-${VERSION//./-} bash -c 'poetry run agent 2> error.log'
 fi
 
