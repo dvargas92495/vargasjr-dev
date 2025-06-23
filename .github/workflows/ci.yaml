@@ -66,17 +66,14 @@ jobs:
         with:
           node-version-file: '.nvmrc'
       - name: Build browser service
-        run: |
-          cd browser
-          npm install
-          npm run build
-          cd ..
+        run: npm run browser:build
       - name: Create complete agent package
         run: |
           mkdir -p vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
           cd vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
           tar -xzf ../agent/dist/vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz --strip-components=1
           cp -r ../browser ./browser
+          cp ../package.json ./package.json
           cd ..
           tar -czf vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
       - name: Publish package

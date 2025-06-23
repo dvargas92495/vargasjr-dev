@@ -63,9 +63,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         if [ -d "browser" ]; then
             echo "Starting browser service..."
-            cd browser
-            screen -dmS browser-service bash -c 'npm run start 2> browser-error.log'
-            cd ..
+            screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
         fi
         
         screen -dmS agent-preview bash -c 'poetry run agent 2> error.log'
@@ -81,9 +79,7 @@ else
     
     if [ -d "browser" ]; then
         echo "Starting browser service..."
-        cd browser
-        screen -dmS browser-service bash -c 'npm run start 2> browser-error.log'
-        cd ..
+        screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
     fi
     
     screen -dmS agent-${VERSION//./-} bash -c 'poetry run agent 2> error.log'

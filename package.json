@@ -19,6 +19,7 @@
     "run-knowledge": "npx tsx scripts/run-knowledge.ts",
     "setup:local": "npx tsx scripts/setup-local.ts",
     "browser:dev": "tsx browser/src/index.ts",
+    "prebrowser:build": "npm install",
     "browser:build": "tsc --project browser",
     "browser:start": "node browser/dist/index.js"
   },
