@@ -8,6 +8,7 @@ import CapitalOneForm from "@/components/CapitalOneForm";
 import MercuryForm from "@/components/MercuryForm";
 import SlackForm from "@/components/SlackForm";
 import RoamResearchForm from "@/components/RoamResearchForm";
+import GoogleForm from "@/components/GoogleForm";
 import DefaultApplicationForm from "@/components/DefaultApplicationForm";
 
 export default function NewApplicationPage() {
@@ -99,6 +100,8 @@ export default function NewApplicationPage() {
               return <SlackForm />;
             case "ROAM_RESEARCH":
               return <RoamResearchForm />;
+            case "GOOGLE":
+              return <GoogleForm />;
             case "NOTION":
             case "DEVIN":
             default:
