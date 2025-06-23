@@ -321,7 +321,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       }
 
       let attempts = 0;
-      const maxAttempts = 10;
+      const maxAttempts = 40;
       let commandOutput = "";
 
       while (attempts < maxAttempts) {
@@ -375,7 +375,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: "offline",
-        error: errorMessage
+        error: `SSM Command Failed to send: ${errorMessage}`
       };
     }
 
@@ -383,7 +383,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
     return {
       instanceId,
       status: "offline", 
-      error: error instanceof Error ? error.message : "Health check failed"
+      error: error instanceof Error ? `Check Instance Failed: ${error.message}` : "Health check failed"
     };
   }
 }

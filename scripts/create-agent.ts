@@ -278,19 +278,18 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
 
       writeFileSync('/tmp/agent.env', envContent);
       const setupCommands = [
-        'sudo apt update',
-        'sudo apt install -y python3.12 python3.12-venv python3-pip',
-        'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1',
-        'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1',
-        'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3',
-        'source ~/.profile'
+        { tag: 'APT', command: 'sudo apt update' },
+        { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip' },
+        { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
+        { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
+        { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
+        { tag: 'PROFILE', command: 'source ~/.profile' }
       ];
       
       const keyPath = `${tmpdir()}/${keyPairName}.pem`;
       
-      for (const command of setupCommands) {
-        console.log(`Executing: ${command}`);
-        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, command);
+      for (const commandObj of setupCommands) {
+        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, commandObj);
       }
       
       console.log("Copying .env file to instance...");
@@ -300,8 +299,8 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './run_agent.sh', '~/run_agent.sh');
       
       console.log("Making run_agent.sh executable and running it...");
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'chmod +x ~/run_agent.sh');
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, 'cd ~ && ./run_agent.sh');
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
       
       console.log("✅ Instance setup complete!");
       
@@ -338,23 +337,25 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
     throw new Error("SSH failed to become ready within timeout (10 minutes). Consider updating to Amazon Linux 2023 AMI for faster boot times.");
   }
 
-  private async executeSSHCommand(keyPath: string, publicDns: string, command: string): Promise<void> {
+  private async executeSSHCommand(keyPath: string, publicDns: string, commandObj: { tag: string; command: string }): Promise<void> {
+    console.log(`Executing [${commandObj.tag}]: ${commandObj.command}`);
+    
     const maxAttempts = 3;
     let attempts = 0;
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${command}"`, {
+        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${commandObj.command}"`, {
           stdio: 'inherit'
         });
         return;
       } catch (error) {
         attempts++;
         if (attempts >= maxAttempts) {
-          console.error(`❌ SSH command failed after ${maxAttempts} attempts: ${command}`);
+          console.error(`❌ [${commandObj.tag}] SSH command failed after ${maxAttempts} attempts: ${commandObj.command}`);
           throw error;
         }
-        console.log(`SSH command failed, retrying... (${attempts}/${maxAttempts})`);
+        console.log(`[${commandObj.tag}] SSH command failed, retrying... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
