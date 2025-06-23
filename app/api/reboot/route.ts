@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       const ssmValidation = await validateSSMReadiness(instanceId);
       if (!ssmValidation.ready) {
         return NextResponse.json({
-          error: ssmValidation.error
+          error: `Cannot reboot agent: ${ssmValidation.error}`
         }, { status: 400 });
       }
 

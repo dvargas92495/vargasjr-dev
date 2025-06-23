@@ -340,7 +340,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: "offline",
-        error: ssmValidation.error
+        error: `Health check failed: ${ssmValidation.error}`
       };
     }
 
