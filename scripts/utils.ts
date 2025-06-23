@@ -1,7 +1,6 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { SSM } from "@aws-sdk/client-ssm";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
-import { IAM } from "@aws-sdk/client-iam";
 import { readFileSync } from "fs";
 
 export interface EC2Instance {
@@ -428,67 +427,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
   }
 }
 
-export async function findOrCreateSSMInstanceProfile(region: string = "us-east-1"): Promise<string> {
-  const iam = new IAM({ region });
-  const roleName = "VargasJR-SSM-Role";
-  const instanceProfileName = "VargasJR-SSM-InstanceProfile";
-  
-  try {
-    const existingProfile = await iam.getInstanceProfile({ InstanceProfileName: instanceProfileName });
-    return instanceProfileName;
-  } catch (error: any) {
-    if (error.name !== "NoSuchEntity") {
-      throw error;
-    }
-  }
-  
-  const trustPolicy = {
-    Version: "2012-10-17",
-    Statement: [
-      {
-        Effect: "Allow",
-        Principal: { Service: "ec2.amazonaws.com" },
-        Action: "sts:AssumeRole"
-      }
-    ]
-  };
-  
-  try {
-    await iam.createRole({
-      RoleName: roleName,
-      AssumeRolePolicyDocument: JSON.stringify(trustPolicy),
-      Description: "Role for VargasJR EC2 instances to access Systems Manager"
-    });
-    
-    await iam.attachRolePolicy({
-      RoleName: roleName,
-      PolicyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-    });
-    
-    console.log(`✅ Created IAM role: ${roleName}`);
-  } catch (roleError: any) {
-    if (roleError.name !== "EntityAlreadyExists") {
-      throw roleError;
-    }
-    console.log(`⚠️  IAM role ${roleName} already exists`);
-  }
-  
-  await iam.createInstanceProfile({
-    InstanceProfileName: instanceProfileName,
-    Description: "Instance profile for VargasJR EC2 instances"
-  });
-  
-  await iam.addRoleToInstanceProfile({
-    InstanceProfileName: instanceProfileName,
-    RoleName: roleName
-  });
-  
-  console.log(`✅ Created IAM instance profile: ${instanceProfileName}`);
-  
-  await new Promise(resolve => setTimeout(resolve, 10000));
-  
-  return instanceProfileName;
-}
+
 
 export async function postGitHubComment(
   content: string, 
