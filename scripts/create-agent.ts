@@ -1,4 +1,4 @@
--#!/usr/bin/env npx tsx
+#!/usr/bin/env npx tsx
 
 import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
