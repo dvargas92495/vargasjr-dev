@@ -202,20 +202,7 @@ class DraftPRScriptRunner {
     const fullPath = join(this.projectRoot, scriptPath);
     const startTime = Date.now();
     
-    console.log(`🚀 ${this.isPreviewMode ? 'Would run' : 'Running'} script: ${scriptPath}`);
-    
-    if (this.isPreviewMode) {
-      const command = this.getExecutionCommand(scriptPath);
-      const duration = Date.now() - startTime;
-      console.log(`✅ Preview: Would execute command: ${command}`);
-      
-      return {
-        scriptPath,
-        success: true,
-        output: `[PREVIEW MODE] Would execute: ${command}`,
-        duration
-      };
-    }
+    console.log(`🚀 ${this.isPreviewMode ? 'Running in preview mode' : 'Running'} script: ${scriptPath}`);
     
     try {
       const command = this.getExecutionCommand(scriptPath);
@@ -259,26 +246,27 @@ class DraftPRScriptRunner {
   private getExecutionCommand(scriptPath: string): string {
     const ext = extname(scriptPath).toLowerCase();
     const fullPath = join(this.projectRoot, scriptPath);
+    const previewFlag = this.isPreviewMode ? ' --preview' : '';
     
     switch (ext) {
       case '.js':
       case '.mjs':
-        return `node "${fullPath}"`;
+        return `node "${fullPath}"${previewFlag}`;
       case '.ts':
-        return `npx tsx "${fullPath}"`;
+        return `npx tsx "${fullPath}"${previewFlag}`;
       case '.py':
-        return `python "${fullPath}"`;
+        return `python "${fullPath}"${previewFlag}`;
       case '.sh':
-        return `bash "${fullPath}"`;
+        return `bash "${fullPath}"${previewFlag}`;
       default:
-        return `"${fullPath}"`;
+        return `"${fullPath}"${previewFlag}`;
     }
   }
 
   private async postResults(results: ScriptResult[]): Promise<void> {
     let commentContent = `# Draft PR Script ${this.isPreviewMode ? 'Preview' : 'Execution Results'}\n\n`;
     commentContent += `**PR**: #${this.prNumber}\n`;
-    commentContent += `**Mode**: ${this.isPreviewMode ? '🔍 Preview (no scripts executed)' : '🚀 Execution'}\n`;
+    commentContent += `**Mode**: ${this.isPreviewMode ? '🔍 Preview (scripts run with --preview flag)' : '🚀 Execution'}\n`;
     commentContent += `**${this.isPreviewMode ? 'Previewed' : 'Executed'}**: ${results.length} script(s)\n`;
     commentContent += `**Timestamp**: ${new Date().toISOString()}\n\n`;
 
