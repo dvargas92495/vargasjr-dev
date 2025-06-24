@@ -432,7 +432,6 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
 
 export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   const iam = new IAMClient({ region: 'us-east-1' });
-  const roleName = 'VargasJR-SSM-Role';
   const instanceProfileName = 'VargasJR-SSM-InstanceProfile';
 
   try {
@@ -443,40 +442,7 @@ export async function findOrCreateSSMInstanceProfile(): Promise<string> {
     if (error.name !== 'NoSuchEntity') {
       throw error;
     }
-  }
-
-  try {
-    await iam.send(new CreateRoleCommand({
-      RoleName: roleName,
-      AssumeRolePolicyDocument: JSON.stringify({
-        Version: '2012-10-17',
-        Statement: [{
-          Effect: 'Allow',
-          Principal: { Service: 'ec2.amazonaws.com' },
-          Action: 'sts:AssumeRole'
-        }]
-      })
-    }));
-
-    await iam.send(new AttachRolePolicyCommand({
-      RoleName: roleName,
-      PolicyArn: 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
-    }));
-
-    await iam.send(new CreateInstanceProfileCommand({
-      InstanceProfileName: instanceProfileName
-    }));
-
-    await iam.send(new AddRoleToInstanceProfileCommand({
-      InstanceProfileName: instanceProfileName,
-      RoleName: roleName
-    }));
-
-    console.log(`✅ Created IAM instance profile: ${instanceProfileName}`);
-    return instanceProfileName;
-  } catch (error: any) {
-    console.warn(`⚠️ Could not create IAM instance profile (${error.message}). Falling back to Default Host Management Configuration.`);
-    throw new Error(`IAM permissions required: ${error.message}`);
+    throw new Error(`IAM instance profile '${instanceProfileName}' does not exist. Please create it manually or use Default Host Management Configuration.`);
   }
 }
 
