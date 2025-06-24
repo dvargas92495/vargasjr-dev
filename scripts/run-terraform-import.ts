@@ -23,10 +23,7 @@ class TerraformImportRunner {
     }
     
     try {
-      if (!this.isPreviewMode) {
-        await this.synthesizeTerraformConfig();
-      }
-      
+      await this.synthesizeTerraformConfig();
       await this.generateImportCommands();
       
       if (this.isPreviewMode) {
