@@ -110,10 +110,10 @@ class TerraformImportRunner {
       "terraform import aws_s3_bucket_versioning.MemoryBucketVersioning vargas-jr-memory",
       "terraform import aws_s3_bucket_versioning.InboxBucketVersioning vargas-jr-inbox",
       
-      "terraform import aws_security_group.SSHSecurityGroup sg-xxxxxxxxx",
+      "terraform import aws_security_group.SSHSecurityGroup sg-0e88fc3206b3f3021",
       
-      "terraform import aws_security_group_rule.SSHIngressRule sg-xxxxxxxxx_ingress_tcp_22_22_0.0.0.0/0",
-      "terraform import aws_security_group_rule.AllEgressRule sg-xxxxxxxxx_egress_all_0_0_0.0.0.0/0",
+      "terraform import aws_security_group_rule.SSHIngressRule sg-0e88fc3206b3f3021_ingress_tcp_22_22_0.0.0.0/0",
+      "terraform import aws_security_group_rule.AllEgressRule sg-0e88fc3206b3f3021_egress_all_0_0_0.0.0.0/0",
       
       "terraform import aws_ses_domain_identity.DomainIdentity vargasjr.dev",
       "terraform import aws_ses_email_identity.EmailIdentity hello@vargasjr.dev",
