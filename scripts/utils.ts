@@ -1,5 +1,6 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { SSM } from "@aws-sdk/client-ssm";
+import { IAMClient, CreateRoleCommand, AttachRolePolicyCommand, CreateInstanceProfileCommand, AddRoleToInstanceProfileCommand, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 
@@ -360,7 +361,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       }
 
       let attempts = 0;
-      const maxAttempts = 40;
+      const maxAttempts = 20;
       let commandOutput = "";
 
       while (attempts < maxAttempts) {
@@ -424,6 +425,24 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       status: "offline", 
       error: error instanceof Error ? `Check Instance Failed: ${error.message}` : "Health check failed"
     };
+  }
+}
+
+
+
+export async function findOrCreateSSMInstanceProfile(): Promise<string> {
+  const iam = new IAMClient({ region: 'us-east-1' });
+  const instanceProfileName = 'VargasJR-SSM-InstanceProfile';
+
+  try {
+    await iam.send(new GetInstanceProfileCommand({ InstanceProfileName: instanceProfileName }));
+    console.log(`✅ Using existing instance profile: ${instanceProfileName}`);
+    return instanceProfileName;
+  } catch (error: any) {
+    if (error.name !== 'NoSuchEntity') {
+      throw error;
+    }
+    throw new Error(`IAM instance profile '${instanceProfileName}' does not exist. Please create it manually or use Default Host Management Configuration.`);
   }
 }
 
