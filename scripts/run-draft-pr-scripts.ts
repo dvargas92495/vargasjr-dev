@@ -17,15 +17,21 @@ class DraftPRScriptRunner {
   private prNumber: string;
   private specificScriptPath?: string;
   private projectRoot: string;
+  private isPreviewMode: boolean;
 
-  constructor(prNumber: string, specificScriptPath?: string) {
+  constructor(prNumber: string, specificScriptPath?: string, isPreviewMode: boolean = false) {
     this.prNumber = prNumber;
     this.specificScriptPath = specificScriptPath;
     this.projectRoot = process.cwd();
+    this.isPreviewMode = isPreviewMode;
   }
 
   async runScripts(): Promise<void> {
-    console.log(`🔍 Running scripts for draft PR #${this.prNumber}`);
+    if (this.isPreviewMode) {
+      console.log(`🔍 Previewing scripts for draft PR #${this.prNumber}`);
+    } else {
+      console.log(`🔍 Running scripts for draft PR #${this.prNumber}`);
+    }
     
     try {
       await this.setupPREnvironment();
@@ -196,7 +202,7 @@ class DraftPRScriptRunner {
     const fullPath = join(this.projectRoot, scriptPath);
     const startTime = Date.now();
     
-    console.log(`🚀 Running script: ${scriptPath}`);
+    console.log(`🚀 ${this.isPreviewMode ? 'Running in preview mode' : 'Running'} script: ${scriptPath}`);
     
     try {
       const command = this.getExecutionCommand(scriptPath);
@@ -240,26 +246,28 @@ class DraftPRScriptRunner {
   private getExecutionCommand(scriptPath: string): string {
     const ext = extname(scriptPath).toLowerCase();
     const fullPath = join(this.projectRoot, scriptPath);
+    const previewFlag = this.isPreviewMode ? ' --preview' : '';
     
     switch (ext) {
       case '.js':
       case '.mjs':
-        return `node "${fullPath}"`;
+        return `node "${fullPath}"${previewFlag}`;
       case '.ts':
-        return `npx tsx "${fullPath}"`;
+        return `npx tsx "${fullPath}"${previewFlag}`;
       case '.py':
-        return `python "${fullPath}"`;
+        return `python "${fullPath}"${previewFlag}`;
       case '.sh':
-        return `bash "${fullPath}"`;
+        return `bash "${fullPath}"${previewFlag}`;
       default:
-        return `"${fullPath}"`;
+        return `"${fullPath}"${previewFlag}`;
     }
   }
 
   private async postResults(results: ScriptResult[]): Promise<void> {
-    let commentContent = `# Draft PR Script Execution Results\n\n`;
+    let commentContent = `# Draft PR Script ${this.isPreviewMode ? 'Preview' : 'Execution Results'}\n\n`;
     commentContent += `**PR**: #${this.prNumber}\n`;
-    commentContent += `**Executed**: ${results.length} script(s)\n`;
+    commentContent += `**Mode**: ${this.isPreviewMode ? '🔍 Preview (scripts run with --preview flag)' : '🚀 Execution'}\n`;
+    commentContent += `**${this.isPreviewMode ? 'Previewed' : 'Executed'}**: ${results.length} script(s)\n`;
     commentContent += `**Timestamp**: ${new Date().toISOString()}\n\n`;
 
     const successful = results.filter(r => r.success);
@@ -348,6 +356,7 @@ async function main() {
   
   let prNumber: string | undefined;
   let scriptPath: string | undefined;
+  let isPreviewMode = false;
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--pr' && i + 1 < args.length) {
@@ -356,6 +365,8 @@ async function main() {
     } else if (args[i] === '--script-path' && i + 1 < args.length) {
       scriptPath = args[i + 1];
       i++;
+    } else if (args[i] === '--preview') {
+      isPreviewMode = true;
     }
   }
   
@@ -364,7 +375,7 @@ async function main() {
     process.exit(1);
   }
   
-  const runner = new DraftPRScriptRunner(prNumber, scriptPath);
+  const runner = new DraftPRScriptRunner(prNumber, scriptPath, isPreviewMode);
   await runner.runScripts();
 }
 

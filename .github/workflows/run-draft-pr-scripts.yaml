@@ -12,6 +12,11 @@ on:
         required: false
         type: string
         default: '/scripts/temp.ts'
+      preview:
+        description: 'Run in preview mode (show what would be executed without running)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   run-scripts:
@@ -34,7 +39,7 @@ jobs:
 
       - name: Discover and run scripts
         id: run_scripts
-        run: npm run one-time-migration -- --pr ${{ inputs.pr_number }} --script-path ${{ inputs.script_path }}
+        run: npm run one-time-migration -- --pr ${{ inputs.pr_number }} --script-path ${{ inputs.script_path }}${{ inputs.preview && ' --preview' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
