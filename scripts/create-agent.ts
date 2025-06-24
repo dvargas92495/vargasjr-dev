@@ -161,7 +161,7 @@ class VargasJRAgentCreator {
     try {
       iamInstanceProfile = await findOrCreateSSMInstanceProfile();
     } catch (error) {
-      console.warn('Using Default Host Management Configuration approach');
+      console.warn('Using Default Host Management Configuration approach:', error);
     }
 
     const result = await this.ec2.runInstances({
