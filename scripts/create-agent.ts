@@ -347,11 +347,35 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${commandObj.command}"`, {
-          stdio: 'inherit'
+        const result = execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${commandObj.command}"`, {
+          stdio: 'pipe',
+          encoding: 'utf8'
         });
+        
+        if (result) {
+          result.toString().split('\n').forEach(line => {
+            if (line.trim()) {
+              console.log(`[${commandObj.tag}] ${line}`);
+            }
+          });
+        }
         return;
-      } catch (error) {
+      } catch (error: any) {
+        if (error.stdout) {
+          error.stdout.toString().split('\n').forEach((line: string) => {
+            if (line.trim()) {
+              console.log(`[${commandObj.tag}] ${line}`);
+            }
+          });
+        }
+        if (error.stderr) {
+          error.stderr.toString().split('\n').forEach((line: string) => {
+            if (line.trim()) {
+              console.error(`[${commandObj.tag}] ${line}`);
+            }
+          });
+        }
+        
         attempts++;
         if (attempts >= maxAttempts) {
           console.error(`❌ [${commandObj.tag}] SSH command failed after ${maxAttempts} attempts: ${commandObj.command}`);
@@ -369,17 +393,41 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
     
     while (attempts < maxAttempts) {
       try {
-        execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o UserKnownHostsFile=/dev/null ${localPath} ubuntu@${publicDns}:${remotePath}`, {
-          stdio: 'inherit'
+        const result = execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o UserKnownHostsFile=/dev/null ${localPath} ubuntu@${publicDns}:${remotePath}`, {
+          stdio: 'pipe',
+          encoding: 'utf8'
         });
+        
+        if (result) {
+          result.toString().split('\n').forEach(line => {
+            if (line.trim()) {
+              console.log(`[SCP] ${line}`);
+            }
+          });
+        }
         return;
-      } catch (error) {
+      } catch (error: any) {
+        if (error.stdout) {
+          error.stdout.toString().split('\n').forEach((line: string) => {
+            if (line.trim()) {
+              console.log(`[SCP] ${line}`);
+            }
+          });
+        }
+        if (error.stderr) {
+          error.stderr.toString().split('\n').forEach((line: string) => {
+            if (line.trim()) {
+              console.error(`[SCP] ${line}`);
+            }
+          });
+        }
+        
         attempts++;
         if (attempts >= maxAttempts) {
           console.error(`❌ SCP command failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
           throw error;
         }
-        console.log(`SCP command failed, retrying... (${attempts}/${maxAttempts})`);
+        console.log(`[SCP] SCP command failed, retrying... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
