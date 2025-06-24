@@ -1,18 +1,7 @@
 name: Apply Devin Knowledge
 
-
-# on:
-#   push:
-#     branches: [main]
-#     paths:
-#       - 'docs/**/*.json'
-#       - 'scripts/run-knowledge.ts'
-#       - '.github/workflows/apply-knowledge.yaml'
-#   pull_request:
-#     paths:
-#       - 'docs/**/*.json'
-#       - 'scripts/run-knowledge.ts'
-#       - '.github/workflows/apply-knowledge.yaml'
+on:
+  workflow_dispatch:
 
 permissions:
   contents: read
