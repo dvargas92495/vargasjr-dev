@@ -502,13 +502,11 @@ export abstract class OneTimeMigrationRunner {
   protected abstract runMigration(): Promise<void>;
 
   protected async postComment(content: string, successMessage?: string): Promise<void> {
-    if (this.isPreviewMode) {
-      await postGitHubComment(
-        content, 
-        this.userAgent, 
-        successMessage || `Posted ${this.migrationName} preview comment to PR`
-      );
-    }
+    await postGitHubComment(
+      content, 
+      this.userAgent, 
+      successMessage || `Posted ${this.migrationName} comment to PR`
+    );
   }
 
   protected logSection(title: string): void {
