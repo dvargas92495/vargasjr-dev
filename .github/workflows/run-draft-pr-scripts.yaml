@@ -3,10 +3,6 @@ name: Run Draft PR Scripts
 on:
   workflow_dispatch:
     inputs:
-      pr_number:
-        description: 'PR number to run scripts from'
-        required: true
-        type: string
       script_path:
         description: 'Optional: Specific script path to run (relative to repo root)'
         required: false
@@ -39,10 +35,11 @@ jobs:
 
       - name: Discover and run scripts
         id: run_scripts
-        run: npm run one-time-migration -- --pr ${{ inputs.pr_number }} --script-path ${{ inputs.script_path }}${{ inputs.preview && ' --preview' || '' }}
+        run: npm run one-time-migration -- --branch ${{ github.head_ref || github.ref_name }} --script-path ${{ inputs.script_path }}${{ inputs.preview && ' --preview' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_HEAD_REF: ${{ github.head_ref || github.ref_name }}
           GITHUB_EVENT_NAME: workflow_dispatch
           GITHUB_EVENT_PATH: /dev/null
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}

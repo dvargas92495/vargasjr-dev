@@ -14,13 +14,14 @@ interface ScriptResult {
 }
 
 class DraftPRScriptRunner {
-  private prNumber: string;
+  private branchName: string;
+  private prNumber?: string;
   private specificScriptPath?: string;
   private projectRoot: string;
   private isPreviewMode: boolean;
 
-  constructor(prNumber: string, specificScriptPath?: string, isPreviewMode: boolean = false) {
-    this.prNumber = prNumber;
+  constructor(branchName: string, specificScriptPath?: string, isPreviewMode: boolean = false) {
+    this.branchName = branchName;
     this.specificScriptPath = specificScriptPath;
     this.projectRoot = process.cwd();
     this.isPreviewMode = isPreviewMode;
@@ -28,9 +29,9 @@ class DraftPRScriptRunner {
 
   async runScripts(): Promise<void> {
     if (this.isPreviewMode) {
-      console.log(`🔍 Previewing scripts for draft PR #${this.prNumber}`);
+      console.log(`🔍 Previewing scripts for branch: ${this.branchName}`);
     } else {
-      console.log(`🔍 Running scripts for draft PR #${this.prNumber}`);
+      console.log(`🔍 Running scripts for branch: ${this.branchName}`);
     }
     
     try {
@@ -109,31 +110,69 @@ class DraftPRScriptRunner {
     return filteredScripts;
   }
 
+  private async findPRByBranch(): Promise<string> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPOSITORY;
+    
+    if (!githubToken || !githubRepo) {
+      throw new Error("GitHub environment variables not available");
+    }
+    
+    const [owner, repo] = githubRepo.split('/');
+    const headFilter = `${owner}:${this.branchName}`;
+    
+    try {
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.statusText}`);
+      }
+      
+      const prs = await response.json();
+      
+      if (prs.length === 0) {
+        throw new Error(`No open PRs found for branch: ${this.branchName}`);
+      }
+      
+      if (prs.length > 1) {
+        throw new Error(`Multiple open PRs found for branch: ${this.branchName}. Expected exactly one.`);
+      }
+      
+      const pr = prs[0];
+      
+      if (!pr.draft) {
+        throw new Error(`PR #${pr.number} for branch ${this.branchName} is not a draft PR`);
+      }
+      
+      console.log(`✅ Found draft PR #${pr.number} for branch: ${this.branchName}`);
+      return pr.number.toString();
+    } catch (error) {
+      throw new Error(`Failed to find PR for branch ${this.branchName}: ${error}`);
+    }
+  }
+
   private async setupPREnvironment(): Promise<void> {
-    console.log(`🔍 Validating PR #${this.prNumber} is a draft...`);
+    console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
+    
+    this.prNumber = await this.findPRByBranch();
+    
+    console.log(`🔄 Checking out PR #${this.prNumber} branch...`);
     
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
     if (!githubToken || !githubRepo) {
-      console.log("⚠️ Not in GitHub Actions environment, skipping PR validation");
+      console.log("⚠️ Not in GitHub Actions environment, skipping PR checkout");
       return;
     }
     
     try {
-      const prData = execSync(`curl -s -H "Authorization: Bearer ${githubToken}" "https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}"`, {
-        encoding: 'utf8'
-      });
-      
-      const pr = JSON.parse(prData);
-      
-      if (pr.draft !== true) {
-        throw new Error(`PR #${this.prNumber} is not a draft PR`);
-      }
-      
-      console.log(`✅ Confirmed PR #${this.prNumber} is a draft PR`);
-      
-      console.log(`🔄 Checking out PR #${this.prNumber} branch...`);
       execSync(`git fetch origin pull/${this.prNumber}/head:pr-${this.prNumber}`, {
         cwd: this.projectRoot,
         stdio: 'inherit'
@@ -213,7 +252,7 @@ class DraftPRScriptRunner {
         stdio: 'pipe',
         env: {
           ...process.env,
-          PR_NUMBER: this.prNumber
+          PR_NUMBER: this.prNumber || ''
         }
       });
       
@@ -331,6 +370,11 @@ class DraftPRScriptRunner {
       return;
     }
     
+    if (!this.prNumber) {
+      console.log("⚠️ No PR number available, skipping comment posting");
+      return;
+    }
+    
     process.env.GITHUB_EVENT_NAME = 'pull_request';
     process.env.GITHUB_EVENT_PATH = '/tmp/github_event.json';
     
@@ -354,13 +398,13 @@ class DraftPRScriptRunner {
 async function main() {
   const args = process.argv.slice(2);
   
-  let prNumber: string | undefined;
+  let branchName: string | undefined;
   let scriptPath: string | undefined;
   let isPreviewMode = false;
   
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--pr' && i + 1 < args.length) {
-      prNumber = args[i + 1];
+    if (args[i] === '--branch' && i + 1 < args.length) {
+      branchName = args[i + 1];
       i++;
     } else if (args[i] === '--script-path' && i + 1 < args.length) {
       scriptPath = args[i + 1];
@@ -370,12 +414,12 @@ async function main() {
     }
   }
   
-  if (!prNumber) {
-    console.error('❌ PR number is required. Use --pr <number>');
+  if (!branchName) {
+    console.error('❌ Branch name is required. Use --branch <name>');
     process.exit(1);
   }
   
-  const runner = new DraftPRScriptRunner(prNumber, scriptPath, isPreviewMode);
+  const runner = new DraftPRScriptRunner(branchName, scriptPath, isPreviewMode);
   await runner.runScripts();
 }
 
