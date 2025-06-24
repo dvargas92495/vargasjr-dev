@@ -364,7 +364,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
   }
 
   private async executeSSHCommand(keyPath: string, publicDns: string, commandObj: { tag: string; command: string }): Promise<void> {
-    console.log(`Executing [${commandObj.tag}]: ${commandObj.command}`);
+    console.log(`[${commandObj.tag}] Executing: ${commandObj.command}`);
 
     const maxAttempts = 3;
     let attempts = 0;
