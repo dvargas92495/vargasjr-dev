@@ -1,5 +1,6 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { SSM } from "@aws-sdk/client-ssm";
+import { IAMClient, CreateRoleCommand, AttachRolePolicyCommand, CreateInstanceProfileCommand, AddRoleToInstanceProfileCommand, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 
@@ -360,7 +361,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       }
 
       let attempts = 0;
-      const maxAttempts = 40;
+      const maxAttempts = 20;
       let commandOutput = "";
 
       while (attempts < maxAttempts) {
@@ -428,6 +429,56 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
 }
 
 
+
+export async function findOrCreateSSMInstanceProfile(): Promise<string> {
+  const iam = new IAMClient({ region: 'us-east-1' });
+  const roleName = 'VargasJR-SSM-Role';
+  const instanceProfileName = 'VargasJR-SSM-InstanceProfile';
+
+  try {
+    await iam.send(new GetInstanceProfileCommand({ InstanceProfileName: instanceProfileName }));
+    console.log(`✅ Using existing instance profile: ${instanceProfileName}`);
+    return instanceProfileName;
+  } catch (error: any) {
+    if (error.name !== 'NoSuchEntity') {
+      throw error;
+    }
+  }
+
+  try {
+    await iam.send(new CreateRoleCommand({
+      RoleName: roleName,
+      AssumeRolePolicyDocument: JSON.stringify({
+        Version: '2012-10-17',
+        Statement: [{
+          Effect: 'Allow',
+          Principal: { Service: 'ec2.amazonaws.com' },
+          Action: 'sts:AssumeRole'
+        }]
+      })
+    }));
+
+    await iam.send(new AttachRolePolicyCommand({
+      RoleName: roleName,
+      PolicyArn: 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+    }));
+
+    await iam.send(new CreateInstanceProfileCommand({
+      InstanceProfileName: instanceProfileName
+    }));
+
+    await iam.send(new AddRoleToInstanceProfileCommand({
+      InstanceProfileName: instanceProfileName,
+      RoleName: roleName
+    }));
+
+    console.log(`✅ Created IAM instance profile: ${instanceProfileName}`);
+    return instanceProfileName;
+  } catch (error: any) {
+    console.warn(`⚠️ Could not create IAM instance profile (${error.message}). Falling back to Default Host Management Configuration.`);
+    throw new Error(`IAM permissions required: ${error.message}`);
+  }
+}
 
 export async function postGitHubComment(
   content: string, 

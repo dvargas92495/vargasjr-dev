@@ -4,7 +4,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -157,11 +157,23 @@ class VargasJRAgentCreator {
       "Security group for VargasJR agent SSH access"
     );
 
+    let iamInstanceProfile: string | undefined;
+    try {
+      iamInstanceProfile = await findOrCreateSSMInstanceProfile();
+    } catch (error) {
+      console.warn('Using Default Host Management Configuration approach');
+    }
+
     const result = await this.ec2.runInstances({
       ImageId: "ami-0e2c8caa4b6378d8c",
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
       SecurityGroupIds: [securityGroupId],
+      ...(iamInstanceProfile && {
+        IamInstanceProfile: {
+          Name: iamInstanceProfile
+        }
+      }),
       MetadataOptions: {
         HttpTokens: "required",
         HttpPutResponseHopLimit: 1,
@@ -287,8 +299,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
         { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip' },
         { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
         { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
-        { tag: 'SSM_INSTALL', command: 'sudo snap install amazon-ssm-agent --classic' },
-        { tag: 'SSM_START', command: 'sudo snap start amazon-ssm-agent' },
+        { tag: 'SSM_STATUS', command: 'sudo systemctl is-active amazon-ssm-agent || sudo systemctl start amazon-ssm-agent' },
         { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
         { tag: 'PROFILE', command: 'source ~/.profile' }
       ];
@@ -312,8 +323,9 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       console.log("✅ Instance setup complete!");
 
       console.log("Waiting for SSM agent to register with Systems Manager...");
-      console.log("Note: Using AWS Default Host Management Configuration for automatic SSM registration");
-      await new Promise(resolve => setTimeout(resolve, 45000));
+      console.log("Note: MetadataOptions enforce IMDSv2 which is required for SSM registration");
+      console.log("Using IAM instance profile for reliable SSM registration");
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
     } catch (error) {
       console.error(`❌ Failed to setup instance: ${error}`);
@@ -401,7 +413,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
   private async waitForInstanceHealthy(instanceId: string): Promise<void> {
     console.log("Waiting for agent to be healthy...");
 
-    const maxAttempts = 40;
+    const maxAttempts = 20;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -414,7 +426,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
         }
 
         attempts++;
-        const waitTime = attempts < 10 ? 5 : 10;
+        const waitTime = 1;
         console.log(`Agent not healthy yet (${healthResult.status}${healthResult.error ? `: ${healthResult.error}` : ''}), waiting... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
 
