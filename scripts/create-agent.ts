@@ -299,7 +299,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
         { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip' },
         { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
         { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
-        { tag: 'SSM_STATUS', command: 'sudo systemctl is-active amazon-ssm-agent || sudo systemctl start amazon-ssm-agent' },
+        { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
         { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
         { tag: 'PROFILE', command: 'source ~/.profile' }
       ];
@@ -323,6 +323,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       console.log("✅ Instance setup complete!");
 
       console.log("Waiting for SSM agent to register with Systems Manager...");
+      console.log("Note: Using snap-installed SSM agent service name for Ubuntu 24.04");
       console.log("Note: MetadataOptions enforce IMDSv2 which is required for SSM registration");
       console.log("Using IAM instance profile for reliable SSM registration");
       await new Promise(resolve => setTimeout(resolve, 30000));
