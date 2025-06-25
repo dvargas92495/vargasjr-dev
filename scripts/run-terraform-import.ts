@@ -3,44 +3,26 @@
 import { execSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { postGitHubComment } from "./utils";
+import { OneTimeMigrationRunner } from "./utils";
 
-class TerraformImportRunner {
+class TerraformImportRunner extends OneTimeMigrationRunner {
   private terraformDir: string;
-  private isPreviewMode: boolean;
   private readonly CDKTF_OUT_DIR = "./terraform/cdktf.out";
+  protected migrationName = "terraform import migration";
+  protected userAgent = "vargasjr-dev-terraform-import-script";
 
   constructor(isPreviewMode: boolean = false) {
+    super(isPreviewMode);
     this.terraformDir = join(process.cwd(), "terraform");
-    this.isPreviewMode = isPreviewMode;
   }
 
-  async runTerraformImport(): Promise<void> {
-    if (this.isPreviewMode) {
-      console.log("🔍 Previewing terraform import commands...");
-    } else {
-      console.log("🚀 Running terraform import commands...");
-    }
-    
-    try {
-      await this.synthesizeTerraformConfig();
-      await this.generateImportCommands();
-      
-      if (this.isPreviewMode) {
-        console.log("✅ Terraform import preview completed successfully!");
-      } else {
-        console.log("✅ Terraform import execution completed successfully!");
-      }
-      
-    } catch (error) {
-      const action = this.isPreviewMode ? "preview" : "run";
-      console.error(`❌ Failed to ${action} terraform imports: ${error}`);
-      process.exit(1);
-    }
+  protected async runMigration(): Promise<void> {
+    await this.synthesizeTerraformConfig();
+    await this.generateImportCommands();
   }
 
   private async synthesizeTerraformConfig(): Promise<void> {
-    console.log("=== Synthesizing CDKTF configuration ===");
+    this.logSection("Synthesizing CDKTF configuration");
     
     try {
       console.log("Running cdktf get to generate providers...");
@@ -60,7 +42,7 @@ class TerraformImportRunner {
   }
 
   private async generateImportCommands(): Promise<void> {
-    console.log("=== Generating terraform import commands ===");
+    this.logSection("Generating terraform import commands");
     
     const importCommands = this.buildImportCommands();
     
@@ -87,15 +69,8 @@ class TerraformImportRunner {
     importContent += "- Run these commands from the terraform directory after `cdktf synth`\n\n";
     importContent += "✅ **End of terraform import preview**\n";
     
-    console.log("\n⚠️ Important Notes:");
-    console.log("- These commands require AWS credentials to be configured");
-    console.log("- Some resource IDs (especially security group IDs) need to be determined from actual AWS resources");
-    console.log("- This is a one-time migration to import existing resources into terraform state");
-    console.log("- Run these commands from the terraform directory after `cdktf synth`");
-    console.log("✅ End of terraform import preview");
-    
     if (this.isPreviewMode) {
-      await postGitHubComment(importContent, "vargasjr-dev-terraform-import-script", "Posted terraform import preview comment to PR");
+      await this.postComment(importContent);
     } else {
       console.log("🚀 Executing terraform import commands...");
       await this.executeImportCommands(importCommands);
@@ -127,9 +102,9 @@ class TerraformImportRunner {
   private async handleNoImportsNeeded(): Promise<void> {
     const importContent = "✅ **No terraform imports needed**\n\n" +
       "All AWS resources are already managed by terraform or no import commands were generated.\n";
-    console.log("✅ No terraform imports needed - all resources are already managed");
+    this.logSuccess("No terraform imports needed - all resources are already managed");
     if (this.isPreviewMode) {
-      await postGitHubComment(importContent, "vargasjr-dev-terraform-import-script", "Posted terraform import preview comment to PR");
+      await this.postComment(importContent);
     }
   }
 
@@ -154,7 +129,7 @@ class TerraformImportRunner {
       }
     }
     
-    console.log("✅ All terraform import commands executed successfully");
+    this.logSuccess("All terraform import commands executed successfully");
   }
 }
 
@@ -163,7 +138,7 @@ async function main() {
   const isPreviewMode = args.includes('--preview');
   
   const runner = new TerraformImportRunner(isPreviewMode);
-  await runner.runTerraformImport();
+  await runner.run();
 }
 
 if (require.main === module) {
