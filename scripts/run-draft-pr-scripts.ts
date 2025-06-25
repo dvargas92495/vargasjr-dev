@@ -16,13 +16,11 @@ interface ScriptResult {
 class DraftPRScriptRunner {
   private branchName: string;
   private prNumber?: string;
-  private specificScriptPath?: string;
   private projectRoot: string;
   private isPreviewMode: boolean;
 
-  constructor(branchName: string, specificScriptPath?: string, isPreviewMode: boolean = false) {
+  constructor(branchName: string, isPreviewMode: boolean = false) {
     this.branchName = branchName;
-    this.specificScriptPath = specificScriptPath;
     this.projectRoot = process.cwd();
     this.isPreviewMode = isPreviewMode;
   }
@@ -37,29 +35,17 @@ class DraftPRScriptRunner {
     try {
       await this.setupPREnvironment();
       
-      let scripts: string[];
-      if (this.specificScriptPath) {
-        const fullPath = join(this.projectRoot, this.specificScriptPath);
-        if (existsSync(fullPath)) {
-          scripts = [this.specificScriptPath];
-        } else {
-          scripts = [];
-        }
-      } else {
-        scripts = await this.discoverScripts();
-      }
+      const scripts = await this.discoverScripts();
       
       if (scripts.length === 0) {
-        const message = this.specificScriptPath 
-          ? `Script not found: ${this.specificScriptPath}`
-          : "No executable scripts found in this PR";
+        const message = "No executable scripts found in this PR";
         
         await this.postComment(`# Draft PR Script Execution\n\n⚠️ ${message}\n\n` +
           "**Script Discovery Rules:**\n" +
-          "- Looks for executable files (`.js`, `.ts`, `.py`, `.sh`) in changed files\n" +
-          "- Checks for scripts in `scripts/one-time/` directory\n" +
-          "- Files must be executable or have recognized extensions\n\n" +
-          "To add a script, create an executable file in your PR changes or add it to `scripts/one-time/`");
+          "- Looks for the first added file (`.js`, `.ts`, `.py`, `.sh`) in the root `scripts/` directory\n" +
+          "- Files must be executable or have recognized extensions\n" +
+          "- Only considers newly added files, not modified files\n\n" +
+          "To add a script, create an executable file in the root `scripts/` directory in your PR");
         return;
       }
 
@@ -82,32 +68,26 @@ class DraftPRScriptRunner {
   }
 
   private async discoverScripts(): Promise<string[]> {
-    const scripts: string[] = [];
-    
-    const oneTimeDir = join(this.projectRoot, "scripts", "one-time");
-    if (existsSync(oneTimeDir)) {
-      const oneTimeScripts = this.getExecutableFiles(oneTimeDir);
-      scripts.push(...oneTimeScripts.map(s => join("scripts", "one-time", s)));
-    }
-
     try {
-      const changedFiles = this.getChangedFilesInPR();
-      const executableChanged = changedFiles.filter(file => this.isExecutableScript(file));
-      scripts.push(...executableChanged);
-    } catch (error) {
-      console.warn(`⚠️ Could not get changed files from PR: ${error}`);
-    }
-
-    const uniqueScripts = [...new Set(scripts)];
-    const filteredScripts = uniqueScripts.filter(script => {
-      const fullPath = join(this.projectRoot, script);
-      if (script.includes('run-draft-pr-scripts.ts')) {
-        return false;
+      const addedFiles = this.getAddedFilesInPR();
+      const scriptsRootFiles = addedFiles.filter(file => {
+        const parts = file.split('/');
+        return parts.length === 2 && 
+               parts[0] === 'scripts' && 
+               this.isExecutableScript(file) &&
+               !file.includes('run-draft-pr-scripts.ts');
+      });
+      
+      if (scriptsRootFiles.length === 0) {
+        return [];
       }
-      return existsSync(fullPath);
-    });
-    
-    return filteredScripts;
+      
+      scriptsRootFiles.sort();
+      return [scriptsRootFiles[0]];
+    } catch (error) {
+      console.warn(`⚠️ Could not discover scripts: ${error}`);
+      return [];
+    }
   }
 
   private async findPRByBranch(): Promise<string> {
@@ -190,9 +170,9 @@ class DraftPRScriptRunner {
     }
   }
 
-  private getChangedFilesInPR(): string[] {
+  private getAddedFilesInPR(): string[] {
     try {
-      const output = execSync(`git diff --name-only origin/main...HEAD`, {
+      const output = execSync(`git diff --diff-filter=A --name-only origin/main...HEAD`, {
         cwd: this.projectRoot,
         encoding: 'utf8'
       });
@@ -399,15 +379,11 @@ async function main() {
   const args = process.argv.slice(2);
   
   let branchName: string | undefined;
-  let scriptPath: string | undefined;
   let isPreviewMode = false;
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--branch' && i + 1 < args.length) {
       branchName = args[i + 1];
-      i++;
-    } else if (args[i] === '--script-path' && i + 1 < args.length) {
-      scriptPath = args[i + 1];
       i++;
     } else if (args[i] === '--preview') {
       isPreviewMode = true;
@@ -419,7 +395,7 @@ async function main() {
     process.exit(1);
   }
   
-  const runner = new DraftPRScriptRunner(branchName, scriptPath, isPreviewMode);
+  const runner = new DraftPRScriptRunner(branchName, isPreviewMode);
   await runner.runScripts();
 }
 
