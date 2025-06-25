@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { App, TerraformStack } from "cdktf";
+import { App, TerraformStack, S3Backend } from "cdktf";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
 import { S3BucketVersioningA } from "@cdktf/provider-aws/lib/s3-bucket-versioning";
@@ -31,6 +31,14 @@ class VargasJRInfrastructureStack extends TerraformStack {
       ...(config.prNumber && { PRNumber: config.prNumber }),
     };
 
+    new S3Backend(this, {
+      bucket: AWS_S3_BUCKETS.TERRAFORM_STATE,
+      key: `terraform/state/${config.environment}${config.prNumber ? `-pr-${config.prNumber}` : ''}/terraform.tfstate`,
+      region: region,
+      encrypt: true,
+    });
+
+    this.createTerraformStateS3Bucket(commonTags);
     this.createS3Resources(commonTags);
     this.createSecurityGroup(commonTags);
     this.createSESResources(commonTags);
@@ -60,6 +68,22 @@ class VargasJRInfrastructureStack extends TerraformStack {
         status: "Enabled",
       },
     });
+  }
+
+  private createTerraformStateS3Bucket(tags: Record<string, string>) {
+    const stateBucket = new S3Bucket(this, "TerraformStateBucket", {
+      bucket: AWS_S3_BUCKETS.TERRAFORM_STATE,
+      tags,
+    });
+
+    new S3BucketVersioningA(this, "TerraformStateBucketVersioning", {
+      bucket: stateBucket.id,
+      versioningConfiguration: {
+        status: "Enabled",
+      },
+    });
+
+    return stateBucket;
   }
 
   private createSecurityGroup(tags: Record<string, string>): SecurityGroup {
