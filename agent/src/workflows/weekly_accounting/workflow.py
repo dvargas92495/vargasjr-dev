@@ -13,7 +13,6 @@ from src.services.google_sheets import get_spreadsheets, prepend_rows
 from vellum import (
     ChatMessagePromptBlock,
     ImagePromptBlock,
-    JinjaPromptBlock,
     PlainTextPromptBlock,
     PromptParameters,
     RichTextPromptBlock,
@@ -85,16 +84,9 @@ class ParseVenmoScreenshots(InlinePromptNode):
         ),
         ChatMessagePromptBlock(
             chat_role="USER",
-            blocks=[
-                JinjaPromptBlock(
-                    template="{% for image_block in image_blocks %}{{ image_block }}{% endfor %}"
-                ),
-            ],
+            blocks=GetVenmoScreenshots.Outputs.image_blocks,
         ),
     ]
-    prompt_inputs = {
-        "image_blocks": GetVenmoScreenshots.Outputs.image_blocks,
-    }
     parameters = PromptParameters(
         max_tokens=8000,
         custom_parameters={
@@ -104,9 +96,6 @@ class ParseVenmoScreenshots(InlinePromptNode):
             },
         },
     )
-
-    class Outputs(InlinePromptNode.Outputs):
-        text: str
 
 
 class GetCreditCardTransactions(BaseNode):
