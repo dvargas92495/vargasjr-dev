@@ -491,3 +491,56 @@ export async function postGitHubComment(
     console.error("Failed to post GitHub comment:", error);
   }
 }
+
+export abstract class OneTimeMigrationRunner {
+  protected isPreviewMode: boolean;
+  protected abstract migrationName: string;
+  protected abstract userAgent: string;
+
+  constructor(isPreviewMode: boolean = false) {
+    this.isPreviewMode = isPreviewMode;
+  }
+
+  async run(): Promise<void> {
+    const action = this.isPreviewMode ? "Previewing" : "Running";
+    console.log(`🔍 ${action} ${this.migrationName}...`);
+    
+    try {
+      await this.runMigration();
+      
+      const successAction = this.isPreviewMode ? "preview" : "execution";
+      console.log(`✅ ${this.migrationName} ${successAction} completed successfully!`);
+      
+    } catch (error) {
+      const failAction = this.isPreviewMode ? "preview" : "run";
+      console.error(`❌ Failed to ${failAction} ${this.migrationName}: ${error}`);
+      process.exit(1);
+    }
+  }
+
+  protected abstract runMigration(): Promise<void>;
+
+  protected async postComment(content: string, successMessage?: string): Promise<void> {
+    await postGitHubComment(
+      content, 
+      this.userAgent, 
+      successMessage || `Posted ${this.migrationName} comment to PR`
+    );
+  }
+
+  protected logSection(title: string): void {
+    console.log(`=== ${title} ===`);
+  }
+
+  protected logSuccess(message: string): void {
+    console.log(`✅ ${message}`);
+  }
+
+  protected logWarning(message: string): void {
+    console.log(`⚠️ ${message}`);
+  }
+
+  protected logError(message: string): void {
+    console.error(`❌ ${message}`);
+  }
+}
