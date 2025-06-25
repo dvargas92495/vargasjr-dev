@@ -127,7 +127,16 @@ class VellumWorkflowPusher {
       const successMessage = `✅ Successfully ${this.isPreviewMode ? 'previewed' : 'pushed'}: ${workflowName}`;
       console.log(successMessage);
       return { success: true, output: this.isPreviewMode ? result : undefined };
-    } catch (error) {
+    } catch (error: any) {
+      if (this.isPreviewMode && error.stdout) {
+        const output = error.stdout.toString();
+        if (output.includes('# Workflow Push Report') && output.includes('## Errors') && output.includes('No errors found')) {
+          const successMessage = `✅ Successfully previewed: ${workflowName}`;
+          console.log(successMessage);
+          return { success: true, output: output };
+        }
+      }
+      
       const errorMessage = `Failed to ${this.isPreviewMode ? 'preview' : 'push'} workflow ${workflowName}: ${error}`;
       console.error(`❌ ${errorMessage}`);
       return { success: false, error: errorMessage };
