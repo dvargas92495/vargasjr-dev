@@ -3,11 +3,6 @@ name: Run Draft PR Scripts
 on:
   workflow_dispatch:
     inputs:
-      script_path:
-        description: 'Optional: Specific script path to run (relative to repo root)'
-        required: false
-        type: string
-        default: '/scripts/temp.ts'
       preview:
         description: 'Run in preview mode (show what would be executed without running)'
         required: false
@@ -39,7 +34,7 @@ jobs:
 
       - name: Discover and run scripts
         id: run_scripts
-        run: npm run one-time-migration -- --branch ${{ github.head_ref || github.ref_name }} --script-path ${{ inputs.script_path }}${{ inputs.preview && ' --preview' || '' }}
+        run: npm run one-time-migration -- --branch ${{ github.head_ref || github.ref_name }}${{ inputs.preview && ' --preview' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
