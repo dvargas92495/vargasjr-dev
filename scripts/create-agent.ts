@@ -276,15 +276,12 @@ class VargasJRAgentCreator {
       if (this.config.prNumber) {
         postgresUrl = await getNeonPreviewDatabaseUrl();
       } else {
-        postgresUrl = `postgresql://postgres:password@localhost:5432/vargasjr_${dbName}`;
+        postgresUrl = process.env.POSTGRES_URL || '';
       }
 
       let envContent = `POSTGRES_URL=${postgresUrl}
 LOG_LEVEL=INFO
-VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
-AWS_ACCESS_KEY_ID=${envVars.AWS_ACCESS_KEY_ID}
-AWS_SECRET_ACCESS_KEY=${envVars.AWS_SECRET_ACCESS_KEY}
-AWS_DEFAULT_REGION=us-east-1`;
+VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
 
       if (this.config.prNumber) {
         envContent += `
