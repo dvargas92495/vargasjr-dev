@@ -22,7 +22,7 @@
     "prebrowser:build": "npm install",
     "browser:build": "tsc --project browser",
     "browser:start": "node browser/dist/index.js",
-    "healthcheck": "screen -ls 2>/dev/null | grep -E '(agent-|\\tagent\\t)' > /dev/null && echo 'Agent running' || ([ -f error.log ] && cat error.log || [ -f browser-error.log ] && cat browser-error.log || echo 'No Sockets found in /run/screen/S-root.')"
+    "healthcheck": "screen -ls 2>/dev/null | grep -E '(agent-|\\tagent\\t)' > /dev/null && echo 'Agent running' || ([ -f error.log ] && cat error.log || ([ -f browser-error.log ] && cat browser-error.log) || echo 'No Sockets found in /run/screen/S-root.')"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
