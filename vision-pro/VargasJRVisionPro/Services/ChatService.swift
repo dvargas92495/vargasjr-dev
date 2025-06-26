@@ -3,7 +3,7 @@ import Foundation
 class ChatService {
     static let shared = ChatService()
     
-    private let baseURL = "https://vargasjr-dev.vercel.app/api"
+    private let baseURL = "https://vargasjr.dev/api"
     
     private init() {}
     
