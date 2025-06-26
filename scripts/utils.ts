@@ -377,7 +377,9 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
             commandOutput = outputResult.StandardOutputContent || "";
             break;
           } else if (outputResult.Status === "Failed") {
-            throw new Error(`SSM command failed: ${outputResult.StandardErrorContent}`);
+            const errorDetails = outputResult.StandardErrorContent || "No error details available";
+            const outputDetails = outputResult.StandardOutputContent || "No output";
+            throw new Error(`SSM command failed: ${errorDetails}\nCommand output: ${outputDetails}`);
           }
         } catch (outputError) {
           if (attempts === maxAttempts - 1) {
@@ -415,7 +417,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
       return {
         instanceId,
         status: "offline",
-        error: `SSM Command Failed to send: ${errorMessage}`
+        error: `SSM Command Failed: ${errorMessage}`
       };
     }
 
