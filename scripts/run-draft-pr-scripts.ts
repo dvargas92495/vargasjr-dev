@@ -142,37 +142,12 @@ class DraftPRScriptRunner {
     
     this.prNumber = await this.findPRByBranch();
     
-    console.log(`🔄 Checking out PR #${this.prNumber} branch...`);
-    
-    const githubToken = process.env.GITHUB_TOKEN;
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-    
-    if (!githubToken || !githubRepo) {
-      console.log("⚠️ Not in GitHub Actions environment, skipping PR checkout");
-      return;
-    }
-    
-    try {
-      execSync(`git fetch origin pull/${this.prNumber}/head:pr-${this.prNumber}`, {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
-      
-      execSync(`git checkout pr-${this.prNumber}`, {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
-      
-      console.log(`✅ Successfully checked out PR #${this.prNumber} branch`);
-      
-    } catch (error) {
-      throw new Error(`Failed to setup PR environment: ${error}`);
-    }
+    console.log(`✅ Found PR #${this.prNumber}, using current HEAD for script discovery`);
   }
 
   private getAddedFilesInPR(): string[] {
     try {
-      const output = execSync(`git diff --diff-filter=A --name-only origin/main...${this.branchName}`, {
+      const output = execSync(`git diff --diff-filter=A --name-only origin/main...HEAD`, {
         cwd: this.projectRoot,
         encoding: 'utf8'
       });
