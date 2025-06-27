@@ -172,7 +172,7 @@ class DraftPRScriptRunner {
 
   private getAddedFilesInPR(): string[] {
     try {
-      const output = execSync(`git diff --diff-filter=A --name-only origin/main...HEAD`, {
+      const output = execSync(`git diff --diff-filter=A --name-only origin/main...${this.branchName}`, {
         cwd: this.projectRoot,
         encoding: 'utf8'
       });
