@@ -9,7 +9,7 @@ class SelectTweet(BaseNode):
     raw_tweets = GenerateTweetContent.Outputs.results[0]["value"]["arguments"]["tweets"]
 
     class Outputs(BaseNode.Outputs):
-        selected_tweet = TweetContent
+        selected_tweet: TweetContent
 
     def run(self) -> Outputs:
         selected_tweet = TweetContent.model_validate(random.choice(self.raw_tweets))
