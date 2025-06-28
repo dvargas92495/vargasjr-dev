@@ -13,6 +13,12 @@ interface AgentConfig {
   prNumber?: string;
 }
 
+interface TimingResult {
+  method: string;
+  duration: number;
+  success: boolean;
+}
+
 class VargasJRAgentCreator {
   private ec2: EC2;
   private config: AgentConfig;
@@ -29,39 +35,94 @@ class VargasJRAgentCreator {
   async createAgent(): Promise<void> {
     const agentName = this.config.prNumber ? `pr-${this.config.prNumber}` : this.config.name;
     const instanceName = `vargas-jr-${agentName}`;
+    const overallStartTime = Date.now();
+    const timingResults: TimingResult[] = [];
+    
     console.log(`Creating Vargas JR agent: ${agentName}`);
 
     try {
+      let startTime = Date.now();
       await this.deleteExistingInstances(instanceName);
+      timingResults.push({
+        method: 'deleteExistingInstances',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
       const keyPairName = `${agentName}-key`;
+      startTime = Date.now();
       await this.createKeyPair(keyPairName);
+      timingResults.push({
+        method: 'createKeyPair',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
       console.log("Waiting for key pair to propagate in AWS...");
       await new Promise(resolve => setTimeout(resolve, 5000));
 
+      startTime = Date.now();
       const instanceId = await this.createEC2Instance(keyPairName);
+      timingResults.push({
+        method: 'createEC2Instance',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
+      startTime = Date.now();
       await this.waitForInstanceRunning(instanceId);
+      timingResults.push({
+        method: 'waitForInstanceRunning',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
       const instanceDetails = await this.getInstanceDetails(instanceId);
 
+      startTime = Date.now();
       await this.setupInstance(instanceDetails, keyPairName);
+      timingResults.push({
+        method: 'setupInstance',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
+      startTime = Date.now();
       try {
         await this.waitForInstanceHealthy(instanceId);
+        timingResults.push({
+          method: 'waitForInstanceHealthy',
+          duration: Date.now() - startTime,
+          success: true
+        });
       } catch (error) {
+        timingResults.push({
+          method: 'waitForInstanceHealthy',
+          duration: Date.now() - startTime,
+          success: false
+        });
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(`⚠️  Health check failed: ${errorMessage}`);
         console.log("Continuing with agent setup despite health check failure...");
       }
 
+      const totalDuration = Date.now() - overallStartTime;
+      
       console.log(`✅ Agent ${agentName} infrastructure and SSH setup completed successfully!`);
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
+      
+      this.reportTimingResults(timingResults, totalDuration);
 
     } catch (error) {
+      const totalDuration = Date.now() - overallStartTime;
       console.error(`❌ Failed to create agent: ${error}`);
+      
+      if (timingResults.length > 0) {
+        console.log("\n📊 Timing results before failure:");
+        this.reportTimingResults(timingResults, totalDuration);
+      }
+      
       process.exit(1);
     }
   }
@@ -512,6 +573,34 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
     }
 
     return envVars;
+  }
+
+  private reportTimingResults(timingResults: TimingResult[], totalDuration: number): void {
+    console.log("\n📊 Agent Creation Timing Report");
+    console.log("=" + "=".repeat(50));
+    console.log(`Total Duration: ${totalDuration}ms (${(totalDuration / 1000).toFixed(1)}s)`);
+    console.log("");
+    
+    const successful = timingResults.filter(r => r.success);
+    const failed = timingResults.filter(r => !r.success);
+    
+    if (successful.length > 0) {
+      console.log(`✅ Successful Methods (${successful.length}):`);
+      for (const result of successful) {
+        const percentage = ((result.duration / totalDuration) * 100).toFixed(1);
+        console.log(`  ${result.method}: ${result.duration}ms (${percentage}%)`);
+      }
+    }
+    
+    if (failed.length > 0) {
+      console.log(`\n❌ Failed Methods (${failed.length}):`);
+      for (const result of failed) {
+        const percentage = ((result.duration / totalDuration) * 100).toFixed(1);
+        console.log(`  ${result.method}: ${result.duration}ms (${percentage}%)`);
+      }
+    }
+    
+    console.log("=" + "=".repeat(50));
   }
 }
 
