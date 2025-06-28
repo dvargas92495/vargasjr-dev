@@ -358,20 +358,12 @@ export interface HealthCheckOptions {
 
 export function getAgentVersion(): string {
   try {
-    const pyprojectPath = join(__dirname, "../agent/pyproject.toml");
-    const content = readFileSync(pyprojectPath, "utf8");
-    const versionLine = content
-      .split("\n")
-      .find((line) => line.includes("version = "));
-    if (versionLine) {
-      const match = versionLine.match(/version = "([^"]+)"/);
-      if (match) {
-        return match[1];
-      }
-    }
-    throw new Error("Version not found in pyproject.toml");
+    const packageJsonPath = join(__dirname, "../package.json");
+    const content = readFileSync(packageJsonPath, "utf8");
+    const packageJson = JSON.parse(content);
+    return packageJson.version;
   } catch (error) {
-    console.warn("Failed to read version from pyproject.toml, using fallback");
+    console.warn("Failed to read version from package.json, using fallback");
     return "0.0.67";
   }
 }
