@@ -355,7 +355,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
         InstanceIds: [instanceId],
         DocumentName: "AWS-RunShellScript",
         Parameters: {
-          commands: ["cd /home/ubuntu && npm run healthcheck"]
+          commands: ["cd vargasjr_dev_agent-* && npm run healthcheck"]
         },
         TimeoutSeconds: 30
       });
