@@ -19,10 +19,27 @@ class DraftPRScriptRunner {
   private projectRoot: string;
   private isPreviewMode: boolean;
 
-  constructor(branchName: string, isPreviewMode: boolean = false) {
-    this.branchName = branchName;
+  constructor(isPreviewMode: boolean = false) {
     this.projectRoot = process.cwd();
+    this.branchName = this.getCurrentBranch();
     this.isPreviewMode = isPreviewMode;
+  }
+
+  private getCurrentBranch(): string {
+    try {
+      const branchName = execSync('git branch --show-current', {
+        cwd: this.projectRoot,
+        encoding: 'utf8'
+      }).trim();
+      
+      if (!branchName) {
+        throw new Error('Could not determine current branch name');
+      }
+      
+      return branchName;
+    } catch (error) {
+      throw new Error(`Failed to get current branch: ${error}`);
+    }
   }
 
   async runScripts(): Promise<void> {
@@ -33,7 +50,7 @@ class DraftPRScriptRunner {
     }
     
     try {
-      await this.setupPREnvironment();
+      this.prNumber = await this.findPRByBranch();
       
       const scripts = await this.discoverScripts();
       
@@ -91,6 +108,8 @@ class DraftPRScriptRunner {
   }
 
   private async findPRByBranch(): Promise<string> {
+    console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
+    
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
@@ -131,19 +150,14 @@ class DraftPRScriptRunner {
       }
       
       console.log(`✅ Found draft PR #${pr.number} for branch: ${this.branchName}`);
+      console.log(`✅ Found PR #${pr.number}, using current HEAD for script discovery`);
       return pr.number.toString();
     } catch (error) {
       throw new Error(`Failed to find PR for branch ${this.branchName}: ${error}`);
     }
   }
 
-  private async setupPREnvironment(): Promise<void> {
-    console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
-    
-    this.prNumber = await this.findPRByBranch();
-    
-    console.log(`✅ Found PR #${this.prNumber}, using current HEAD for script discovery`);
-  }
+
 
   private getAddedFilesInPR(): string[] {
     try {
@@ -353,24 +367,15 @@ class DraftPRScriptRunner {
 async function main() {
   const args = process.argv.slice(2);
   
-  let branchName: string | undefined;
   let isPreviewMode = false;
   
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--branch' && i + 1 < args.length) {
-      branchName = args[i + 1];
-      i++;
-    } else if (args[i] === '--preview') {
+    if (args[i] === '--preview') {
       isPreviewMode = true;
     }
   }
   
-  if (!branchName) {
-    console.error('❌ Branch name is required. Use --branch <name>');
-    process.exit(1);
-  }
-  
-  const runner = new DraftPRScriptRunner(branchName, isPreviewMode);
+  const runner = new DraftPRScriptRunner(isPreviewMode);
   await runner.runScripts();
 }
 
