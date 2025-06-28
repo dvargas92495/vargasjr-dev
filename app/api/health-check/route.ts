@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
-import { checkInstanceHealth } from "../../../scripts/utils";
+import { checkInstanceHealth, getAgentVersion } from "../../../scripts/utils";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -22,7 +22,11 @@ export async function POST(request: Request) {
     const { instanceId } = healthCheckSchema.parse(body);
     
     try {
-      const healthResult = await checkInstanceHealth(instanceId);
+      const version = getAgentVersion();
+      const healthResult = await checkInstanceHealth(instanceId, "us-east-1", {
+        environment: 'production',
+        version: version
+      });
       return NextResponse.json(healthResult);
     } catch (error) {
       return NextResponse.json({

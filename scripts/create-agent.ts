@@ -4,7 +4,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, getAgentVersion } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -89,15 +89,15 @@ class VargasJRAgentCreator {
 
       startTime = Date.now();
       try {
-        await this.waitForInstanceHealthy(instanceId);
+        await checkInstanceHealth(instanceId, this.config.region);
         timingResults.push({
-          method: 'waitForInstanceHealthy',
+          method: 'checkInstanceHealth',
           duration: Date.now() - startTime,
           success: true
         });
       } catch (error) {
         timingResults.push({
-          method: 'waitForInstanceHealthy',
+          method: 'checkInstanceHealth',
           duration: Date.now() - startTime,
           success: false
         });
@@ -348,7 +348,13 @@ VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
         envContent += `
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
-GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
+GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}
+export AGENT_ENVIRONMENT
+export PR_NUMBER`;
+      } else {
+        envContent += `
+AGENT_ENVIRONMENT=production
+export AGENT_ENVIRONMENT`;
       }
 
       writeFileSync('/tmp/agent.env', envContent);
@@ -518,21 +524,6 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
 
   private formatError(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
-  }
-
-  private async waitForInstanceHealthy(instanceId: string): Promise<void> {
-    console.log("Waiting for agent to be healthy...");
-    const overallStartTime = Date.now();
-
-    const healthResult = await checkInstanceHealth(instanceId, this.config.region);
-    const totalDuration = Date.now() - overallStartTime;
-
-    if (healthResult.status === "healthy") {
-      console.log(`✅ Agent is healthy and running (total wait time: ${totalDuration}ms)`);
-      return;
-    }
-
-    throw new Error(`Agent failed to become healthy: ${healthResult.error || 'Unknown error'} (total wait time: ${totalDuration}ms)`);
   }
 
   private getEnvironmentVariables() {
