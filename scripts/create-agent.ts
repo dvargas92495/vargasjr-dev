@@ -379,6 +379,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'DEBUG', command: 'ls -la ~/' });
 
       console.log("✅ Instance setup complete!");
 

@@ -355,7 +355,15 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
         InstanceIds: [instanceId],
         DocumentName: "AWS-RunShellScript",
         Parameters: {
-          commands: ["cd vargasjr_dev_agent-pr-190 && npm run healthcheck"]
+          commands: [
+            "source ~/.env && " +
+            "if [ \"$AGENT_ENVIRONMENT\" = \"preview\" ] && [ -n \"$PR_NUMBER\" ]; then " +
+              "cd /home/ubuntu/vargasjr_dev_agent-pr-$PR_NUMBER && npm run healthcheck; " +
+            "else " +
+              "VERSION=$(curl -s https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest | grep '\"tag_name\":' | cut -d'\"' -f4 | sed 's/^v//') && " +
+              "cd /home/ubuntu/vargasjr_dev_agent-$VERSION && npm run healthcheck; " +
+            "fi"
+          ]
         },
         TimeoutSeconds: 30
       });
