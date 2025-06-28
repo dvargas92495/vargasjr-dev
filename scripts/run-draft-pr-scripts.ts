@@ -161,6 +161,16 @@ class DraftPRScriptRunner {
 
   private getAddedFilesInPR(): string[] {
     try {
+      execSync('git status', {
+        cwd: this.projectRoot,
+        stdio: 'inherit'
+      });
+      
+      execSync('git log --oneline -5', {
+        cwd: this.projectRoot,
+        stdio: 'inherit'
+      });
+      
       const output = execSync(`git diff --diff-filter=A --name-only origin/main...HEAD`, {
         cwd: this.projectRoot,
         encoding: 'utf8'
