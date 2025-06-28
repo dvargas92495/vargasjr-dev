@@ -521,16 +521,22 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
 
   private async waitForInstanceHealthy(instanceId: string): Promise<void> {
     console.log("Waiting for agent to be healthy...");
+    const overallStartTime = Date.now();
 
     const maxAttempts = 20;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
       try {
+        const healthCheckStartTime = Date.now();
         const healthResult = await checkInstanceHealth(instanceId, this.config.region);
+        const healthCheckDuration = Date.now() - healthCheckStartTime;
+
+        console.log(`[Health Check ${attempts + 1}/${maxAttempts}] Duration: ${healthCheckDuration}ms, Status: ${healthResult.status}`);
 
         if (healthResult.status === "healthy") {
-          console.log("✅ Agent is healthy and running");
+          const totalDuration = Date.now() - overallStartTime;
+          console.log(`✅ Agent is healthy and running (total wait time: ${totalDuration}ms)`);
           return;
         }
 
