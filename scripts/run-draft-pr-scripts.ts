@@ -161,6 +161,11 @@ class DraftPRScriptRunner {
 
   private getAddedFilesInPR(): string[] {
     try {
+      execSync('git fetch origin main', {
+        cwd: this.projectRoot,
+        stdio: 'inherit'
+      });
+      
       execSync('git status', {
         cwd: this.projectRoot,
         stdio: 'inherit'
