@@ -4,7 +4,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, getAgentVersion } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -331,8 +331,6 @@ class VargasJRAgentCreator {
     const envVars = this.getEnvironmentVariables();
 
     try {
-      const dbName = this.config.name.replace('-', '_');
-
       let postgresUrl: string;
       if (this.config.prNumber) {
         postgresUrl = await getNeonPreviewDatabaseUrl();
@@ -382,7 +380,7 @@ AGENT_ENVIRONMENT=production`;
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'DEBUG', command: 'ls -la ~/' });
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'DEBUG', command: 'ls -la ~/vargasjr_dev_agent-*' });
 
       console.log("✅ Instance setup complete!");
 

@@ -356,18 +356,6 @@ export interface HealthCheckOptions {
   prNumber?: string;
 }
 
-export function getAgentVersion(): string {
-  try {
-    const packageJsonPath = join(__dirname, "../package.json");
-    const content = readFileSync(packageJsonPath, "utf8");
-    const packageJson = JSON.parse(content);
-    return packageJson.version;
-  } catch (error) {
-    console.warn("Failed to read version from package.json, using fallback");
-    return "0.0.67";
-  }
-}
-
 export interface SSMReadinessResult {
   ready: boolean;
   error?: string;
@@ -449,8 +437,7 @@ export async function checkInstanceHealth(
 
     try {
       const sendCommandStartTime = Date.now();
-      const version = getAgentVersion();
-      const directoryName = `vargasjr_dev_agent-${version}`;
+      const directoryName = `vargasjr_dev_agent-*`;
 
       const commandResult = await ssm.sendCommand({
         InstanceIds: [instanceId],
