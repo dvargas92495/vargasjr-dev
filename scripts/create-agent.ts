@@ -101,7 +101,7 @@ class VargasJRAgentCreator {
           duration: Date.now() - startTime,
           success: false
         });
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = this.formatError(error);
         console.error(`⚠️  Health check failed: ${errorMessage}`);
         console.log("Continuing with agent setup despite health check failure...");
       }
@@ -415,7 +415,7 @@ AGENT_ENVIRONMENT=production`;
         attempts++;
         const waitTime = attempts < 10 ? 10 : 15;
         console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
-        console.log(`SSH error: ${error instanceof Error ? error.message : String(error)}`);
+        console.log(`SSH error: ${this.formatError(error)}`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       }
     }
