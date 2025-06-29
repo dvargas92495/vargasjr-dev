@@ -521,35 +521,17 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
 
   private async waitForInstanceHealthy(instanceId: string): Promise<void> {
     console.log("Waiting for agent to be healthy...");
+    const overallStartTime = Date.now();
 
-    const maxAttempts = 20;
-    let attempts = 0;
+    const healthResult = await checkInstanceHealth(instanceId, this.config.region);
+    const totalDuration = Date.now() - overallStartTime;
 
-    while (attempts < maxAttempts) {
-      try {
-        const healthResult = await checkInstanceHealth(instanceId, this.config.region);
-
-        if (healthResult.status === "healthy") {
-          console.log("✅ Agent is healthy and running");
-          return;
-        }
-
-        attempts++;
-        const waitTime = 1;
-        console.log(`Agent not healthy yet (${healthResult.status}${healthResult.error ? `: ${healthResult.error}` : ''}), waiting... (${attempts}/${maxAttempts})`);
-        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
-
-      } catch (error) {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          throw new Error(`Agent failed to become healthy within timeout: ${this.formatError(error)}`);
-        }
-        console.log(`Health check failed, retrying... (${attempts}/${maxAttempts}): ${this.formatError(error)}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    if (healthResult.status === "healthy") {
+      console.log(`✅ Agent is healthy and running (total wait time: ${totalDuration}ms)`);
+      return;
     }
 
-    throw new Error("Agent failed to become healthy within timeout (20 minutes)");
+    throw new Error(`Agent failed to become healthy: ${healthResult.error || 'Unknown error'} (total wait time: ${totalDuration}ms)`);
   }
 
   private getEnvironmentVariables() {

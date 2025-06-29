@@ -336,7 +336,11 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
   const ssm = new SSM({ region });
   
   try {
+    const ssmValidationStartTime = Date.now();
     const ssmValidation = await validateSSMReadiness(instanceId, region);
+    const ssmValidationDuration = Date.now() - ssmValidationStartTime;
+    console.log(`  [SSM Validation] Duration: ${ssmValidationDuration}ms, Ready: ${ssmValidation.ready}`);
+    
     if (!ssmValidation.ready) {
       return {
         instanceId,
@@ -346,6 +350,7 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
     }
 
     try {
+      const sendCommandStartTime = Date.now();
       const commandResult = await ssm.sendCommand({
         InstanceIds: [instanceId],
         DocumentName: "AWS-RunShellScript",
@@ -354,12 +359,15 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
         },
         TimeoutSeconds: 30
       });
+      const sendCommandDuration = Date.now() - sendCommandStartTime;
+      console.log(`  [SSM Send Command] Duration: ${sendCommandDuration}ms`);
 
       const commandId = commandResult.Command?.CommandId;
       if (!commandId) {
         throw new Error("Failed to get command ID from SSM");
       }
 
+      const pollingStartTime = Date.now();
       let attempts = 0;
       const maxAttempts = 20;
       let commandOutput = "";
@@ -368,10 +376,14 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         try {
+          const getInvocationStartTime = Date.now();
           const outputResult = await ssm.getCommandInvocation({
             CommandId: commandId,
             InstanceId: instanceId
           });
+          const getInvocationDuration = Date.now() - getInvocationStartTime;
+          
+          console.log(`  [SSM Poll ${attempts + 1}/${maxAttempts}] Duration: ${getInvocationDuration}ms, Status: ${outputResult.Status}`);
 
           if (outputResult.Status === "Success") {
             commandOutput = outputResult.StandardOutputContent || "";
@@ -389,6 +401,9 @@ export async function checkInstanceHealth(instanceId: string, region: string = "
         
         attempts++;
       }
+
+      const pollingDuration = Date.now() - pollingStartTime;
+      console.log(`  [SSM Polling Loop] Total duration: ${pollingDuration}ms, Attempts: ${attempts + 1}/${maxAttempts}`);
 
       if (attempts >= maxAttempts) {
         throw new Error("SSM command timed out");
