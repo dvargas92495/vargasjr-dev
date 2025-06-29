@@ -89,15 +89,15 @@ class VargasJRAgentCreator {
 
       startTime = Date.now();
       try {
-        await this.waitForInstanceHealthy(instanceId);
+        await checkInstanceHealth(instanceId, this.config.region);
         timingResults.push({
-          method: 'waitForInstanceHealthy',
+          method: 'checkInstanceHealth',
           duration: Date.now() - startTime,
           success: true
         });
       } catch (error) {
         timingResults.push({
-          method: 'waitForInstanceHealthy',
+          method: 'checkInstanceHealth',
           duration: Date.now() - startTime,
           success: false
         });
@@ -331,8 +331,6 @@ class VargasJRAgentCreator {
     const envVars = this.getEnvironmentVariables();
 
     try {
-      const dbName = this.config.name.replace('-', '_');
-
       let postgresUrl: string;
       if (this.config.prNumber) {
         postgresUrl = await getNeonPreviewDatabaseUrl();
@@ -349,6 +347,9 @@ VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
 GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
+      } else {
+        envContent += `
+AGENT_ENVIRONMENT=production`;
       }
 
       writeFileSync('/tmp/agent.env', envContent);
@@ -379,6 +380,7 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
+      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'DEBUG', command: 'ls -la ~/vargasjr_dev_agent-*' });
 
       console.log("✅ Instance setup complete!");
 
@@ -517,21 +519,6 @@ GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
 
   private formatError(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
-  }
-
-  private async waitForInstanceHealthy(instanceId: string): Promise<void> {
-    console.log("Waiting for agent to be healthy...");
-    const overallStartTime = Date.now();
-
-    const healthResult = await checkInstanceHealth(instanceId, this.config.region);
-    const totalDuration = Date.now() - overallStartTime;
-
-    if (healthResult.status === "healthy") {
-      console.log(`✅ Agent is healthy and running (total wait time: ${totalDuration}ms)`);
-      return;
-    }
-
-    throw new Error(`Agent failed to become healthy: ${healthResult.error || 'Unknown error'} (total wait time: ${totalDuration}ms)`);
   }
 
   private getEnvironmentVariables() {
