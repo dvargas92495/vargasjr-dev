@@ -8,11 +8,13 @@ on:
       - 'agent/src/workflows/**'
       - '.github/workflows/push-vellum-workflows.yaml'
       - 'scripts/push-vellum-workflows.ts'
+      - 'agent/vellum.lock.json'
   pull_request:
     paths:
       - 'agent/src/workflows/**'
       - '.github/workflows/push-vellum-workflows.yaml'
       - 'scripts/push-vellum-workflows.ts'
+      - 'agent/vellum.lock.json'
 
 permissions:
   contents: read
