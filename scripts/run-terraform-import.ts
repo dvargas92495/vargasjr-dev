@@ -7,7 +7,7 @@ import { OneTimeMigrationRunner } from "./utils";
 
 class TerraformImportRunner extends OneTimeMigrationRunner {
   private terraformDir: string;
-  private readonly CDKTF_OUT_DIR = "./terraform/cdktf.out";
+  private readonly CDKTF_OUT_DIR = "./terraform/cdktf.out/stacks/vargasjr-preview";
   protected migrationName = "terraform import migration";
   protected userAgent = "vargasjr-dev-terraform-import-script";
 
