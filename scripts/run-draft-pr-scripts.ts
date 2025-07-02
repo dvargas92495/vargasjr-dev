@@ -19,10 +19,27 @@ class DraftPRScriptRunner {
   private projectRoot: string;
   private isPreviewMode: boolean;
 
-  constructor(branchName: string, isPreviewMode: boolean = false) {
-    this.branchName = branchName;
+  constructor(isPreviewMode: boolean = false) {
     this.projectRoot = process.cwd();
+    this.branchName = this.getCurrentBranch();
     this.isPreviewMode = isPreviewMode;
+  }
+
+  private getCurrentBranch(): string {
+    try {
+      const branchName = execSync('git branch --show-current', {
+        cwd: this.projectRoot,
+        encoding: 'utf8'
+      }).trim();
+      
+      if (!branchName) {
+        throw new Error('Could not determine current branch name');
+      }
+      
+      return branchName;
+    } catch (error) {
+      throw new Error(`Failed to get current branch: ${error}`);
+    }
   }
 
   async runScripts(): Promise<void> {
@@ -33,7 +50,7 @@ class DraftPRScriptRunner {
     }
     
     try {
-      await this.setupPREnvironment();
+      this.prNumber = await this.findPRByBranch();
       
       const scripts = await this.discoverScripts();
       
@@ -69,7 +86,7 @@ class DraftPRScriptRunner {
 
   private async discoverScripts(): Promise<string[]> {
     try {
-      const addedFiles = this.getAddedFilesInPR();
+      const addedFiles = await this.getAddedFilesInPR();
       const scriptsRootFiles = addedFiles.filter(file => {
         const parts = file.split('/');
         return parts.length === 2 && 
@@ -91,6 +108,8 @@ class DraftPRScriptRunner {
   }
 
   private async findPRByBranch(): Promise<string> {
+    console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
+    
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
@@ -131,54 +150,46 @@ class DraftPRScriptRunner {
       }
       
       console.log(`✅ Found draft PR #${pr.number} for branch: ${this.branchName}`);
+      console.log(`✅ Found PR #${pr.number}, using current HEAD for script discovery`);
       return pr.number.toString();
     } catch (error) {
       throw new Error(`Failed to find PR for branch ${this.branchName}: ${error}`);
     }
   }
 
-  private async setupPREnvironment(): Promise<void> {
-    console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
-    
-    this.prNumber = await this.findPRByBranch();
-    
-    console.log(`🔄 Checking out PR #${this.prNumber} branch...`);
-    
+
+  private async getAddedFilesInPR(): Promise<string[]> {
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
-    if (!githubToken || !githubRepo) {
-      console.log("⚠️ Not in GitHub Actions environment, skipping PR checkout");
-      return;
+    if (!githubToken || !githubRepo || !this.prNumber) {
+      console.warn('GitHub environment variables or PR number not available, falling back to empty array');
+      return [];
     }
     
     try {
-      execSync(`git fetch origin pull/${this.prNumber}/head:pr-${this.prNumber}`, {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}/files`, {
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
       });
       
-      execSync(`git checkout pr-${this.prNumber}`, {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.statusText}`);
+      }
       
-      console.log(`✅ Successfully checked out PR #${this.prNumber} branch`);
+      const files = await response.json();
       
+      const addedFiles = files
+        .filter((file: any) => file.status === 'added')
+        .map((file: any) => file.filename);
+      
+      console.log(`📁 Found ${addedFiles.length} added files in PR #${this.prNumber}`);
+      return addedFiles;
     } catch (error) {
-      throw new Error(`Failed to setup PR environment: ${error}`);
-    }
-  }
-
-  private getAddedFilesInPR(): string[] {
-    try {
-      const output = execSync(`git diff --diff-filter=A --name-only origin/main...${this.branchName}`, {
-        cwd: this.projectRoot,
-        encoding: 'utf8'
-      });
-      return output.trim().split('\n').filter(line => line.length > 0);
-    } catch (error) {
-      console.warn(`Could not get git diff: ${error}`);
+      console.warn(`Could not get PR files from GitHub API: ${error}`);
       return [];
     }
   }
@@ -378,24 +389,15 @@ class DraftPRScriptRunner {
 async function main() {
   const args = process.argv.slice(2);
   
-  let branchName: string | undefined;
   let isPreviewMode = false;
   
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--branch' && i + 1 < args.length) {
-      branchName = args[i + 1];
-      i++;
-    } else if (args[i] === '--preview') {
+    if (args[i] === '--preview') {
       isPreviewMode = true;
     }
   }
   
-  if (!branchName) {
-    console.error('❌ Branch name is required. Use --branch <name>');
-    process.exit(1);
-  }
-  
-  const runner = new DraftPRScriptRunner(branchName, isPreviewMode);
+  const runner = new DraftPRScriptRunner(isPreviewMode);
   await runner.runScripts();
 }
 
