@@ -1,6 +1,11 @@
 #!/bin/bash
 
 source ~/.profile
+
+if [ -f ".env" ]; then
+    source .env
+fi
+
 rm -Rf vargasjr_dev_agent-*
 yes | rm -rf ~/.cache/pypoetry/virtualenvs/*
 
