@@ -79,6 +79,7 @@ class TerraformImportRunner extends OneTimeMigrationRunner {
 
   private buildImportCommands(): string[] {
     const commands: string[] = [
+      "terraform init",
       "terraform import aws_s3_bucket.MemoryBucket vargas-jr-memory",
       "terraform import aws_s3_bucket.InboxBucket vargas-jr-inbox",
       
