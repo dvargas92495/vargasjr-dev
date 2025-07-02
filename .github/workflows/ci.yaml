@@ -4,14 +4,38 @@ on:
   push:
     paths:
       - 'agent/pyproject.toml'
+      - 'package.json'
+      - 'browser/**'
   pull_request:
     paths:
       - 'agent/pyproject.toml'
+      - 'browser/**'
+      - 'scripts/**'
+      - 'app/**'
+      - 'components/**'
+      - 'db/**'
+      - 'eslint.config.mjs'
+      - 'package.json'
+      - '.github/workflows/ci.yaml'
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+      - name: Install Node.js dependencies
+        run: npm install
+      - name: Run ESLint
+        run: npm run lint
   test-agent:
     runs-on: ubuntu-latest
+    needs: lint
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -37,7 +61,7 @@ jobs:
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
   publish-agent:
     runs-on: ubuntu-latest
-    needs: test-agent
+    needs: [lint, test-agent]
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: write
