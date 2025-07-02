@@ -86,7 +86,7 @@ class DraftPRScriptRunner {
 
   private async discoverScripts(): Promise<string[]> {
     try {
-      const addedFiles = this.getAddedFilesInPR();
+      const addedFiles = await this.getAddedFilesInPR();
       const scriptsRootFiles = addedFiles.filter(file => {
         const parts = file.split('/');
         return parts.length === 2 && 
@@ -159,30 +159,38 @@ class DraftPRScriptRunner {
 
 
 
-  private getAddedFilesInPR(): string[] {
+  private async getAddedFilesInPR(): Promise<string[]> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPOSITORY;
+    
+    if (!githubToken || !githubRepo || !this.prNumber) {
+      console.warn('GitHub environment variables or PR number not available, falling back to empty array');
+      return [];
+    }
+    
     try {
-      execSync('git fetch origin main', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}/files`, {
+        headers: {
+          "Authorization": `Bearer ${githubToken}`,
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
       });
       
-      execSync('git status', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.statusText}`);
+      }
       
-      execSync('git log --oneline -5', {
-        cwd: this.projectRoot,
-        stdio: 'inherit'
-      });
+      const files = await response.json();
       
-      const output = execSync(`git diff --diff-filter=A --name-only origin/main...HEAD`, {
-        cwd: this.projectRoot,
-        encoding: 'utf8'
-      });
-      return output.trim().split('\n').filter(line => line.length > 0);
+      const addedFiles = files
+        .filter((file: any) => file.status === 'added')
+        .map((file: any) => file.filename);
+      
+      console.log(`📁 Found ${addedFiles.length} added files in PR #${this.prNumber}`);
+      return addedFiles;
     } catch (error) {
-      console.warn(`Could not get git diff: ${error}`);
+      console.warn(`Could not get PR files from GitHub API: ${error}`);
       return [];
     }
   }
