@@ -4,21 +4,19 @@ on:
   push:
     paths:
       - 'agent/pyproject.toml'
-      - '**/*.ts'
-      - '**/*.tsx'
-      - '**/*.js'
-      - '**/*.jsx'
-      - 'eslint.config.mjs'
       - 'package.json'
+      - 'browser/**'
   pull_request:
     paths:
       - 'agent/pyproject.toml'
-      - '**/*.ts'
-      - '**/*.tsx'
-      - '**/*.js'
-      - '**/*.jsx'
+      - 'browser/**'
+      - 'scripts/**'
+      - 'app/**'
+      - 'components/**'
+      - 'db/**'
       - 'eslint.config.mjs'
       - 'package.json'
+      - '.github/workflows/ci.yaml'
   workflow_dispatch:
 
 jobs:
