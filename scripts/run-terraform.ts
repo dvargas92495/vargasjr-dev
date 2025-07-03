@@ -2,25 +2,33 @@
 
 import { execSync } from "child_process";
 import { join } from "path";
-import { OneTimeMigrationRunner } from "./utils";
+import { postGitHubComment } from "./utils";
 
-class TerraformPlanRunner extends OneTimeMigrationRunner {
-  protected migrationName = "Terraform Plan";
-  protected userAgent = "vargasjr-dev-terraform-script";
+interface TerraformRunnerOptions {
+  isPreviewMode: boolean;
+}
+
+class TerraformRunner {
   private terraformDir: string;
+  private isPreviewMode: boolean;
 
-  constructor(isPreviewMode: boolean = false) {
-    super(isPreviewMode);
+  constructor(options: TerraformRunnerOptions) {
+    this.isPreviewMode = options.isPreviewMode;
     this.terraformDir = join(process.cwd(), "terraform");
   }
 
-  protected async runMigration(): Promise<void> {
-    this.logSection("Running Terraform Plan");
+  async run(): Promise<void> {
+    console.log(`🔍 ${this.isPreviewMode ? 'Previewing' : 'Running'} Terraform...`);
     
+    if (!this.isPreviewMode) {
+      console.log("🚀 Terraform apply is coming soon!");
+      return;
+    }
+
     try {
       process.chdir(this.terraformDir);
       
-      this.logSection("Generating CDKTF providers");
+      console.log("=== Generating CDKTF providers ===");
       execSync("npx cdktf get", {
         stdio: 'inherit',
         env: {
@@ -31,7 +39,7 @@ class TerraformPlanRunner extends OneTimeMigrationRunner {
         }
       });
 
-      this.logSection("Synthesizing CDKTF code");
+      console.log("=== Synthesizing CDKTF code ===");
       execSync("npx cdktf synth", {
         stdio: 'inherit',
         env: {
@@ -42,7 +50,7 @@ class TerraformPlanRunner extends OneTimeMigrationRunner {
         }
       });
 
-      this.logSection("Running Terraform Plan");
+      console.log("=== Running Terraform Plan ===");
       const planOutput = execSync("npx cdktf diff --no-color", {
         encoding: 'utf8',
         env: {
@@ -88,12 +96,7 @@ class TerraformPlanRunner extends OneTimeMigrationRunner {
     commentContent += "---\n";
     commentContent += "*This plan was generated automatically by the Terraform Plan workflow.*\n";
     
-    if (this.isPreviewMode) {
-      await this.postComment(commentContent, "Posted Terraform plan comment to PR");
-    } else {
-      console.log("Plan output:");
-      console.log(commentContent);
-    }
+    await this.postComment(commentContent, "Posted Terraform plan comment to PR");
   }
 
   private async handleNoChanges(): Promise<void> {
@@ -103,11 +106,8 @@ class TerraformPlanRunner extends OneTimeMigrationRunner {
       "---\n" +
       "*This plan was generated automatically by the Terraform Plan workflow.*\n";
     
-    this.logSuccess("No infrastructure changes detected");
-    
-    if (this.isPreviewMode) {
-      await this.postComment(commentContent, "Posted Terraform plan comment to PR");
-    }
+    console.log("✅ No infrastructure changes detected");
+    await this.postComment(commentContent, "Posted Terraform plan comment to PR");
   }
 
   private async handlePlanError(errorOutput: string): Promise<void> {
@@ -120,10 +120,16 @@ class TerraformPlanRunner extends OneTimeMigrationRunner {
       "---\n" +
       "*This plan was generated automatically by the Terraform Plan workflow.*\n";
     
-    this.logError("Terraform plan failed");
-    
-    if (this.isPreviewMode) {
-      await this.postComment(commentContent, "Posted Terraform plan error comment to PR");
+    console.log("❌ Terraform plan failed");
+    await this.postComment(commentContent, "Posted Terraform plan error comment to PR");
+  }
+
+  private async postComment(content: string, successMessage: string): Promise<void> {
+    try {
+      await postGitHubComment(content, "vargasjr-dev-terraform-script", successMessage);
+      console.log(`✅ ${successMessage}`);
+    } catch (error) {
+      console.log("Not in PR context or missing GitHub environment variables, skipping comment");
     }
   }
 
@@ -142,7 +148,7 @@ async function main() {
   const args = process.argv.slice(2);
   const isPreviewMode = args.includes('--preview');
   
-  const runner = new TerraformPlanRunner(isPreviewMode);
+  const runner = new TerraformRunner({ isPreviewMode });
   await runner.run();
 }
 

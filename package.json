@@ -17,7 +17,7 @@
     "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts",
     "one-time-migration": "npx tsx scripts/run-draft-pr-scripts.ts",
     "run-migrations": "npx tsx scripts/run-migrations.ts",
-    "terraform-plan": "npx tsx scripts/run-terraform-plan.ts",
+    "terraform": "npx tsx scripts/run-terraform.ts",
     "run-knowledge": "npx tsx scripts/run-knowledge.ts",
     "setup:local": "npx tsx scripts/setup-local.ts",
     "browser:dev": "tsx browser/src/index.ts",
