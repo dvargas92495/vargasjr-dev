@@ -84,6 +84,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
       toPort: 22,
       protocol: "tcp",
       cidrBlocks: ["0.0.0.0/0"],
+      description: "SSH access from anywhere",
       securityGroupId: securityGroup.id,
     });
 
