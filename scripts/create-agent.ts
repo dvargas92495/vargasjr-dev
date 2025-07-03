@@ -101,7 +101,7 @@ class VargasJRAgentCreator {
           duration: Date.now() - startTime,
           success: false
         });
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = this.formatError(error);
         console.error(`⚠️  Health check failed: ${errorMessage}`);
         console.log("Continuing with agent setup despite health check failure...");
       }
@@ -356,6 +356,7 @@ AGENT_ENVIRONMENT=production`;
       const setupCommands = [
         { tag: 'APT', command: 'sudo apt update' },
         { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip' },
+        { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
         { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
         { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
         { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
@@ -415,7 +416,7 @@ AGENT_ENVIRONMENT=production`;
         attempts++;
         const waitTime = attempts < 10 ? 10 : 15;
         console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
-        console.log(`SSH error: ${error instanceof Error ? error.message : String(error)}`);
+        console.log(`SSH error: ${this.formatError(error)}`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       }
     }

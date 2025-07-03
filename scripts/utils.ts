@@ -1,16 +1,8 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { SSM } from "@aws-sdk/client-ssm";
-import {
-  IAMClient,
-  CreateRoleCommand,
-  AttachRolePolicyCommand,
-  CreateInstanceProfileCommand,
-  AddRoleToInstanceProfileCommand,
-  GetInstanceProfileCommand,
-} from "@aws-sdk/client-iam";
+import { IAMClient, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
-import { join } from "path";
 
 export interface EC2Instance {
   InstanceId?: string;
@@ -416,7 +408,6 @@ export async function checkInstanceHealth(
   instanceId: string,
   region: string = "us-east-1"
 ): Promise<HealthCheckResult> {
-  const ec2 = new EC2({ region });
   const ssm = new SSM({ region });
 
   try {
@@ -464,20 +455,10 @@ export async function checkInstanceHealth(
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         try {
-          const getInvocationStartTime = Date.now();
           const outputResult = await ssm.getCommandInvocation({
             CommandId: commandId,
             InstanceId: instanceId,
           });
-          const getInvocationDuration = Date.now() - getInvocationStartTime;
-
-          console.log(
-            `  [SSM Poll ${
-              attempts + 1
-            }/${maxAttempts}] Duration: ${getInvocationDuration}ms, Status: ${
-              outputResult.Status
-            }`
-          );
 
           if (outputResult.Status === "Success") {
             commandOutput = outputResult.StandardOutputContent || "";
@@ -495,6 +476,13 @@ export async function checkInstanceHealth(
           if (attempts === maxAttempts - 1) {
             throw outputError;
           }
+          console.error(
+            `  [Health Check Attempt ${attempts + 1}/${maxAttempts}] Error: ${
+              outputError instanceof Error
+                ? outputError.message
+                : String(outputError)
+            }`
+          );
         }
 
         attempts++;

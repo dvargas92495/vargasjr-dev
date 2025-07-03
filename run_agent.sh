@@ -1,6 +1,11 @@
 #!/bin/bash
 
 source ~/.profile
+
+if [ -f ".env" ]; then
+    source .env
+fi
+
 rm -Rf vargasjr_dev_agent-*
 yes | rm -rf ~/.cache/pypoetry/virtualenvs/*
 
@@ -20,7 +25,11 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$REPO/actions/artifacts?name=$ARTIFACT_NAME")
         
-        ARTIFACT_ID=$(echo "$ARTIFACT_DATA" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+        ARTIFACT_ID=$(echo "$ARTIFACT_DATA" | sed -n 's/.*"artifacts":\[{"id":\([0-9]*\).*/\1/p')
+        
+        if [ -z "$ARTIFACT_ID" ]; then
+            ARTIFACT_ID=$(echo "$ARTIFACT_DATA" | grep -o '"id":[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*')
+        fi
         
         if [ -z "$ARTIFACT_ID" ]; then
             echo "Error: No artifacts found for PR $PR_NUMBER"
