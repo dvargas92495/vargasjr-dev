@@ -574,6 +574,55 @@ export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   }
 }
 
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error = new Error('Unknown error');
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        break;
+      }
+      
+      const isRetryable = isRetryableError(error);
+      if (!isRetryable) {
+        break;
+      }
+      
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      console.log(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError;
+}
+
+function isRetryableError(error: any): boolean {
+  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    return true;
+  }
+  
+  if (error.message && error.message.includes('GitHub API error')) {
+    const statusMatch = error.message.match(/GitHub API error: (\d+)/);
+    if (statusMatch) {
+      const status = parseInt(statusMatch[1]);
+      return status >= 500 || status === 429;
+    }
+    return true;
+  }
+  
+  return false;
+}
+
 export async function postGitHubComment(
   content: string,
   userAgent: string,
@@ -605,28 +654,36 @@ export async function postGitHubComment(
       return;
     }
 
-    const response = await fetch(
-      `https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${githubToken}`,
-          "Content-Type": "application/json",
-          "User-Agent": userAgent,
-        },
-        body: JSON.stringify({
-          body: content,
-        }),
-      }
-    );
+    await retryWithBackoff(async () => {
+      const response = await fetch(
+        `https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${githubToken}`,
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+          },
+          body: JSON.stringify({
+            body: content,
+          }),
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`);
-    }
+      if (!response.ok) {
+        if (response.status >= 500 || response.status === 429) {
+          throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+        } else {
+          throw new Error(`GitHub API client error: ${response.status} ${response.statusText}`);
+        }
+      }
+
+      return response;
+    });
 
     console.log(`✅ ${successMessage}`);
   } catch (error) {
-    console.error("Failed to post GitHub comment:", error);
+    console.error("Failed to post GitHub comment after retries:", error);
   }
 }
 
