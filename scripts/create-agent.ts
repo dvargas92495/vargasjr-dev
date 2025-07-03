@@ -355,7 +355,7 @@ AGENT_ENVIRONMENT=production`;
       writeFileSync('/tmp/agent.env', envContent);
       const setupCommands = [
         { tag: 'APT', command: 'sudo apt update' },
-        { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip' },
+        { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip libpq-dev' },
         { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
         { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
         { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
