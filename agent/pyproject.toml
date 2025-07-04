@@ -14,7 +14,7 @@ packages = [
 python = "^3.11"
 vellum-ai = "^0.14.81"
 sqlmodel = "^0.0.22"
-psycopg = {extras = ["binary"], version = "^3.2.3"}
+psycopg2-binary = "^2.9.9"
 boto3 = "^1.35.91"
 google-api-python-client = "^2.157.0"
 google-auth-httplib2 = "^0.2.0"
