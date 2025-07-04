@@ -13,10 +13,7 @@ import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
-import { SecretsmanagerSecret } from "@cdktf/provider-aws/lib/secretsmanager-secret";
-import { SecretsmanagerSecretVersion } from "@cdktf/provider-aws/lib/secretsmanager-secret-version";
 import { AWS_S3_BUCKETS } from "../app/lib/constants";
-import { randomBytes } from "crypto";
 
 interface VargasJRStackConfig {
   environment: "production" | "preview";
@@ -143,16 +140,6 @@ class VargasJRInfrastructureStack extends TerraformStack {
       policyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
     });
 
-    const webhookSecret = new SecretsmanagerSecret(this, "SESWebhookSecret", {
-      name: "vargas-jr-ses-webhook-secret",
-      description: "Secret for SES webhook signature verification",
-      tags
-    });
-
-    new SecretsmanagerSecretVersion(this, "SESWebhookSecretVersion", {
-      secretId: webhookSecret.id,
-      secretString: randomBytes(32).toString('hex')
-    });
 
     const emailLambda = new LambdaFunction(this, "EmailLambdaFunction", {
       functionName: "vargas-jr-email-processor",
@@ -163,7 +150,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
       environment: {
         variables: {
           WEBHOOK_URL: this.getWebhookUrl(),
-          SES_WEBHOOK_SECRET: webhookSecret.arn
+          SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
         }
       },
       filename: "./lambda-email-processor.js",
