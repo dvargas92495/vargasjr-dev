@@ -21,7 +21,55 @@ class TerraformRunner {
     console.log(`🔍 ${this.isPreviewMode ? 'Previewing' : 'Running'} Terraform...`);
     
     if (!this.isPreviewMode) {
-      console.log("🚀 Terraform apply is coming soon!");
+      console.log("🚀 Running Terraform apply...");
+      
+      try {
+        process.chdir(this.terraformDir);
+        
+        console.log("=== Generating CDKTF providers ===");
+        execSync("npx cdktf get", {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+            AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+            VERCEL_ENV: 'production',
+          }
+        });
+
+        console.log("=== Synthesizing CDKTF code ===");
+        execSync("npx cdktf synth", {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+            AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+            VERCEL_ENV: 'production',
+          }
+        });
+
+        console.log("=== Deploying infrastructure ===");
+        execSync("npx cdktf deploy --auto-approve", {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+            AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+            AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+            VERCEL_ENV: 'production',
+          }
+        });
+
+        console.log("✅ Terraform deployment completed successfully");
+        
+      } catch (error: any) {
+        const errorOutput = error.stdout || error.stderr || error.message;
+        console.log("❌ Terraform deployment failed");
+        console.error(errorOutput);
+        throw error;
+      }
       return;
     }
 
