@@ -29,7 +29,6 @@ version = "0.0.64"
 - Follow existing code patterns and conventions in the codebase
 - Ensure all tests pass before submitting changes
 - Run linting checks with `npm run lint` before committing
-- For Python tests, use `poetry run pytest` in the agent directory
 
 ## Development Setup
 
@@ -43,7 +42,6 @@ npm run dev
 ```bash
 cd agent
 poetry install
-poetry run pytest  # Run tests
 ```
 
 ## Testing Guidelines
@@ -76,7 +74,6 @@ Use `mock_sql_session` fixture to create test data in the database rather than m
 ### Test Categories
 
 - Frontend tests: `npm t`
-- Python tests: `npm run test:agent`
 - Linting: `npm run lint`
 
 ## Pull Request Guidelines

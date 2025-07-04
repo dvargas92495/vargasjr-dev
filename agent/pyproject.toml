@@ -22,17 +22,11 @@ google-auth-oauthlib = "^1.2.1"
 runwayml = "^2.2.1"
 tweepy = "^4.14.0"
 
-[tool.poetry.scripts]
-agent = "src.cli:agent"
-reboot = "src.cli:reboot"
 
 
 [tool.poetry.group.dev.dependencies]
 mypy = "1.11.0"
-pytest = "^7.4.0"
-pytest-mock = "3.10.0"
 python-dotenv = "^1.0.1"
-pytest-postgresql = "^6.1.1"
 ipdb = "^0.13.13"
 types-requests = "^2.32.0.20241016"
 google-api-python-client-stubs = "^1.28.0"
@@ -40,9 +34,3 @@ requests-mock = "^1.12.1"
 
 [tool.mypy]
 plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy", "sqlalchemy.ext.mypy.plugin"]
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::DeprecationWarning:pytz",
-    "ignore:Load is deprecated on a client fixture:DeprecationWarning",
-]
