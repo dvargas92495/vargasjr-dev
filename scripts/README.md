@@ -29,5 +29,5 @@ npm run create-agent <agent-name>
 
 ### Manual steps after running
 
-1. Copy `run_agent.sh` to the instance
+1. Copy `scripts/run_agent.sh` to the instance
 2. Run the agent using the copied script

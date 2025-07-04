@@ -376,7 +376,7 @@ AGENT_ENVIRONMENT=production`;
       await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
 
       console.log("Copying run_agent.sh script to instance...");
-      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './run_agent.sh', '~/run_agent.sh');
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './scripts/run_agent.sh', '~/run_agent.sh');
 
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
