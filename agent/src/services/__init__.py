@@ -64,7 +64,8 @@ def postgres_session(expire_on_commit: bool = True):
         return Session(engine, expire_on_commit=expire_on_commit)
     except Exception as e:
         masked_url = mask_url_password(url.replace("postgres://", "postgresql+psycopg://"))
-        raise Exception(f"Failed to create database session with URL: {masked_url}") from e
+        url_prefix = url[:20] + "..." if len(url) > 20 else url
+        raise Exception(f"Failed to create database session with URL: {masked_url} (original URL prefix: {url_prefix})") from e
 
 
 def sqlite_session():
