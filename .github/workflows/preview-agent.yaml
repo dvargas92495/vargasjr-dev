@@ -5,55 +5,8 @@ on:
     types: [opened, synchronize, closed]
 
 jobs:
-  publish-agent:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-      - name: Bootstrap poetry
-        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
-      - name: Install dependencies
-        run: poetry install
-        working-directory: agent
-      - name: Build package
-        run: poetry build
-        working-directory: agent
-      - name: Get version from pyproject.toml
-        id: get_version
-        run: |
-          VERSION=$(sed -n '3p' agent/pyproject.toml | cut -d'"' -f2)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      - name: Set up Node.js for browser service
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-      - name: Build browser service
-        run: npm run browser:build
-      - name: Create complete agent package
-        run: |
-          mkdir -p vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
-          cd vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
-          tar -xzf ../agent/dist/vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz --strip-components=1
-          cp -r ../browser ./browser
-          cp -r ../scripts ./scripts
-          cp ../package.json ./package.json
-          cd ..
-          tar -czf vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
-      - name: Publish package
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-pr-${{ github.event.number }}
-          path: vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz
-          retention-days: 5
-
   create-preview-agent:
     runs-on: ubuntu-latest
-    needs: publish-agent
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     steps:
       - name: Checkout repo
