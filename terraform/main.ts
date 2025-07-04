@@ -39,7 +39,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
 
     new S3Backend(this, {
       bucket: AWS_S3_BUCKETS.TERRAFORM_STATE,
-      key: `terraform/state/${config.environment}${config.prNumber ? `-pr-${config.prNumber}` : ''}/terraform.tfstate`,
+      key: "terraform/state/terraform.tfstate",
       region: region,
       encrypt: true,
     });

@@ -39,24 +39,28 @@ Error: creating IAM Role (vargas-jr-email-lambda-role): operation error IAM: Cre
 
 ## Backend Configuration
 
-The terraform state is stored in S3 bucket `vargas-jr-terraform-state` with environment-specific keys:
-- Production: `terraform/state/production/terraform.tfstate`
-- Preview: `terraform/state/preview-pr-{number}/terraform.tfstate`
+The terraform state is stored in S3 bucket `vargas-jr-terraform-state` with a single state file:
+- All environments: `terraform/state/terraform.tfstate`
 
-This separation prevents conflicts between preview and production deployments. The "already exists" errors mentioned in the deployment logs are likely from previous failed deployments where resources were partially created, not from backend conflicts.
+This consolidated approach uses a single state file for all deployments. The "already exists" errors mentioned in the deployment logs are likely from previous failed deployments where resources were partially created.
 
 ## Deployment Process
 
 1. **Preview Mode** (Pull Requests): `npm run terraform -- --preview`
    - Runs `cdktf diff` to show planned changes
    - Posts results as GitHub PR comment
-   - Uses preview-specific state key
+   - Uses shared state file (read-only)
 
 2. **Production Mode** (Main branch): `npm run terraform`
    - Runs `cdktf deploy --auto-approve`
    - Applies changes to production infrastructure
-   - Uses production state key
+   - Uses shared state file
 
 ## Error Handling
 
-The terraform runner includes proper error handling that should cause deployments to fail on IAM permission errors. If errors appear to "silently succeed", check the GitHub Actions logs for the full error output.
+The terraform runner includes proper error handling with explicit `process.exit(1)` calls to ensure that deployment failures cause GitHub Actions to fail immediately. This prevents the "silent success" issue where errors were logged but the action continued to pass.
+
+Key improvements:
+- Terraform apply failures now call `process.exit(1)` instead of just throwing errors
+- Plan failures in preview mode also call `process.exit(1)` to fail the action
+- Main function catches all unhandled errors and exits with code 1
