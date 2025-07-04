@@ -77,10 +77,10 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         fi
         
         if [ -d "worker" ]; then
-            echo "Worker service available (not started yet)"
+            echo "Building and starting worker service..."
+            npm run agent:build
+            screen -dmS agent-preview bash -c 'npm run agent:start 2> error.log'
         fi
-        
-        screen -dmS agent-preview bash -c 'poetry run agent 2> error.log'
         
 else
     echo "Detected production environment"
@@ -98,10 +98,10 @@ else
     fi
     
     if [ -d "worker" ]; then
-        echo "Worker service available (not started yet)"
+        echo "Building and starting worker service..."
+        npm run agent:build
+        screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start 2> error.log'
     fi
-    
-    screen -dmS agent-${VERSION//./-} bash -c 'poetry run agent 2> error.log'
 fi
 
 # # Useful tools
