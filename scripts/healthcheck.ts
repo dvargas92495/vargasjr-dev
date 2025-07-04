@@ -22,7 +22,7 @@ async function runHealthcheck(): Promise<void> {
   if (existsSync('error.log')) {
     const errorLogContent = readFileSync('error.log', 'utf8').trim();
     if (errorLogContent.length > 0) {
-      console.error(`Error Log: ${errorLogContent}`);
+      console.error(`Error Log (${errorLogContent.length} chars): ${errorLogContent}`);
       process.exit(2);
     }
   }
