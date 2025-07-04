@@ -33,39 +33,41 @@ def postgres_session(expire_on_commit: bool = True):
     if not url:
         raise ValueError("POSTGRES_URL is not set")
 
+    def mask_url_password(url: str) -> str:
+        """Mask password in database URL while preserving protocol and other details"""
+        if "@" not in url:
+            return url
+        
+        try:
+            protocol_and_auth = url.split("@")[0]  # protocol://user:password
+            host_and_rest = url.split("@")[1]      # host:port/database?params
+            
+            if "://" not in protocol_and_auth:
+                return url
+            
+            protocol = protocol_and_auth.split("://")[0]  # protocol
+            auth_part = protocol_and_auth.split("://")[1]  # user:password
+            
+            if ":" in auth_part:
+                user = auth_part.split(":")[0]
+                return f"{protocol}://{user}:***@{host_and_rest}"
+            else:
+                return f"{protocol}://{auth_part}:***@{host_and_rest}"
+        except Exception:
+            if "://" in url:
+                protocol = url.split("://")[0]
+                return f"{protocol}://***"
+            return "***"
+
     try:
         engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
         return Session(engine, expire_on_commit=expire_on_commit)
-    except ModuleNotFoundError as e:
-        masked_url = url
-        if "@" in url:
-            protocol_and_user = url.split("@")[0]
-            host_and_rest = url.split("@")[1]
-            if ":" in protocol_and_user and "//" in protocol_and_user:
-                protocol_part = protocol_and_user.split("://")[0]
-                user_part = protocol_and_user.split("://")[1]
-                if ":" in user_part:
-                    user = user_part.split(":")[0]
-                    masked_url = f"{protocol_part}://{user}:***@{host_and_rest}"
-                else:
-                    masked_url = f"{protocol_part}://{user_part}:***@{host_and_rest}"
-        
-        raise ModuleNotFoundError(f"Database driver not found for URL: {masked_url}. Original error: {str(e)}") from e
-    except Exception as e:
-        masked_url = url
-        if "@" in url:
-            protocol_and_user = url.split("@")[0]
-            host_and_rest = url.split("@")[1]
-            if ":" in protocol_and_user and "//" in protocol_and_user:
-                protocol_part = protocol_and_user.split("://")[0]
-                user_part = protocol_and_user.split("://")[1]
-                if ":" in user_part:
-                    user = user_part.split(":")[0]
-                    masked_url = f"{protocol_part}://{user}:***@{host_and_rest}"
-                else:
-                    masked_url = f"{protocol_part}://{user_part}:***@{host_and_rest}"
-        
-        raise Exception(f"Failed to create database session with URL: {masked_url}") from e
+    except (ModuleNotFoundError, Exception) as e:
+        masked_url = mask_url_password(url.replace("postgres://", "postgresql+psycopg://"))
+        if isinstance(e, ModuleNotFoundError):
+            raise ModuleNotFoundError(f"Database driver not found for URL: {masked_url}. Original error: {str(e)}") from e
+        else:
+            raise Exception(f"Failed to create database session with URL: {masked_url}") from e
 
 
 def sqlite_session():
