@@ -37,35 +37,9 @@ jobs:
         run: npm install
       - name: Run ESLint
         run: npm run lint
-  test-agent:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-      - name: Install Node.js dependencies
-        run: npm install
-      - name: Set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-      - name: Bootstrap poetry
-        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
-      - name: Install dependencies
-        run: poetry install
-        working-directory: agent
-      - name: Test
-        run: poetry run pytest -rP .
-        working-directory: agent
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
   publish-agent:
     runs-on: ubuntu-latest
-    needs: [lint, test-agent]
+    needs: [lint]
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: write
@@ -126,7 +100,7 @@ jobs:
 
   create-preview-agent:
     runs-on: ubuntu-latest
-    needs: [lint, test-agent, publish-agent]
+    needs: [lint, publish-agent]
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repo

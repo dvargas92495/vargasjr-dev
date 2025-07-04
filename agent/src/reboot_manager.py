@@ -102,7 +102,7 @@ def reboot_agent(target_version: Optional[str] = None, logger: Optional[logging.
 
         screen_name = f"agent-{target_version.replace('.', '-')}"
         subprocess.Popen(
-            ["screen", "-dmS", screen_name, "bash", "-c", "poetry run agent 2> error.log"],
+            ["screen", "-dmS", screen_name, "bash", "-c", "npm run agent:start 2> error.log"],
             start_new_session=True,
         )
         logger.info(f"Started new agent in screen session: {screen_name}")
