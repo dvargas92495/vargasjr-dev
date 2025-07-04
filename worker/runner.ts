@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import { createFileLogger, getVersion, Logger } from './utils';
 import { postgresSession } from './database';
 import { RoutineJob } from './routine-job';
+import { checkAndRebootIfNeeded } from './reboot-manager';
 
 dotenv.config();
 
@@ -109,5 +110,6 @@ export class AgentRunner {
   }
 
   private checkAndRebootIfNeeded(): void {
+    checkAndRebootIfNeeded(this.logger);
   }
 }

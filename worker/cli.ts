@@ -2,6 +2,7 @@
 
 import { AgentRunner } from './runner';
 import { getVersion } from './utils';
+import { getLatestVersion, rebootAgent } from './reboot-manager';
 
 function agent(): void {
   const agentRunner = new AgentRunner({ sleepTime: 5 });
@@ -21,13 +22,22 @@ function main(): void {
     if (checkOnlyArg) {
       const currentVersion = getVersion();
       console.log(`Current version: ${currentVersion}`);
-      console.log('Latest version: unknown');
-      console.log('No update needed');
-      process.exit(0);
+      getLatestVersion().then(latestVersion => {
+        console.log(`Latest version: ${latestVersion || 'unknown'}`);
+        if (latestVersion && latestVersion !== currentVersion) {
+          console.log('Update available');
+        } else {
+          console.log('No update needed');
+        }
+        process.exit(0);
+      });
+      return;
     }
     
-    console.log('Reboot functionality not implemented yet');
-    process.exit(1);
+    const targetVersion = versionArg ? versionArg.split('=')[1] : undefined;
+    rebootAgent(targetVersion).then(success => {
+      process.exit(success ? 0 : 1);
+    });
   } else {
     console.log('Usage: cli.ts [agent|reboot] [options]');
     process.exit(1);
@@ -42,13 +52,22 @@ function reboot(): void {
   if (checkOnlyArg) {
     const currentVersion = getVersion();
     console.log(`Current version: ${currentVersion}`);
-    console.log('Latest version: unknown');
-    console.log('No update needed');
-    process.exit(0);
+    getLatestVersion().then(latestVersion => {
+      console.log(`Latest version: ${latestVersion || 'unknown'}`);
+      if (latestVersion && latestVersion !== currentVersion) {
+        console.log('Update available');
+      } else {
+        console.log('No update needed');
+      }
+      process.exit(0);
+    });
+    return;
   }
   
-  console.log('Reboot functionality not implemented yet');
-  process.exit(1);
+  const targetVersion = versionArg ? versionArg.split('=')[1] : undefined;
+  rebootAgent(targetVersion).then(success => {
+    process.exit(success ? 0 : 1);
+  });
 }
 
 if (require.main === module) {
