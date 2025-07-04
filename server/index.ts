@@ -58,3 +58,9 @@ export const postSlackMessage = async ({
   
   return response.json();
 };
+
+export const convertPriorityToLabel = (priority: number): 'High' | 'Medium' | 'Low' => {
+  if (priority >= 0.75) return 'High';
+  if (priority >= 0.40) return 'Medium';
+  return 'Low';
+};
