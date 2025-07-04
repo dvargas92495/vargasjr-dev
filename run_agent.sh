@@ -68,6 +68,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         cd "$AGENT_DIR"
         cp ../.env .
+        npm install
         poetry install
         
         if [ -d "browser" ]; then
@@ -84,6 +85,7 @@ else
     tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
+    npm install
     poetry install
     
     if [ -d "browser" ]; then

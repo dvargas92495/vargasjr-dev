@@ -33,8 +33,39 @@ def postgres_session(expire_on_commit: bool = True):
     if not url:
         raise ValueError("POSTGRES_URL is not set")
 
-    engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
-    return Session(engine, expire_on_commit=expire_on_commit)
+    def mask_url_password(url: str) -> str:
+        """Mask password in database URL while preserving protocol and other details"""
+        if "@" not in url:
+            return f"No @ found in URL: {url}"
+        
+        try:
+            protocol_and_auth = url.split("@")[0]  # protocol://user:password
+            host_and_rest = url.split("@")[1]      # host:port/database?params
+            
+            if "://" not in protocol_and_auth:
+                return f"No :// found in URL: {url}"
+            
+            protocol = protocol_and_auth.split("://")[0]  # protocol
+            auth_part = protocol_and_auth.split("://")[1]  # user:password
+            
+            if ":" in auth_part:
+                user = auth_part.split(":")[0]
+                return f"{protocol}://{user}:***@{host_and_rest}"
+            else:
+                return f"{protocol}://{auth_part}:***@{host_and_rest}"
+        except Exception:
+            if "://" in url:
+                protocol = url.split("://")[0]
+                return f"{protocol}://***"
+            return "***"
+
+    try:
+        engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
+        return Session(engine, expire_on_commit=expire_on_commit)
+    except Exception as e:
+        masked_url = mask_url_password(url.replace("postgres://", "postgresql+psycopg://"))
+        url_prefix = url[:20] + "..." if len(url) > 20 else url
+        raise Exception(f"Failed to create database session with URL: {masked_url} (original URL prefix: {url_prefix})") from e
 
 
 def sqlite_session():
