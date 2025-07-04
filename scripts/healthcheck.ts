@@ -10,6 +10,7 @@ async function runHealthcheck(): Promise<void> {
 
   let hasAgentSession = false;
   let hasFatalError = false;
+  let detailedReport = '';
 
   console.log('--- Environment Information ---');
   const agentEnv = process.env.AGENT_ENVIRONMENT || 'unknown';
@@ -38,9 +39,6 @@ async function runHealthcheck(): Promise<void> {
   console.log('--- Process Information ---');
   try {
     const psOutput = execSync('ps aux', { encoding: 'utf8' });
-    console.log('All running processes:');
-    console.log(psOutput);
-    console.log('');
     
     const agentProcesses = psOutput.split('\n').filter(line => 
       line.includes('poetry run agent') || 
@@ -55,10 +53,10 @@ async function runHealthcheck(): Promise<void> {
     } else {
       console.log('No agent-related processes found');
     }
-    console.log('');
   } catch (error) {
     console.error(`Failed to get process information: ${error}`);
   }
+  console.log('');
 
   console.log('--- Screen Sessions ---');
   let screenOutput = '';
@@ -75,45 +73,63 @@ async function runHealthcheck(): Promise<void> {
   }
   console.log('');
 
-  console.log('--- System Resources ---');
+  detailedReport += '--- System Resources ---\n';
   try {
     const memInfo = execSync('free -h', { encoding: 'utf8' });
-    console.log('Memory usage:');
-    console.log(memInfo);
+    detailedReport += 'Memory usage:\n';
+    detailedReport += memInfo + '\n';
     
     const diskInfo = execSync('df -h .', { encoding: 'utf8' });
-    console.log('Disk usage (current directory):');
-    console.log(diskInfo);
+    detailedReport += 'Disk usage (current directory):\n';
+    detailedReport += diskInfo + '\n';
   } catch (error) {
-    console.error(`Failed to get system resource information: ${error}`);
+    detailedReport += `Failed to get system resource information: ${error}\n`;
   }
-  console.log('');
+  detailedReport += '\n';
 
-  console.log('--- File System Checks ---');
-  const importantFiles = ['.env', 'error.log', 'browser-error.log', 'agent.log'];
+  detailedReport += '--- File System Checks ---\n';
+  const importantFiles = ['.env', 'error.log', 'browser-error.log', 'agent.log', 'out.log'];
   const importantDirs = ['node_modules', 'agent', 'browser'];
   
   importantFiles.forEach(file => {
     if (existsSync(file)) {
       try {
         const stats = statSync(file);
-        console.log(`${file}: ✓ Exists (${stats.size} bytes, modified: ${stats.mtime.toISOString()})`);
+        detailedReport += `${file}: ✓ Exists (${stats.size} bytes, modified: ${stats.mtime.toISOString()})\n`;
       } catch (error) {
-        console.log(`${file}: ✓ Exists (unable to read stats: ${error})`);
+        detailedReport += `${file}: ✓ Exists (unable to read stats: ${error})\n`;
       }
     } else {
-      console.log(`${file}: ✗ Missing`);
+      detailedReport += `${file}: ✗ Missing\n`;
     }
   });
   
   importantDirs.forEach(dir => {
     if (existsSync(dir)) {
-      console.log(`${dir}/: ✓ Exists`);
+      detailedReport += `${dir}/: ✓ Exists\n`;
     } else {
-      console.log(`${dir}/: ✗ Missing`);
+      detailedReport += `${dir}/: ✗ Missing\n`;
     }
   });
-  console.log('');
+  detailedReport += '\n';
+
+  detailedReport += '--- Network Connectivity ---\n';
+  try {
+    detailedReport += 'Testing GitHub API connectivity...\n';
+    const githubTest = execSync('curl -s -o /dev/null -w "%{http_code}" https://api.github.com/user', { encoding: 'utf8', timeout: 10000 });
+    detailedReport += `GitHub API response: ${githubTest}\n`;
+  } catch (error) {
+    detailedReport += `GitHub API test failed: ${error}\n`;
+  }
+
+  try {
+    detailedReport += 'Testing Vellum API connectivity...\n';
+    const vellumTest = execSync('curl -s -o /dev/null -w "%{http_code}" https://api.vellum.ai', { encoding: 'utf8', timeout: 10000 });
+    detailedReport += `Vellum API response: ${vellumTest}\n`;
+  } catch (error) {
+    detailedReport += `Vellum API test failed: ${error}\n`;
+  }
+  detailedReport += '\n';
 
   console.log('--- Log File Analysis ---');
   if (existsSync('error.log')) {
@@ -166,6 +182,28 @@ async function runHealthcheck(): Promise<void> {
     console.log('No browser-error.log file found');
   }
 
+  if (existsSync('out.log')) {
+    try {
+      const outLogContent = readFileSync('out.log', 'utf8').trim();
+      if (outLogContent.length > 0) {
+        console.log(`Output Log (${outLogContent.length} chars):`);
+        const lines = outLogContent.split('\n');
+        if (lines.length > 20) {
+          console.log('... (showing last 20 lines) ...');
+          console.log(lines.slice(-20).join('\n'));
+        } else {
+          console.log(outLogContent);
+        }
+      } else {
+        console.log('Output log exists but is empty');
+      }
+    } catch (error) {
+      console.log(`Failed to read out.log: ${error}`);
+    }
+  } else {
+    console.log('No out.log file found');
+  }
+
   if (existsSync('agent.log')) {
     try {
       const agentLogContent = readFileSync('agent.log', 'utf8').trim();
@@ -189,65 +227,28 @@ async function runHealthcheck(): Promise<void> {
   }
   console.log('');
 
-  console.log('--- Network Connectivity ---');
-  try {
-    console.log('Testing GitHub API connectivity...');
-    const githubTest = execSync('curl -s -o /dev/null -w "%{http_code}" https://api.github.com/user', { encoding: 'utf8', timeout: 10000 });
-    console.log(`GitHub API response: ${githubTest}`);
-  } catch (error) {
-    console.log(`GitHub API test failed: ${error}`);
-  }
-
-  try {
-    console.log('Testing Vellum API connectivity...');
-    const vellumTest = execSync('curl -s -o /dev/null -w "%{http_code}" https://api.vellum.ai', { encoding: 'utf8', timeout: 10000 });
-    console.log(`Vellum API response: ${vellumTest}`);
-  } catch (error) {
-    console.log(`Vellum API test failed: ${error}`);
-  }
-  console.log('');
-
-  console.log('--- Installation Verification ---');
-  try {
-    const poetryVersion = execSync('poetry --version', { encoding: 'utf8' }).trim();
-    console.log(`Poetry: ✓ ${poetryVersion}`);
-  } catch (error) {
-    console.log(`Poetry: ✗ Not available (${error})`);
-  }
-
-  try {
-    const npmVersion = execSync('npm --version', { encoding: 'utf8' }).trim();
-    console.log(`NPM: ✓ ${npmVersion}`);
-  } catch (error) {
-    console.log(`NPM: ✗ Not available (${error})`);
-  }
-
-  try {
-    const pythonVersion = execSync('python --version', { encoding: 'utf8' }).trim();
-    console.log(`Python: ✓ ${pythonVersion}`);
-  } catch (error) {
-    console.log(`Python: ✗ Not available (${error})`);
-  }
-  console.log('');
 
   console.log('--- Health Check Summary ---');
+  console.log(`Detailed report saved to memory (${detailedReport.length} chars)`);
+  
   if (hasAgentSession) {
-    console.log('✓ Agent screen session is running');
-    console.log('Status: HEALTHY');
+    console.log('✅ HEALTHY: Agent is running');
     process.exit(0);
   } else if (hasFatalError) {
-    console.log('✗ Fatal error detected in logs');
-    console.log('Status: FATAL ERROR');
+    console.log('💀 FATAL ERROR: Critical errors found in logs');
+    console.log('Common causes:');
+    console.log('  - Missing or invalid environment variables');
+    console.log('  - Database connection issues');
+    console.log('  - Poetry/Python environment problems');
+    console.log('  - Permission issues');
     process.exit(2);
   } else {
-    console.log('✗ No agent screen session found');
-    console.log('Status: UNHEALTHY');
+    console.log('⚠️  UNHEALTHY: Agent not running');
     console.log('Common causes:');
-    console.log('  - Agent process failed to start');
-    console.log('  - Poetry dependencies not installed');
-    console.log('  - Environment variables missing');
-    console.log('  - Database connection issues');
+    console.log('  - Agent process crashed or failed to start');
     console.log('  - Screen session terminated unexpectedly');
+    console.log('  - Missing dependencies or configuration');
+    console.log('  - Resource constraints (memory/disk)');
     process.exit(1);
   }
 }

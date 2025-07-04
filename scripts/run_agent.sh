@@ -79,7 +79,9 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         if [ -d "worker" ]; then
             echo "Building and starting worker service..."
             npm run agent:build
-            screen -dmS agent-preview bash -c 'npm run agent:start 2> error.log'
+            screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
+        else
+            screen -dmS agent-preview bash -c 'poetry run agent > out.log 2> error.log'
         fi
         
 else
@@ -100,7 +102,9 @@ else
     if [ -d "worker" ]; then
         echo "Building and starting worker service..."
         npm run agent:build
-        screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start 2> error.log'
+        screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start > out.log 2> error.log'
+    else
+        screen -dmS agent-${VERSION//./-} bash -c 'poetry run agent > out.log 2> error.log'
     fi
 fi
 
