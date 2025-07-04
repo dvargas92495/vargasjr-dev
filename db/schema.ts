@@ -131,3 +131,14 @@ export const JobsTable = pgTable("jobs", {
 });
 
 export type Job = typeof JobsTable.$inferSelect;
+
+export const JobSessionsTable = pgTable("job_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  jobId: uuid("job_id")
+    .notNull()
+    .references(() => JobsTable.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  endAt: timestamp("end_at"),
+});
+
+export type JobSession = typeof JobSessionsTable.$inferSelect;
