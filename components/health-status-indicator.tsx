@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 interface HealthStatus {
   status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
   error?: string;
+  errorType?: "retryable" | "fatal";
 }
 
 interface HealthStatusIndicatorProps {
@@ -43,12 +44,18 @@ const HealthStatusIndicator = ({
         const data = await response.json();
         const status = {
           status: data.status,
-          error: data.error
+          error: data.error,
+          errorType: data.errorType
         };
         setHealthStatus(status);
         onHealthStatusChange?.(status);
       } else {
-        const status = { status: "error" as const, error: "Health check failed" };
+        const data = await response.json();
+        const status = { 
+          status: "error" as const, 
+          error: data.error || "Health check failed",
+          errorType: data.errorType || (response.status === 500 ? "fatal" : "retryable")
+        };
         setHealthStatus(status);
         onHealthStatusChange?.(status);
       }
@@ -79,10 +86,10 @@ const HealthStatusIndicator = ({
   const getStatusText = () => {
     switch (healthStatus.status) {
       case "healthy": return "Agent Running";
-      case "unhealthy": return `Agent Not Running${healthStatus.error ? `: ${healthStatus.error}` : ""}`;
-      case "offline": return `Instance Offline${healthStatus.error ? `: ${healthStatus.error}` : ""}`;
+      case "unhealthy": return `Agent Not Running${healthStatus.error ? `: ${healthStatus.error}` : ""}${healthStatus.errorType === "fatal" ? " (Fatal)" : ""}`;
+      case "offline": return `Instance Offline${healthStatus.error ? `: ${healthStatus.error}` : ""}${healthStatus.errorType === "fatal" ? " (Fatal)" : ""}`;
       case "loading": return "Checking...";
-      case "error": return `Health Check Error${healthStatus.error ? `: ${healthStatus.error}` : ""}`;
+      case "error": return `Health Check Error${healthStatus.error ? `: ${healthStatus.error}` : ""}${healthStatus.errorType === "fatal" ? " (Fatal)" : ""}`;
       default: return "Unknown";
     }
   };

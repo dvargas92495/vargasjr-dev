@@ -23,13 +23,20 @@ export async function POST(request: Request) {
     
     try {
       const healthResult = await checkInstanceHealth(instanceId);
+      
+      if (healthResult.status !== "healthy") {
+        const statusCode = healthResult.errorType === "fatal" ? 500 : 503;
+        return NextResponse.json(healthResult, { status: statusCode });
+      }
+      
       return NextResponse.json(healthResult);
     } catch (error) {
       return NextResponse.json({
         instanceId,
         status: "offline", 
-        error: error instanceof Error ? error.message : "Health check failed"
-      });
+        error: error instanceof Error ? error.message : "Health check failed",
+        errorType: "retryable"
+      }, { status: 503 });
     }
 
   } catch (error) {
