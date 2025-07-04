@@ -5,9 +5,9 @@ from sqlmodel import select
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
-from src.models.job import Job
-from src.models.job_session import JobSession
-from src.services import postgres_session
+from models.job import Job
+from models.job_session import JobSession
+from services import postgres_session
 
 logger = logging.getLogger(__name__)
 
