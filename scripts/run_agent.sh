@@ -104,6 +104,9 @@ else
     fi
 fi
 
+echo "Running health check..."
+npm run healthcheck
+
 # # Useful tools
 # 
 # ## Switch to a screen session
