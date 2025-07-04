@@ -60,10 +60,21 @@ def postgres_session(expire_on_commit: bool = True):
             return "***"
 
     try:
-        engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+        
+        engine = create_engine(url)
         return Session(engine, expire_on_commit=expire_on_commit)
     except Exception as e:
-        masked_url = mask_url_password(url.replace("postgres://", "postgresql+psycopg://"))
+        masked_url_for_error = url
+        if url.startswith("postgres://"):
+            masked_url_for_error = url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://"):
+            masked_url_for_error = url.replace("postgresql://", "postgresql+psycopg://", 1)
+        
+        masked_url = mask_url_password(masked_url_for_error)
         url_prefix = url[:20] + "..." if len(url) > 20 else url
         raise Exception(f"Failed to create database session with URL: {masked_url} (original URL prefix: {url_prefix})") from e
 
