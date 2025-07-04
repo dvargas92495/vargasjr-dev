@@ -25,11 +25,11 @@
     "browser:build": "tsc --project browser",
     "browser:start": "node browser/dist/index.js",
     "healthcheck": "npx tsx scripts/healthcheck.ts",
-    "agent:ts:build": "cd agent/typescript && npm run build",
-    "agent:ts:dev": "cd agent/typescript && npm run dev",
-    "agent:ts:start": "cd agent/typescript && npm start",
-    "agent:ts:agent": "cd agent/typescript && npm run agent",
-    "agent:ts:reboot": "cd agent/typescript && npm run reboot"
+    "agent:build": "cd worker && tsc",
+    "agent:dev": "tsx worker/index.ts",
+    "agent:start": "node worker/dist/index.js",
+    "agent:agent": "tsx worker/cli.ts agent",
+    "agent:reboot": "tsx worker/cli.ts reboot"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
