@@ -267,8 +267,8 @@ class VellumWorkflowPusher {
         execSync('git commit -m "Update vellum.lock.json with new workflow changes"', { cwd: process.cwd() });
         execSync(`git push origin ${branchName}`, { cwd: process.cwd() });
         
-        const prTitle = "Update vellum.lock.json with new container image tag";
-        const prBody = "This PR updates the vellum.lock.json file with a new container image tag to resolve SDK version mismatches.";
+        const prTitle = "Update vellum.lock.json with new workflow changes";
+        const prBody = "This PR updates the vellum.lock.json file with new workflow changes to resolve SDK version mismatches.";
         
         execSync(`gh pr create --title "${prTitle}" --body "${prBody}" --head ${branchName} --base main`, {
           cwd: process.cwd(),
