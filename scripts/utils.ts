@@ -422,7 +422,7 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: "offline",
-        error: `Health check failed: ${ssmValidation.error}`,
+        error: `Health check failed: ${ssmValidation.error}`
       };
     }
 
@@ -468,8 +468,18 @@ export async function checkInstanceHealth(
               outputResult.StandardErrorContent || "No error details available";
             const outputDetails =
               outputResult.StandardOutputContent || "No output";
+            
+            const exitCode = outputResult.ResponseCode || 1;
+            const isFatalError = exitCode === 2;
+            
+            if (isFatalError) {
+              throw new Error(
+                `Fatal error detected (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
+              );
+            }
+            
             throw new Error(
-              `SSM command failed: ${errorDetails}\nCommand output: ${outputDetails}`
+              `SSM command failed (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
             );
           }
         } catch (outputError) {
@@ -505,7 +515,7 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: hasAgentSession ? "healthy" : "unhealthy",
-        error: hasAgentSession ? undefined : "No agent screen session found",
+        error: hasAgentSession ? undefined : "No agent screen session found"
       };
     } catch (ssmError) {
       const errorMessage =
@@ -518,14 +528,14 @@ export async function checkInstanceHealth(
         return {
           instanceId,
           status: "offline",
-          error: "Instance not managed by Systems Manager",
+          error: "Instance not managed by Systems Manager"
         };
       }
 
       return {
         instanceId,
         status: "offline",
-        error: `SSM Command Failed: ${errorMessage}`,
+        error: `SSM Command Failed: ${errorMessage}`
       };
     }
   } catch (error) {
@@ -535,7 +545,7 @@ export async function checkInstanceHealth(
       error:
         error instanceof Error
           ? `Check Instance Failed: ${error.message}`
-          : "Health check failed",
+          : "Health check failed"
     };
   }
 }

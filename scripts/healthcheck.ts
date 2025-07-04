@@ -21,10 +21,12 @@ async function runHealthcheck(): Promise<void> {
   
   if (existsSync('error.log')) {
     const errorLogContent = readFileSync('error.log', 'utf8');
-    throw new Error(`Error Log: ${errorLogContent}`);
+    console.error(`Error Log: ${errorLogContent}`);
+    process.exit(2);
   }
   
-  throw new Error('No Sockets found in /run/screen/S-root.');
+  console.error('No Sockets found in /run/screen/S-root.');
+  process.exit(1);
 }
 
 runHealthcheck();
