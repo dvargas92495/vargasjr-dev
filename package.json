@@ -24,7 +24,12 @@
     "prebrowser:build": "npm install",
     "browser:build": "tsc --project browser",
     "browser:start": "node browser/dist/index.js",
-    "healthcheck": "npx tsx scripts/healthcheck.ts"
+    "healthcheck": "npx tsx scripts/healthcheck.ts",
+    "agent:build": "cd worker && tsc",
+    "agent:dev": "tsx worker/index.ts",
+    "agent:start": "node worker/dist/index.js",
+    "agent:agent": "tsx worker/cli.ts agent",
+    "agent:reboot": "tsx worker/cli.ts reboot"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
