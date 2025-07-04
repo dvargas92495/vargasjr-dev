@@ -20,9 +20,11 @@ async function runHealthcheck(): Promise<void> {
   }
   
   if (existsSync('error.log')) {
-    const errorLogContent = readFileSync('error.log', 'utf8');
-    console.error(`Error Log: ${errorLogContent}`);
-    process.exit(2);
+    const errorLogContent = readFileSync('error.log', 'utf8').trim();
+    if (errorLogContent.length > 0) {
+      console.error(`Error Log (${errorLogContent.length} chars): ${errorLogContent}`);
+      process.exit(2);
+    }
   }
   
   console.error('No Sockets found in /run/screen/S-root.');
