@@ -7,6 +7,7 @@ on:
       - 'package.json'
       - 'browser/**'
       - 'worker/**'
+      - 'run_agent.sh'
   pull_request:
     paths:
       - 'agent/pyproject.toml'
@@ -19,6 +20,7 @@ on:
       - 'eslint.config.mjs'
       - 'package.json'
       - '.github/workflows/ci.yaml'
+      - 'run_agent.sh'
   workflow_dispatch:
 
 jobs:
