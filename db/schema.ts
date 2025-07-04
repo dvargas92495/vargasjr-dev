@@ -3,6 +3,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   uuid,
@@ -119,3 +120,14 @@ export const RoutineJobsTable = pgTable("routine_jobs", {
 });
 
 export type RoutineJob = typeof RoutineJobsTable.$inferSelect;
+
+export const JobsTable = pgTable("jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  dueDate: timestamp("due_date").notNull(),
+  priority: real("priority").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Job = typeof JobsTable.$inferSelect;
