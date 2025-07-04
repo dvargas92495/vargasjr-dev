@@ -47,50 +47,35 @@ class VargasJRInfrastructureStack extends TerraformStack {
   private createS3Resources(tags: Record<string, string>) {
     const memoryBucket = new S3Bucket(this, "MemoryBucket", {
       bucket: AWS_S3_BUCKETS.MEMORY,
-      tags,
     });
 
     new S3BucketVersioningA(this, "MemoryBucketVersioning", {
       bucket: memoryBucket.id,
       versioningConfiguration: {
-        status: "Enabled",
+        status: "Disabled",
       },
     });
 
     const inboxBucket = new S3Bucket(this, "InboxBucket", {
       bucket: AWS_S3_BUCKETS.INBOX,
-      tags,
     });
 
     new S3BucketVersioningA(this, "InboxBucketVersioning", {
       bucket: inboxBucket.id,
       versioningConfiguration: {
-        status: "Enabled",
+        status: "Disabled",
       },
     });
   }
 
   private createTerraformStateS3Bucket(tags: Record<string, string>) {
-    const stateBucket = new S3Bucket(this, "TerraformStateBucket", {
-      bucket: AWS_S3_BUCKETS.TERRAFORM_STATE,
-      tags,
-    });
-
-    new S3BucketVersioningA(this, "TerraformStateBucketVersioning", {
-      bucket: stateBucket.id,
-      versioningConfiguration: {
-        status: "Enabled",
-      },
-    });
-
-    return stateBucket;
+    return null;
   }
 
   private createSecurityGroup(tags: Record<string, string>): SecurityGroup {
     const securityGroup = new SecurityGroup(this, "SSHSecurityGroup", {
       name: "vargas-jr-ssh-access",
       description: "Security group for VargasJR agent SSH access",
-      tags,
     });
 
     new SecurityGroupRule(this, "SSHIngressRule", {
@@ -109,7 +94,6 @@ class VargasJRInfrastructureStack extends TerraformStack {
       toPort: 0,
       protocol: "-1",
       cidrBlocks: ["0.0.0.0/0"],
-      description: "All outbound traffic",
       securityGroupId: securityGroup.id,
     });
 
