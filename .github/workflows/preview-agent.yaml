@@ -11,13 +11,29 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+      - name: Check if agent artifacts are needed
+        id: check_artifacts
+        run: |
+          CHANGED_FILES=$(gh pr view ${{ github.event.number }} --json files --jq '.files[].path')
+          if echo "$CHANGED_FILES" | grep -E '^(agent/|browser/|scripts/|app/|components/|db/)'; then
+            echo "needs_agent=true" >> "$GITHUB_OUTPUT"
+            echo "Preview agent needed - found changes in agent-related paths"
+          else
+            echo "needs_agent=false" >> "$GITHUB_OUTPUT"
+            echo "Preview agent not needed - no changes in agent-related paths"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Node.js
+        if: steps.check_artifacts.outputs.needs_agent == 'true'
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
       - name: Install dependencies
+        if: steps.check_artifacts.outputs.needs_agent == 'true'
         run: npm install
       - name: Create preview agent
+        if: steps.check_artifacts.outputs.needs_agent == 'true'
         run: npm run create-agent -- pr-${{ github.event.number }}
         env:
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
