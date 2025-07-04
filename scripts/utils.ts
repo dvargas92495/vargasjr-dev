@@ -340,7 +340,6 @@ export interface HealthCheckResult {
   instanceId: string;
   status: "healthy" | "unhealthy" | "offline";
   error?: string;
-  errorType?: "retryable" | "fatal";
 }
 
 export interface HealthCheckOptions {
@@ -423,8 +422,7 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: "offline",
-        error: `Health check failed: ${ssmValidation.error}`,
-        errorType: "retryable"
+        error: `Health check failed: ${ssmValidation.error}`
       };
     }
 
@@ -471,7 +469,7 @@ export async function checkInstanceHealth(
             const outputDetails =
               outputResult.StandardOutputContent || "No output";
             
-            const exitCode = (outputResult as any).ExitCode || 1;
+            const exitCode = outputResult.ResponseCode || 1;
             const isFatalError = exitCode === 2;
             
             if (isFatalError) {
@@ -517,14 +515,11 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: hasAgentSession ? "healthy" : "unhealthy",
-        error: hasAgentSession ? undefined : "No agent screen session found",
-        errorType: hasAgentSession ? undefined : "retryable",
+        error: hasAgentSession ? undefined : "No agent screen session found"
       };
     } catch (ssmError) {
       const errorMessage =
         ssmError instanceof Error ? ssmError.message : "SSM command failed";
-      
-      const isFatalError = errorMessage.includes("exit code 2") || errorMessage.includes("Fatal error detected");
 
       if (
         errorMessage.includes("InvalidInstanceId.NotFound") ||
@@ -533,16 +528,14 @@ export async function checkInstanceHealth(
         return {
           instanceId,
           status: "offline",
-          error: "Instance not managed by Systems Manager",
-          errorType: "retryable"
+          error: "Instance not managed by Systems Manager"
         };
       }
 
       return {
         instanceId,
         status: "offline",
-        error: `SSM Command Failed: ${errorMessage}`,
-        errorType: isFatalError ? "fatal" : "retryable"
+        error: `SSM Command Failed: ${errorMessage}`
       };
     }
   } catch (error) {
@@ -552,8 +545,7 @@ export async function checkInstanceHealth(
       error:
         error instanceof Error
           ? `Check Instance Failed: ${error.message}`
-          : "Health check failed",
-      errorType: "retryable"
+          : "Health check failed"
     };
   }
 }
