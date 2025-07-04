@@ -471,10 +471,17 @@ export async function checkInstanceHealth(
             const outputDetails =
               outputResult.StandardOutputContent || "No output";
             
-            const isFatalError = errorDetails.includes("Error Log:") || outputDetails.includes("Error Log:");
+            const exitCode = (outputResult as any).ExitCode || 1;
+            const isFatalError = exitCode === 2;
+            
+            if (isFatalError) {
+              throw new Error(
+                `Fatal error detected (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
+              );
+            }
             
             throw new Error(
-              `SSM command failed: ${errorDetails}\nCommand output: ${outputDetails}${isFatalError ? '\n[FATAL_ERROR]' : ''}`
+              `SSM command failed (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
             );
           }
         } catch (outputError) {
@@ -517,8 +524,7 @@ export async function checkInstanceHealth(
       const errorMessage =
         ssmError instanceof Error ? ssmError.message : "SSM command failed";
       
-      const isFatalError = errorMessage.includes("[FATAL_ERROR]");
-      const cleanErrorMessage = errorMessage.replace('\n[FATAL_ERROR]', '');
+      const isFatalError = errorMessage.includes("exit code 2") || errorMessage.includes("Fatal error detected");
 
       if (
         errorMessage.includes("InvalidInstanceId.NotFound") ||
@@ -535,7 +541,7 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: "offline",
-        error: `SSM Command Failed: ${cleanErrorMessage}`,
+        error: `SSM Command Failed: ${errorMessage}`,
         errorType: isFatalError ? "fatal" : "retryable"
       };
     }
