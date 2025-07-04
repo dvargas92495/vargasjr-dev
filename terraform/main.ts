@@ -7,6 +7,12 @@ import { SecurityGroup } from "@cdktf/provider-aws/lib/security-group";
 import { SecurityGroupRule } from "@cdktf/provider-aws/lib/security-group-rule";
 import { SesEmailIdentity } from "@cdktf/provider-aws/lib/ses-email-identity";
 import { SesDomainIdentity } from "@cdktf/provider-aws/lib/ses-domain-identity";
+import { LambdaFunction } from "@cdktf/provider-aws/lib/lambda-function";
+import { LambdaPermission } from "@cdktf/provider-aws/lib/lambda-permission";
+import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
+import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
+import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
+import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
 import { AWS_S3_BUCKETS } from "../app/lib/constants";
 
 interface VargasJRStackConfig {
@@ -42,6 +48,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     this.createS3Resources(commonTags);
     this.createSecurityGroup(commonTags);
     this.createSESResources(commonTags);
+    this.createEmailLambdaResources(commonTags);
   }
 
   private createS3Resources(tags: Record<string, string>) {
@@ -109,6 +116,82 @@ class VargasJRInfrastructureStack extends TerraformStack {
       email: "hello@vargasjr.dev",
     });
   }
+
+  private createEmailLambdaResources(tags: Record<string, string>) {
+    const lambdaRole = new IamRole(this, "EmailLambdaRole", {
+      name: "vargas-jr-email-lambda-role",
+      assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Action: "sts:AssumeRole",
+            Effect: "Allow",
+            Principal: {
+              Service: "lambda.amazonaws.com"
+            }
+          }
+        ]
+      }),
+      tags
+    });
+
+    new IamRolePolicyAttachment(this, "EmailLambdaBasicExecution", {
+      role: lambdaRole.name,
+      policyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    });
+
+
+    const emailLambda = new LambdaFunction(this, "EmailLambdaFunction", {
+      functionName: "vargas-jr-email-processor",
+      role: lambdaRole.arn,
+      handler: "index.handler",
+      runtime: "nodejs18.x",
+      timeout: 30,
+      environment: {
+        variables: {
+          WEBHOOK_URL: this.getWebhookUrl(),
+          SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
+        }
+      },
+      filename: "./lambda-email-processor.js",
+      tags
+    });
+
+    new LambdaPermission(this, "EmailLambdaSESPermission", {
+      statementId: "AllowSESInvoke",
+      action: "lambda:InvokeFunction",
+      functionName: emailLambda.functionName,
+      principal: "ses.amazonaws.com"
+    });
+
+    const receiptRuleSet = new SesReceiptRuleSet(this, "EmailReceiptRuleSet", {
+      ruleSetName: "vargas-jr-email-rules"
+    });
+
+    new SesReceiptRule(this, "EmailReceiptRule", {
+      name: "process-incoming-email",
+      ruleSetName: receiptRuleSet.ruleSetName,
+      recipients: ["hello@vargasjr.dev"],
+      enabled: true,
+      lambdaAction: [
+        {
+          functionArn: emailLambda.arn,
+          invocationType: "Event",
+          position: 1
+        }
+      ]
+    });
+  }
+
+  private getWebhookUrl(): string {
+    const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
+    if (environment === 'production') {
+      return 'https://vargasjr.dev/api/ses/webhook';
+    } else {
+      return `https://${process.env.VERCEL_URL}/api/ses/webhook`;
+    }
+  }
+
 
 }
 
