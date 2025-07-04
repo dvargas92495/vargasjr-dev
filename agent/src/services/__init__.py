@@ -33,8 +33,24 @@ def postgres_session(expire_on_commit: bool = True):
     if not url:
         raise ValueError("POSTGRES_URL is not set")
 
-    engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
-    return Session(engine, expire_on_commit=expire_on_commit)
+    try:
+        engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
+        return Session(engine, expire_on_commit=expire_on_commit)
+    except Exception as e:
+        masked_url = url
+        if "@" in url:
+            protocol_and_user = url.split("@")[0]
+            host_and_rest = url.split("@")[1]
+            if ":" in protocol_and_user and "//" in protocol_and_user:
+                protocol_part = protocol_and_user.split("://")[0]
+                user_part = protocol_and_user.split("://")[1]
+                if ":" in user_part:
+                    user = user_part.split(":")[0]
+                    masked_url = f"{protocol_part}://{user}:***@{host_and_rest}"
+                else:
+                    masked_url = f"{protocol_part}://{user_part}:***@{host_and_rest}"
+        
+        raise Exception(f"Failed to create database engine with URL: {masked_url}") from e
 
 
 def sqlite_session():
