@@ -79,7 +79,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         if [ -d "worker" ]; then
             echo "Building and starting worker service..."
             npm run agent:build
-            screen -dmS worker-preview bash -c 'npm run agent:start 2> error.log'
+            screen -dmS agent-preview bash -c 'npm run agent:start 2> error.log'
         fi
         
 else
@@ -100,17 +100,17 @@ else
     if [ -d "worker" ]; then
         echo "Building and starting worker service..."
         npm run agent:build
-        screen -dmS worker-${VERSION//./-} bash -c 'npm run agent:start 2> error.log'
+        screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start 2> error.log'
     fi
 fi
 
 # # Useful tools
 # 
 # ## Switch to a screen session
-# screen -r worker
+# screen -r agent
 # 
 # ## Kill a screen session
-# screen -X -S worker quit
+# screen -X -S agent quit
 # 
 # ## List screen sessions
 # screen -ls
