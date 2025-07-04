@@ -33,7 +33,7 @@ def postgres_session(expire_on_commit: bool = True):
     if not url:
         raise ValueError("POSTGRES_URL is not set")
 
-    engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
+    engine = create_engine(url.replace("postgres://", "postgresql://"))
     return Session(engine, expire_on_commit=expire_on_commit)
 
 
