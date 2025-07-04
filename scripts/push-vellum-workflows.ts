@@ -264,7 +264,7 @@ class VellumWorkflowPusher {
         
         execSync(`git checkout -b ${branchName}`, { cwd: process.cwd() });
         execSync('git add agent/vellum.lock.json', { cwd: process.cwd() });
-        execSync('git commit -m "Update vellum.lock.json with new container image tag"', { cwd: process.cwd() });
+        execSync('git commit -m "Update vellum.lock.json with new workflow changes"', { cwd: process.cwd() });
         execSync(`git push origin ${branchName}`, { cwd: process.cwd() });
         
         const prTitle = "Update vellum.lock.json with new container image tag";
