@@ -36,14 +36,14 @@ def postgres_session(expire_on_commit: bool = True):
     def mask_url_password(url: str) -> str:
         """Mask password in database URL while preserving protocol and other details"""
         if "@" not in url:
-            return url
+            return f"No @ found in URL: {url}"
         
         try:
             protocol_and_auth = url.split("@")[0]  # protocol://user:password
             host_and_rest = url.split("@")[1]      # host:port/database?params
             
             if "://" not in protocol_and_auth:
-                return url
+                return f"No :// found in URL: {url}"
             
             protocol = protocol_and_auth.split("://")[0]  # protocol
             auth_part = protocol_and_auth.split("://")[1]  # user:password
@@ -62,12 +62,9 @@ def postgres_session(expire_on_commit: bool = True):
     try:
         engine = create_engine(url.replace("postgres://", "postgresql+psycopg://"))
         return Session(engine, expire_on_commit=expire_on_commit)
-    except (ModuleNotFoundError, Exception) as e:
+    except Exception as e:
         masked_url = mask_url_password(url.replace("postgres://", "postgresql+psycopg://"))
-        if isinstance(e, ModuleNotFoundError):
-            raise ModuleNotFoundError(f"Database driver not found for URL: {masked_url}. Original error: {str(e)}") from e
-        else:
-            raise Exception(f"Failed to create database session with URL: {masked_url}") from e
+        raise Exception(f"Failed to create database session with URL: {masked_url}") from e
 
 
 def sqlite_session():
