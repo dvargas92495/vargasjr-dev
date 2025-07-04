@@ -54,6 +54,14 @@ export default async function AdminLayout({
                 CRM
               </Link>
             </li>
+            <li>
+              <Link
+                href="/admin/jobs"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+              >
+                Jobs
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>
