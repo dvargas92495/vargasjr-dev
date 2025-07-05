@@ -68,7 +68,7 @@ class TerraformRunner {
         const errorOutput = error.stdout || error.stderr || error.message;
         console.log("❌ Terraform deployment failed");
         console.error(errorOutput);
-        throw error;
+        process.exit(1);
       }
       return;
     }
@@ -119,7 +119,7 @@ class TerraformRunner {
       
       const errorOutput = error.stdout || error.stderr || error.message;
       await this.handlePlanError(errorOutput);
-      throw error;
+      process.exit(1);
     }
   }
 
@@ -201,5 +201,8 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch(console.error);
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
