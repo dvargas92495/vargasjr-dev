@@ -138,7 +138,7 @@ class VellumWorkflowPusher {
           return { success: true, output: output };
         }
         
-        if (workflowName === 'weekly_accounting' && output.includes('dry_run` is only supported when updating an existing Workflow Sandbox')) {
+        if (output.includes('dry_run` is only supported when updating an existing Workflow Sandbox')) {
           const warningMessage = `⚠️  Skipping ${workflowName}: dry_run not supported for new workflows`;
           console.log(warningMessage);
           return { success: true, output: `Skipped: ${workflowName} - dry_run not supported for new workflows` };
