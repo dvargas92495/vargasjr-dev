@@ -10,7 +10,7 @@ class VellumWorkflowPusher {
   private isPreviewMode: boolean;
 
   constructor(isPreviewMode: boolean = false) {
-    this.agentDir = join(process.cwd(), "agent");
+    this.agentDir = join(process.cwd(), "vellum");
     this.isPreviewMode = isPreviewMode;
   }
 
@@ -23,12 +23,12 @@ class VellumWorkflowPusher {
     
     try {
       if (!existsSync(this.agentDir)) {
-        throw new Error("Agent directory not found. Make sure you're running this from the project root.");
+        throw new Error("Vellum directory not found. Make sure you're running this from the project root.");
       }
 
-      const workflowsDir = join(this.agentDir, "src", "workflows");
+      const workflowsDir = join(this.agentDir, "workflows");
       if (!existsSync(workflowsDir)) {
-        throw new Error("Workflows directory not found at agent/src/workflows");
+        throw new Error("Workflows directory not found at vellum/workflows");
       }
 
       const workflowDirs = this.getWorkflowDirectories(workflowsDir);
@@ -114,7 +114,7 @@ class VellumWorkflowPusher {
     
     try {
       const dryRunFlag = this.isPreviewMode ? " --dry-run" : "";
-      const command = `poetry run vellum workflows push "src.workflows.${workflowName}"${dryRunFlag}`;
+      const command = `poetry run vellum workflows push "workflows.${workflowName}"${dryRunFlag}`;
       
       const result = execSync(command, {
         cwd: this.agentDir,
@@ -192,7 +192,7 @@ class VellumWorkflowPusher {
       const newTag = this.incrementPatchVersion(currentTag);
       console.log(`📦 Pushing new container image with tag: ${newTag}`);
       
-      const dockerfilePath = join(this.agentDir, "src", "workflows", "Dockerfile");
+      const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
       const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
       
       execSync(pushImageCommand, {
@@ -251,7 +251,7 @@ class VellumWorkflowPusher {
 
   private async handleLockFileChanges(): Promise<void> {
     try {
-      const gitStatus = execSync('git status --porcelain agent/vellum.lock.json', { 
+      const gitStatus = execSync('git status --porcelain vellum/vellum.lock.json', { 
         encoding: 'utf8',
         cwd: process.cwd()
       }).trim();
@@ -263,7 +263,7 @@ class VellumWorkflowPusher {
         const branchName = `devin/${timestamp}-update-vellum-lock-file`;
         
         execSync(`git checkout -b ${branchName}`, { cwd: process.cwd() });
-        execSync('git add agent/vellum.lock.json', { cwd: process.cwd() });
+        execSync('git add vellum/vellum.lock.json', { cwd: process.cwd() });
         execSync('git commit -m "Update vellum.lock.json with new workflow changes"', { cwd: process.cwd() });
         execSync(`git push origin ${branchName}`, { cwd: process.cwd() });
         

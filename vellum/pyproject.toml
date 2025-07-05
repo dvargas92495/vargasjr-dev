@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "vargasjr-dev-agent"
+version = "0.0.68"
+description = "Vargas Jr Dev Agent"
+authors = []
+keywords = []
+license = "MIT"
+classifiers = []
+packages = [
+    { include = "models" },
+    { include = "services" },
+    { include = "workflows" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+vellum-ai = "^0.14.81"
+sqlmodel = "^0.0.22"
+psycopg = {extras = ["binary"], version = "^3.2.3"}
+boto3 = "^1.35.91"
+google-api-python-client = "^2.157.0"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.1"
+runwayml = "^2.2.1"
+tweepy = "^4.14.0"
+
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "1.11.0"
+python-dotenv = "^1.0.1"
+ipdb = "^0.13.13"
+types-requests = "^2.32.0.20241016"
+google-api-python-client-stubs = "^1.28.0"
+requests-mock = "^1.12.1"
+
+[tool.mypy]
+plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy", "sqlalchemy.ext.mypy.plugin"]

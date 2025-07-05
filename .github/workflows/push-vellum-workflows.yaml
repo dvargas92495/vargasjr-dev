@@ -5,16 +5,16 @@ on:
     branches:
       - main
     paths:
-      - 'agent/src/workflows/**'
+      - 'vellum/workflows/**'
       - '.github/workflows/push-vellum-workflows.yaml'
       - 'scripts/push-vellum-workflows.ts'
-      - 'agent/vellum.lock.json'
+      - 'vellum/vellum.lock.json'
   pull_request:
     paths:
-      - 'agent/src/workflows/**'
+      - 'vellum/workflows/**'
       - '.github/workflows/push-vellum-workflows.yaml'
       - 'scripts/push-vellum-workflows.ts'
-      - 'agent/vellum.lock.json'
+      - 'vellum/vellum.lock.json'
 
 permissions:
   contents: read
@@ -46,7 +46,7 @@ jobs:
         
       - name: Install dependencies
         run: poetry install
-        working-directory: agent
+        working-directory: vellum
         
       - name: Preview workflows
         run: npm run push-vellum-workflows -- --preview
@@ -78,7 +78,7 @@ jobs:
         
       - name: Install dependencies
         run: poetry install
-        working-directory: agent
+        working-directory: vellum
         
       - name: Push workflows to Vellum
         run: npm run push-vellum-workflows
