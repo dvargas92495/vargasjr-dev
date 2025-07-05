@@ -1,42 +1,5 @@
 # Terraform Infrastructure Setup
 
-## Required AWS IAM Permissions
-
-The AWS user/role used for terraform deployment must have the following IAM permissions:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "iam:CreateRole",
-        "iam:DeleteRole",
-        "iam:GetRole",
-        "iam:AttachRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:ListAttachedRolePolicies",
-        "s3:*",
-        "ses:*",
-        "lambda:*",
-        "ec2:*"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-## Current IAM Permission Issue
-
-The deployment is failing with the following error:
-```
-Error: creating IAM Role (vargas-jr-email-lambda-role): operation error IAM: CreateRole, https response error StatusCode: 403, RequestID: 6b5d901c-e2e3-40f1-b754-1ec6a885563a, api error AccessDenied: User: arn:aws:iam::009994482511:user/vargas-jr-admin is not authorized to perform: iam:CreateRole on resource: arn:aws:iam::009994482511:role/vargas-jr-email-lambda-role because no identity-based policy allows the iam:CreateRole action
-```
-
-**Solution**: The AWS user `vargas-jr-admin` needs to be granted the `iam:CreateRole` permission in the AWS console or via an IAM policy update.
-
 ## Backend Configuration
 
 The terraform state is stored in S3 bucket `vargas-jr-terraform-state` with a single state file:
