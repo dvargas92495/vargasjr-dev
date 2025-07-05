@@ -5,7 +5,7 @@ import { join } from 'path';
 
 class VersionSync {
   private packageJsonPath = join(process.cwd(), 'package.json');
-  private pyprojectTomlPath = join(process.cwd(), 'agent', 'pyproject.toml');
+  private pyprojectTomlPath = join(process.cwd(), 'vellum', 'pyproject.toml');
 
   async run(): Promise<void> {
     console.log('🔄 Syncing version from package.json to pyproject.toml...');

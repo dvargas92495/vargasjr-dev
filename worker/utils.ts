@@ -4,7 +4,7 @@ import { createWriteStream } from 'fs';
 
 export function getVersion(): string {
   try {
-    const pyprojectPath = path.join(__dirname, '../agent/pyproject.toml');
+    const pyprojectPath = path.join(__dirname, '../vellum/pyproject.toml');
     const content = fs.readFileSync(pyprojectPath, 'utf-8');
     
     for (const line of content.split('\n')) {
