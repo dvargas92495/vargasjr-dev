@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { execSync } from "child_process";
-import { readdirSync, statSync, existsSync } from "fs";
+import { readdirSync, statSync, existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { postGitHubComment } from "./utils";
 
@@ -84,6 +84,8 @@ class VellumWorkflowPusher {
         await postGitHubComment(commentContent, "vargasjr-dev-vellum-script", "Posted Vellum workflow preview comment to PR");
       } else {
         console.log("✅ All workflows pushed successfully!");
+        
+        await this.handleLockFileChanges();
       }
 
     } catch (error) {
@@ -143,6 +145,15 @@ class VellumWorkflowPusher {
         }
       }
       
+      const errorOutput = (error.stdout || error.stderr || error.message || '').toString();
+      if (errorOutput.includes('SDK Version') && errorOutput.includes('does not match SDK version') && errorOutput.includes('within the container image')) {
+        console.log(`🔄 Detected SDK version mismatch for ${workflowName}, attempting to push new image...`);
+        const retryResult = await this.handleSdkVersionMismatch(workflowName, errorOutput);
+        if (retryResult.success) {
+          return retryResult;
+        }
+      }
+      
       const errorMessage = `Failed to ${this.isPreviewMode ? 'preview' : 'push'} workflow ${workflowName}: ${error}`;
       console.error(`❌ ${errorMessage}`);
       return { success: false, error: errorMessage };
@@ -165,6 +176,114 @@ class VellumWorkflowPusher {
       console.log("=".repeat(50));
     } else {
       console.log("\n⚠️  No vellum.lock.json file found");
+    }
+  }
+
+  private async handleSdkVersionMismatch(workflowName: string, errorOutput: string): Promise<{success: boolean, error?: string, output?: string}> {
+    try {
+      const lockFilePath = join(this.agentDir, "vellum.lock.json");
+      if (!existsSync(lockFilePath)) {
+        throw new Error("vellum.lock.json not found");
+      }
+      
+      const lockFileContent = JSON.parse(readFileSync(lockFilePath, 'utf8'));
+      const currentTag = lockFileContent.workflows[0]?.container_image_tag || "1.0.0";
+      
+      const newTag = this.incrementPatchVersion(currentTag);
+      console.log(`📦 Pushing new container image with tag: ${newTag}`);
+      
+      const dockerfilePath = join(this.agentDir, "src", "workflows", "Dockerfile");
+      const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
+      
+      execSync(pushImageCommand, {
+        cwd: this.agentDir,
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          VELLUM_API_KEY: process.env.VELLUM_API_KEY
+        }
+      });
+      
+      console.log(`✅ Successfully pushed container image: vargasjr:${newTag}`);
+      
+      this.updateLockFileTag(lockFileContent, newTag);
+      writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
+      console.log(`📝 Updated vellum.lock.json with new tag: ${newTag}`);
+      
+      console.log(`🔄 Retrying workflow push for: ${workflowName}`);
+      const retryResult = await this.pushWorkflow(workflowName);
+      
+      if (retryResult.success) {
+        console.log(`✅ Successfully pushed workflow after image update: ${workflowName}`);
+      }
+      
+      return retryResult;
+      
+    } catch (error: any) {
+      const errorMessage = `Failed to handle SDK version mismatch for ${workflowName}: ${error}`;
+      console.error(`❌ ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    }
+  }
+
+  private incrementPatchVersion(version: string): string {
+    const parts = version.split('.');
+    if (parts.length !== 3) {
+      throw new Error(`Invalid version format: ${version}`);
+    }
+    
+    const major = parseInt(parts[0]);
+    const minor = parseInt(parts[1]);
+    const patch = parseInt(parts[2]) + 1;
+    
+    return `${major}.${minor}.${patch}`;
+  }
+
+  private updateLockFileTag(lockFileContent: any, newTag: string): void {
+    if (lockFileContent.workflows && Array.isArray(lockFileContent.workflows)) {
+      lockFileContent.workflows.forEach((workflow: any) => {
+        if (workflow.container_image_name === "vargasjr") {
+          workflow.container_image_tag = newTag;
+        }
+      });
+    }
+  }
+
+  private async handleLockFileChanges(): Promise<void> {
+    try {
+      const gitStatus = execSync('git status --porcelain agent/vellum.lock.json', { 
+        encoding: 'utf8',
+        cwd: process.cwd()
+      }).trim();
+      
+      if (gitStatus) {
+        console.log("🔍 Detected changes in vellum.lock.json, creating PR...");
+        
+        const timestamp = Math.floor(Date.now() / 1000);
+        const branchName = `devin/${timestamp}-update-vellum-lock-file`;
+        
+        execSync(`git checkout -b ${branchName}`, { cwd: process.cwd() });
+        execSync('git add agent/vellum.lock.json', { cwd: process.cwd() });
+        execSync('git commit -m "Update vellum.lock.json with new workflow changes"', { cwd: process.cwd() });
+        execSync(`git push origin ${branchName}`, { cwd: process.cwd() });
+        
+        const prTitle = "Update vellum.lock.json with new workflow changes";
+        const prBody = "This PR updates the vellum.lock.json file with new workflow changes to resolve SDK version mismatches.";
+        
+        execSync(`gh pr create --title "${prTitle}" --body "${prBody}" --head ${branchName} --base main`, {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            GITHUB_TOKEN: process.env.GITHUB_TOKEN
+          }
+        });
+        
+        console.log(`✅ Created PR for lock file changes on branch: ${branchName}`);
+      } else {
+        console.log("ℹ️  No changes detected in vellum.lock.json");
+      }
+    } catch (error) {
+      console.error(`⚠️  Failed to handle lock file changes: ${error}`);
     }
   }
 
