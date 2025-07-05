@@ -31,6 +31,10 @@ class VellumWorkflowPusher {
         throw new Error("Workflows directory not found at agent/src/workflows");
       }
 
+      if (!this.isPreviewMode) {
+        await this.checkAndUpdateSdkVersionIfNeeded();
+      }
+
       const workflowDirs = this.getWorkflowDirectories(workflowsDir);
       
       if (workflowDirs.length === 0) {
@@ -181,6 +185,18 @@ class VellumWorkflowPusher {
 
   private async handleSdkVersionMismatch(workflowName: string, errorOutput: string): Promise<{success: boolean, error?: string, output?: string}> {
     try {
+      const versionInfo = this.extractSdkVersionsFromError(errorOutput);
+      if (versionInfo) {
+        console.log(`🔍 SDK Version Analysis:`);
+        console.log(`   Expected (from request): ${versionInfo.expectedVersion}`);
+        console.log(`   Current (in container): ${versionInfo.containerVersion}`);
+        
+        if (!this.shouldUpdateContainer(versionInfo.expectedVersion, versionInfo.containerVersion)) {
+          console.log(`⚠️  Skipping container update - version difference doesn't warrant rebuild`);
+          return { success: false, error: `SDK version mismatch: expected ${versionInfo.expectedVersion}, container has ${versionInfo.containerVersion}` };
+        }
+      }
+      
       const lockFilePath = join(this.agentDir, "vellum.lock.json");
       if (!existsSync(lockFilePath)) {
         throw new Error("vellum.lock.json not found");
@@ -246,6 +262,113 @@ class VellumWorkflowPusher {
           workflow.container_image_tag = newTag;
         }
       });
+    }
+  }
+
+  private async checkAndUpdateSdkVersionIfNeeded(): Promise<void> {
+    try {
+      console.log("🔍 Checking SDK version compatibility...");
+      
+      const pyprojectPath = join(this.agentDir, "pyproject.toml");
+      if (!existsSync(pyprojectPath)) {
+        console.log("⚠️  pyproject.toml not found, skipping SDK version check");
+        return;
+      }
+      
+      const pyprojectContent = readFileSync(pyprojectPath, 'utf8');
+      const vellumVersionMatch = pyprojectContent.match(/vellum-ai\s*=\s*"([^"]+)"/);
+      
+      if (!vellumVersionMatch) {
+        console.log("⚠️  Could not find vellum-ai version in pyproject.toml, skipping SDK version check");
+        return;
+      }
+      
+      const vellumVersionSpec = vellumVersionMatch[1];
+      console.log(`📦 Found vellum-ai version spec: ${vellumVersionSpec}`);
+      
+      const versionMatch = vellumVersionSpec.match(/[\d.]+/);
+      if (!versionMatch) {
+        console.log("⚠️  Could not parse vellum-ai version, skipping SDK version check");
+        return;
+      }
+      
+      const expectedSdkVersion = versionMatch[0];
+      console.log(`🎯 Expected SDK version: ${expectedSdkVersion}`);
+      
+      const lockFilePath = join(this.agentDir, "vellum.lock.json");
+      if (!existsSync(lockFilePath)) {
+        console.log("⚠️  vellum.lock.json not found, will be created during first workflow push");
+        return;
+      }
+      
+      const lockFileContent = JSON.parse(readFileSync(lockFilePath, 'utf8'));
+      const currentTag = lockFileContent.workflows[0]?.container_image_tag || "1.0.0";
+      console.log(`🏷️  Current container image tag: ${currentTag}`);
+      
+      const containerUpdateNeeded = await this.checkIfContainerUpdateNeeded(expectedSdkVersion, currentTag);
+      if (containerUpdateNeeded) {
+        console.log(`⚠️  Container image may need updating due to SDK version change`);
+        console.log(`   Expected SDK: ${expectedSdkVersion}, Current tag: ${currentTag}`);
+        console.log(`   Container will be rebuilt automatically if workflow push fails`);
+      } else {
+        console.log(`✅ Container image appears compatible with expected SDK version`);
+      }
+      
+    } catch (error) {
+      console.log(`⚠️  SDK version check failed: ${error}`);
+    }
+  }
+
+  private extractSdkVersionsFromError(errorOutput: string): { expectedVersion: string; containerVersion: string } | null {
+    const sdkVersionPattern = /SDK Version '([^']+)' from request does not match SDK version '([^']+)' within the container image/;
+    const match = errorOutput.match(sdkVersionPattern);
+    
+    if (match) {
+      return {
+        expectedVersion: match[1],
+        containerVersion: match[2]
+      };
+    }
+    
+    return null;
+  }
+
+  private shouldUpdateContainer(expectedVersion: string, containerVersion: string): boolean {
+    if (expectedVersion !== containerVersion) {
+      console.log(`🔄 Container update needed: ${containerVersion} → ${expectedVersion}`);
+      return true;
+    }
+    
+    console.log(`✅ SDK versions match: ${expectedVersion}`);
+    return false;
+  }
+
+  private async checkIfContainerUpdateNeeded(expectedSdkVersion: string, currentTag: string): Promise<boolean> {
+    try {
+      const pyprojectPath = join(this.agentDir, "pyproject.toml");
+      const gitLogCommand = `git log --oneline -5 --follow -- ${pyprojectPath}`;
+      
+      try {
+        const gitLog = execSync(gitLogCommand, {
+          cwd: process.cwd(),
+          encoding: 'utf8',
+          stdio: 'pipe'
+        });
+        
+        const recentCommits = gitLog.trim().split('\n').length;
+        if (recentCommits > 0) {
+          console.log(`📝 Found ${recentCommits} recent commits to pyproject.toml`);
+          return true;
+        }
+      } catch (gitError) {
+        console.log(`⚠️  Could not check git history: ${gitError}`);
+      }
+      
+      return false;
+      
+    } catch (error) {
+      console.log(`⚠️  Error checking container update need: ${error}`);
+      return false;
     }
   }
 
