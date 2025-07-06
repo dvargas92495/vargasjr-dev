@@ -2,7 +2,7 @@
 
 ## Version Management
 
-### Agent Directory Changes
+### Vellum Directory Changes
 Always bump the patch version in `vellum/pyproject.toml` whenever making changes in the `/vellum` directory. This ensures proper versioning for agent releases.
 
 Example:
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-### Agent (Python)
+### Vellum Workflows (Python)
 ```bash
 cd vellum
 poetry install
