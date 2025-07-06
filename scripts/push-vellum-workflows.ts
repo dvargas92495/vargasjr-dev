@@ -130,27 +130,12 @@ class VellumWorkflowPusher {
       console.log(successMessage);
       return { success: true, output: this.isPreviewMode ? result : undefined };
     } catch (error: any) {
-      if (this.isPreviewMode) {
-        const output = (error.stdout || error.stderr || '').toString();
-        if (output.includes('# Workflow Push Report') && output.includes('## Errors') && output.includes('No errors found')) {
-          const successMessage = `✅ Successfully previewed: ${workflowName}`;
-          console.log(successMessage);
-          return { success: true, output: output };
-        }
-        
-        if (output.includes('dry_run` is only supported when updating an existing Workflow Sandbox')) {
-          const warningMessage = `⚠️  Skipping ${workflowName}: dry_run not supported for new workflows`;
-          console.log(warningMessage);
-          return { success: true, output: `Skipped: ${workflowName} - dry_run not supported for new workflows` };
-        }
-      }
-      
       const errorOutput = (error.stdout || error.stderr || error.message || '').toString();
+      console.error(`SDK Version: ${errorOutput.includes('SDK Version')}`);
+      console.error(`does not match SDK version: ${errorOutput.includes('does not match SDK version')}`);
+      console.error(`within the container image: ${errorOutput.includes('within the container image')}`);
       if (errorOutput.includes('SDK Version') && errorOutput.includes('does not match SDK version') && errorOutput.includes('within the container image')) {
         console.log(`🔄 Detected SDK version mismatch for ${workflowName}, attempting to push new image...`);
-        console.error(`SDK Version: ${errorOutput.includes('SDK Version')}`);
-        console.error(`does not match SDK version: ${errorOutput.includes('does not match SDK version')}`);
-        console.error(`within the container image: ${errorOutput.includes('within the container image')}`);
         const retryResult = await this.handleSdkVersionMismatch(workflowName, errorOutput);
         if (retryResult.success) {
           return retryResult;
