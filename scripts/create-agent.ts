@@ -367,15 +367,17 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
+      const keyPath = `${tmpdir()}/${keyPairName}.pem`;
+
       for (const commandObj of setupCommands) {
         await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
       }
 
       console.log("Copying .env file to instance...");
-      await this.executeSSMFileTransfer(instanceDetails.instanceId, '/tmp/agent.env', '~/.env', envContent);
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
 
       console.log("Copying run_agent.sh script to instance...");
-      await this.executeSSMFileTransfer(instanceDetails.instanceId, './scripts/run_agent.sh', '~/run_agent.sh');
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './scripts/run_agent.sh', '~/run_agent.sh');
 
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
@@ -494,62 +496,47 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async executeSSMFileTransfer(instanceId: string, localPath: string, remotePath: string, fileContent?: string): Promise<void> {
+  private async executeSCPCommand(keyPath: string, publicDns: string, localPath: string, remotePath: string): Promise<void> {
     const maxAttempts = 3;
     let attempts = 0;
-    const ssm = new SSM({ region: "us-east-1" });
-
-    const content = fileContent || require('fs').readFileSync(localPath, 'utf8');
-    
-    const writeCommand = `cat > ${remotePath} << 'EOF'\n${content}\nEOF`;
 
     while (attempts < maxAttempts) {
       try {
-        const commandResult = await ssm.sendCommand({
-          InstanceIds: [instanceId],
-          DocumentName: "AWS-RunShellScript",
-          Parameters: {
-            commands: [writeCommand],
-          },
-          TimeoutSeconds: 60,
+        const result = execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o UserKnownHostsFile=/dev/null ${localPath} ubuntu@${publicDns}:${remotePath}`, {
+          stdio: 'pipe',
+          encoding: 'utf8'
         });
-
-        const commandId = commandResult.Command?.CommandId;
-        if (!commandId) {
-          throw new Error("Failed to get command ID from SSM");
-        }
-
-        let pollAttempts = 0;
-        const maxPollAttempts = 12;
         
-        while (pollAttempts < maxPollAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          
-          const outputResult = await ssm.getCommandInvocation({
-            CommandId: commandId,
-            InstanceId: instanceId,
+        if (result) {
+          result.toString().split('\n').forEach(line => {
+            if (line.trim()) {
+              console.log(`[SCP] ${line}`);
+            }
           });
-
-          if (outputResult.Status === "Success") {
-            console.log(`[SSM] File transferred: ${localPath} -> ${remotePath}`);
-            return;
-          } else if (outputResult.Status === "Failed") {
-            const errorDetails = outputResult.StandardErrorContent || "No error details available";
-            throw new Error(`SSM file transfer failed: ${errorDetails}`);
-          }
-          
-          pollAttempts++;
+        }
+        return;
+      } catch (error: any) {
+        if (error.stdout) {
+          error.stdout.toString().split('\n').forEach((line: string) => {
+            if (line.trim()) {
+              console.log(`[SCP] ${line}`);
+            }
+          });
+        }
+        if (error.stderr) {
+          error.stderr.toString().split('\n').forEach((line: string) => {
+            if (line.trim()) {
+              console.error(`[SCP] ${line}`);
+            }
+          });
         }
         
-        throw new Error(`SSM file transfer timed out`);
-      } catch (error: any) {
         attempts++;
         if (attempts >= maxAttempts) {
-          console.error(`❌ SSM file transfer failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
+          console.error(`❌ SCP command failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
           throw error;
         }
-        console.log(`[SSM] File transfer failed, retrying... (${attempts}/${maxAttempts})`);
-        console.error(`Error: ${error.message}`);
+        console.log(`[SCP] SCP command failed, retrying... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
