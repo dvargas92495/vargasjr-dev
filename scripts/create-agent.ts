@@ -1,10 +1,11 @@
 #!/usr/bin/env npx tsx
 
 import { EC2 } from "@aws-sdk/client-ec2";
+import { SSM } from "@aws-sdk/client-ssm";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
 
 interface AgentConfig {
   name: string;
@@ -108,7 +109,7 @@ class VargasJRAgentCreator {
 
       const totalDuration = Date.now() - overallStartTime;
       
-      console.log(`✅ Agent ${agentName} infrastructure and SSH setup completed successfully!`);
+      console.log(`✅ Agent ${agentName} infrastructure and SSM setup completed successfully!`);
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
       
@@ -323,10 +324,10 @@ class VargasJRAgentCreator {
   private async setupInstance(instanceDetails: any, keyPairName: string): Promise<void> {
     console.log(`Basic setup for Vargas JR agent instance: ${instanceDetails.instanceId}`);
     console.log(`Instance available at: ${instanceDetails.publicDns}`);
-    console.log(`SSH key available at: ${tmpdir()}/${keyPairName}.pem`);
+    console.log(`Key pair created: ${keyPairName}`);
 
 
-    await this.waitForSSHReady(instanceDetails.publicDns, keyPairName);
+    await this.waitForSSMReady(instanceDetails.instanceId);
 
     const envVars = this.getEnvironmentVariables();
 
@@ -366,22 +367,20 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'PROFILE', command: 'source ~/.profile' }
       ];
 
-      const keyPath = `${tmpdir()}/${keyPairName}.pem`;
-
       for (const commandObj of setupCommands) {
-        await this.executeSSHCommand(keyPath, instanceDetails.publicDns, commandObj);
+        await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
       }
 
       console.log("Copying .env file to instance...");
-      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
+      await this.executeSSMFileTransfer(instanceDetails.instanceId, '/tmp/agent.env', '~/.env', envContent);
 
       console.log("Copying run_agent.sh script to instance...");
-      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './scripts/run_agent.sh', '~/run_agent.sh');
+      await this.executeSSMFileTransfer(instanceDetails.instanceId, './scripts/run_agent.sh', '~/run_agent.sh');
 
       console.log("Making run_agent.sh executable and running it...");
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
-      await this.executeSSHCommand(keyPath, instanceDetails.publicDns, { tag: 'DEBUG', command: 'ls -la ~/vargasjr_dev_agent-*' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'DEBUG', command: 'ls -la ~/vargasjr_dev_agent-*' });
 
       console.log("✅ Instance setup complete!");
 
@@ -397,122 +396,160 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async waitForSSHReady(publicDns: string, keyPairName: string): Promise<void> {
-    const keyPath = `${tmpdir()}/${keyPairName}.pem`;
+  private async waitForSSMReady(instanceId: string): Promise<void> {
     const maxAttempts = 40;
     let attempts = 0;
 
-    const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "exit 0"`;
-    console.log(`Attempting SSH connection with command: ${sshCommand}`);
+    console.log(`Waiting for SSM agent to be ready on instance: ${instanceId}`);
 
     while (attempts < maxAttempts) {
       try {
-        execSync(sshCommand, {
-          stdio: 'pipe'
-        });
-        console.log("✅ SSH is ready");
-        return;
+        const ssmValidation = await validateSSMReadiness(instanceId);
+        if (ssmValidation.ready) {
+          console.log("✅ SSM is ready");
+          return;
+        }
+        
+        attempts++;
+        const waitTime = attempts < 10 ? 10 : 15;
+        console.log(`SSM not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        console.log(`SSM error: ${ssmValidation.error}`);
+        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       } catch (error) {
         attempts++;
         const waitTime = attempts < 10 ? 10 : 15;
-        console.log(`SSH not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
-        console.log(`SSH error: ${this.formatError(error)}`);
+        console.log(`SSM validation failed, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        console.log(`SSM error: ${this.formatError(error)}`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       }
     }
 
-    throw new Error("SSH failed to become ready within timeout (10 minutes). Consider updating to Amazon Linux 2023 AMI for faster boot times.");
+    throw new Error("SSM failed to become ready within timeout (10 minutes). Check SSM agent installation and IAM permissions.");
   }
 
-  private async executeSSHCommand(keyPath: string, publicDns: string, commandObj: { tag: string; command: string }): Promise<void> {
+  private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }): Promise<void> {
     console.log(`[${commandObj.tag}] Executing: ${commandObj.command}`);
 
     const maxAttempts = 3;
     let attempts = 0;
+    const ssm = new SSM({ region: "us-east-1" });
 
     while (attempts < maxAttempts) {
       try {
-        const result = execSync(`ssh -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=60 -o UserKnownHostsFile=/dev/null ubuntu@${publicDns} "${commandObj.command}"`, {
-          stdio: 'pipe',
-          encoding: 'utf8'
+        const commandResult = await ssm.sendCommand({
+          InstanceIds: [instanceId],
+          DocumentName: "AWS-RunShellScript",
+          Parameters: {
+            commands: [commandObj.command],
+          },
+          TimeoutSeconds: 300,
         });
-        
-        if (result) {
-          result.toString().split('\n').forEach(line => {
-            if (line.trim()) {
-              console.log(`[${commandObj.tag}] ${line}`);
-            }
-          });
+
+        const commandId = commandResult.Command?.CommandId;
+        if (!commandId) {
+          throw new Error("Failed to get command ID from SSM");
         }
-        return;
+
+        let pollAttempts = 0;
+        const maxPollAttempts = 60;
+        
+        while (pollAttempts < maxPollAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          const outputResult = await ssm.getCommandInvocation({
+            CommandId: commandId,
+            InstanceId: instanceId,
+          });
+
+          if (outputResult.Status === "Success") {
+            const output = outputResult.StandardOutputContent || "";
+            if (output.trim()) {
+              output.split('\n').forEach(line => {
+                if (line.trim()) {
+                  console.log(`[${commandObj.tag}] ${line}`);
+                }
+              });
+            }
+            return;
+          } else if (outputResult.Status === "Failed") {
+            const errorDetails = outputResult.StandardErrorContent || "No error details available";
+            const outputDetails = outputResult.StandardOutputContent || "No output";
+            throw new Error(`SSM command failed: ${errorDetails}\nCommand output: ${outputDetails}`);
+          }
+          
+          pollAttempts++;
+        }
+        
+        throw new Error(`SSM command timed out after ${maxPollAttempts * 5} seconds`);
       } catch (error: any) {
-        if (error.stdout) {
-          error.stdout.toString().split('\n').forEach((line: string) => {
-            if (line.trim()) {
-              console.log(`[${commandObj.tag}] ${line}`);
-            }
-          });
-        }
-        if (error.stderr) {
-          error.stderr.toString().split('\n').forEach((line: string) => {
-            if (line.trim()) {
-              console.error(`[${commandObj.tag}] ${line}`);
-            }
-          });
-        }
-        
         attempts++;
         if (attempts >= maxAttempts) {
-          console.error(`❌ [${commandObj.tag}] SSH command failed after ${maxAttempts} attempts: ${commandObj.command}`);
+          console.error(`❌ [${commandObj.tag}] SSM command failed after ${maxAttempts} attempts: ${commandObj.command}`);
           throw error;
         }
-        console.log(`[${commandObj.tag}] SSH command failed, retrying... (${attempts}/${maxAttempts})`);
+        console.log(`[${commandObj.tag}] SSM command failed, retrying... (${attempts}/${maxAttempts})`);
+        console.error(`Error: ${error.message}`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
   }
 
-  private async executeSCPCommand(keyPath: string, publicDns: string, localPath: string, remotePath: string): Promise<void> {
+  private async executeSSMFileTransfer(instanceId: string, localPath: string, remotePath: string, fileContent?: string): Promise<void> {
     const maxAttempts = 3;
     let attempts = 0;
+    const ssm = new SSM({ region: "us-east-1" });
+
+    const content = fileContent || require('fs').readFileSync(localPath, 'utf8');
+    
+    const writeCommand = `cat > ${remotePath} << 'EOF'\n${content}\nEOF`;
 
     while (attempts < maxAttempts) {
       try {
-        const result = execSync(`scp -i ${keyPath} -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o UserKnownHostsFile=/dev/null ${localPath} ubuntu@${publicDns}:${remotePath}`, {
-          stdio: 'pipe',
-          encoding: 'utf8'
+        const commandResult = await ssm.sendCommand({
+          InstanceIds: [instanceId],
+          DocumentName: "AWS-RunShellScript",
+          Parameters: {
+            commands: [writeCommand],
+          },
+          TimeoutSeconds: 60,
         });
-        
-        if (result) {
-          result.toString().split('\n').forEach(line => {
-            if (line.trim()) {
-              console.log(`[SCP] ${line}`);
-            }
-          });
+
+        const commandId = commandResult.Command?.CommandId;
+        if (!commandId) {
+          throw new Error("Failed to get command ID from SSM");
         }
-        return;
+
+        let pollAttempts = 0;
+        const maxPollAttempts = 12;
+        
+        while (pollAttempts < maxPollAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          const outputResult = await ssm.getCommandInvocation({
+            CommandId: commandId,
+            InstanceId: instanceId,
+          });
+
+          if (outputResult.Status === "Success") {
+            console.log(`[SSM] File transferred: ${localPath} -> ${remotePath}`);
+            return;
+          } else if (outputResult.Status === "Failed") {
+            const errorDetails = outputResult.StandardErrorContent || "No error details available";
+            throw new Error(`SSM file transfer failed: ${errorDetails}`);
+          }
+          
+          pollAttempts++;
+        }
+        
+        throw new Error(`SSM file transfer timed out`);
       } catch (error: any) {
-        if (error.stdout) {
-          error.stdout.toString().split('\n').forEach((line: string) => {
-            if (line.trim()) {
-              console.log(`[SCP] ${line}`);
-            }
-          });
-        }
-        if (error.stderr) {
-          error.stderr.toString().split('\n').forEach((line: string) => {
-            if (line.trim()) {
-              console.error(`[SCP] ${line}`);
-            }
-          });
-        }
-        
         attempts++;
         if (attempts >= maxAttempts) {
-          console.error(`❌ SCP command failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
+          console.error(`❌ SSM file transfer failed after ${maxAttempts} attempts: ${localPath} -> ${remotePath}`);
           throw error;
         }
-        console.log(`[SCP] SCP command failed, retrying... (${attempts}/${maxAttempts})`);
+        console.log(`[SSM] File transfer failed, retrying... (${attempts}/${maxAttempts})`);
+        console.error(`Error: ${error.message}`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
