@@ -364,7 +364,7 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
         { tag: 'NODEJS', command: 'curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -' },
         { tag: 'NODE_INSTALL', command: 'sudo apt-get install -y nodejs' },
-        { tag: 'PROFILE', command: 'source ~/.profile' }
+        { tag: 'PROFILE', command: '. ~/.profile' }
       ];
 
       for (const commandObj of setupCommands) {
