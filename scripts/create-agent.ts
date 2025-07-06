@@ -380,9 +380,9 @@ AGENT_ENVIRONMENT=production`;
       await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './scripts/run_agent.sh', '~/run_agent.sh');
 
       console.log("Making run_agent.sh executable and running it...");
-      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x ~/run_agent.sh' });
-      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd ~ && ./run_agent.sh' });
-      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'DEBUG', command: 'ls -la ~/vargasjr_dev_agent-*' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x /home/ubuntu/run_agent.sh' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd /home/ubuntu && ./run_agent.sh' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'DEBUG', command: 'ls -la /home/ubuntu/vargasjr_dev_agent-*' });
 
       console.log("✅ Instance setup complete!");
 
