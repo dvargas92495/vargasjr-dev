@@ -357,29 +357,45 @@ export async function validateSSMReadiness(
   instanceId: string,
   region: string = "us-east-1"
 ): Promise<SSMReadinessResult> {
+  console.log(`[SSM Validation] Starting validation for instance ${instanceId} in region ${region}`);
+  const validationStartTime = Date.now();
+  
   const ec2 = new EC2({ region });
   const ssm = new SSM({ region });
 
   try {
+    console.log(`[SSM Validation] Checking EC2 instance state...`);
     const instanceResult = await ec2.describeInstances({
       InstanceIds: [instanceId],
     });
     const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
 
-    if (!instance || instance.State?.Name !== "running") {
+    if (!instance) {
+      console.error(`[SSM Validation] Instance ${instanceId} not found`);
       return {
         ready: false,
-        error: `Instance is ${
-          instance?.State?.Name || "not found"
-        }, must be running for SSM`,
+        error: "Instance not found",
       };
     }
 
+    const instanceState = instance.State?.Name;
+    console.log(`[SSM Validation] Instance state: ${instanceState}`);
+    
+    if (instanceState !== "running") {
+      console.error(`[SSM Validation] Instance is ${instanceState}, must be running for SSM`);
+      return {
+        ready: false,
+        error: `Instance is ${instanceState}, must be running for SSM`,
+      };
+    }
+
+    console.log(`[SSM Validation] Checking SSM registration...`);
     const ssmInstances = await ssm.describeInstanceInformation({
       Filters: [{ Key: "InstanceIds", Values: [instanceId] }],
     });
 
     if (!ssmInstances.InstanceInformationList?.length) {
+      console.error(`[SSM Validation] Instance ${instanceId} not registered with Systems Manager`);
       return {
         ready: false,
         error: "Instance not registered with Systems Manager",
@@ -387,20 +403,46 @@ export async function validateSSMReadiness(
     }
 
     const ssmInstance = ssmInstances.InstanceInformationList[0];
+    const pingStatus = ssmInstance.PingStatus;
+    const lastPingDateTime = ssmInstance.LastPingDateTime;
+    const platformType = ssmInstance.PlatformType;
+    const agentVersion = ssmInstance.AgentVersion;
+    
+    console.log(`[SSM Validation] SSM Instance Details:`);
+    console.log(`  - Ping Status: ${pingStatus}`);
+    console.log(`  - Last Ping: ${lastPingDateTime}`);
+    console.log(`  - Platform: ${platformType}`);
+    console.log(`  - Agent Version: ${agentVersion}`);
 
-    if (ssmInstance.PingStatus !== "Online") {
+    if (pingStatus !== "Online") {
+      const validationDuration = Date.now() - validationStartTime;
+      console.error(`[SSM Validation] SSM agent ping status is ${pingStatus}, must be Online`);
+      console.error(`[SSM Validation] Last successful ping was at: ${lastPingDateTime}`);
+      console.error(`[SSM Validation] Validation failed after ${validationDuration}ms`);
+      
       return {
         ready: false,
-        error: `SSM agent is ${ssmInstance.PingStatus}, must be Online`,
+        error: `SSM agent is ${pingStatus}, must be Online`,
       };
     }
 
+    const validationDuration = Date.now() - validationStartTime;
+    console.log(`[SSM Validation] Validation successful after ${validationDuration}ms`);
     return { ready: true };
+    
   } catch (error: any) {
+    const validationDuration = Date.now() - validationStartTime;
+    console.error(`[SSM Validation] Validation failed after ${validationDuration}ms`);
+    console.error(`[SSM Validation] Error:`, error);
+    
     if (error.name === "InvalidInstanceID.NotFound") {
+      console.error(`[SSM Validation] AWS returned InvalidInstanceID.NotFound for ${instanceId}`);
       return { ready: false, error: "Instance not found" };
     }
-    return { ready: false, error: error.message };
+    
+    const errorMessage = error.message || "Unknown validation error";
+    console.error(`[SSM Validation] Unexpected error: ${errorMessage}`);
+    return { ready: false, error: errorMessage };
   }
 }
 
@@ -415,7 +457,7 @@ export async function checkInstanceHealth(
     const ssmValidation = await validateSSMReadiness(instanceId, region);
     const ssmValidationDuration = Date.now() - ssmValidationStartTime;
     console.log(
-      `  [SSM Validation] Duration: ${ssmValidationDuration}ms, Ready: ${ssmValidation.ready}`
+      `[Health Check] SSM Validation - Duration: ${ssmValidationDuration}ms, Ready: ${ssmValidation.ready}`
     );
 
     if (!ssmValidation.ready) {
@@ -439,9 +481,8 @@ export async function checkInstanceHealth(
         TimeoutSeconds: 30,
       });
       const sendCommandDuration = Date.now() - sendCommandStartTime;
-      console.log(`  [SSM Send Command] Duration: ${sendCommandDuration}ms`);
-
       const commandId = commandResult.Command?.CommandId;
+      console.log(`[Health Check] SSM Send Command - Duration: ${sendCommandDuration}ms, CommandId: ${commandId}`);
       if (!commandId) {
         throw new Error("Failed to get command ID from SSM");
       }
@@ -487,7 +528,7 @@ export async function checkInstanceHealth(
             throw outputError;
           }
           console.error(
-            `  [Health Check Attempt ${attempts + 1}/${maxAttempts}] Error: ${
+            `[Health Check] Attempt ${attempts + 1}/${maxAttempts} Error: ${
               outputError instanceof Error
                 ? outputError.message
                 : String(outputError)
@@ -500,9 +541,9 @@ export async function checkInstanceHealth(
 
       const pollingDuration = Date.now() - pollingStartTime;
       console.log(
-        `  [SSM Polling Loop] Total duration: ${pollingDuration}ms, Attempts: ${
+        `[Health Check] SSM Polling Loop - Total duration: ${pollingDuration}ms, Attempts: ${
           attempts + 1
-        }/${maxAttempts}`
+        }/${maxAttempts}, Final Status: ${commandOutput ? 'Success' : 'Timeout'}`
       );
 
       if (attempts >= maxAttempts) {
