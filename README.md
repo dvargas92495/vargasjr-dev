@@ -6,7 +6,7 @@ Vargas JR is a fully automated senior-level software developer available for hir
 
 This repository contains the following top-level directories:
 
-- **`/agent`** - Python-based AI agent implementation using Poetry for dependency management
+- **`/vellum`** - Python-based AI workflows implementation using Poetry for dependency management
 - **`/scripts`** - Utility scripts for managing infrastructure and workflows (TypeScript)
 - **`/.github/workflows`** - GitHub Actions for CI/CD and automation
 - **`/app`** - Next.js web application frontend
