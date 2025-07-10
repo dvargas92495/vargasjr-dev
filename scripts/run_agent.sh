@@ -7,7 +7,6 @@ if [ -f ".env" ]; then
 fi
 
 rm -Rf vargasjr_dev_agent-*
-yes | rm -rf ~/.cache/pypoetry/virtualenvs/*
 
 if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         echo "Detected preview environment for PR $PR_NUMBER"
@@ -69,7 +68,6 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         cd "$AGENT_DIR"
         cp ../.env .
         npm install
-        poetry install
         
         if [ -d "browser" ]; then
             echo "Starting browser service..."
@@ -81,7 +79,8 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
             npm run agent:build
             screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
         else
-            screen -dmS agent-preview bash -c 'poetry run agent > out.log 2> error.log'
+            echo "Error: worker directory not found. Agent requires npm-based worker setup."
+            exit 1
         fi
         
 else
@@ -92,7 +91,6 @@ else
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
     npm install
-    poetry install
     
     if [ -d "browser" ]; then
         echo "Starting browser service..."
@@ -104,7 +102,8 @@ else
         npm run agent:build
         screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start > out.log 2> error.log'
     else
-        screen -dmS agent-${VERSION//./-} bash -c 'poetry run agent > out.log 2> error.log'
+        echo "Error: worker directory not found. Agent requires npm-based worker setup."
+        exit 1
     fi
 fi
 
