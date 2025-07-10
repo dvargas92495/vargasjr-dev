@@ -81,12 +81,14 @@ class VargasJRAgentCreator {
       const instanceDetails = await this.getInstanceDetails(instanceId);
 
       startTime = Date.now();
-      await this.setupInstance(instanceDetails, keyPairName);
+      const setupTimingResults = await this.setupInstance(instanceDetails, keyPairName);
+      const setupDuration = Date.now() - startTime;
       timingResults.push({
         method: 'setupInstance',
-        duration: Date.now() - startTime,
+        duration: setupDuration,
         success: true
       });
+      timingResults.push(...setupTimingResults);
 
       startTime = Date.now();
       try {
@@ -321,17 +323,25 @@ class VargasJRAgentCreator {
     };
   }
 
-  private async setupInstance(instanceDetails: any, keyPairName: string): Promise<void> {
+  private async setupInstance(instanceDetails: any, keyPairName: string): Promise<TimingResult[]> {
     console.log(`Basic setup for Vargas JR agent instance: ${instanceDetails.instanceId}`);
     console.log(`Instance available at: ${instanceDetails.publicDns}`);
     console.log(`Key pair created: ${keyPairName}`);
 
-
-    await this.waitForSSMReady(instanceDetails.instanceId);
-
-    const envVars = this.getEnvironmentVariables();
+    const setupTimingResults: TimingResult[] = [];
 
     try {
+      let startTime = Date.now();
+      await this.waitForSSMReady(instanceDetails.instanceId);
+      setupTimingResults.push({
+        method: 'setupInstance.waitForSSMReady',
+        duration: Date.now() - startTime,
+        success: true
+      });
+
+      startTime = Date.now();
+      const envVars = this.getEnvironmentVariables();
+
       let postgresUrl: string;
       if (this.config.prNumber) {
         postgresUrl = await getNeonPreviewDatabaseUrl();
@@ -354,6 +364,20 @@ AGENT_ENVIRONMENT=production`;
       }
 
       writeFileSync('/tmp/agent.env', envContent);
+      
+      const keyPath = `${tmpdir()}/${keyPairName}.pem`;
+      console.log("Copying .env file to instance...");
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
+      console.log("Copying run_agent.sh script to instance...");
+      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './scripts/run_agent.sh', '~/run_agent.sh');
+      
+      setupTimingResults.push({
+        method: 'setupInstance.environmentSetup',
+        duration: Date.now() - startTime,
+        success: true
+      });
+
+      startTime = Date.now();
       const setupCommands = [
         { tag: 'APT', command: 'sudo apt update' },
         { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip libpq-dev' },
@@ -367,22 +391,26 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
-      const keyPath = `${tmpdir()}/${keyPairName}.pem`;
-
       for (const commandObj of setupCommands) {
         await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
       }
+      
+      setupTimingResults.push({
+        method: 'setupInstance.dependencyInstallation',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
-      console.log("Copying .env file to instance...");
-      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, '/tmp/agent.env', '~/.env');
-
-      console.log("Copying run_agent.sh script to instance...");
-      await this.executeSCPCommand(keyPath, instanceDetails.publicDns, './scripts/run_agent.sh', '~/run_agent.sh');
-
+      startTime = Date.now();
       console.log("Making run_agent.sh executable and running it...");
       await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x /home/ubuntu/run_agent.sh' });
       await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd /home/ubuntu && ./run_agent.sh' });
-      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'DEBUG', command: 'ls -la /home/ubuntu/vargasjr_dev_agent-*' });
+      
+      setupTimingResults.push({
+        method: 'setupInstance.agentDeployment',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
       console.log("✅ Instance setup complete!");
 
@@ -391,6 +419,8 @@ AGENT_ENVIRONMENT=production`;
       console.log("Note: MetadataOptions enforce IMDSv2 which is required for SSM registration");
       console.log("Using IAM instance profile for reliable SSM registration");
       await new Promise(resolve => setTimeout(resolve, 30000));
+
+      return setupTimingResults;
 
     } catch (error) {
       console.error(`❌ Failed to setup instance: ${error}`);
