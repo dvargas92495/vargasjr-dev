@@ -6,6 +6,7 @@ import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
+import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 
 interface AgentConfig {
   name: string;
@@ -212,6 +213,32 @@ class VargasJRAgentCreator {
     }
   }
 
+  private async getLatestCustomAMI(): Promise<string> {
+    console.log("Looking for latest custom VargasJR AMI...");
+    
+    const images = await this.ec2.describeImages({
+      Owners: ['self'],
+      Filters: [
+        { Name: 'name', Values: [VARGASJR_IMAGE_NAME] },
+        { Name: 'state', Values: ['available'] }
+      ]
+    });
+    
+    const sortedImages = images.Images?.sort((a, b) => 
+      new Date(b.CreationDate!).getTime() - new Date(a.CreationDate!).getTime()
+    );
+    
+    if (!sortedImages?.length) {
+      console.warn('No custom VargasJR AMI found. This is expected for new PRs before terraform is deployed.');
+      console.warn('Falling back to base Ubuntu AMI. Note: This may require Node.js to be installed manually.');
+      return "ami-0e2c8caa4b6378d8c";
+    }
+    
+    const customAmiId = sortedImages[0].ImageId!;
+    console.log(`Found custom AMI: ${customAmiId} (${sortedImages[0].Name})`);
+    return customAmiId;
+  }
+
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
 
@@ -228,8 +255,10 @@ class VargasJRAgentCreator {
       console.warn('Using Default Host Management Configuration approach:', error);
     }
 
+    const imageId = await this.getLatestCustomAMI();
+
     const result = await this.ec2.runInstances({
-      ImageId: "ami-0e2c8caa4b6378d8c",
+      ImageId: imageId,
       InstanceType: this.config.instanceType as any,
       KeyName: keyPairName,
       SecurityGroupIds: [securityGroupId],
@@ -382,8 +411,6 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'APT', command: 'sudo apt update' },
         { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
         { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
-        { tag: 'NODEJS', command: 'curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -' },
-        { tag: 'NODE_INSTALL', command: 'sudo apt-get install -y nodejs' },
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
