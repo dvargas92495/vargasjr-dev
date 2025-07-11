@@ -3,8 +3,44 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { notFound } from "next/navigation";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 
-function getCurrentPRNumber(): string | null {
-  return process.env.VERCEL_GIT_PULL_REQUEST_ID || null;
+async function getCurrentPRNumber(): Promise<string | null> {
+  if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
+    return process.env.VERCEL_GIT_PULL_REQUEST_ID;
+  }
+  
+  const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
+  if (commitRef) {
+    const branchName = commitRef.replace('refs/heads/', '');
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubRepo = process.env.GITHUB_REPOSITORY;
+    
+    if (githubToken && githubRepo && branchName) {
+      try {
+        const [owner] = githubRepo.split('/');
+        const headFilter = `${owner}:${branchName}`;
+        
+        const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+          headers: {
+            "Authorization": `Bearer ${githubToken}`,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+          }
+        });
+        
+        if (response.ok) {
+          const prs = await response.json();
+          if (prs.length === 1) {
+            console.log(`✅ Found PR #${prs[0].number} for branch: ${branchName}`);
+            return prs[0].number.toString();
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ GitHub API lookup failed: ${error}`);
+      }
+    }
+  }
+  
+  return null;
 }
 
 export default async function AdminPage() {
@@ -13,7 +49,7 @@ export default async function AdminPage() {
   });
   
   const environmentPrefix = getEnvironmentPrefix();
-  const currentPRNumber = getCurrentPRNumber();
+  const currentPRNumber = await getCurrentPRNumber();
   
   const filters = [
     { Name: "tag:Project", Values: ["VargasJR"] },
