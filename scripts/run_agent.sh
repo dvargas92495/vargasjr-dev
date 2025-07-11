@@ -67,16 +67,26 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         cd "$AGENT_DIR"
         cp ../.env .
-        echo "Node.js version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        npm install
+        if which node >/dev/null 2>&1; then
+            echo "Node.js version: $(node --version)"
+            echo "NPM version: $(npm --version)"
+            npm install
+        else
+            echo "Node.js version: Not installed (using base Ubuntu AMI)"
+            echo "NPM version: Not installed (using base Ubuntu AMI)"
+            echo "Skipping npm install - Node.js not available (using base Ubuntu AMI)"
+        fi
         
-        echo "Starting browser service..."
-        screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
-        
-        echo "Building and starting worker service..."
-        npm run agent:build
-        screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
+        if which node >/dev/null 2>&1; then
+            echo "Starting browser service..."
+            screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
+            
+            echo "Building and starting worker service..."
+            npm run agent:build
+            screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
+        else
+            echo "Skipping browser and worker services - Node.js not available (using base Ubuntu AMI)"
+        fi
         
 else
     echo "Detected production environment"
@@ -85,20 +95,34 @@ else
     tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
-    echo "Node.js version: $(node --version)"
-    echo "NPM version: $(npm --version)"
-    npm install
+    if which node >/dev/null 2>&1; then
+        echo "Node.js version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        npm install
+    else
+        echo "Node.js version: Not installed (using base Ubuntu AMI)"
+        echo "NPM version: Not installed (using base Ubuntu AMI)"
+        echo "Skipping npm install - Node.js not available (using base Ubuntu AMI)"
+    fi
     
-    echo "Starting browser service..."
-    screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
-    
-    echo "Building and starting worker service..."
-    npm run agent:build
-    screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start > out.log 2> error.log'
+    if which node >/dev/null 2>&1; then
+        echo "Starting browser service..."
+        screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
+        
+        echo "Building and starting worker service..."
+        npm run agent:build
+        screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start > out.log 2> error.log'
+    else
+        echo "Skipping browser and worker services - Node.js not available (using base Ubuntu AMI)"
+    fi
 fi
 
-echo "Running health check..."
-npm run healthcheck
+if which node >/dev/null 2>&1; then
+    echo "Running health check..."
+    npm run healthcheck
+else
+    echo "Skipping health check - Node.js not available (using base Ubuntu AMI)"
+fi
 
 # # Useful tools
 # 
