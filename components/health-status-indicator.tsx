@@ -5,6 +5,19 @@ import { useCallback, useEffect, useState } from "react";
 interface HealthStatus {
   status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
   error?: string;
+  diagnostics?: {
+    ssm?: {
+      registered?: boolean;
+      pingStatus?: string;
+      lastPingDateTime?: Date;
+      timeSinceLastPing?: string;
+      platformType?: string;
+      agentVersion?: string;
+      associationStatus?: string;
+      lastAssociationExecutionDate?: Date;
+    };
+    troubleshooting?: string[];
+  };
 }
 
 interface HealthStatusIndicatorProps {
@@ -43,7 +56,8 @@ const HealthStatusIndicator = ({
         const data = await response.json();
         const status = {
           status: data.status,
-          error: data.error
+          error: data.error,
+          diagnostics: data.diagnostics
         };
         setHealthStatus(status);
         onHealthStatusChange?.(status);
@@ -103,6 +117,32 @@ const HealthStatusIndicator = ({
       {healthStatus.status !== "healthy" && healthStatus.status !== "loading" && healthStatus.error && (
         <div className="text-xs text-red-600 ml-5">
           {healthStatus.error}
+        </div>
+      )}
+      
+      {healthStatus.diagnostics?.ssm && (
+        <div className="ml-5 mt-2 text-xs">
+          <details className="cursor-pointer">
+            <summary className="text-blue-600 hover:text-blue-800">SSM Debug Info</summary>
+            <div className="mt-2 p-2 bg-gray-50 border rounded text-gray-700">
+              <div className="grid grid-cols-2 gap-1 mb-2">
+                <div>Status: <span className="font-mono">{healthStatus.diagnostics.ssm.pingStatus || 'Unknown'}</span></div>
+                <div>Agent: <span className="font-mono">{healthStatus.diagnostics.ssm.agentVersion || 'Unknown'}</span></div>
+                <div>Platform: <span className="font-mono">{healthStatus.diagnostics.ssm.platformType || 'Unknown'}</span></div>
+                <div>Last Ping: <span className="font-mono">{healthStatus.diagnostics.ssm.timeSinceLastPing || 'Unknown'}</span></div>
+              </div>
+              {healthStatus.diagnostics.troubleshooting && healthStatus.diagnostics.troubleshooting.length > 0 && (
+                <div>
+                  <div className="font-medium mb-1">Troubleshooting Steps:</div>
+                  <ol className="list-decimal list-inside space-y-1">
+                    {healthStatus.diagnostics.troubleshooting.map((step: string, index: number) => (
+                      <li key={index}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          </details>
         </div>
       )}
     </div>
