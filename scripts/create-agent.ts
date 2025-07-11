@@ -409,7 +409,7 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'APT', command: 'sudo apt update' },
         { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
         { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
-        { tag: 'NODE_VERSION', command: 'node --version && npm --version' },
+        { tag: 'NODE_VERSION', command: 'which node >/dev/null 2>&1 && (node --version && npm --version) || echo "Node.js not installed (using base Ubuntu AMI)"' },
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
