@@ -19,7 +19,7 @@ import { ImagebuilderImageRecipe } from "@cdktf/provider-aws/lib/imagebuilder-im
 import { ImagebuilderComponent } from "@cdktf/provider-aws/lib/imagebuilder-component";
 import { ImagebuilderInfrastructureConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-infrastructure-configuration";
 import { ImagebuilderDistributionConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-distribution-configuration";
-import { AWS_S3_BUCKETS } from "../app/lib/constants";
+import { AWS_S3_BUCKETS, WORKSPACE_COMPONENT_NAME } from "../app/lib/constants";
 
 interface VargasJRStackConfig {
   environment: "production" | "preview";
@@ -234,7 +234,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     });
 
     const nodeJsComponent = new ImagebuilderComponent(this, "NodeJSComponent", {
-      name: "vargasjr-nodejs-component",
+      name: WORKSPACE_COMPONENT_NAME,
       platform: "Linux",
       version: "1.0.0",
       data: `
@@ -280,7 +280,7 @@ phases:
       name: "vargasjr-dist-config",
       distribution: [{
         amiDistributionConfiguration: {
-          name: "vargasjr-nodejs-{{ imagebuilder:buildDate }}",
+          name: `${WORKSPACE_COMPONENT_NAME}-{{ imagebuilder:buildDate }}`,
           description: "VargasJR AMI with Node.js pre-installed"
         },
         region: "us-east-1"
@@ -289,7 +289,7 @@ phases:
     });
 
     const imageRecipe = new ImagebuilderImageRecipe(this, "VargasJRImageRecipe", {
-      name: "vargasjr-nodejs-recipe",
+      name: `${WORKSPACE_COMPONENT_NAME}-recipe`,
       version: "1.0.0",
       parentImage: "ami-0e2c8caa4b6378d8c",
       component: [{
@@ -299,7 +299,7 @@ phases:
     });
 
     const imagePipeline = new ImagebuilderImagePipeline(this, "VargasJRImagePipeline", {
-      name: "vargasjr-nodejs-pipeline",
+      name: `${WORKSPACE_COMPONENT_NAME}-pipeline`,
       imageRecipeArn: imageRecipe.arn,
       infrastructureConfigurationArn: infraConfig.arn,
       distributionConfigurationArn: distConfig.arn,

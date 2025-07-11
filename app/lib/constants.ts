@@ -3,3 +3,5 @@ export const AWS_S3_BUCKETS = {
   INBOX: 'vargas-jr-inbox',
   TERRAFORM_STATE: 'vargas-jr-terraform-state',
 } as const;
+
+export const WORKSPACE_COMPONENT_NAME = 'vargasjr-workspace';
