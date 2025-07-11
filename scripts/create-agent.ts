@@ -380,12 +380,8 @@ AGENT_ENVIRONMENT=production`;
       startTime = Date.now();
       const setupCommands = [
         { tag: 'APT', command: 'sudo apt update' },
-        { tag: 'PYTHON', command: 'sudo apt install -y python3.12 python3.12-venv python3-pip libpq-dev' },
         { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
-        { tag: 'PY3_12', command: 'sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1' },
-        { tag: 'PY_ALIAS', command: 'sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1' },
         { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
-        { tag: 'POETRY', command: 'curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3' },
         { tag: 'NODEJS', command: 'curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -' },
         { tag: 'NODE_INSTALL', command: 'sudo apt-get install -y nodejs' },
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
