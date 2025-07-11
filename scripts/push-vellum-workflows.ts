@@ -255,6 +255,13 @@ class VellumWorkflowPusher {
       if (gitStatus) {
         console.log("🔍 Detected changes in vellum.lock.json, creating PR...");
         
+        const githubToken = process.env.GITHUB_TOKEN;
+        if (!githubToken) {
+          console.log("⚠️  Skipping PR creation - missing GitHub token");
+          console.log("ℹ️  Lock file changes detected but cannot create PR without GITHUB_TOKEN");
+          return;
+        }
+        
         const timestamp = Math.floor(Date.now() / 1000);
         const branchName = `devin/${timestamp}-update-vellum-lock-file`;
         
@@ -270,7 +277,7 @@ class VellumWorkflowPusher {
           cwd: process.cwd(),
           env: {
             ...process.env,
-            GITHUB_TOKEN: process.env.GITHUB_TOKEN
+            GITHUB_TOKEN: githubToken
           }
         });
         
