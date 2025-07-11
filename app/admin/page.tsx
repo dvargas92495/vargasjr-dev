@@ -4,7 +4,19 @@ import { notFound } from "next/navigation";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 
 function getCurrentPRNumber(): string | null {
-  return process.env.VERCEL_GIT_PULL_REQUEST_ID || null;
+  if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
+    return process.env.VERCEL_GIT_PULL_REQUEST_ID;
+  }
+  
+  const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
+  if (commitRef) {
+    const prMatch = commitRef.match(/refs\/heads\/devin\/(\d+)-/);
+    if (prMatch) {
+      return prMatch[1];
+    }
+  }
+  
+  return null;
 }
 
 export default async function AdminPage() {
