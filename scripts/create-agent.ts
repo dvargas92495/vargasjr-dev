@@ -6,6 +6,7 @@ import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
+import { WORKSPACE_COMPONENT_NAME } from "../app/lib/constants";
 
 interface AgentConfig {
   name: string;
@@ -218,7 +219,7 @@ class VargasJRAgentCreator {
     const images = await this.ec2.describeImages({
       Owners: ['self'],
       Filters: [
-        { Name: 'name', Values: ['vargasjr-nodejs-*'] },
+        { Name: 'name', Values: [`${WORKSPACE_COMPONENT_NAME}-*`] },
         { Name: 'state', Values: ['available'] }
       ]
     });
