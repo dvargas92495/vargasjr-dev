@@ -260,7 +260,7 @@ class VellumWorkflowPusher {
         
         execSync(`git checkout -b ${branchName}`, { cwd: process.cwd() });
         execSync('git add vellum/vellum.lock.json', { cwd: process.cwd() });
-        execSync('git commit -m "Update vellum.lock.json with new workflow changes"', { cwd: process.cwd() });
+        execSync('git -c user.name="Devin AI" -c user.email="devin-ai-integration[bot]@users.noreply.github.com" commit -m "Update vellum.lock.json with new workflow changes"', { cwd: process.cwd() });
         execSync(`git push origin ${branchName}`, { cwd: process.cwd() });
         
         const prTitle = "Update vellum.lock.json with new workflow changes";
