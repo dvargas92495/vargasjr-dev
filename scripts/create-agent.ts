@@ -6,7 +6,7 @@ import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
-import { WORKSPACE_COMPONENT_NAME } from "../app/lib/constants";
+import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 
 interface AgentConfig {
   name: string;
@@ -219,7 +219,7 @@ class VargasJRAgentCreator {
     const images = await this.ec2.describeImages({
       Owners: ['self'],
       Filters: [
-        { Name: 'name', Values: [`${WORKSPACE_COMPONENT_NAME}-*`] },
+        { Name: 'name', Values: [VARGASJR_IMAGE_NAME] },
         { Name: 'state', Values: ['available'] }
       ]
     });
@@ -411,7 +411,6 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'APT', command: 'sudo apt update' },
         { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
         { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
-        { tag: 'NODE_SETUP', command: 'which node >/dev/null 2>&1 && (node --version && npm --version) || (echo "Node.js not found, installing..." && curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs)' },
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
