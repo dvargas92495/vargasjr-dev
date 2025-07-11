@@ -10,11 +10,6 @@ async function getCurrentPRNumber(): Promise<string | null> {
   
   const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
-    const prMatch = commitRef.match(/refs\/heads\/devin\/(\d+)-/);
-    if (prMatch) {
-      return prMatch[1];
-    }
-    
     const branchName = commitRef.replace('refs/heads/', '');
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
