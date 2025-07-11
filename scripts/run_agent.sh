@@ -67,6 +67,8 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         cd "$AGENT_DIR"
         cp ../.env .
+        echo "Node.js version: $(node --version)"
+        echo "NPM version: $(npm --version)"
         npm install
         
         echo "Starting browser service..."
@@ -83,6 +85,8 @@ else
     tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
+    echo "Node.js version: $(node --version)"
+    echo "NPM version: $(npm --version)"
     npm install
     
     echo "Starting browser service..."
