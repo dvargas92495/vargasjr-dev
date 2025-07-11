@@ -229,7 +229,8 @@ class VargasJRAgentCreator {
     );
     
     if (!sortedImages?.length) {
-      console.warn('No custom VargasJR AMI found, falling back to base Ubuntu AMI');
+      console.warn('No custom VargasJR AMI found. This is expected for new PRs before terraform is deployed.');
+      console.warn('Falling back to base Ubuntu AMI. Note: This may require Node.js to be installed manually.');
       return "ami-0e2c8caa4b6378d8c";
     }
     
@@ -410,7 +411,7 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'APT', command: 'sudo apt update' },
         { tag: 'UNZIP', command: 'sudo apt install -y unzip' },
         { tag: 'SSM_STATUS', command: 'sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent' },
-        { tag: 'NODE_VERSION', command: 'which node >/dev/null 2>&1 && (node --version && npm --version) || echo "Node.js not installed (using base Ubuntu AMI)"' },
+        { tag: 'NODE_SETUP', command: 'which node >/dev/null 2>&1 && (node --version && npm --version) || (echo "Node.js not found, installing..." && curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs)' },
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
