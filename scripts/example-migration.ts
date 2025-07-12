@@ -20,15 +20,15 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
         "✅ **Migration Preview Successful**\n\n" +
         "This migration will import existing AWS resources into terraform state to resolve 'already exists' errors.\n\n" +
         "**Resources to be imported:**\n" +
-        "- S3 Bucket: `vargas-jr-memory`\n" +
-        "- S3 Bucket: `vargas-jr-inbox`\n" +
-        "- S3 Bucket: `vargas-jr-terraform-state`\n" +
-        "- Security Group: `vargas-jr-ssh-access`\n" +
-        "- IAM Role: `vargas-jr-email-lambda-role`\n" +
-        "- Lambda Function: `vargas-jr-email-processor`\n" +
-        "- SES Domain Identity: `vargasjr.dev`\n" +
-        "- SES Email Identity: `hello@vargasjr.dev`\n" +
-        "- SES Receipt Rule Set: `vargas-jr-email-rules`\n\n" +
+        "- S3 Bucket: `vargas-jr-memory` → `aws_s3_bucket.MemoryBucket`\n" +
+        "- S3 Bucket: `vargas-jr-inbox` → `aws_s3_bucket.InboxBucket`\n" +
+        "- Security Group: `vargas-jr-ssh-access` → `aws_security_group.SSHSecurityGroup`\n" +
+        "- IAM Role: `vargas-jr-email-lambda-role` → `aws_iam_role.EmailLambdaRole`\n" +
+        "- Lambda Function: `vargas-jr-email-processor` → `aws_lambda_function.EmailLambdaFunction`\n" +
+        "- SES Domain Identity: `vargasjr.dev` → `aws_ses_domain_identity.DomainIdentity`\n" +
+        "- SES Email Identity: `hello@vargasjr.dev` → `aws_ses_email_identity.EmailIdentity`\n" +
+        "- SES Receipt Rule Set: `vargas-jr-email-rules` → `aws_ses_receipt_rule_set.EmailReceiptRuleSet`\n\n" +
+        "**Note:** S3 terraform state bucket is managed by backend configuration and doesn't need explicit import.\n\n" +
         "**Environment:** Preview Mode\n" +
         "**Status:** Ready for execution"
       );
@@ -44,54 +44,73 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
         this.logSection("Synthesizing CDKTF code");
         execSync("npx cdktf synth", { stdio: 'inherit' });
         
+        const stackDir = join(terraformDir, "cdktf.out/stacks/vargasjr-preview");
+        process.chdir(stackDir);
+        
+        this.logSection("Initializing Terraform");
+        execSync("terraform init", { stdio: 'inherit' });
+        
         this.logSection("Importing existing AWS resources");
         
-        await this.importResource("aws_s3_bucket.MemoryBucket", "vargas-jr-memory");
-        await this.importResource("aws_s3_bucket.InboxBucket", "vargas-jr-inbox");
-        await this.importResource("aws_s3_bucket.TerraformStateBucket", "vargas-jr-terraform-state");
+        const importResults: Array<{resource: string, id: string, success: boolean, error?: string}> = [];
         
-        await this.importResource("aws_security_group.SSHSecurityGroup", "vargas-jr-ssh-access");
+        await this.importResource("aws_s3_bucket.MemoryBucket", "vargas-jr-memory", importResults);
+        await this.importResource("aws_s3_bucket.InboxBucket", "vargas-jr-inbox", importResults);
+        await this.importResource("aws_security_group.SSHSecurityGroup", "vargas-jr-ssh-access", importResults);
+        await this.importResource("aws_iam_role.EmailLambdaRole", "vargas-jr-email-lambda-role", importResults);
+        await this.importResource("aws_lambda_function.EmailLambdaFunction", "vargas-jr-email-processor", importResults);
+        await this.importResource("aws_ses_domain_identity.DomainIdentity", "vargasjr.dev", importResults);
+        await this.importResource("aws_ses_email_identity.EmailIdentity", "hello@vargasjr.dev", importResults);
+        await this.importResource("aws_ses_receipt_rule_set.EmailReceiptRuleSet", "vargas-jr-email-rules", importResults);
         
-        await this.importResource("aws_iam_role.EmailLambdaRole", "vargas-jr-email-lambda-role");
+        const successCount = importResults.filter(r => r.success).length;
+        const failureCount = importResults.filter(r => !r.success).length;
         
-        await this.importResource("aws_lambda_function.EmailLambdaFunction", "vargas-jr-email-processor");
+        if (successCount > 0) {
+          this.logSuccess(`Successfully imported ${successCount} resources`);
+        }
+        if (failureCount > 0) {
+          this.logWarning(`Failed to import ${failureCount} resources`);
+        }
         
-        await this.importResource("aws_ses_domain_identity.DomainIdentity", "vargasjr.dev");
-        await this.importResource("aws_ses_email_identity.EmailIdentity", "hello@vargasjr.dev");
-        await this.importResource("aws_ses_receipt_rule_set.EmailReceiptRuleSet", "vargas-jr-email-rules");
-        
-        this.logSuccess("All terraform imports completed successfully");
-        
-        await this.postComment(
-          "# Terraform Import Migration Results\n\n" +
-          "✅ **Migration Completed Successfully**\n\n" +
-          "Successfully imported existing AWS resources into terraform state.\n\n" +
-          "**Imported Resources:**\n" +
-          "- ✅ S3 Bucket: `vargas-jr-memory`\n" +
-          "- ✅ S3 Bucket: `vargas-jr-inbox`\n" +
-          "- ✅ S3 Bucket: `vargas-jr-terraform-state`\n" +
-          "- ✅ Security Group: `vargas-jr-ssh-access`\n" +
-          "- ✅ IAM Role: `vargas-jr-email-lambda-role`\n" +
-          "- ✅ Lambda Function: `vargas-jr-email-processor`\n" +
-          "- ✅ SES Domain Identity: `vargasjr.dev`\n" +
-          "- ✅ SES Email Identity: `hello@vargasjr.dev`\n" +
-          "- ✅ SES Receipt Rule Set: `vargas-jr-email-rules`\n\n" +
-          `**Execution time:** ${new Date().toISOString()}\n\n` +
-          "This should resolve 'already exists' errors in future terraform deployments."
-        );
+        await this.postImportResults(importResults);
         
       } catch (error) {
-        this.logError(`Terraform import failed: ${error}`);
+        this.logError(`Terraform import migration failed: ${error}`);
+        await this.postComment(
+          "# Terraform Import Migration Failed\n\n" +
+          "❌ **Migration Failed**\n\n" +
+          "The terraform import migration encountered critical errors.\n\n" +
+          "**Error Details:**\n" +
+          "```\n" +
+          `${error}\n` +
+          "```\n\n" +
+          "**Common Causes:**\n" +
+          "- Missing AWS credentials in the execution environment\n" +
+          "- Terraform CLI not installed or not accessible\n" +
+          "- S3 backend configuration issues\n" +
+          "- Network connectivity issues\n\n" +
+          "**Next Steps:**\n" +
+          "1. Verify AWS credentials are properly configured\n" +
+          "2. Ensure Terraform CLI is installed and accessible\n" +
+          "3. Check S3 backend bucket accessibility\n" +
+          "4. Review terraform configuration for syntax errors\n\n" +
+          `**Execution time:** ${new Date().toISOString()}`
+        );
         throw error;
       }
     }
   }
   
-  private async importResource(terraformAddress: string, awsResourceId: string): Promise<void> {
+  private async importResource(
+    terraformAddress: string, 
+    awsResourceId: string, 
+    results: Array<{resource: string, id: string, success: boolean, error?: string}>
+  ): Promise<void> {
     try {
       this.logSuccess(`Importing ${terraformAddress} -> ${awsResourceId}`);
-      execSync(`npx cdktf import ${terraformAddress} ${awsResourceId}`, { 
-        stdio: 'inherit',
+      execSync(`terraform import ${terraformAddress} ${awsResourceId}`, { 
+        stdio: 'pipe',
         env: {
           ...process.env,
           AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
@@ -100,9 +119,79 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
         }
       });
       this.logSuccess(`Successfully imported ${terraformAddress}`);
+      results.push({resource: terraformAddress, id: awsResourceId, success: true});
     } catch (error) {
-      this.logWarning(`Failed to import ${terraformAddress}: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logWarning(`Failed to import ${terraformAddress}: ${errorMessage}`);
+      results.push({resource: terraformAddress, id: awsResourceId, success: false, error: errorMessage});
     }
+  }
+  
+  private async postImportResults(results: Array<{resource: string, id: string, success: boolean, error?: string}>): Promise<void> {
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+    
+    let comment = "# Terraform Import Migration Results\n\n";
+    
+    if (successCount === results.length) {
+      comment += "✅ **Migration Completed Successfully**\n\n";
+      comment += "Successfully imported all existing AWS resources into terraform state.\n\n";
+    } else if (successCount > 0) {
+      comment += "⚠️ **Migration Partially Completed**\n\n";
+      comment += `Successfully imported ${successCount} out of ${results.length} resources.\n\n`;
+    } else {
+      comment += "❌ **Migration Failed**\n\n";
+      comment += "Failed to import any resources. See detailed errors below.\n\n";
+    }
+    
+    comment += "## Import Results\n\n";
+    
+    for (const result of results) {
+      if (result.success) {
+        comment += `- ✅ **${result.resource}** ← \`${result.id}\`\n`;
+      } else {
+        comment += `- ❌ **${result.resource}** ← \`${result.id}\`\n`;
+        if (result.error) {
+          comment += `  - Error: \`${result.error.split('\n')[0]}\`\n`;
+        }
+      }
+    }
+    
+    if (failureCount > 0) {
+      comment += "\n## Detailed Error Information\n\n";
+      const failedResults = results.filter(r => !r.success);
+      
+      for (const result of failedResults) {
+        comment += `### ${result.resource}\n`;
+        comment += `**Resource ID:** \`${result.id}\`\n\n`;
+        if (result.error) {
+          comment += "**Error Details:**\n";
+          comment += "```\n";
+          comment += result.error;
+          comment += "\n```\n\n";
+        }
+      }
+      
+      comment += "## Common Solutions\n\n";
+      comment += "**For 'NoCredentialProviders' errors:**\n";
+      comment += "- Ensure AWS credentials are configured in the execution environment\n";
+      comment += "- Check that AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set\n\n";
+      comment += "**For 'resource does not exist' errors:**\n";
+      comment += "- Verify the AWS resource actually exists in the target account\n";
+      comment += "- Check the resource ID/name matches exactly\n";
+      comment += "- Ensure you're targeting the correct AWS region\n\n";
+      comment += "**For 'already managed by Terraform' errors:**\n";
+      comment += "- The resource is already in terraform state (this is actually good!)\n";
+      comment += "- No action needed for these resources\n\n";
+    }
+    
+    comment += `\n**Execution time:** ${new Date().toISOString()}\n`;
+    
+    if (successCount > 0) {
+      comment += "\nThis should help resolve 'already exists' errors in future terraform deployments.";
+    }
+    
+    await this.postComment(comment);
   }
 }
 
