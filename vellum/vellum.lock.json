@@ -2,7 +2,7 @@
   "version": "1.0",
   "workflows": [
     {
-      "module": "src.workflows.brainrot",
+      "module": "workflows.brainrot",
       "workflow_sandbox_id": "87d1d6f0-5bf1-4f64-b5ed-9a5a969cde33",
       "ignore": null,
       "deployments": [],
@@ -12,7 +12,7 @@
       "target_directory": null
     },
     {
-      "module": "src.workflows.create_devin_chat",
+      "module": "workflows.create_devin_chat",
       "workflow_sandbox_id": "4f48b17a-4512-4506-8251-d15c5c6aea44",
       "ignore": null,
       "deployments": [],
@@ -22,7 +22,7 @@
       "target_directory": null
     },
     {
-      "module": "src.workflows.daily_routine_notion",
+      "module": "workflows.daily_routine_notion",
       "workflow_sandbox_id": "ee623898-a5ed-4a8d-ac41-a8fb0642be05",
       "ignore": null,
       "deployments": [],
@@ -32,7 +32,7 @@
       "target_directory": null
     },
     {
-      "module": "src.workflows.make_sports_bets",
+      "module": "workflows.make_sports_bets",
       "workflow_sandbox_id": "0e7bf47f-aaf8-45b8-85c6-6547a7bb0684",
       "ignore": null,
       "deployments": [],
@@ -42,7 +42,7 @@
       "target_directory": null
     },
     {
-      "module": "src.workflows.post_twitter",
+      "module": "workflows.post_twitter",
       "workflow_sandbox_id": "c545dc9b-664f-4dc2-859a-2760781cf6b9",
       "ignore": null,
       "deployments": [],
@@ -52,7 +52,7 @@
       "target_directory": null
     },
     {
-      "module": "src.workflows.triage_message",
+      "module": "workflows.triage_message",
       "workflow_sandbox_id": "7644ddff-c5a8-4d98-b1b1-d965e6b083f4",
       "ignore": null,
       "deployments": [],
