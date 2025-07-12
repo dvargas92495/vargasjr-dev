@@ -340,6 +340,20 @@ export interface HealthCheckResult {
   instanceId: string;
   status: "healthy" | "unhealthy" | "offline";
   error?: string;
+  diagnostics?: {
+    ssm?: {
+      registered?: boolean;
+      pingStatus?: string;
+      lastPingDateTime?: Date;
+      timeSinceLastPing?: string;
+      platformType?: string;
+      agentVersion?: string;
+      associationStatus?: string;
+      lastAssociationExecutionDate?: Date;
+      troubleshooting?: string[];
+    };
+    troubleshooting?: string[];
+  };
 }
 
 export interface HealthCheckOptions {
@@ -351,6 +365,17 @@ export interface HealthCheckOptions {
 export interface SSMReadinessResult {
   ready: boolean;
   error?: string;
+  diagnostics?: {
+    registered: boolean;
+    pingStatus?: string;
+    lastPingDateTime?: Date;
+    timeSinceLastPing?: string;
+    platformType?: string;
+    agentVersion?: string;
+    associationStatus?: string;
+    lastAssociationExecutionDate?: Date;
+    troubleshooting?: string[];
+  };
 }
 
 export async function validateSSMReadiness(
@@ -399,6 +424,15 @@ export async function validateSSMReadiness(
       return {
         ready: false,
         error: "Instance not registered with Systems Manager",
+        diagnostics: {
+          registered: false,
+          troubleshooting: [
+            "Verify SSM Agent is installed and running",
+            "Check IAM instance profile has AmazonSSMManagedInstanceCore policy", 
+            "Verify VPC endpoints or outbound HTTPS (443) connectivity",
+            "Restart SSM Agent: sudo systemctl restart amazon-ssm-agent"
+          ]
+        }
       };
     }
 
@@ -407,28 +441,69 @@ export async function validateSSMReadiness(
     const lastPingDateTime = ssmInstance.LastPingDateTime;
     const platformType = ssmInstance.PlatformType;
     const agentVersion = ssmInstance.AgentVersion;
+    const lastAssociationExecutionDate = ssmInstance.LastAssociationExecutionDate;
+    const associationStatus = ssmInstance.AssociationStatus;
     
     console.log(`[SSM Validation] SSM Instance Details:`);
     console.log(`  - Ping Status: ${pingStatus}`);
     console.log(`  - Last Ping: ${lastPingDateTime}`);
     console.log(`  - Platform: ${platformType}`);
     console.log(`  - Agent Version: ${agentVersion}`);
+    console.log(`  - Association Status: ${associationStatus}`);
+    console.log(`  - Last Association Execution: ${lastAssociationExecutionDate}`);
 
     if (pingStatus !== "Online") {
       const validationDuration = Date.now() - validationStartTime;
+      const timeSinceLastPing = lastPingDateTime ? 
+        Math.floor((Date.now() - new Date(lastPingDateTime).getTime()) / 1000 / 60) : null;
+      
       console.error(`[SSM Validation] SSM agent ping status is ${pingStatus}, must be Online`);
       console.error(`[SSM Validation] Last successful ping was at: ${lastPingDateTime}`);
       console.error(`[SSM Validation] Validation failed after ${validationDuration}ms`);
       
+      const troubleshootingSteps = [
+        "Check if SSM Agent is running: sudo systemctl status amazon-ssm-agent",
+        "Restart SSM Agent: sudo systemctl restart amazon-ssm-agent", 
+        "Verify IAM instance profile permissions (AmazonSSMManagedInstanceCore)",
+        "Check VPC security groups allow outbound HTTPS (443)",
+        "Verify Systems Manager VPC endpoints if using private subnets"
+      ];
+
+      if (timeSinceLastPing && timeSinceLastPing > 30) {
+        troubleshootingSteps.unshift("Instance has been offline for over 30 minutes - may need manual intervention");
+      }
+      
       return {
         ready: false,
         error: `SSM agent is ${pingStatus}, must be Online`,
+        diagnostics: {
+          registered: true,
+          pingStatus,
+          lastPingDateTime,
+          timeSinceLastPing: timeSinceLastPing ? `${timeSinceLastPing} minutes ago` : 'Unknown',
+          platformType,
+          agentVersion,
+          associationStatus,
+          lastAssociationExecutionDate,
+          troubleshooting: troubleshootingSteps
+        }
       };
     }
 
     const validationDuration = Date.now() - validationStartTime;
     console.log(`[SSM Validation] Validation successful after ${validationDuration}ms`);
-    return { ready: true };
+    return { 
+      ready: true,
+      diagnostics: {
+        registered: true,
+        pingStatus,
+        lastPingDateTime,
+        platformType,
+        agentVersion,
+        associationStatus,
+        lastAssociationExecutionDate
+      }
+    };
     
   } catch (error: any) {
     const validationDuration = Date.now() - validationStartTime;
@@ -464,7 +539,11 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: "offline",
-        error: `Health check failed: ${ssmValidation.error}`
+        error: `Health check failed: ${ssmValidation.error}`,
+        diagnostics: {
+          ssm: ssmValidation.diagnostics,
+          troubleshooting: ssmValidation.diagnostics?.troubleshooting || []
+        }
       };
     }
 
@@ -556,7 +635,10 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: hasAgentSession ? "healthy" : "unhealthy",
-        error: hasAgentSession ? undefined : "No agent screen session found"
+        error: hasAgentSession ? undefined : "No agent screen session found",
+        diagnostics: {
+          ssm: ssmValidation.diagnostics
+        }
       };
     } catch (ssmError) {
       const errorMessage =
@@ -576,7 +658,11 @@ export async function checkInstanceHealth(
       return {
         instanceId,
         status: "offline",
-        error: `SSM Command Failed: ${errorMessage}`
+        error: `SSM Command Failed: ${errorMessage}`,
+        diagnostics: {
+          ssm: ssmValidation.diagnostics,
+          troubleshooting: ssmValidation.diagnostics?.troubleshooting || []
+        }
       };
     }
   } catch (error) {
