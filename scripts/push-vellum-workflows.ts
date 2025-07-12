@@ -8,6 +8,7 @@ import { postGitHubComment } from "./utils";
 class VellumWorkflowPusher {
   private agentDir: string;
   private isPreviewMode: boolean;
+  private hasDockerImageBeenPushed: boolean = false;
 
   constructor(isPreviewMode: boolean = false) {
     this.agentDir = join(process.cwd(), "vellum");
@@ -176,6 +177,14 @@ class VellumWorkflowPusher {
 
   private async handleSdkVersionMismatch(workflowName: string, errorOutput: string): Promise<{success: boolean, error?: string, output?: string}> {
     try {
+      if (this.hasDockerImageBeenPushed) {
+        throw new Error("Docker image push has already been attempted once. Multiple docker image pushes are not allowed.");
+      }
+      
+      if (this.isPreviewMode) {
+        throw new Error("Docker image push is not allowed in preview mode. SDK version mismatches cannot be resolved in preview.");
+      }
+      
       const lockFilePath = join(this.agentDir, "vellum.lock.json");
       if (!existsSync(lockFilePath)) {
         throw new Error("vellum.lock.json not found");
@@ -199,6 +208,7 @@ class VellumWorkflowPusher {
         }
       });
       
+      this.hasDockerImageBeenPushed = true;
       console.log(`✅ Successfully pushed container image: vargasjr:${newTag}`);
       
       this.updateLockFileTag(lockFileContent, newTag);
