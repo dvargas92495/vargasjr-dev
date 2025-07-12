@@ -9,6 +9,7 @@ import { execSync } from "child_process";
 interface SSHConnectConfig {
   prNumber?: string;
   region?: string;
+  command?: string;
 }
 
 class VargasJRSSHConnector {
@@ -34,7 +35,7 @@ class VargasJRSSHConnector {
       const keyPath = await this.writeKeyToTempFile(keyMaterial);
 
       try {
-        await this.establishSSHConnection(instance.PublicDnsName || "", keyPath);
+        await this.establishSSHConnection(instance.PublicDnsName || "", keyPath, this.config.command);
       } finally {
         unlinkSync(keyPath);
       }
@@ -107,22 +108,35 @@ class VargasJRSSHConnector {
     return keyPath;
   }
 
-  private async establishSSHConnection(publicDns: string, keyPath: string): Promise<void> {
+  private async establishSSHConnection(publicDns: string, keyPath: string, command?: string): Promise<void> {
     if (!publicDns) {
       throw new Error("No public DNS name available for SSH connection");
     }
     
     console.log(`🔗 Connecting to ubuntu@${publicDns}...`);
     
-    const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${publicDns}`;
+    let sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${publicDns}`;
     
-    try {
-      execSync(sshCommand, { stdio: 'inherit' });
-    } catch (error: any) {
-      if (error.status === 130) {
-        console.log("\n👋 SSH session ended");
-      } else {
-        throw new Error(`SSH connection failed: ${error.message}`);
+    if (command) {
+      sshCommand += ` "${command}"`;
+      try {
+        const output = execSync(sshCommand, { encoding: 'utf8' });
+        console.log(output);
+      } catch (error: any) {
+        console.error(`❌ Command execution failed: ${error.message}`);
+        if (error.stdout) console.log(error.stdout);
+        if (error.stderr) console.error(error.stderr);
+        process.exit(error.status || 1);
+      }
+    } else {
+      try {
+        execSync(sshCommand, { stdio: 'inherit' });
+      } catch (error: any) {
+        if (error.status === 130) {
+          console.log("\n👋 SSH session ended");
+        } else {
+          throw new Error(`SSH connection failed: ${error.message}`);
+        }
       }
     }
   }
@@ -132,10 +146,14 @@ async function main() {
   const args = process.argv.slice(2);
   
   let prNumber: string | undefined;
+  let command: string | undefined;
   
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--pr" && i + 1 < args.length) {
       prNumber = args[i + 1];
+      i++;
+    } else if (args[i] === "--command" && i + 1 < args.length) {
+      command = args[i + 1];
       i++;
     } else if (args[i] && !args[i].startsWith("--")) {
       prNumber = args[i];
@@ -147,7 +165,7 @@ async function main() {
     process.exit(1);
   }
 
-  const connector = new VargasJRSSHConnector({ prNumber });
+  const connector = new VargasJRSSHConnector({ prNumber, command });
   await connector.connect();
 }
 
