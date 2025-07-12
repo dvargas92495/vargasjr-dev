@@ -23,8 +23,8 @@
       "@/*": ["./*"]
     },
     "outDir": "./dist",
-    "rootDir": "."
+    "rootDir": ".."
   },
-  "include": ["*.ts"],
+  "include": ["*.ts", "../db/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
