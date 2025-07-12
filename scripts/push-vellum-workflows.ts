@@ -131,7 +131,7 @@ class VellumWorkflowPusher {
       console.log(successMessage);
       return { success: true, output: this.isPreviewMode ? result : undefined };
     } catch (error: any) {
-      const errorOutput = (error.stdout || error.stderr || error.message || '').toString();
+      const errorOutput = (error.stdout + error.stderr + error.message + '').toString();
       console.error(`SDK Version: ${errorOutput.includes('SDK Version')}`);
       console.error(`does not match SDK version: ${errorOutput.includes('does not match SDK version')}`);
       console.error(`within the container image: ${errorOutput.includes('within the container image')}`);
