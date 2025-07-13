@@ -52,6 +52,16 @@
       "target_directory": null
     },
     {
+      "module": "workflows.process_job",
+      "workflow_sandbox_id": "951f14ae-5f10-4954-b524-c05539b6b3f8",
+      "ignore": null,
+      "deployments": [],
+      "container_image_name": null,
+      "container_image_tag": null,
+      "workspace": "default",
+      "target_directory": null
+    },
+    {
       "module": "workflows.triage_message",
       "workflow_sandbox_id": "7644ddff-c5a8-4d98-b1b1-d965e6b083f4",
       "ignore": null,
