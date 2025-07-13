@@ -310,9 +310,9 @@ class DraftPRScriptRunner {
         commentContent += `**Duration**: ${result.duration}ms\n\n`;
         if (result.output) {
           commentContent += "**Output**:\n```\n";
-          commentContent += result.output.substring(0, 2000); // Limit output length
-          if (result.output.length > 2000) {
-            commentContent += "\n... (output truncated)";
+          commentContent += result.output.substring(0, 10000);
+          if (result.output.length > 10000) {
+            commentContent += "\n... (output truncated - exceeds 10k characters)";
           }
           commentContent += "\n```\n\n";
         }
@@ -327,9 +327,9 @@ class DraftPRScriptRunner {
         commentContent += `**Error**: ${result.error}\n\n`;
         if (result.output) {
           commentContent += "**Output**:\n```\n";
-          commentContent += result.output.substring(0, 1000);
-          if (result.output.length > 1000) {
-            commentContent += "\n... (output truncated)";
+          commentContent += result.output.substring(0, 5000);
+          if (result.output.length > 5000) {
+            commentContent += "\n... (output truncated - exceeds 5k characters)";
           }
           commentContent += "\n```\n\n";
         }

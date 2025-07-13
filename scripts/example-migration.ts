@@ -116,14 +116,18 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
           AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
           AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
           AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
-        }
+        },
+        maxBuffer: 1024 * 1024 * 10
       });
       this.logSuccess(`Successfully imported ${terraformAddress}`);
       results.push({resource: terraformAddress, id: awsResourceId, success: true});
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logWarning(`Failed to import ${terraformAddress}: ${errorMessage}`);
-      results.push({resource: terraformAddress, id: awsResourceId, success: false, error: errorMessage});
+      const stderr = (error as any).stderr || '';
+      const stdout = (error as any).stdout || '';
+      const fullError = `${errorMessage}\n\nSTDOUT:\n${stdout}\n\nSTDERR:\n${stderr}`.trim();
+      this.logWarning(`Failed to import ${terraformAddress}: ${fullError}`);
+      results.push({resource: terraformAddress, id: awsResourceId, success: false, error: fullError});
     }
   }
   
@@ -173,13 +177,17 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
       }
       
       comment += "## Common Solutions\n\n";
-      comment += "**For 'NoCredentialProviders' errors:**\n";
+      comment += "**For 'NoCredentialProviders' or 'no valid credential sources' errors:**\n";
       comment += "- Ensure AWS credentials are configured in the execution environment\n";
-      comment += "- Check that AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set\n\n";
+      comment += "- Check that AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set\n";
+      comment += "- Verify the AWS credentials have sufficient permissions for the resources\n\n";
+      comment += "**For 'Backend initialization required' errors:**\n";
+      comment += "- The terraform backend needs to be initialized before imports\n";
+      comment += "- This should be handled automatically by the script's terraform init step\n\n";
       comment += "**For 'resource does not exist' errors:**\n";
       comment += "- Verify the AWS resource actually exists in the target account\n";
-      comment += "- Check the resource ID/name matches exactly\n";
-      comment += "- Ensure you're targeting the correct AWS region\n\n";
+      comment += "- Check the resource ID/name matches exactly (case-sensitive)\n";
+      comment += "- Ensure you're targeting the correct AWS region (us-east-1)\n\n";
       comment += "**For 'already managed by Terraform' errors:**\n";
       comment += "- The resource is already in terraform state (this is actually good!)\n";
       comment += "- No action needed for these resources\n\n";
