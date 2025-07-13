@@ -124,6 +124,8 @@ class VargasJRSSHConnector {
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
         process.exit(error.status || 1);
+      } finally {
+        console.log(`✅ Successfully executed SSH command: ${command}`);
       }
     } else {
       try {
