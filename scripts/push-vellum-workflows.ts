@@ -144,7 +144,15 @@ class VellumWorkflowPusher {
       
       if (errorOutput.includes('SDK Version') && errorOutput.includes('does not match SDK version') && errorOutput.includes('within the container image')) {
         console.log(`🔄 Detected SDK version mismatch for ${workflowName}, attempting to push new image...`);
-        const retryResult = await this.handleSdkVersionMismatch(workflowName, errorOutput);
+        const retryResult = await this.handleImageError(workflowName, errorOutput, 'sdk_version_mismatch');
+        if (retryResult.success) {
+          return retryResult;
+        }
+      }
+      
+      if (errorOutput.includes('container image tags not found')) {
+        console.log(`🔄 Detected missing container image tags for ${workflowName}, attempting to push existing image...`);
+        const retryResult = await this.handleImageError(workflowName, errorOutput, 'missing_image_tags');
         if (retryResult.success) {
           return retryResult;
         }
@@ -175,14 +183,14 @@ class VellumWorkflowPusher {
     }
   }
 
-  private async handleSdkVersionMismatch(workflowName: string, errorOutput: string): Promise<{success: boolean, error?: string, output?: string}> {
+  private async handleImageError(workflowName: string, errorOutput: string, errorType: 'sdk_version_mismatch' | 'missing_image_tags'): Promise<{success: boolean, error?: string, output?: string}> {
     try {
       if (this.hasDockerImageBeenPushed) {
         throw new Error("Docker image push has already been attempted once. Multiple docker image pushes are not allowed.");
       }
       
       if (this.isPreviewMode) {
-        throw new Error("Docker image push is not allowed in preview mode. SDK version mismatches cannot be resolved in preview.");
+        throw new Error("Docker image push is not allowed in preview mode. Image errors cannot be resolved in preview.");
       }
       
       const lockFilePath = join(this.agentDir, "vellum.lock.json");
@@ -193,11 +201,17 @@ class VellumWorkflowPusher {
       const lockFileContent = JSON.parse(readFileSync(lockFilePath, 'utf8'));
       const currentTag = lockFileContent.workflows[0]?.container_image_tag || "1.0.0";
       
-      const newTag = this.incrementPatchVersion(currentTag);
-      console.log(`📦 Pushing new container image with tag: ${newTag}`);
+      let tagToUse: string;
+      if (errorType === 'sdk_version_mismatch') {
+        tagToUse = this.incrementPatchVersion(currentTag);
+        console.log(`📦 Pushing new container image with incremented tag: ${tagToUse}`);
+      } else {
+        tagToUse = currentTag;
+        console.log(`📦 Pushing container image with existing tag: ${tagToUse}`);
+      }
       
       const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
-      const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
+      const pushImageCommand = `poetry run vellum images push vargasjr:${tagToUse} --source ${dockerfilePath}`;
       
       execSync(pushImageCommand, {
         cwd: this.agentDir,
@@ -209,11 +223,13 @@ class VellumWorkflowPusher {
       });
       
       this.hasDockerImageBeenPushed = true;
-      console.log(`✅ Successfully pushed container image: vargasjr:${newTag}`);
+      console.log(`✅ Successfully pushed container image: vargasjr:${tagToUse}`);
       
-      this.updateLockFileTag(lockFileContent, newTag);
-      writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
-      console.log(`📝 Updated vellum.lock.json with new tag: ${newTag}`);
+      if (errorType === 'sdk_version_mismatch') {
+        this.updateLockFileTag(lockFileContent, tagToUse);
+        writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
+        console.log(`📝 Updated vellum.lock.json with new tag: ${tagToUse}`);
+      }
       
       console.log(`🔄 Retrying workflow push for: ${workflowName}`);
       const retryResult = await this.pushWorkflow(workflowName);
@@ -225,7 +241,7 @@ class VellumWorkflowPusher {
       return retryResult;
       
     } catch (error: any) {
-      const errorMessage = `Failed to handle SDK version mismatch for ${workflowName}: ${error}`;
+      const errorMessage = `Failed to handle image error for ${workflowName}: ${error}`;
       console.error(`❌ ${errorMessage}`);
       return { success: false, error: errorMessage };
     }
