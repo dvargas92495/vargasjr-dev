@@ -163,7 +163,7 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
           AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
           AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
         },
-        maxBuffer: 1024 * 1024 * 10,
+        maxBuffer: 1024 * 1024 * 1,
         encoding: 'utf8'
       });
       
