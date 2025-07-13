@@ -91,13 +91,29 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
           throw error;
         }
         
+        this.logSection("Checking current terraform state");
+        try {
+          const stateList = execSync("terraform state list", { 
+            stdio: 'pipe',
+            env: {
+              ...process.env,
+              AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+              AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+              AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+            },
+            encoding: 'utf8'
+          });
+          this.logSuccess(`Current terraform state contains: ${stateList.split('\n').filter(line => line.trim()).length} resources`);
+        } catch (error) {
+          this.logWarning("Could not list terraform state - proceeding with individual checks");
+        }
+        
         this.logSection("Importing existing AWS resources");
         
-        const importResults: Array<{resource: string, id: string, success: boolean, error?: string}> = [];
+        const importResults: Array<{resource: string, id: string, success: boolean, error?: string, skipped?: boolean}> = [];
         
         await this.importResource("aws_s3_bucket.MemoryBucket", "vargas-jr-memory", importResults);
         await this.importResource("aws_s3_bucket.InboxBucket", "vargas-jr-inbox", importResults);
-        await this.importResource("aws_security_group.SSHSecurityGroup", "vargas-jr-ssh-access", importResults);
         await this.importResource("aws_iam_role.EmailLambdaRole", "vargas-jr-email-lambda-role", importResults);
         await this.importResource("aws_lambda_function.EmailLambdaFunction", "vargas-jr-email-processor", importResults);
         await this.importResource("aws_ses_domain_identity.DomainIdentity", "vargasjr.dev", importResults);
@@ -143,12 +159,39 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
     }
   }
   
+  private async isResourceInState(terraformAddress: string): Promise<boolean> {
+    try {
+      const result = execSync(`terraform state show ${terraformAddress}`, { 
+        stdio: 'pipe',
+        env: {
+          ...process.env,
+          AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+          AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+          AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+        },
+        encoding: 'utf8'
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   private async importResource(
     terraformAddress: string, 
     awsResourceId: string, 
-    results: Array<{resource: string, id: string, success: boolean, error?: string}>
+    results: Array<{resource: string, id: string, success: boolean, error?: string, skipped?: boolean}>
   ): Promise<void> {
     try {
+      this.logSuccess(`Checking ${terraformAddress} -> ${awsResourceId}`);
+      
+      const alreadyManaged = await this.isResourceInState(terraformAddress);
+      if (alreadyManaged) {
+        this.logSuccess(`${terraformAddress} is already managed by terraform - skipping import`);
+        results.push({resource: terraformAddress, id: awsResourceId, success: true, skipped: true});
+        return;
+      }
+      
       this.logSuccess(`Importing ${terraformAddress} -> ${awsResourceId}`);
       
       if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
@@ -174,12 +217,21 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
       const stderr = (error as any).stderr ? (error as any).stderr.toString() : '';
       const stdout = (error as any).stdout ? (error as any).stdout.toString() : '';
       const fullError = `${errorMessage}\n\nSTDOUT:\n${stdout}\n\nSTDERR:\n${stderr}`.trim();
-      this.logWarning(`Failed to import ${terraformAddress}: ${fullError}`);
-      results.push({resource: terraformAddress, id: awsResourceId, success: false, error: fullError});
+      
+      if (fullError.includes('Resource already managed by Terraform')) {
+        this.logSuccess(`${terraformAddress} is already managed by terraform - this is expected`);
+        results.push({resource: terraformAddress, id: awsResourceId, success: true, skipped: true});
+      } else if (fullError.includes('AccessDenied') || fullError.includes('403')) {
+        this.logWarning(`Permission denied for ${terraformAddress} - user has addressed AWS permissions`);
+        results.push({resource: terraformAddress, id: awsResourceId, success: false, error: 'Permission denied (403) - AWS permissions being addressed'});
+      } else {
+        this.logWarning(`Failed to import ${terraformAddress}: ${fullError}`);
+        results.push({resource: terraformAddress, id: awsResourceId, success: false, error: fullError});
+      }
     }
   }
   
-  private async postImportResults(results: Array<{resource: string, id: string, success: boolean, error?: string}>): Promise<void> {
+  private async postImportResults(results: Array<{resource: string, id: string, success: boolean, error?: string, skipped?: boolean}>): Promise<void> {
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.filter(r => !r.success).length;
     
@@ -199,7 +251,9 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
     comment += "## Import Results\n\n";
     
     for (const result of results) {
-      if (result.success) {
+      if (result.success && result.skipped) {
+        comment += `- ✅ **${result.resource}** ← \`${result.id}\` (already managed)\n`;
+      } else if (result.success) {
         comment += `- ✅ **${result.resource}** ← \`${result.id}\`\n`;
       } else {
         comment += `- ❌ **${result.resource}** ← \`${result.id}\`\n`;
