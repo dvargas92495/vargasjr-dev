@@ -151,10 +151,16 @@ class VellumWorkflowPusher {
       }
       
       if (errorOutput.includes('Container image') && errorOutput.includes('not found')) {
-        console.log(`🔄 Detected missing container image for ${workflowName}, attempting to push existing image...`);
-        const retryResult = await this.handleImageError(workflowName, errorOutput, 'missing_image_tags');
-        if (retryResult.success) {
-          return retryResult;
+        if (this.isPreviewMode) {
+          const warningMessage = `⚠️  Skipping ${workflowName}: Container image not found (would be resolved in actual push)`;
+          console.log(warningMessage);
+          return { success: true, output: `Skipped: ${workflowName} - Container image not found (would be resolved in actual push)` };
+        } else {
+          console.log(`🔄 Detected missing container image for ${workflowName}, attempting to push existing image...`);
+          const retryResult = await this.handleImageError(workflowName, errorOutput, 'missing_image_tags');
+          if (retryResult.success) {
+            return retryResult;
+          }
         }
       }
       
