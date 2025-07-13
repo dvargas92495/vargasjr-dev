@@ -120,12 +120,9 @@ class VargasJRSSHConnector {
     if (command) {
       sshCommand += ` "${command}"`;
       try {
-        const output = execSync(sshCommand, { encoding: 'utf8' });
-        console.log(output);
+        execSync(sshCommand, { stdio: 'inherit' });
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
-        if (error.stdout) console.log(error.stdout);
-        if (error.stderr) console.error(error.stderr);
         process.exit(error.status || 1);
       }
     } else {
