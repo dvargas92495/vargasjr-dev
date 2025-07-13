@@ -15,6 +15,7 @@ import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
 import { AWS_S3_BUCKETS } from "../app/lib/constants";
 
+
 interface VargasJRStackConfig {
   environment: "production" | "preview";
   prNumber?: string;
