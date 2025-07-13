@@ -46,43 +46,23 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      - name: Set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-      - name: Bootstrap poetry
-        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
-      - name: Install dependencies
-        run: poetry install
-        working-directory: vellum
-      - name: Build package
-        run: poetry build
-        working-directory: vellum
-      - name: Get version from pyproject.toml
-        id: get_version
-        run: |
-          VERSION=$(sed -n '3p' vellum/pyproject.toml | cut -d'"' -f2)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      - name: Set up Node.js for browser service
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: '.nvmrc'
+      - name: Install Node.js dependencies
+        run: npm install
+      - name: Get version from package.json
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Build browser service
         run: npm run browser:build
       - name: Build worker service
         run: npm run agent:build
       - name: Create complete agent package
-        run: |
-          mkdir -p vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
-          cd vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
-          tar -xzf ../vellum/dist/vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz --strip-components=1
-          cp -r ../browser ./browser
-          cp -r ../scripts ./scripts
-          cp -r ../worker ./worker
-          cp -r ../db ./db
-          cp ../package.json ./package.json
-          cd ..
-          tar -czf vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
+        run: npm run agent:publish
       - name: Publish package
         uses: actions/upload-artifact@v4
         with:
