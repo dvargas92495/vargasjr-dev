@@ -71,7 +71,36 @@ export class SecurityGroupRulesImportMigration extends OneTimeMigrationRunner {
       console.log("Preview: terraform state list");
     }
 
+    this.logSection("Getting security group ID from terraform state");
+    let securityGroupId: string;
+    
+    if (!this.isPreviewMode) {
+      try {
+        const sgStateOutput = execSync("terraform state show aws_security_group.SSHSecurityGroup", { 
+          cwd: "./terraform/cdktf.out/stacks/vargasjr-preview",
+          encoding: "utf8"
+        });
+        
+        const sgIdMatch = sgStateOutput.match(/id\s*=\s*"(sg-[a-f0-9]+)"/);
+        if (!sgIdMatch) {
+          throw new Error("Could not find security group ID in terraform state");
+        }
+        securityGroupId = sgIdMatch[1];
+        this.logSuccess(`Found security group ID: ${securityGroupId}`);
+      } catch (error) {
+        this.logWarning("Could not get security group ID from terraform state, security group may not be imported yet");
+        throw new Error("Security group must be imported before importing rules");
+      }
+    } else {
+      securityGroupId = "sg-XXXXXXXXX";
+      console.log("Preview: terraform state show aws_security_group.SSHSecurityGroup");
+      console.log(`Preview: Found security group ID: ${securityGroupId}`);
+    }
+
     this.logSection("Importing existing AWS security group rules");
+    
+    const ingressImportId = `${securityGroupId}_ingress_tcp_22_22_0.0.0.0/0`;
+    const egressImportId = `${securityGroupId}_egress_-1_0_0_0.0.0.0/0`;
     
     if (!this.isPreviewMode) {
       try {
@@ -81,22 +110,22 @@ export class SecurityGroupRulesImportMigration extends OneTimeMigrationRunner {
         });
         
         if (!ingressStateOutput.includes("aws_security_group_rule.SSHIngressRule")) {
-          this.logSuccess("Importing aws_security_group_rule.SSHIngressRule -> sgr-0c8ee58d1f115d62c");
-          execSync("terraform import aws_security_group_rule.SSHIngressRule sgr-0c8ee58d1f115d62c", { 
+          this.logSuccess(`Importing aws_security_group_rule.SSHIngressRule -> ${ingressImportId}`);
+          execSync(`terraform import aws_security_group_rule.SSHIngressRule "${ingressImportId}"`, { 
             cwd: "./terraform/cdktf.out/stacks/vargasjr-preview", 
             stdio: "inherit" 
           });
         }
       } catch (error) {
         console.log("Proceeding with ingress rule import");
-        this.logSuccess("Importing aws_security_group_rule.SSHIngressRule -> sgr-0c8ee58d1f115d62c");
-        execSync("terraform import aws_security_group_rule.SSHIngressRule sgr-0c8ee58d1f115d62c", { 
+        this.logSuccess(`Importing aws_security_group_rule.SSHIngressRule -> ${ingressImportId}`);
+        execSync(`terraform import aws_security_group_rule.SSHIngressRule "${ingressImportId}"`, { 
           cwd: "./terraform/cdktf.out/stacks/vargasjr-preview", 
           stdio: "inherit" 
         });
       }
     } else {
-      console.log("Preview: terraform import aws_security_group_rule.SSHIngressRule sgr-0c8ee58d1f115d62c");
+      console.log(`Preview: terraform import aws_security_group_rule.SSHIngressRule "${ingressImportId}"`);
     }
 
     if (!this.isPreviewMode) {
@@ -107,22 +136,22 @@ export class SecurityGroupRulesImportMigration extends OneTimeMigrationRunner {
         });
         
         if (!egressStateOutput.includes("aws_security_group_rule.AllEgressRule")) {
-          this.logSuccess("Importing aws_security_group_rule.AllEgressRule -> sgr-0644d2da06bd5ff67");
-          execSync("terraform import aws_security_group_rule.AllEgressRule sgr-0644d2da06bd5ff67", { 
+          this.logSuccess(`Importing aws_security_group_rule.AllEgressRule -> ${egressImportId}`);
+          execSync(`terraform import aws_security_group_rule.AllEgressRule "${egressImportId}"`, { 
             cwd: "./terraform/cdktf.out/stacks/vargasjr-preview", 
             stdio: "inherit" 
           });
         }
       } catch (error) {
         console.log("Proceeding with egress rule import");
-        this.logSuccess("Importing aws_security_group_rule.AllEgressRule -> sgr-0644d2da06bd5ff67");
-        execSync("terraform import aws_security_group_rule.AllEgressRule sgr-0644d2da06bd5ff67", { 
+        this.logSuccess(`Importing aws_security_group_rule.AllEgressRule -> ${egressImportId}`);
+        execSync(`terraform import aws_security_group_rule.AllEgressRule "${egressImportId}"`, { 
           cwd: "./terraform/cdktf.out/stacks/vargasjr-preview", 
           stdio: "inherit" 
         });
       }
     } else {
-      console.log("Preview: terraform import aws_security_group_rule.AllEgressRule sgr-0644d2da06bd5ff67");
+      console.log(`Preview: terraform import aws_security_group_rule.AllEgressRule "${egressImportId}"`);
     }
 
     this.logSuccess("Security group rules import completed successfully");
