@@ -48,7 +48,48 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
         process.chdir(stackDir);
         
         this.logSection("Initializing Terraform");
-        execSync("terraform init", { stdio: 'inherit' });
+        try {
+          execSync("terraform init", { 
+            stdio: 'inherit',
+            env: {
+              ...process.env,
+              AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+              AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+              AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
+            }
+          });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('NoCredentialProviders') || errorMessage.includes('no valid credential sources')) {
+            this.logError("AWS credentials not configured in execution environment");
+            await this.postComment(
+              "# Terraform Import Migration Failed - Missing AWS Credentials\n\n" +
+              "❌ **Migration Failed: AWS Credentials Required**\n\n" +
+              "The terraform import migration requires AWS credentials to be configured in the execution environment.\n\n" +
+              "**Error Details:**\n" +
+              "```\n" +
+              `${errorMessage}\n` +
+              "```\n\n" +
+              "**Required Environment Variables:**\n" +
+              "- `AWS_ACCESS_KEY_ID` - AWS access key ID\n" +
+              "- `AWS_SECRET_ACCESS_KEY` - AWS secret access key\n" +
+              "- `AWS_DEFAULT_REGION` - AWS region (defaults to us-east-1)\n\n" +
+              "**Next Steps:**\n" +
+              "1. Configure AWS credentials in the GitHub Actions environment\n" +
+              "2. Ensure the credentials have sufficient permissions for:\n" +
+              "   - S3 bucket access (for terraform state backend)\n" +
+              "   - EC2 security group management\n" +
+              "   - IAM role management\n" +
+              "   - Lambda function management\n" +
+              "   - SES domain and email identity management\n" +
+              "3. Re-run the migration script after credentials are configured\n\n" +
+              "**Note:** This migration cannot proceed without proper AWS credentials.\n\n" +
+              `**Execution time:** ${new Date().toISOString()}`
+            );
+            throw new Error("AWS credentials not configured - cannot proceed with terraform operations");
+          }
+          throw error;
+        }
         
         this.logSection("Importing existing AWS resources");
         
@@ -109,7 +150,12 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
   ): Promise<void> {
     try {
       this.logSuccess(`Importing ${terraformAddress} -> ${awsResourceId}`);
-      execSync(`terraform import ${terraformAddress} ${awsResourceId}`, { 
+      
+      if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+        throw new Error("AWS credentials not configured - AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are required");
+      }
+      
+      const result = execSync(`terraform import ${terraformAddress} ${awsResourceId}`, { 
         stdio: 'pipe',
         env: {
           ...process.env,
@@ -117,14 +163,16 @@ class TerraformImportMigration extends OneTimeMigrationRunner {
           AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
           AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || 'us-east-1',
         },
-        maxBuffer: 1024 * 1024 * 10
+        maxBuffer: 1024 * 1024 * 10,
+        encoding: 'utf8'
       });
+      
       this.logSuccess(`Successfully imported ${terraformAddress}`);
       results.push({resource: terraformAddress, id: awsResourceId, success: true});
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const stderr = (error as any).stderr || '';
-      const stdout = (error as any).stdout || '';
+      const stderr = (error as any).stderr ? (error as any).stderr.toString() : '';
+      const stdout = (error as any).stdout ? (error as any).stdout.toString() : '';
       const fullError = `${errorMessage}\n\nSTDOUT:\n${stdout}\n\nSTDERR:\n${stderr}`.trim();
       this.logWarning(`Failed to import ${terraformAddress}: ${fullError}`);
       results.push({resource: terraformAddress, id: awsResourceId, success: false, error: fullError});
