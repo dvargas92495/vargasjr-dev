@@ -8,6 +8,16 @@ on:
       - 'terraform/**'
       - '.github/workflows/terraform-apply.yaml'
       - 'scripts/run-terraform.ts'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
 
 permissions:
   contents: read
