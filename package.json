@@ -26,7 +26,7 @@
     "healthcheck": "npx tsx scripts/healthcheck.ts",
     "agent:build": "cd worker && tsc",
     "agent:dev": "tsx worker/index.ts",
-    "agent:start": "node worker/dist/index.js",
+    "agent:start": "node worker/dist/worker/index.js",
     "agent:agent": "tsx worker/cli.ts agent",
     "agent:reboot": "tsx worker/cli.ts reboot",
     "agent:publish": "npx tsx scripts/publish-agent.ts",
