@@ -411,7 +411,7 @@ AGENT_ENVIRONMENT=production`;
       console.log("Making run_agent.sh executable and running it...");
       try {
         await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x /home/ubuntu/run_agent.sh' });
-        await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd /home/ubuntu && ./run_agent.sh' });
+        await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd /home/ubuntu && ./run_agent.sh' }, 600);
       } catch (error) {
         console.error(`❌ Agent deployment command failed`);
         console.error(`Error: ${this.formatError(error)}`);
@@ -475,7 +475,7 @@ AGENT_ENVIRONMENT=production`;
     throw new Error("SSM failed to become ready within timeout (10 minutes). Check SSM agent installation and IAM permissions.");
   }
 
-  private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }): Promise<void> {
+  private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }, timeoutSeconds: number = 300): Promise<void> {
     console.log(`[${commandObj.tag}] Executing: ${commandObj.command}`);
 
     const maxAttempts = 3;
@@ -490,7 +490,7 @@ AGENT_ENVIRONMENT=production`;
           Parameters: {
             commands: [commandObj.command],
           },
-          TimeoutSeconds: 300,
+          TimeoutSeconds: timeoutSeconds,
         });
 
         const commandId = commandResult.Command?.CommandId;
@@ -528,7 +528,7 @@ AGENT_ENVIRONMENT=production`;
           pollAttempts++;
         }
         
-        throw new Error(`SSM command timed out after ${maxPollAttempts * 5} seconds`);
+        throw new Error(`SSM command timed out after ${timeoutSeconds} seconds`);
       } catch (error: any) {
         attempts++;
         if (attempts >= maxAttempts) {
