@@ -60,6 +60,16 @@
       "container_image_tag": "1.1.1",
       "workspace": "default",
       "target_directory": null
+    },
+    {
+      "module": "workflows.weekly_accounting",
+      "workflow_sandbox_id": "aae86b5d-15f1-4760-aca1-1a872cd8ba0e",
+      "ignore": null,
+      "deployments": [],
+      "container_image_name": null,
+      "container_image_tag": null,
+      "workspace": "default",
+      "target_directory": null
     }
   ],
   "workspaces": []
