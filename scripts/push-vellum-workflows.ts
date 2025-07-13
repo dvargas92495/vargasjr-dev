@@ -150,8 +150,8 @@ class VellumWorkflowPusher {
         }
       }
       
-      if (errorOutput.includes('container image tags not found')) {
-        console.log(`🔄 Detected missing container image tags for ${workflowName}, attempting to push existing image...`);
+      if (errorOutput.includes('Container image') && errorOutput.includes('not found')) {
+        console.log(`🔄 Detected missing container image for ${workflowName}, attempting to push existing image...`);
         const retryResult = await this.handleImageError(workflowName, errorOutput, 'missing_image_tags');
         if (retryResult.success) {
           return retryResult;
