@@ -1,4 +1,5 @@
 import { Logger } from './utils';
+import { VellumClient } from 'vellum-ai';
 
 export class RoutineJob {
   private name: string;
@@ -80,7 +81,47 @@ export class RoutineJob {
     return parseInt(pattern) === value;
   }
 
-  run(): void {
+  getName(): string {
+    return this.name;
+  }
+
+  async run(): Promise<any> {
     this.logger.info(`Running Routine Job ${this.name}`);
+    
+    try {
+      const apiKey = process.env.VELLUM_API_KEY;
+      if (!apiKey) {
+        throw new Error('VELLUM_API_KEY environment variable is required');
+      }
+
+      const vellumClient = new VellumClient({
+        apiKey: apiKey,
+      });
+
+      const stream = await vellumClient.executeWorkflowStream({
+        workflowDeploymentName: this.name,
+        inputs: [],
+      });
+
+      let workflowOutputs: any = null;
+
+      for await (const event of stream) {
+        if (event.type === 'WORKFLOW') {
+          if (event.data.error) {
+            throw new Error(`Workflow ${this.name} failed: ${event.data.error.message}`);
+          }
+          
+          if (event.data.state === 'FULFILLED' && event.data.outputs) {
+            workflowOutputs = event.data.outputs;
+          }
+        }
+      }
+
+      this.logger.info(`Completed Routine Job ${this.name}`);
+      return workflowOutputs;
+    } catch (error) {
+      this.logger.error(`Failed to execute workflow ${this.name}: ${error}`);
+      throw error;
+    }
   }
 }

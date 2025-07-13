@@ -4,6 +4,8 @@ import { createFileLogger, getVersion, Logger } from './utils';
 import { postgresSession } from './database';
 import { RoutineJob } from './routine-job';
 import { checkAndRebootIfNeeded } from './reboot-manager';
+import { RoutineJobsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 dotenv.config();
 
@@ -22,7 +24,7 @@ export class AgentRunner {
   private maxLoops?: number;
   private lastUpdated: Date;
   private updateInterval: number;
-  private routineJobs: RoutineJob[];
+  private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
 
   constructor(config: AgentRunnerConfig = {}) {
@@ -41,7 +43,12 @@ export class AgentRunner {
     this.lastUpdated = new Date();
     this.updateInterval = 60000;
 
-    this.routineJobs = this.loadRoutineJobs();
+    this.loadRoutineJobs().then(jobs => {
+      this.routineJobs = jobs;
+    }).catch(error => {
+      this.logger.error(`Failed to load routine jobs during initialization: ${error}`);
+      this.routineJobs = [];
+    });
 
     this.logger.info(`Initialized agent v${this.currentVersion}`);
   }
@@ -70,7 +77,13 @@ export class AgentRunner {
 
         for (const job of this.routineJobs) {
           if (job.shouldRun()) {
-            job.run();
+            job.run().then(outputs => {
+              if (outputs) {
+                this.logger.info(`Routine job ${job.getName()} completed with outputs: ${JSON.stringify(outputs)}`);
+              }
+            }).catch(error => {
+              this.logger.error(`Routine job ${job.getName()} failed: ${error}`);
+            });
             break;
           }
         }
@@ -99,10 +112,11 @@ export class AgentRunner {
     return this.cancelSignal.listenerCount('cancel') === 0;
   }
 
-  private loadRoutineJobs(): RoutineJob[] {
+  private async loadRoutineJobs(): Promise<RoutineJob[]> {
     try {
       const db = postgresSession();
-      return [];
+      const routineJobs = await db.select().from(RoutineJobsTable).where(eq(RoutineJobsTable.enabled, true));
+      return routineJobs.map((job: any) => new RoutineJob(job.name, job.cronExpression, this.logger));
     } catch (error) {
       this.logger.error(`Failed to load routine jobs: ${error}`);
       return [];
