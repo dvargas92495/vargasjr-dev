@@ -119,7 +119,7 @@ class VellumWorkflowPusher {
       
       const result = execSync(command, {
         cwd: this.agentDir,
-        stdio: this.isPreviewMode ? 'pipe' : 'inherit',
+        stdio: 'pipe',
         encoding: 'utf8',
         env: {
           ...process.env,
@@ -224,7 +224,7 @@ class VellumWorkflowPusher {
       
       execSync(pushImageCommand, {
         cwd: this.agentDir,
-        stdio: 'inherit',
+        stdio: 'pipe',
         env: {
           ...process.env,
           VELLUM_API_KEY: process.env.VELLUM_API_KEY
