@@ -626,6 +626,33 @@ AGENT_ENVIRONMENT=production`;
     } catch (error) {
       console.error(`Failed to list worker directory: ${this.formatError(error)}`);
     }
+
+    try {
+      console.log('\n🔧 Checking build artifacts...');
+      const buildCheckResult = await ssm.sendCommand({
+        InstanceIds: [instanceId],
+        DocumentName: "AWS-RunShellScript",
+        Parameters: {
+          commands: ['echo "=== BUILD ARTIFACTS CHECK ==="; if [ -f /home/ubuntu/*/worker/dist/index.js ]; then echo "✅ worker/dist/index.js found"; ls -la /home/ubuntu/*/worker/dist/; else echo "❌ worker/dist/index.js missing"; find /home/ubuntu -name "index.js" -type f 2>/dev/null || echo "No index.js files found"; fi'],
+        },
+        TimeoutSeconds: 60,
+      });
+
+      if (buildCheckResult.Command?.CommandId) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const buildCheckOutput = await ssm.getCommandInvocation({
+          CommandId: buildCheckResult.Command.CommandId,
+          InstanceId: instanceId,
+        });
+        
+        if (buildCheckOutput.Status === "Success") {
+          const output = buildCheckOutput.StandardOutputContent || "";
+          console.log(output);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to check build artifacts: ${this.formatError(error)}`);
+    }
   }
 
   private async executeSCPCommand(keyPath: string, publicDns: string, localPath: string, remotePath: string): Promise<void> {
