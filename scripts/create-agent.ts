@@ -26,7 +26,7 @@ class VargasJRAgentCreator {
 
   constructor(config: AgentConfig) {
     this.config = {
-      instanceType: "t3.micro",
+      instanceType: config.prNumber ? "t3.small" : "t3.micro",
       region: "us-east-1",
       ...config
     };
