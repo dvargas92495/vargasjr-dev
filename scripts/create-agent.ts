@@ -388,17 +388,7 @@ AGENT_ENVIRONMENT=production`;
       ];
 
       for (const commandObj of setupCommands) {
-        try {
-          await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
-        } catch (error) {
-          console.error(`❌ Setup command failed: [${commandObj.tag}] ${commandObj.command}`);
-          console.error(`Error: ${this.formatError(error)}`);
-          
-          await this.executeDiagnosticCommands(instanceDetails.instanceId);
-          
-          console.error('\n💀 Script terminated due to SSM command failure. See diagnostic information above.');
-          process.exit(1);
-        }
+        await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
       }
       
       setupTimingResults.push({
@@ -409,18 +399,8 @@ AGENT_ENVIRONMENT=production`;
 
       startTime = Date.now();
       console.log("Making run_agent.sh executable and running it...");
-      try {
-        await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x /home/ubuntu/run_agent.sh' });
-        await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd /home/ubuntu && ./run_agent.sh' }, 600);
-      } catch (error) {
-        console.error(`❌ Agent deployment command failed`);
-        console.error(`Error: ${this.formatError(error)}`);
-        
-        await this.executeDiagnosticCommands(instanceDetails.instanceId);
-        
-        console.error('\n💀 Script terminated due to SSM command failure. See diagnostic information above.');
-        process.exit(1);
-      }
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'CHMOD', command: 'chmod +x /home/ubuntu/run_agent.sh' });
+      await this.executeSSMCommand(instanceDetails.instanceId, { tag: 'AGENT', command: 'cd /home/ubuntu && ./run_agent.sh' }, 600);
       
       setupTimingResults.push({
         method: 'setupInstance.agentDeployment',
@@ -475,7 +455,7 @@ AGENT_ENVIRONMENT=production`;
     throw new Error("SSM failed to become ready within timeout (10 minutes). Check SSM agent installation and IAM permissions.");
   }
 
-  private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }, timeoutSeconds: number = 300): Promise<void> {
+  private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }, timeoutSeconds: number = 300, enableDiagnostics: boolean = true): Promise<void> {
     console.log(`[${commandObj.tag}] Executing: ${commandObj.command}`);
 
     const maxAttempts = 3;
@@ -533,6 +513,14 @@ AGENT_ENVIRONMENT=production`;
         attempts++;
         if (attempts >= maxAttempts) {
           console.error(`❌ [${commandObj.tag}] SSM command failed after ${maxAttempts} attempts: ${commandObj.command}`);
+          
+          if (enableDiagnostics) {
+            console.error(`Error: ${this.formatError(error)}`);
+            await this.executeDiagnosticCommands(instanceId);
+            console.error('\n💀 Script terminated due to SSM command failure. See diagnostic information above.');
+            process.exit(1);
+          }
+          
           throw error;
         }
         console.log(`[${commandObj.tag}] SSM command failed, retrying... (${attempts}/${maxAttempts})`);
@@ -544,112 +532,43 @@ AGENT_ENVIRONMENT=production`;
 
   private async executeDiagnosticCommands(instanceId: string): Promise<void> {
     console.log('\n🔍 Executing diagnostic commands to gather error information...');
-    const ssm = new SSM({ region: "us-east-1" });
     
     try {
       console.log('📄 Checking for error.log...');
-      const errorLogResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: ['if [ -f /home/ubuntu/error.log ]; then echo "=== ERROR.LOG CONTENTS ==="; cat /home/ubuntu/error.log; else echo "No error.log file found"; fi'],
-        },
-        TimeoutSeconds: 60,
-      });
-
-      if (errorLogResult.Command?.CommandId) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const errorLogOutput = await ssm.getCommandInvocation({
-          CommandId: errorLogResult.Command.CommandId,
-          InstanceId: instanceId,
-        });
-        
-        if (errorLogOutput.Status === "Success") {
-          const output = errorLogOutput.StandardOutputContent || "";
-          console.log(output);
-        }
-      }
+      await this.executeSSMCommand(instanceId, {
+        tag: 'ERROR_LOG',
+        command: 'if [ -f /home/ubuntu/error.log ]; then echo "=== ERROR.LOG CONTENTS ==="; cat /home/ubuntu/error.log; else echo "No error.log file found"; fi'
+      }, 60, false);
     } catch (error) {
       console.error(`Failed to read error.log: ${this.formatError(error)}`);
     }
 
     try {
       console.log('\n📁 Listing agent directory...');
-      const agentDirResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: ['echo "=== AGENT DIRECTORY LISTING ==="; ls -la /home/ubuntu/agent/ 2>/dev/null || echo "Agent directory not found"'],
-        },
-        TimeoutSeconds: 60,
-      });
-
-      if (agentDirResult.Command?.CommandId) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const agentDirOutput = await ssm.getCommandInvocation({
-          CommandId: agentDirResult.Command.CommandId,
-          InstanceId: instanceId,
-        });
-        
-        if (agentDirOutput.Status === "Success") {
-          const output = agentDirOutput.StandardOutputContent || "";
-          console.log(output);
-        }
-      }
+      await this.executeSSMCommand(instanceId, {
+        tag: 'AGENT_DIR',
+        command: 'echo "=== AGENT DIRECTORY LISTING ==="; ls -la /home/ubuntu/agent/ 2>/dev/null || echo "Agent directory not found"'
+      }, 60, false);
     } catch (error) {
       console.error(`Failed to list agent directory: ${this.formatError(error)}`);
     }
 
     try {
       console.log('\n📁 Listing worker directory...');
-      const workerDirResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: ['echo "=== WORKER DIRECTORY LISTING ==="; ls -la /home/ubuntu/worker/ 2>/dev/null || echo "Worker directory not found"'],
-        },
-        TimeoutSeconds: 60,
-      });
-
-      if (workerDirResult.Command?.CommandId) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const workerDirOutput = await ssm.getCommandInvocation({
-          CommandId: workerDirResult.Command.CommandId,
-          InstanceId: instanceId,
-        });
-        
-        if (workerDirOutput.Status === "Success") {
-          const output = workerDirOutput.StandardOutputContent || "";
-          console.log(output);
-        }
-      }
+      await this.executeSSMCommand(instanceId, {
+        tag: 'WORKER_DIR',
+        command: 'echo "=== WORKER DIRECTORY LISTING ==="; ls -la /home/ubuntu/worker/ 2>/dev/null || echo "Worker directory not found"'
+      }, 60, false);
     } catch (error) {
       console.error(`Failed to list worker directory: ${this.formatError(error)}`);
     }
 
     try {
       console.log('\n🔧 Checking build artifacts...');
-      const buildCheckResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: ['echo "=== BUILD ARTIFACTS CHECK ==="; if [ -f /home/ubuntu/*/worker/dist/index.js ]; then echo "✅ worker/dist/index.js found"; ls -la /home/ubuntu/*/worker/dist/; else echo "❌ worker/dist/index.js missing"; find /home/ubuntu -name "index.js" -type f 2>/dev/null || echo "No index.js files found"; fi'],
-        },
-        TimeoutSeconds: 60,
-      });
-
-      if (buildCheckResult.Command?.CommandId) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const buildCheckOutput = await ssm.getCommandInvocation({
-          CommandId: buildCheckResult.Command.CommandId,
-          InstanceId: instanceId,
-        });
-        
-        if (buildCheckOutput.Status === "Success") {
-          const output = buildCheckOutput.StandardOutputContent || "";
-          console.log(output);
-        }
-      }
+      await this.executeSSMCommand(instanceId, {
+        tag: 'BUILD_CHECK',
+        command: 'echo "=== BUILD ARTIFACTS CHECK ==="; if [ -f /home/ubuntu/*/worker/dist/index.js ]; then echo "✅ worker/dist/index.js found"; ls -la /home/ubuntu/*/worker/dist/; else echo "❌ worker/dist/index.js missing"; find /home/ubuntu -name "index.js" -type f 2>/dev/null || echo "No index.js files found"; fi'
+      }, 60, false);
     } catch (error) {
       console.error(`Failed to check build artifacts: ${this.formatError(error)}`);
     }
