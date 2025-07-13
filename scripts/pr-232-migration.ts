@@ -25,17 +25,14 @@ class PR232Migration extends OneTimeMigrationRunner {
       try {
         const sshCommand = `npx tsx ./scripts/ssh-connect.ts --pr 232 --command "${command}"`;
         
-        const output = execSync(sshCommand, { 
+        execSync(sshCommand, { 
           encoding: 'utf8',
-          stdio: 'pipe'
+          stdio: 'inherit'
         });
         
-        console.log(output);
         this.logSuccess(`Successfully executed: ${command}`);
       } catch (error: any) {
         this.logError(`Failed to execute '${command}': ${error.message}`);
-        if (error.stdout) console.log(error.stdout);
-        if (error.stderr) console.error(error.stderr);
       }
     }
 
