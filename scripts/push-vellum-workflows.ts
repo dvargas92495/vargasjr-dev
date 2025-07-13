@@ -132,6 +132,13 @@ class VellumWorkflowPusher {
       return { success: true, output: this.isPreviewMode ? result : undefined };
     } catch (error: any) {
       const errorOutput = (error.stdout + error.stderr + error.message + '').toString();
+      
+      if (this.isPreviewMode && errorOutput.includes('# Workflow Push Report') && errorOutput.includes('No errors found')) {
+        const successMessage = `✅ Successfully previewed: ${workflowName}`;
+        console.log(successMessage);
+        return { success: true, output: errorOutput };
+      }
+      
       console.error(`SDK Version: ${errorOutput.includes('SDK Version')}`);
       console.error(`does not match SDK version: ${errorOutput.includes('does not match SDK version')}`);
       console.error(`within the container image: ${errorOutput.includes('within the container image')}`);
