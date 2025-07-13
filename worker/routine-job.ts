@@ -85,7 +85,7 @@ export class RoutineJob {
     return this.name;
   }
 
-  async run(): Promise<void> {
+  async run(): Promise<any> {
     this.logger.info(`Running Routine Job ${this.name}`);
     
     try {
@@ -103,18 +103,25 @@ export class RoutineJob {
         inputs: [],
       });
 
+      let workflowOutputs: any = null;
+
       for await (const event of stream) {
         if (event.type === 'WORKFLOW') {
-          this.logger.info(`Workflow ${this.name} event: ${event.data.state}`);
           if (event.data.error) {
-            this.logger.error(`Workflow ${this.name} error: ${event.data.error.message}`);
+            throw new Error(`Workflow ${this.name} failed: ${event.data.error.message}`);
+          }
+          
+          if (event.data.state === 'FULFILLED' && event.data.outputs) {
+            workflowOutputs = event.data.outputs;
           }
         }
       }
 
       this.logger.info(`Completed Routine Job ${this.name}`);
+      return workflowOutputs;
     } catch (error) {
       this.logger.error(`Failed to execute workflow ${this.name}: ${error}`);
+      throw error;
     }
   }
 }

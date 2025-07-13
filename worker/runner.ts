@@ -77,7 +77,11 @@ export class AgentRunner {
 
         for (const job of this.routineJobs) {
           if (job.shouldRun()) {
-            job.run().catch(error => {
+            job.run().then(outputs => {
+              if (outputs) {
+                this.logger.info(`Routine job ${job.getName()} completed with outputs: ${JSON.stringify(outputs)}`);
+              }
+            }).catch(error => {
               this.logger.error(`Routine job ${job.getName()} failed: ${error}`);
             });
             break;
