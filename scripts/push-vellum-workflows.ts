@@ -150,6 +150,9 @@ class VellumWorkflowPusher {
         }
       }
       
+      console.error(`Container image: ${errorOutput.includes('Container image')}`);
+      console.error(`not found: ${errorOutput.includes('not found')}`);
+      
       if (errorOutput.includes('Container image') && errorOutput.includes('not found')) {
         if (this.isPreviewMode) {
           const warningMessage = `⚠️  Skipping ${workflowName}: Container image not found (would be resolved in actual push)`;
@@ -165,7 +168,7 @@ class VellumWorkflowPusher {
       }
       
       const errorMessage = `Failed to ${this.isPreviewMode ? 'preview' : 'push'} workflow ${workflowName}: ${error}`;
-      console.error(`❌ ${errorMessage}`);
+      console.error(`❌ ${errorOutput}`);
       return { success: false, error: errorMessage };
     }
   }
