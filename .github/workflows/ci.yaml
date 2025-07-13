@@ -79,6 +79,7 @@ jobs:
           cp -r ../browser ./browser
           cp -r ../scripts ./scripts
           cp -r ../worker ./worker
+          cp -r ../db ./db
           cp ../package.json ./package.json
           cd ..
           tar -czf vargasjr_dev_agent-${{ steps.get_version.outputs.version }}.tar.gz vargasjr_dev_agent-${{ steps.get_version.outputs.version }}
