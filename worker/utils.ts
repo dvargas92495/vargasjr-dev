@@ -4,15 +4,10 @@ import { createWriteStream } from 'fs';
 
 export function getVersion(): string {
   try {
-    const pyprojectPath = path.join(__dirname, '../vellum/pyproject.toml');
-    const content = fs.readFileSync(pyprojectPath, 'utf-8');
-    
-    for (const line of content.split('\n')) {
-      if (line.startsWith('version = ')) {
-        return line.split('=')[1].trim().replace(/"/g, '');
-      }
-    }
-    return 'unknown';
+    const packageJsonPath = path.join(__dirname, '../package.json');
+    const content = fs.readFileSync(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(content);
+    return packageJson.version || 'unknown';
   } catch (error) {
     return 'unknown';
   }

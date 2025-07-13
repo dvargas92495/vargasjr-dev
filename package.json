@@ -29,6 +29,7 @@
     "agent:start": "node worker/dist/index.js",
     "agent:agent": "tsx worker/cli.ts agent",
     "agent:reboot": "tsx worker/cli.ts reboot",
+    "agent:publish": "npx tsx scripts/publish-agent.ts",
     "connect": "npx tsx scripts/ssh-connect.ts"
   },
   "dependencies": {
