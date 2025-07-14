@@ -154,7 +154,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
           SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
         }
       },
-      filename: "./lambda-email-processor.js",
+      filename: "lambda-email-processor.js",
       tags
     });
 
