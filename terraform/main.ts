@@ -144,7 +144,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
 
 
     const lambdaAsset = new TerraformAsset(this, "EmailLambdaAsset", {
-      path: path.resolve(__dirname, "lambda-email-processor.js"),
+      path: "lambda-email-processor.js",
       type: AssetType.ARCHIVE,
     });
 
