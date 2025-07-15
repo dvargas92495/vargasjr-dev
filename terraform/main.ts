@@ -1,6 +1,6 @@
-import { join } from "path";
+import * as path from "path";
 import { Construct } from "constructs";
-import { App, TerraformStack, S3Backend } from "cdktf";
+import { App, TerraformStack, S3Backend, TerraformAsset, AssetType } from "cdktf";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
 import { S3BucketVersioningA } from "@cdktf/provider-aws/lib/s3-bucket-versioning";
@@ -14,8 +14,6 @@ import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
-import { ArchiveProvider } from "@cdktf/provider-archive/lib/provider";
-import { DataArchiveFile } from "@cdktf/provider-archive/lib/data-archive-file";
 import { AWS_S3_BUCKETS } from "../app/lib/constants";
 
 
@@ -34,8 +32,6 @@ class VargasJRInfrastructureStack extends TerraformStack {
     new AwsProvider(this, "AWS", {
       region: region,
     });
-
-    new ArchiveProvider(this, "archive");
 
     const commonTags = {
       Project: "VargasJR",
@@ -147,11 +143,9 @@ class VargasJRInfrastructureStack extends TerraformStack {
     });
 
 
-    const lambdaArchive = new DataArchiveFile(this, "EmailLambdaArchive", {
-      type: "zip",
-      sourceFile: join(process.cwd(), "terraform", "lambda-email-processor.js"),
-      outputPath: join(process.cwd(), "terraform", "lambda-email-processor.zip"),
-      outputFileMode: "0666"
+    const lambdaAsset = new TerraformAsset(this, "EmailLambdaAsset", {
+      path: path.resolve(__dirname, "lambda-email-processor.js"),
+      type: AssetType.ARCHIVE,
     });
 
     const emailLambda = new LambdaFunction(this, "EmailLambdaFunction", {
@@ -166,8 +160,8 @@ class VargasJRInfrastructureStack extends TerraformStack {
           SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
         }
       },
-      filename: lambdaArchive.outputPath,
-      sourceCodeHash: lambdaArchive.outputBase64Sha256,
+      filename: lambdaAsset.path,
+      sourceCodeHash: lambdaAsset.assetHash,
       tags
     });
 
