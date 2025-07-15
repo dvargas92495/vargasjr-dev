@@ -145,7 +145,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     const emailLambda = new LambdaFunction(this, "EmailLambdaFunction", {
       functionName: "vargas-jr-email-processor",
       role: lambdaRole.arn,
-      handler: "index.handler",
+      handler: "lambda-email-processor.handler",
       runtime: "nodejs18.x",
       timeout: 30,
       environment: {
