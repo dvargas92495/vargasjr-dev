@@ -1,6 +1,5 @@
 import InstanceCard from "@/components/instance-card";
 import { EC2 } from "@aws-sdk/client-ec2";
-import { notFound } from "next/navigation";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 
 async function getCurrentPRNumber(): Promise<string | null> {
@@ -62,12 +61,24 @@ export default async function AdminPage() {
     filters.push({ Name: "tag:PRNumber", Values: [currentPRNumber] });
   }
   
-  const instances = await ec2
-    .describeInstances({ Filters: filters })
-    .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
-
-  if (instances.length === 0) {
-    notFound();
+  let instances: Array<{
+    InstanceId?: string;
+    State?: { Name?: string };
+    KeyName?: string;
+    PublicDnsName?: string;
+    InstanceType?: string;
+    ImageId?: string;
+    Tags?: Array<{ Key?: string; Value?: string }>;
+  }> = [];
+  let errorMessage: string | null = null;
+  
+  try {
+    instances = await ec2
+      .describeInstances({ Filters: filters })
+      .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
+  } catch (error) {
+    console.error('Failed to query EC2 instances:', error);
+    errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
   }
 
   return (
@@ -85,9 +96,52 @@ export default async function AdminPage() {
         </div>
       </div>
       
-      {instances.map((instance) => (
-        <InstanceCard key={instance.InstanceId} instance={instance} />
-      ))}
+      {/* Instances Section */}
+      {errorMessage ? (
+        <div className="bg-red-50 border border-red-200 p-6 rounded-lg w-full max-w-2xl">
+          <h3 className="font-semibold text-red-800 mb-2">Unable to Query Instances</h3>
+          <p className="text-sm text-red-600 mb-3">
+            Failed to connect to AWS EC2 service. This is likely due to missing or invalid AWS credentials.
+          </p>
+          <div className="text-sm text-red-500 font-mono bg-red-100 p-2 rounded">
+            {errorMessage}
+          </div>
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-sm text-yellow-800">
+              <strong>Note:</strong> In production, this page should have proper AWS credentials configured 
+              to query EC2 instances. This error is expected in local development without AWS setup.
+            </p>
+          </div>
+        </div>
+      ) : instances.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-2xl">
+          <h3 className="font-semibold text-gray-800 mb-2">No Instances Found</h3>
+          <p className="text-sm text-gray-600 mb-3">
+            No EC2 instances were found matching the current environment filters.
+          </p>
+          <div className="text-sm text-gray-500">
+            <p><strong>Expected tags:</strong></p>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li>Project: VargasJR</li>
+              {environmentPrefix === '' && <li>Type: main</li>}
+              {environmentPrefix === 'PREVIEW' && currentPRNumber && <li>PRNumber: {currentPRNumber}</li>}
+              <li>State: running, stopped, or pending</li>
+            </ul>
+          </div>
+          {environmentPrefix === '' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800">
+                <strong>Production Environment:</strong> No production instances are currently running. 
+                You may need to create a production agent using the create-agent script.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        instances.map((instance) => (
+          <InstanceCard key={instance.InstanceId} instance={instance} />
+        ))
+      )}
     </div>
   );
 }
