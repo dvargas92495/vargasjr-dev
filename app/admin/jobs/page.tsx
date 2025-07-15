@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import JobRow from "@/components/job-row";
+import Link from "next/link";
 
 interface Job {
   id: string;
@@ -44,8 +45,32 @@ export default function JobsPage() {
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
-  if (loading) return <div className="p-6">Loading jobs...</div>;
-  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (loading) return (
+    <>
+      <div className="p-6">Loading jobs...</div>
+      <div className="mt-4">
+        <Link
+          href="/admin/jobs/routine/new"
+          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          New Routine Job
+        </Link>
+      </div>
+    </>
+  );
+  if (error) return (
+    <>
+      <div className="p-6 text-red-600">Error: {error}</div>
+      <div className="mt-4">
+        <Link
+          href="/admin/jobs/routine/new"
+          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          New Routine Job
+        </Link>
+      </div>
+    </>
+  );
 
   return (
     <>
@@ -64,6 +89,14 @@ export default function JobsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="mt-4">
+        <Link
+          href="/admin/jobs/routine/new"
+          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          New Routine Job
+        </Link>
       </div>
     </>
   );
