@@ -1,5 +1,6 @@
+import * as path from "path";
 import { Construct } from "constructs";
-import { App, TerraformStack, S3Backend } from "cdktf";
+import { App, TerraformStack, S3Backend, TerraformAsset, AssetType } from "cdktf";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
 import { S3BucketVersioningA } from "@cdktf/provider-aws/lib/s3-bucket-versioning";
@@ -142,10 +143,15 @@ class VargasJRInfrastructureStack extends TerraformStack {
     });
 
 
+    const lambdaAsset = new TerraformAsset(this, "EmailLambdaAsset", {
+      path: "lambda",
+      type: AssetType.ARCHIVE,
+    });
+
     const emailLambda = new LambdaFunction(this, "EmailLambdaFunction", {
       functionName: "vargas-jr-email-processor",
       role: lambdaRole.arn,
-      handler: "index.handler",
+      handler: "lambda-email-processor.handler",
       runtime: "nodejs18.x",
       timeout: 30,
       environment: {
@@ -154,7 +160,8 @@ class VargasJRInfrastructureStack extends TerraformStack {
           SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
         }
       },
-      filename: "lambda-email-processor.js",
+      filename: lambdaAsset.path,
+      sourceCodeHash: lambdaAsset.assetHash,
       tags
     });
 
