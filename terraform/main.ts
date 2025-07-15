@@ -13,6 +13,8 @@ import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
+import { ArchiveProvider } from "@cdktf/provider-archive/lib/provider";
+import { DataArchiveFile } from "@cdktf/provider-archive/lib/data-archive-file";
 import { AWS_S3_BUCKETS } from "../app/lib/constants";
 
 
@@ -31,6 +33,8 @@ class VargasJRInfrastructureStack extends TerraformStack {
     new AwsProvider(this, "AWS", {
       region: region,
     });
+
+    new ArchiveProvider(this, "archive");
 
     const commonTags = {
       Project: "VargasJR",
@@ -142,6 +146,13 @@ class VargasJRInfrastructureStack extends TerraformStack {
     });
 
 
+    const lambdaArchive = new DataArchiveFile(this, "EmailLambdaArchive", {
+      type: "zip",
+      sourceFile: "lambda-email-processor.js",
+      outputPath: "lambda-email-processor.zip",
+      outputFileMode: "0666"
+    });
+
     const emailLambda = new LambdaFunction(this, "EmailLambdaFunction", {
       functionName: "vargas-jr-email-processor",
       role: lambdaRole.arn,
@@ -154,7 +165,8 @@ class VargasJRInfrastructureStack extends TerraformStack {
           SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
         }
       },
-      filename: "lambda-email-processor.js",
+      filename: lambdaArchive.outputPath,
+      sourceCodeHash: lambdaArchive.outputBase64Sha256,
       tags
     });
 
