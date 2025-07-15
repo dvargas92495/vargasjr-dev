@@ -80,6 +80,8 @@ class VargasJRSSHConnector {
     const instance = instances[0];
     console.log(`✅ Found instance: ${instance.InstanceId}`);
     console.log(`   Public DNS: ${instance.PublicDnsName}`);
+    console.log(`   Public IP: ${instance.PublicIpAddress}`);
+    console.log(`   Security Groups: ${instance.SecurityGroups?.map(sg => `${sg.GroupName} (${sg.GroupId})`).join(', ')}`);
     
     if (!instance.PublicDnsName) {
       throw new Error("Instance does not have a public DNS name");
@@ -125,24 +127,30 @@ class VargasJRSSHConnector {
     
     console.log(`🔗 Connecting to ubuntu@${publicDns}...`);
     
-    let sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${publicDns}`;
+    let sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ConnectionAttempts=3 ubuntu@${publicDns}`;
     
     if (command) {
       sshCommand += ` "${command}"`;
       try {
-        execSync(sshCommand, { stdio: 'inherit' });
+        execSync(sshCommand, { stdio: 'inherit', timeout: 60000 });
         console.log(`✅ Successfully executed SSH command: ${command}`);
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
+        if (error.message?.includes('timeout') || error.message?.includes('Connection timed out')) {
+          throw new Error(`SSH connection timed out. This may indicate a security group or network connectivity issue. Please check that the instance's security group allows SSH access on port 22 from your IP address.`);
+        }
         throw new Error(`SSH command failed: ${error.message}`);
       }
     } else {
       try {
-        execSync(sshCommand, { stdio: 'inherit' });
+        execSync(sshCommand, { stdio: 'inherit', timeout: 60000 });
       } catch (error: any) {
         if (error.status === 130) {
           console.log("\n👋 SSH session ended");
         } else {
+          if (error.message?.includes('timeout') || error.message?.includes('Connection timed out')) {
+            throw new Error(`SSH connection timed out. This may indicate a security group or network connectivity issue. Please check that the instance's security group allows SSH access on port 22 from your IP address.`);
+          }
           throw new Error(`SSH connection failed: ${error.message}`);
         }
       }
