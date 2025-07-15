@@ -41,7 +41,7 @@ class VargasJRSSHConnector {
       }
     } catch (error) {
       console.error(`❌ Failed to establish SSH connection: ${error}`);
-      process.exit(1);
+      throw error;
     }
   }
 
@@ -92,13 +92,23 @@ class VargasJRSSHConnector {
     let secretName;
     
     if (this.config.prNumber) {
-      secretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
+      secretName = `vargasjr-pr-${this.config.prNumber}-pr-${this.config.prNumber}-key-pem`;
     } else {
       secretName = `vargasjr-prod-prod-key-pem`;
     }
 
     console.log(`Retrieving SSH key from secret: ${secretName}`);
-    return await getSecret(secretName, this.config.region);
+    
+    try {
+      return await getSecret(secretName, this.config.region);
+    } catch (error: any) {
+      if (this.config.prNumber && error.message?.includes('Secret not found')) {
+        const fallbackSecretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
+        console.log(`Primary secret not found, trying fallback: ${fallbackSecretName}`);
+        return await getSecret(fallbackSecretName, this.config.region);
+      }
+      throw error;
+    }
   }
 
   private async writeKeyToTempFile(keyMaterial: string): Promise<string> {
@@ -121,11 +131,10 @@ class VargasJRSSHConnector {
       sshCommand += ` "${command}"`;
       try {
         execSync(sshCommand, { stdio: 'inherit' });
+        console.log(`✅ Successfully executed SSH command: ${command}`);
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
-        process.exit(error.status || 1);
-      } finally {
-        console.log(`✅ Successfully executed SSH command: ${command}`);
+        throw new Error(`SSH command failed: ${error.message}`);
       }
     } else {
       try {
