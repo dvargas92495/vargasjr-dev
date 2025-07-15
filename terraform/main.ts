@@ -1,3 +1,4 @@
+import { join } from "path";
 import { Construct } from "constructs";
 import { App, TerraformStack, S3Backend } from "cdktf";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
@@ -148,8 +149,8 @@ class VargasJRInfrastructureStack extends TerraformStack {
 
     const lambdaArchive = new DataArchiveFile(this, "EmailLambdaArchive", {
       type: "zip",
-      sourceFile: "lambda-email-processor.js",
-      outputPath: "lambda-email-processor.zip",
+      sourceFile: join(process.cwd(), "terraform", "lambda-email-processor.js"),
+      outputPath: join(process.cwd(), "terraform", "lambda-email-processor.zip"),
       outputFileMode: "0666"
     });
 
