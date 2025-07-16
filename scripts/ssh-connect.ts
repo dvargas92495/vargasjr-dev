@@ -41,7 +41,7 @@ class VargasJRSSHConnector {
       }
     } catch (error) {
       console.error(`❌ Failed to establish SSH connection: ${error}`);
-      process.exit(1);
+      throw error;
     }
   }
 
@@ -80,6 +80,8 @@ class VargasJRSSHConnector {
     const instance = instances[0];
     console.log(`✅ Found instance: ${instance.InstanceId}`);
     console.log(`   Public DNS: ${instance.PublicDnsName}`);
+    console.log(`   Public IP: ${instance.PublicIpAddress}`);
+    console.log(`   Security Groups: ${instance.SecurityGroups?.map(sg => `${sg.GroupName} (${sg.GroupId})`).join(', ')}`);
     
     if (!instance.PublicDnsName) {
       throw new Error("Instance does not have a public DNS name");
@@ -92,13 +94,23 @@ class VargasJRSSHConnector {
     let secretName;
     
     if (this.config.prNumber) {
-      secretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
+      secretName = `vargasjr-pr-${this.config.prNumber}-pr-${this.config.prNumber}-key-pem`;
     } else {
       secretName = `vargasjr-prod-prod-key-pem`;
     }
 
     console.log(`Retrieving SSH key from secret: ${secretName}`);
-    return await getSecret(secretName, this.config.region);
+    
+    try {
+      return await getSecret(secretName, this.config.region);
+    } catch (error: any) {
+      if (this.config.prNumber && error.message?.includes('Secret not found')) {
+        const fallbackSecretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
+        console.log(`Primary secret not found, trying fallback: ${fallbackSecretName}`);
+        return await getSecret(fallbackSecretName, this.config.region);
+      }
+      throw error;
+    }
   }
 
   private async writeKeyToTempFile(keyMaterial: string): Promise<string> {
@@ -115,27 +127,37 @@ class VargasJRSSHConnector {
     
     console.log(`🔗 Connecting to ubuntu@${publicDns}...`);
     
-    let sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${publicDns}`;
+    let sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ConnectionAttempts=3 ubuntu@${publicDns}`;
     
     if (command) {
       sshCommand += ` "${command}"`;
       try {
-        const output = execSync(sshCommand, { encoding: 'utf8' });
-        console.log(output);
+        execSync(sshCommand, { stdio: 'inherit', timeout: 60000 });
+        console.log(`✅ Successfully executed SSH command: ${command}`);
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
-        if (error.stdout) console.log(error.stdout);
-        if (error.stderr) console.error(error.stderr);
-        process.exit(error.status || 1);
+        if (error.signal === 'SIGTERM' || error.killed) {
+          throw new Error(`SSH command was terminated due to timeout. This indicates a network connectivity issue.`);
+        }
+        if (error.message?.includes('timeout') || error.message?.includes('Connection timed out') || error.code === 'ETIMEDOUT') {
+          throw new Error(`SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`);
+        }
+        throw new Error(`SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`);
       }
     } else {
       try {
-        execSync(sshCommand, { stdio: 'inherit' });
+        execSync(sshCommand, { stdio: 'inherit', timeout: 60000 });
       } catch (error: any) {
         if (error.status === 130) {
           console.log("\n👋 SSH session ended");
         } else {
-          throw new Error(`SSH connection failed: ${error.message}`);
+          if (error.signal === 'SIGTERM' || error.killed) {
+            throw new Error(`SSH command was terminated due to timeout. This indicates a network connectivity issue.`);
+          }
+          if (error.message?.includes('timeout') || error.message?.includes('Connection timed out') || error.code === 'ETIMEDOUT') {
+            throw new Error(`SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`);
+          }
+          throw new Error(`SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`);
         }
       }
     }

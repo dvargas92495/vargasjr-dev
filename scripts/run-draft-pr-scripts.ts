@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
 import { readdirSync, statSync, existsSync, readFileSync } from "fs";
 import { join, extname, relative } from "path";
 import { postGitHubComment } from "./utils";
@@ -234,43 +234,80 @@ class DraftPRScriptRunner {
     
     console.log(`🚀 ${this.isPreviewMode ? 'Running in preview mode' : 'Running'} script: ${scriptPath}`);
     
-    try {
+    return new Promise((resolve) => {
       const command = this.getExecutionCommand(scriptPath);
+      const [cmd, ...args] = command.split(' ');
       
-      const output = execSync(command, {
+      let output = '';
+      let errorOutput = '';
+      
+      const child = spawn(cmd, args, {
         cwd: this.projectRoot,
-        encoding: 'utf8',
-        stdio: 'pipe',
+        stdio: ['inherit', 'pipe', 'pipe'],
         env: {
           ...process.env,
           PR_NUMBER: this.prNumber || ''
+        },
+        timeout: 120000
+      });
+      
+      const timeoutId = setTimeout(() => {
+        child.kill('SIGTERM');
+        console.error(`❌ Script execution timed out after 2 minutes: ${scriptPath}`);
+      }, 120000);
+      
+      child.stdout?.on('data', (data) => {
+        const text = data.toString();
+        process.stdout.write(text);
+        output += text;
+      });
+      
+      child.stderr?.on('data', (data) => {
+        const text = data.toString();
+        process.stderr.write(text);
+        errorOutput += text;
+      });
+      
+      child.on('close', (code) => {
+        clearTimeout(timeoutId);
+        const duration = Date.now() - startTime;
+        
+        if (code === 0) {
+          console.log(`✅ Successfully executed: ${scriptPath} (${duration}ms)`);
+          resolve({
+            scriptPath,
+            success: true,
+            output: output.trim(),
+            duration
+          });
+        } else {
+          const errorMessage = `Process exited with code ${code}`;
+          console.error(`❌ Failed to execute: ${scriptPath} - ${errorMessage}`);
+          resolve({
+            scriptPath,
+            success: false,
+            error: errorMessage,
+            output: (output + errorOutput).trim(),
+            duration
+          });
         }
       });
       
-      const duration = Date.now() - startTime;
-      console.log(`✅ Successfully executed: ${scriptPath} (${duration}ms)`);
-      
-      return {
-        scriptPath,
-        success: true,
-        output: output.trim(),
-        duration
-      };
-    } catch (error: any) {
-      const duration = Date.now() - startTime;
-      const errorMessage = error.message || 'Unknown error';
-      const errorOutput = error.stdout || error.stderr || '';
-      
-      console.error(`❌ Failed to execute: ${scriptPath} - ${errorMessage}`);
-      
-      return {
-        scriptPath,
-        success: false,
-        error: errorMessage,
-        output: errorOutput.trim(),
-        duration
-      };
-    }
+      child.on('error', (error) => {
+        clearTimeout(timeoutId);
+        const duration = Date.now() - startTime;
+        const errorMessage = error.message || 'Unknown error';
+        console.error(`❌ Failed to execute: ${scriptPath} - ${errorMessage}`);
+        console.error(`❌ Error details:`, error);
+        resolve({
+          scriptPath,
+          success: false,
+          error: errorMessage,
+          output: (output + errorOutput).trim(),
+          duration
+        });
+      });
+    });
   }
 
   private getExecutionCommand(scriptPath: string): string {
@@ -281,15 +318,15 @@ class DraftPRScriptRunner {
     switch (ext) {
       case '.js':
       case '.mjs':
-        return `node "${fullPath}"${previewFlag}`;
+        return `node ${fullPath}${previewFlag}`;
       case '.ts':
-        return `npx tsx "${fullPath}"${previewFlag}`;
+        return `npx tsx ${fullPath}${previewFlag}`;
       case '.py':
-        return `python "${fullPath}"${previewFlag}`;
+        return `python ${fullPath}${previewFlag}`;
       case '.sh':
-        return `bash "${fullPath}"${previewFlag}`;
+        return `bash ${fullPath}${previewFlag}`;
       default:
-        return `"${fullPath}"${previewFlag}`;
+        return `${fullPath}${previewFlag}`;
     }
   }
 

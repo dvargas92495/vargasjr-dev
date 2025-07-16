@@ -414,9 +414,20 @@ AGENT_ENVIRONMENT=production`;
         { tag: 'PROFILE', command: '[ -f ~/.profile ] && . ~/.profile || true' }
       ];
 
-      for (const commandObj of setupCommands) {
-        await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
+      console.log(`📋 Starting setup commands execution (${setupCommands.length} commands total)`);
+      for (let i = 0; i < setupCommands.length; i++) {
+        const commandObj = setupCommands[i];
+        console.log(`🔄 [${i + 1}/${setupCommands.length}] About to execute: [${commandObj.tag}] ${commandObj.command}`);
+        
+        try {
+          await this.executeSSMCommand(instanceDetails.instanceId, commandObj, 300, false);
+          console.log(`✅ [${i + 1}/${setupCommands.length}] Successfully completed: [${commandObj.tag}]`);
+        } catch (error) {
+          console.error(`⚠️ [${i + 1}/${setupCommands.length}] Setup command failed but continuing: [${commandObj.tag}] ${commandObj.command}`);
+          console.error(`Error: ${this.formatError(error)}`);
+        }
       }
+      console.log(`📋 Completed setup commands execution`)
       
       setupTimingResults.push({
         method: 'setupInstance.dependencyInstallation',
