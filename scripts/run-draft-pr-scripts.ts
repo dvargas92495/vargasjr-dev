@@ -247,8 +247,14 @@ class DraftPRScriptRunner {
         env: {
           ...process.env,
           PR_NUMBER: this.prNumber || ''
-        }
+        },
+        timeout: 120000
       });
+      
+      const timeoutId = setTimeout(() => {
+        child.kill('SIGTERM');
+        console.error(`❌ Script execution timed out after 2 minutes: ${scriptPath}`);
+      }, 120000);
       
       child.stdout?.on('data', (data) => {
         const text = data.toString();
@@ -263,6 +269,7 @@ class DraftPRScriptRunner {
       });
       
       child.on('close', (code) => {
+        clearTimeout(timeoutId);
         const duration = Date.now() - startTime;
         
         if (code === 0) {
@@ -287,9 +294,11 @@ class DraftPRScriptRunner {
       });
       
       child.on('error', (error) => {
+        clearTimeout(timeoutId);
         const duration = Date.now() - startTime;
         const errorMessage = error.message || 'Unknown error';
         console.error(`❌ Failed to execute: ${scriptPath} - ${errorMessage}`);
+        console.error(`❌ Error details:`, error);
         resolve({
           scriptPath,
           success: false,

@@ -8,6 +8,21 @@ class PR232Migration extends OneTimeMigrationRunner {
   protected userAgent = "vargasjr-pr-232-migration";
 
   protected async runMigration(): Promise<void> {
+    this.logSection("Network Connectivity Check");
+    
+    try {
+      const pingCommand = `ping -c 3 -W 5 ec2-44-204-212-27.compute-1.amazonaws.com`;
+      execSync(pingCommand, { 
+        encoding: 'utf8',
+        stdio: 'inherit',
+        timeout: 15000
+      });
+      this.logSuccess("Network connectivity test passed");
+    } catch (error: any) {
+      this.logError(`Network connectivity test failed: ${error.message}`);
+      this.logError("This indicates a VPC/subnet/route table issue or the instance may need to be recreated");
+    }
+    
     this.logSection("Connecting to PR 232 Instance");
     
     const commands = [

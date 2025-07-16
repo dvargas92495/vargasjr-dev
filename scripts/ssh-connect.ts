@@ -136,10 +136,13 @@ class VargasJRSSHConnector {
         console.log(`✅ Successfully executed SSH command: ${command}`);
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
-        if (error.message?.includes('timeout') || error.message?.includes('Connection timed out')) {
-          throw new Error(`SSH connection timed out. This may indicate a security group or network connectivity issue. Please check that the instance's security group allows SSH access on port 22 from your IP address.`);
+        if (error.signal === 'SIGTERM' || error.killed) {
+          throw new Error(`SSH command was terminated due to timeout. This indicates a network connectivity issue.`);
         }
-        throw new Error(`SSH command failed: ${error.message}`);
+        if (error.message?.includes('timeout') || error.message?.includes('Connection timed out') || error.code === 'ETIMEDOUT') {
+          throw new Error(`SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`);
+        }
+        throw new Error(`SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`);
       }
     } else {
       try {
@@ -148,10 +151,13 @@ class VargasJRSSHConnector {
         if (error.status === 130) {
           console.log("\n👋 SSH session ended");
         } else {
-          if (error.message?.includes('timeout') || error.message?.includes('Connection timed out')) {
-            throw new Error(`SSH connection timed out. This may indicate a security group or network connectivity issue. Please check that the instance's security group allows SSH access on port 22 from your IP address.`);
+          if (error.signal === 'SIGTERM' || error.killed) {
+            throw new Error(`SSH command was terminated due to timeout. This indicates a network connectivity issue.`);
           }
-          throw new Error(`SSH connection failed: ${error.message}`);
+          if (error.message?.includes('timeout') || error.message?.includes('Connection timed out') || error.code === 'ETIMEDOUT') {
+            throw new Error(`SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`);
+          }
+          throw new Error(`SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`);
         }
       }
     }
