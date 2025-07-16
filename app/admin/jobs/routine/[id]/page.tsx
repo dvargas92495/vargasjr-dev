@@ -152,7 +152,7 @@ export default function RoutineJobDetailPage({
         <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           <h3 className="font-semibold">Test Result:</h3>
           <p>{testResult.message}</p>
-          {testResult.outputs && (
+          {testResult.outputs !== undefined && (
             <pre className="mt-2 text-sm bg-white p-2 rounded">
               {JSON.stringify(testResult.outputs, null, 2)}
             </pre>
