@@ -388,7 +388,12 @@ AGENT_ENVIRONMENT=production`;
       ];
 
       for (const commandObj of setupCommands) {
-        await this.executeSSMCommand(instanceDetails.instanceId, commandObj);
+        try {
+          await this.executeSSMCommand(instanceDetails.instanceId, commandObj, 300, false);
+        } catch (error) {
+          console.error(`⚠️ Setup command failed but continuing: [${commandObj.tag}] ${commandObj.command}`);
+          console.error(`Error: ${this.formatError(error)}`);
+        }
       }
       
       setupTimingResults.push({
