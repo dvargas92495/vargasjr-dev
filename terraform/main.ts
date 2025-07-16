@@ -12,9 +12,15 @@ import { LambdaFunction } from "@cdktf/provider-aws/lib/lambda-function";
 import { LambdaPermission } from "@cdktf/provider-aws/lib/lambda-permission";
 import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
+import { IamInstanceProfile } from "@cdktf/provider-aws/lib/iam-instance-profile";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
-import { AWS_S3_BUCKETS } from "../app/lib/constants";
+import { ImagebuilderImagePipeline } from "@cdktf/provider-aws/lib/imagebuilder-image-pipeline";
+import { ImagebuilderImageRecipe } from "@cdktf/provider-aws/lib/imagebuilder-image-recipe";
+import { ImagebuilderComponent } from "@cdktf/provider-aws/lib/imagebuilder-component";
+import { ImagebuilderInfrastructureConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-infrastructure-configuration";
+import { ImagebuilderDistributionConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-distribution-configuration";
+import { AWS_S3_BUCKETS, VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 
 
 interface VargasJRStackConfig {
@@ -51,6 +57,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     this.createSecurityGroup(commonTags);
     this.createSESResources(commonTags);
     this.createEmailLambdaResources(commonTags);
+    this.createCustomAMI(commonTags);
   }
 
   private createS3Resources(tags: Record<string, string>) {
@@ -198,6 +205,117 @@ class VargasJRInfrastructureStack extends TerraformStack {
     } else {
       return `https://${process.env.VERCEL_URL}/api/ses/webhook`;
     }
+  }
+
+  private createCustomAMI(tags: Record<string, string>) {
+    const imageBuilderRole = new IamRole(this, "ImageBuilderRole", {
+      name: "vargasjr-imagebuilder-role",
+      assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Action: "sts:AssumeRole",
+            Effect: "Allow",
+            Principal: {
+              Service: "ec2.amazonaws.com"
+            }
+          }
+        ]
+      }),
+      tags
+    });
+
+    new IamRolePolicyAttachment(this, "ImageBuilderSSMPolicy", {
+      role: imageBuilderRole.name,
+      policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    });
+
+    new IamRolePolicyAttachment(this, "ImageBuilderEC2Policy", {
+      role: imageBuilderRole.name,
+      policyArn: "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder"
+    });
+
+    const imageBuilderInstanceProfile = new IamInstanceProfile(this, "ImageBuilderInstanceProfile", {
+      name: "vargasjr-imagebuilder-instance-profile",
+      role: imageBuilderRole.name,
+      tags
+    });
+
+    const nodeJsComponent = new ImagebuilderComponent(this, "NodeJSComponent", {
+      name: VARGASJR_IMAGE_NAME,
+      platform: "Linux",
+      version: "1.0.0",
+      data: `
+name: Install Node.js 20
+description: Installs Node.js 20.x on Ubuntu
+schemaVersion: 1.0
+
+phases:
+  - name: build
+    steps:
+      - name: UpdatePackages
+        action: ExecuteBash
+        inputs:
+          commands:
+            - apt update
+            - apt install -y unzip curl
+      - name: InstallNodeJS
+        action: ExecuteBash
+        inputs:
+          commands:
+            - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            - apt-get install -y nodejs
+            - node --version
+            - npm --version
+      - name: InstallSSMAgent
+        action: ExecuteBash
+        inputs:
+          commands:
+            - systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+            - systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+`,
+      tags
+    });
+
+    const infraConfig = new ImagebuilderInfrastructureConfiguration(this, "VargasJRInfraConfig", {
+      name: "vargasjr-infra-config",
+      instanceProfileName: imageBuilderInstanceProfile.name,
+      instanceTypes: ["t3.medium"],
+      tags
+    });
+
+    const distConfig = new ImagebuilderDistributionConfiguration(this, "VargasJRDistConfig", {
+      name: "vargasjr-dist-config",
+      distribution: [{
+        amiDistributionConfiguration: {
+          name: VARGASJR_IMAGE_NAME,
+          description: "VargasJR AMI with Node.js pre-installed"
+        },
+        region: "us-east-1"
+      }],
+      tags
+    });
+
+    const imageRecipe = new ImagebuilderImageRecipe(this, "VargasJRImageRecipe", {
+      name: VARGASJR_IMAGE_NAME,
+      version: "1.0.0",
+      parentImage: "ami-0e2c8caa4b6378d8c",
+      component: [{
+        componentArn: nodeJsComponent.arn
+      }],
+      tags
+    });
+
+    const imagePipeline = new ImagebuilderImagePipeline(this, "VargasJRImagePipeline", {
+      name: VARGASJR_IMAGE_NAME,
+      imageRecipeArn: imageRecipe.arn,
+      infrastructureConfigurationArn: infraConfig.arn,
+      distributionConfigurationArn: distConfig.arn,
+      status: "ENABLED",
+      tags
+    });
+
+    return imagePipeline;
   }
 
 
