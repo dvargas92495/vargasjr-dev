@@ -11,8 +11,17 @@ interface Job {
   priority: 'High' | 'Medium' | 'Low';
 }
 
+interface RoutineJob {
+  id: string;
+  name: string;
+  cronExpression: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [routineJobs, setRoutineJobs] = useState<RoutineJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +45,20 @@ export default function JobsPage() {
       }
     };
 
+    const fetchRoutineJobs = async () => {
+      try {
+        const response = await fetch('/api/jobs/routine');
+        if (response.ok) {
+          const data = await response.json();
+          setRoutineJobs(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch routine jobs:', err);
+      }
+    };
+
     fetchJobs();
+    fetchRoutineJobs();
   }, []);
 
   const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
@@ -75,6 +97,7 @@ export default function JobsPage() {
   return (
     <>
       <div className="flex-1">
+        <h2 className="text-xl font-bold mb-4">Regular Jobs</h2>
         <table className="min-w-full border border-gray-300">
           <thead>
             <tr className="bg-gray-500">
@@ -90,6 +113,44 @@ export default function JobsPage() {
           </tbody>
         </table>
       </div>
+
+      <div className="flex-1 mt-8">
+        <h2 className="text-xl font-bold mb-4">Routine Jobs</h2>
+        <table className="min-w-full border border-gray-300">
+          <thead>
+            <tr className="bg-gray-500">
+              <th className="px-6 py-3 border-b text-left">Name</th>
+              <th className="px-6 py-3 border-b text-left">Cron Expression</th>
+              <th className="px-6 py-3 border-b text-left">Status</th>
+              <th className="px-6 py-3 border-b text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {routineJobs.map((job) => (
+              <tr key={job.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 border-b">{job.name}</td>
+                <td className="px-6 py-4 border-b">{job.cronExpression}</td>
+                <td className="px-6 py-4 border-b">
+                  {job.enabled ? (
+                    <span className="text-green-600 font-semibold">✓ Enabled</span>
+                  ) : (
+                    <span className="text-red-600 font-semibold">✗ Disabled</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 border-b">
+                  <Link
+                    href={`/admin/jobs/routine/${job.id}`}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    View Details
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       <div className="mt-4">
         <Link
           href="/admin/jobs/routine/new"
