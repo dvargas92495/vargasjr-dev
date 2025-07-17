@@ -288,7 +288,7 @@ phases:
       name: "vargasjr-dist-config",
       distribution: [{
         amiDistributionConfiguration: {
-          name: VARGASJR_IMAGE_NAME,
+          name: `${VARGASJR_IMAGE_NAME}-{{ imagebuilder:buildDate }}`,
           description: "VargasJR AMI with Node.js pre-installed"
         },
         region: "us-east-1"
