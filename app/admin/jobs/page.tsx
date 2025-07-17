@@ -7,22 +7,6 @@ import { convertPriorityToLabel } from "@/server";
 import { desc } from "drizzle-orm";
 import { getVellumSandboxUrlServer } from "@/app/lib/vellum-server-utils";
 
-interface Job {
-  id: string;
-  name: string;
-  dueDate: Date;
-  priority: 'High' | 'Medium' | 'Low';
-}
-
-interface RoutineJobWithSandbox {
-  id: string;
-  name: string;
-  cronExpression: string;
-  enabled: boolean;
-  createdAt: Date;
-  sandboxUrl: string | null;
-}
-
 export default async function JobsPage() {
   const db = getDb();
   
