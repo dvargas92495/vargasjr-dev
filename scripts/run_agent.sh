@@ -2,13 +2,6 @@
 
 source ~/.profile
 
-if ! command -v npm &> /dev/null; then
-    echo "Node.js not found. Installing Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-    echo "Node.js installation completed"
-fi
-
 if [ -f ".env" ]; then
     source .env
 fi
