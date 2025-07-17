@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
 
+export async function GET() {
+  try {
+    const db = getDb();
+    const routineJobs = await db.select().from(RoutineJobsTable);
+    return NextResponse.json(routineJobs);
+  } catch (error) {
+    console.error("Failed to fetch routine jobs:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch routine jobs", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
