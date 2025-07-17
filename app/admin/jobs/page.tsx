@@ -59,6 +59,7 @@ export default async function JobsPage() {
               <th className="px-6 py-3 border-b text-left">Job Name</th>
               <th className="px-6 py-3 border-b text-left">Due Date</th>
               <th className="px-6 py-3 border-b text-left">Priority</th>
+              <th className="px-6 py-3 border-b text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
