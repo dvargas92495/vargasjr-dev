@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getVellumSandboxUrl } from "@/app/lib/vellum-utils";
+import { testRoutineJobWorkflow, getRoutineJob } from "@/app/actions";
 
 interface RoutineJob {
   id: string;
@@ -11,61 +12,27 @@ interface RoutineJob {
   createdAt: string;
 }
 
-export default function RoutineJobDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const [routineJob, setRoutineJob] = useState<RoutineJob | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface RoutineJobDetailClientProps {
+  routineJob: RoutineJob;
+}
+
+function RoutineJobDetailClient({ routineJob }: RoutineJobDetailClientProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; outputs?: unknown; message: string } | null>(null);
-  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sandboxUrl, setSandboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    params.then(setResolvedParams);
-  }, [params]);
-
-  useEffect(() => {
-    if (!resolvedParams) return;
-
-    const fetchRoutineJob = async () => {
-      try {
-        const response = await fetch(`/api/jobs/routine/${resolvedParams.id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch routine job');
-        }
-        const data = await response.json();
-        setRoutineJob(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRoutineJob();
-  }, [resolvedParams]);
+    getVellumSandboxUrl(routineJob.name).then(setSandboxUrl);
+  }, [routineJob.name]);
 
   const handleTest = async () => {
-    if (!routineJob) return;
-
     setTesting(true);
     setTestResult(null);
     setError(null);
 
     try {
-      const response = await fetch(`/api/jobs/routine/${routineJob.id}/test`, {
-        method: 'POST',
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Test failed');
-      }
-      
+      const result = await testRoutineJobWorkflow(routineJob.id);
       setTestResult(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Test failed');
@@ -73,20 +40,6 @@ export default function RoutineJobDetailPage({
       setTesting(false);
     }
   };
-
-  if (loading) {
-    return <div className="p-6">Loading routine job...</div>;
-  }
-
-  if (error && !routineJob) {
-    return <div className="p-6 text-red-600">Error: {error}</div>;
-  }
-
-  if (!routineJob) {
-    return <div className="p-6">Routine job not found</div>;
-  }
-
-  const sandboxUrl = getVellumSandboxUrl(routineJob.name);
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -161,4 +114,23 @@ export default function RoutineJobDetailPage({
       )}
     </div>
   );
+}
+
+export default async function RoutineJobDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  
+  try {
+    const routineJob = await getRoutineJob(id);
+    return <RoutineJobDetailClient routineJob={routineJob} />;
+  } catch (error) {
+    return (
+      <div className="p-6 text-red-600">
+        Error: {error instanceof Error ? error.message : 'Unknown error'}
+      </div>
+    );
+  }
 }
