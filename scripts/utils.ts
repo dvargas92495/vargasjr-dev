@@ -557,7 +557,7 @@ export async function checkInstanceHealth(
         Parameters: {
           commands: [`cd /home/ubuntu/${directoryName} && npm run healthcheck`],
         },
-        TimeoutSeconds: 12,
+        TimeoutSeconds: 30,
       });
       const sendCommandDuration = Date.now() - sendCommandStartTime;
       const commandId = commandResult.Command?.CommandId;
