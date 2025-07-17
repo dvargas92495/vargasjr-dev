@@ -5,6 +5,23 @@ import { JobsTable, RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
 import { desc } from "drizzle-orm";
+import { getVellumSandboxUrlServer } from "@/app/lib/vellum-server-utils";
+
+interface Job {
+  id: string;
+  name: string;
+  dueDate: Date;
+  priority: 'High' | 'Medium' | 'Low';
+}
+
+interface RoutineJobWithSandbox {
+  id: string;
+  name: string;
+  cronExpression: string;
+  enabled: boolean;
+  createdAt: Date;
+  sandboxUrl: string | null;
+}
 
 export default async function JobsPage() {
   const db = getDb();
@@ -26,8 +43,18 @@ export default async function JobsPage() {
   }));
 
   const routineJobs = await db.select().from(RoutineJobsTable);
+  
+  const routineJobsWithSandbox = await Promise.all(
+    routineJobs.map(async (job) => {
+      const sandboxUrl = await getVellumSandboxUrlServer(job.name);
+      return {
+        ...job,
+        sandboxUrl,
+      };
+    })
+  );
 
-  const routineJobsWithStringDates = routineJobs.map(job => ({
+  const routineJobsWithStringDates = routineJobsWithSandbox.map(job => ({
     ...job,
     createdAt: job.createdAt.toISOString(),
   }));
@@ -82,12 +109,24 @@ export default async function JobsPage() {
                   )}
                 </td>
                 <td className="px-6 py-4 border-b">
-                  <Link
-                    href={`/admin/jobs/routine/${job.id}`}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    View Details
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/admin/jobs/routine/${job.id}`}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      View Details
+                    </Link>
+                    {job.sandboxUrl && (
+                      <a
+                        href={job.sandboxUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        Sandbox
+                      </a>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
