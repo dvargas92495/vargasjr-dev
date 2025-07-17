@@ -229,9 +229,10 @@ class VargasJRAgentCreator {
     );
     
     if (!sortedImages?.length) {
-      console.warn('No custom VargasJR AMI found. This is expected for new PRs before terraform is deployed.');
-      console.warn('Falling back to base Ubuntu AMI. Note: This may require Node.js to be installed manually.');
-      return "ami-0e2c8caa4b6378d8c";
+      throw new Error(
+        `No custom VargasJR AMI found with name '${VARGASJR_IMAGE_NAME}'. ` +
+        `Ensure Terraform has been deployed to create the custom AMI before running this script.`
+      );
     }
     
     const customAmiId = sortedImages[0].ImageId!;
