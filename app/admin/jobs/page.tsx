@@ -53,70 +53,74 @@ export default async function JobsPage() {
     <>
       <div className="flex-1">
         <h2 className="text-xl font-bold mb-4">Regular Jobs</h2>
-        <table className="min-w-full border border-gray-300">
-          <thead>
-            <tr className="bg-gray-500">
-              <th className="px-6 py-3 border-b text-left">Job Name</th>
-              <th className="px-6 py-3 border-b text-left">Due Date</th>
-              <th className="px-6 py-3 border-b text-left">Priority</th>
-              <th className="px-6 py-3 border-b text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedJobs.map((job) => (
-              <JobRow key={job.id} job={job} />
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border border-gray-300">
+            <thead>
+              <tr className="bg-gray-500">
+                <th className="px-6 py-3 border-b text-left">Job Name</th>
+                <th className="px-6 py-3 border-b text-left">Due Date</th>
+                <th className="px-6 py-3 border-b text-left">Priority</th>
+                <th className="px-6 py-3 border-b text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedJobs.map((job) => (
+                <JobRow key={job.id} job={job} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="flex-1 mt-8">
         <h2 className="text-xl font-bold mb-4">Routine Jobs</h2>
-        <table className="min-w-full border border-gray-300">
-          <thead>
-            <tr className="bg-gray-500">
-              <th className="px-6 py-3 border-b text-left">Name</th>
-              <th className="px-6 py-3 border-b text-left">Cron Expression</th>
-              <th className="px-6 py-3 border-b text-left">Status</th>
-              <th className="px-6 py-3 border-b text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {routineJobsWithStringDates.map((job) => (
-              <tr key={job.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 border-b">{job.name}</td>
-                <td className="px-6 py-4 border-b">{job.cronExpression}</td>
-                <td className="px-6 py-4 border-b">
-                  {job.enabled ? (
-                    <span className="text-green-600 font-semibold">✓ Enabled</span>
-                  ) : (
-                    <span className="text-red-600 font-semibold">✗ Disabled</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 border-b">
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/admin/jobs/routine/${job.id}`}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      View Details
-                    </Link>
-                    {job.sandboxUrl && (
-                      <a
-                        href={job.sandboxUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        Sandbox
-                      </a>
-                    )}
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border border-gray-300">
+            <thead>
+              <tr className="bg-gray-500">
+                <th className="px-6 py-3 border-b text-left">Name</th>
+                <th className="px-6 py-3 border-b text-left">Cron Expression</th>
+                <th className="px-6 py-3 border-b text-left">Status</th>
+                <th className="px-6 py-3 border-b text-left">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {routineJobsWithStringDates.map((job) => (
+                <tr key={job.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 border-b">{job.name}</td>
+                  <td className="px-6 py-4 border-b">{job.cronExpression}</td>
+                  <td className="px-6 py-4 border-b">
+                    {job.enabled ? (
+                      <span className="text-green-600 font-semibold">✓ Enabled</span>
+                    ) : (
+                      <span className="text-red-600 font-semibold">✗ Disabled</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 border-b">
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/admin/jobs/routine/${job.id}`}
+                        className="text-blue-600 hover:text-blue-800 inline-block min-h-[44px] flex items-center"
+                      >
+                        View Details
+                      </Link>
+                      {job.sandboxUrl && (
+                        <a
+                          href={job.sandboxUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-green-600 hover:text-green-800 inline-block min-h-[44px] flex items-center"
+                        >
+                          Sandbox
+                        </a>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="mt-4">
