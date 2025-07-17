@@ -1,98 +1,42 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React from "react";
 import JobRow from "@/components/job-row";
 import Link from "next/link";
+import { JobsTable, RoutineJobsTable } from "@/db/schema";
+import { getDb } from "@/db/connection";
+import { convertPriorityToLabel } from "@/server";
+import { desc } from "drizzle-orm";
 
-interface Job {
-  id: string;
-  name: string;
-  dueDate: Date;
-  priority: 'High' | 'Medium' | 'Low';
-}
+export default async function JobsPage() {
+  const db = getDb();
+  
+  const jobs = await db
+    .select({
+      id: JobsTable.id,
+      name: JobsTable.name,
+      dueDate: JobsTable.dueDate,
+      priority: JobsTable.priority,
+      createdAt: JobsTable.createdAt,
+    })
+    .from(JobsTable)
+    .orderBy(desc(JobsTable.priority));
 
-interface RoutineJob {
-  id: string;
-  name: string;
-  cronExpression: string;
-  enabled: boolean;
-  createdAt: string;
-}
+  const jobsWithLabels = jobs.map(job => ({
+    ...job,
+    priority: convertPriorityToLabel(job.priority),
+  }));
 
-export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [routineJobs, setRoutineJobs] = useState<RoutineJob[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const routineJobs = await db.select().from(RoutineJobsTable);
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await fetch('/api/jobs');
-        if (!response.ok) {
-          throw new Error('Failed to fetch jobs');
-        }
-        const data = await response.json();
-        const jobsWithDates = data.map((job: Omit<Job, 'dueDate'> & { dueDate: string }) => ({
-          ...job,
-          dueDate: new Date(job.dueDate),
-        }));
-        setJobs(jobsWithDates);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchRoutineJobs = async () => {
-      try {
-        const response = await fetch('/api/jobs/routine');
-        if (response.ok) {
-          const data = await response.json();
-          setRoutineJobs(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch routine jobs:', err);
-      }
-    };
-
-    fetchJobs();
-    fetchRoutineJobs();
-  }, []);
+  const routineJobsWithStringDates = routineJobs.map(job => ({
+    ...job,
+    createdAt: job.createdAt.toISOString(),
+  }));
 
   const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
   
-  const sortedJobs = [...jobs].sort((a, b) => {
+  const sortedJobs = [...jobsWithLabels].sort((a, b) => {
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
-
-  if (loading) return (
-    <>
-      <div className="p-6">Loading jobs...</div>
-      <div className="mt-4">
-        <Link
-          href="/admin/jobs/routine/new"
-          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          New Routine Job
-        </Link>
-      </div>
-    </>
-  );
-  if (error) return (
-    <>
-      <div className="p-6 text-red-600">Error: {error}</div>
-      <div className="mt-4">
-        <Link
-          href="/admin/jobs/routine/new"
-          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          New Routine Job
-        </Link>
-      </div>
-    </>
-  );
 
   return (
     <>
@@ -126,7 +70,7 @@ export default function JobsPage() {
             </tr>
           </thead>
           <tbody>
-            {routineJobs.map((job) => (
+            {routineJobsWithStringDates.map((job) => (
               <tr key={job.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 border-b">{job.name}</td>
                 <td className="px-6 py-4 border-b">{job.cronExpression}</td>
