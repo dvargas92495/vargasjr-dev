@@ -186,3 +186,23 @@ export async function deleteJob(id: string) {
   revalidatePath("/admin/jobs");
   return deletedJob[0];
 }
+
+export async function getJob(id: string) {
+  const db = getDb();
+  const job = await db
+    .select()
+    .from(JobsTable)
+    .where(eq(JobsTable.id, id))
+    .then((results) => results[0]);
+
+  if (!job) {
+    throw new Error("Job not found");
+  }
+
+  return {
+    ...job,
+    priority: convertPriorityToLabel(job.priority),
+    createdAt: job.createdAt.toISOString(),
+    dueDate: job.dueDate.toISOString()
+  };
+}
