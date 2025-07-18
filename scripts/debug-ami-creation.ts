@@ -62,6 +62,9 @@ class AMIDebugMigration extends OneTimeMigrationRunner {
         console.log(debugOutput);
       }
       
+      console.log("=== FULL DEBUG OUTPUT ===");
+      console.log(debugOutput);
+      
       this.logSuccess("AWS AMI debugging completed successfully");
       
     } catch (error) {
@@ -79,10 +82,17 @@ class AMIDebugMigration extends OneTimeMigrationRunner {
         env: { ...process.env }
       });
       this.logSuccess(`Command completed successfully`);
+      console.log(`=== OUTPUT FOR: ${command} ===`);
+      console.log(result.trim());
+      console.log(`=== END OUTPUT ===`);
       return result.trim();
     } catch (error: any) {
       this.logWarning(`Command failed: ${error.message}`);
-      return `Error: ${error.message}\nStderr: ${error.stderr || 'N/A'}`;
+      const errorOutput = `Error: ${error.message}\nStderr: ${error.stderr || 'N/A'}`;
+      console.log(`=== ERROR FOR: ${command} ===`);
+      console.log(errorOutput);
+      console.log(`=== END ERROR ===`);
+      return errorOutput;
     }
   }
 }
