@@ -20,6 +20,7 @@ import { ImagebuilderImageRecipe } from "@cdktf/provider-aws/lib/imagebuilder-im
 import { ImagebuilderComponent } from "@cdktf/provider-aws/lib/imagebuilder-component";
 import { ImagebuilderInfrastructureConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-infrastructure-configuration";
 import { ImagebuilderDistributionConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-distribution-configuration";
+import { ImagebuilderImage } from "@cdktf/provider-aws/lib/imagebuilder-image";
 import { AWS_S3_BUCKETS, VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 
 
@@ -312,6 +313,13 @@ phases:
       infrastructureConfigurationArn: infraConfig.arn,
       distributionConfigurationArn: distConfig.arn,
       status: "ENABLED",
+      tags
+    });
+
+    const image = new ImagebuilderImage(this, "VargasJRImage", {
+      imageRecipeArn: imageRecipe.arn,
+      infrastructureConfigurationArn: infraConfig.arn,
+      distributionConfigurationArn: distConfig.arn,
       tags
     });
 
