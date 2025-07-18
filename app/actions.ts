@@ -5,7 +5,6 @@ import { addInboxMessage } from "@/server";
 import { ChatSessionsTable, ContactsTable, RoutineJobsTable, JobsTable } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db/connection";
-import { convertPriorityToLabel } from "@/server";
 import { VellumClient } from 'vellum-ai';
 import { convertPriorityToLabel } from "@/server";
 
