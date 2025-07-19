@@ -219,7 +219,7 @@ class VargasJRAgentCreator {
     const images = await this.ec2.describeImages({
       Owners: ['self'],
       Filters: [
-        { Name: 'name', Values: [VARGASJR_IMAGE_NAME] },
+        { Name: 'name', Values: [`${VARGASJR_IMAGE_NAME}-*`] },
         { Name: 'state', Values: ['available'] }
       ]
     });
@@ -230,7 +230,7 @@ class VargasJRAgentCreator {
     
     if (!sortedImages?.length) {
       throw new Error(
-        `No custom VargasJR AMI found with name '${VARGASJR_IMAGE_NAME}'. ` +
+        `No custom VargasJR AMI found with name pattern '${VARGASJR_IMAGE_NAME}-*'. ` +
         `Ensure Terraform has been deployed to create the custom AMI before running this script.`
       );
     }
