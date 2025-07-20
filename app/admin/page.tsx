@@ -50,6 +50,11 @@ export default async function AdminPage() {
   const environmentPrefix = getEnvironmentPrefix();
   const currentPRNumber = await getCurrentPRNumber();
   
+  const postgresUrl = process.env.POSTGRES_URL;
+  const scrubbedPostgresUrl = postgresUrl 
+    ? postgresUrl.replace(/:[^:@]*@/, ':***@')
+    : 'Not set';
+  
   if (environmentPrefix === 'PREVIEW' && !currentPRNumber) {
     return (
       <div className="flex flex-col gap-4 justify-start items-start">
@@ -62,6 +67,7 @@ export default async function AdminPage() {
           <div className="text-sm font-mono space-y-1 text-gray-700">
             <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot;</div>
             <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+            <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
             <div><strong>Total Instances Found:</strong> 0</div>
           </div>
         </div>
@@ -122,6 +128,7 @@ export default async function AdminPage() {
         <div className="text-sm font-mono space-y-1 text-gray-700">
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
           <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+          <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
       </div>
