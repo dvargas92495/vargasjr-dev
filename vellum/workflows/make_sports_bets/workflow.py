@@ -30,7 +30,7 @@ class RecordYesterdaysGames(BaseNode):
 
     def run(self) -> Outputs:
         yesterday = datetime.now() - timedelta(days=1)
-        logger: Logger = getattr(self._context, "logger")
+        logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         fetch_scoreboard_on_date(yesterday, logger)
 
         sheets = get_spreadsheets()
@@ -528,14 +528,14 @@ Report: {self.wagers['report_md_file']}
             )
             return self.Outputs(summary=f"Sent bets to {to_email}.")
         except Exception:
-            logger: Logger = getattr(self._context, "logger")
+            logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
             logger.exception("Failed to send email")
 
         return self.Outputs(summary=summary)
     
 class BackupMemory(BaseNode):
     def run(self) -> BaseNode.Outputs:
-        logger: Logger = getattr(self._context, "logger")
+        logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         backup_memory(logger)
         return self.Outputs()
 

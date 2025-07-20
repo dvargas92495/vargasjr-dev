@@ -1,4 +1,5 @@
 from logging import Logger
+import logging
 import os
 import random
 import time
@@ -186,7 +187,7 @@ Video URL: {self.video_url}
             )
             return self.Outputs(summary=f"Sent video to {to_email}.")
         except Exception:
-            logger: Logger = getattr(self._context, "logger")
+            logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
             logger.exception("Failed to send email")
 
         return self.Outputs(summary=summary)

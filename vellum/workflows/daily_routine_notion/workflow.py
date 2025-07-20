@@ -21,7 +21,7 @@ class PublishToNotionNode(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
-        logger: logging.Logger = getattr(self._context, "logger")
+        logger: logging.Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         
         try:
             notion_app = get_application_by_name("Notion")
