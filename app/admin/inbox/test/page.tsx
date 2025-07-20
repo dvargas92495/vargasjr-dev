@@ -18,7 +18,7 @@ export default function TestLambdaPage() {
       const testSender = formData.get("testSender");
 
       try {
-        const response = await fetch("/api/lambda-test", {
+        const response = await fetch("/api/test-email", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { z } from "zod";
+import { LAMBDA_FUNCTION_NAMES } from "../../lib/constants";
 
 const testRequestSchema = z.object({
   previewBranchName: z.string().min(1),
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     };
 
     const invokeCommand = new InvokeCommand({
-      FunctionName: "vargas-jr-email-processor",
+      FunctionName: LAMBDA_FUNCTION_NAMES.EMAIL_PROCESSOR,
       Payload: JSON.stringify(testEvent)
     });
 
