@@ -86,7 +86,7 @@ export default async function JobsPage() {
             </thead>
             <tbody>
               {routineJobsWithStringDates.map((job) => (
-                <tr key={job.id} className="hover:bg-gray-50">
+                <tr key={job.id}>
                   <td className="px-6 py-4 border-b">{job.name}</td>
                   <td className="px-6 py-4 border-b">{job.cronExpression}</td>
                   <td className="px-6 py-4 border-b">
@@ -101,6 +101,7 @@ export default async function JobsPage() {
                       <Link
                         href={`/admin/jobs/routine/${job.id}`}
                         className="text-blue-600 hover:text-blue-800 inline-block min-h-[44px] flex items-center"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         View Details
                       </Link>
@@ -110,6 +111,7 @@ export default async function JobsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-green-600 hover:text-green-800 inline-block min-h-[44px] flex items-center"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           Sandbox
                         </a>
