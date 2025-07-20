@@ -50,6 +50,36 @@ export default async function AdminPage() {
   const environmentPrefix = getEnvironmentPrefix();
   const currentPRNumber = await getCurrentPRNumber();
   
+  if (environmentPrefix === 'PREVIEW' && !currentPRNumber) {
+    return (
+      <div className="flex flex-col gap-4 justify-start items-start">
+        <h1 className="text-2xl font-bold">Vargas JR</h1>
+        <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
+        
+        {/* Environment Info */}
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
+          <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
+          <div className="text-sm font-mono space-y-1 text-gray-700">
+            <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot;</div>
+            <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+            <div><strong>Total Instances Found:</strong> 0</div>
+          </div>
+        </div>
+        
+        {/* No instances message for preview without PR */}
+        <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-2xl">
+          <h3 className="font-semibold text-gray-800 mb-2">No Instances Available</h3>
+          <p className="text-sm text-gray-600 mb-3">
+            Preview environments require a valid PR number to show instances.
+          </p>
+          <div className="text-sm text-gray-500">
+            <p>Current environment is in preview mode but no PR number was detected.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   const filters = [
     { Name: "tag:Project", Values: ["VargasJR"] },
     { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
