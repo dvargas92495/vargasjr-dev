@@ -165,7 +165,9 @@ class VargasJRInfrastructureStack extends TerraformStack {
       environment: {
         variables: {
           WEBHOOK_URL: this.getWebhookUrl(),
-          SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
+          SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || '',
+          LAMBDA_TEST_MODE: process.env.LAMBDA_TEST_MODE || 'false',
+          TEST_WEBHOOK_URL: process.env.TEST_WEBHOOK_URL || ''
         }
       },
       filename: lambdaAsset.path,

@@ -18,7 +18,19 @@ exports.handler = async (event) => {
         hmac.update(body);
         const signature = hmac.digest('base64');
         
-        const webhookUrl = new URL(process.env.WEBHOOK_URL);
+        const getWebhookUrl = () => {
+            const testWebhookUrl = process.env.TEST_WEBHOOK_URL;
+            const isTestMode = process.env.LAMBDA_TEST_MODE === 'true';
+            
+            if (isTestMode && testWebhookUrl) {
+                console.log('Using test webhook URL:', testWebhookUrl);
+                return testWebhookUrl;
+            }
+            
+            return process.env.WEBHOOK_URL;
+        };
+
+        const webhookUrl = new URL(getWebhookUrl());
         const options = {
             hostname: webhookUrl.hostname,
             port: 443,
