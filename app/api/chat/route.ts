@@ -4,6 +4,7 @@ import formatZodError from "@/utils/format-zod-error";
 import { eq } from "drizzle-orm";
 import { NotFoundError } from "@/server/errors";
 import { getDb } from "@/db/connection";
+import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 
 export async function POST(request: Request) {
   try {
@@ -16,21 +17,6 @@ export async function POST(request: Request) {
       .parse(body);
 
     const db = getDb();
-    const isPostgres = !!process.env.POSTGRES_URL;
-    
-    let ChatSessionsTable, InboxesTable, ContactsTable;
-    
-    if (isPostgres) {
-      const schema = await import("@/db/schema");
-      ChatSessionsTable = schema.ChatSessionsTable;
-      InboxesTable = schema.InboxesTable;
-      ContactsTable = schema.ContactsTable;
-    } else {
-      const schema = await import("@/db/sqlite-schema");
-      ChatSessionsTable = schema.ChatSessionsTable;
-      InboxesTable = schema.InboxesTable;
-      ContactsTable = schema.ContactsTable;
-    }
 
     let inbox = await db
       .select({ id: InboxesTable.id })
@@ -44,7 +30,7 @@ export async function POST(request: Request) {
         .values({
           name: "chat-sessions",
           type: "CHAT_SESSION",
-          config: JSON.stringify({}),
+          config: {},
         })
         .returning({ id: InboxesTable.id });
       inbox = newInbox;

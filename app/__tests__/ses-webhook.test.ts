@@ -55,15 +55,6 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
 }));
 
-const { mockAddInboxMessage, mockPostSlackMessage } = vi.hoisted(() => ({
-  mockAddInboxMessage: vi.fn(),
-  mockPostSlackMessage: vi.fn()
-}));
-
-vi.mock("@/server", () => ({
-  addInboxMessage: mockAddInboxMessage,
-  postSlackMessage: mockPostSlackMessage
-}));
 
 describe("SES Webhook", () => {
   beforeEach(() => {
@@ -75,11 +66,8 @@ describe("SES Webhook", () => {
     mockExecute.mockClear();
     mockInsert.mockClear();
     mockValues.mockClear();
-    mockAddInboxMessage.mockClear();
     process.env.SES_WEBHOOK_SECRET = mockEnv.SES_WEBHOOK_SECRET;
     delete process.env.POSTGRES_URL;
-    
-    mockAddInboxMessage.mockResolvedValue(undefined);
   });
 
   it("should return 500 when SES_WEBHOOK_SECRET is missing", async () => {
@@ -294,8 +282,11 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    const { NotFoundError } = await import("@/server/errors");
-    mockAddInboxMessage.mockRejectedValue(new NotFoundError("Inbox not found"));
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockResolvedValue([]);
 
     const response = await POST(request);
     const data = await response.json();
@@ -335,7 +326,11 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockAddInboxMessage.mockRejectedValue(new Error("Database connection failed"));
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
+    mockLimit.mockReturnValue({ execute: mockExecute });
+    mockExecute.mockRejectedValue(new Error("Database connection failed"));
 
     const response = await POST(request);
     const data = await response.json();

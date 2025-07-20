@@ -38,8 +38,7 @@ export async function GET(request: NextRequest) {
       .select({ id: InboxesTable.id })
       .from(InboxesTable)
       .where(eq(InboxesTable.type, "CHAT_SESSION"))
-      .limit(1)
-      .execute();
+      .limit(1);
 
     if (!inbox.length) {
       const newInbox = await db
@@ -57,8 +56,7 @@ export async function GET(request: NextRequest) {
       .select({ id: ContactsTable.id })
       .from(ContactsTable)
       .where(eq(ContactsTable.email, customerEmail))
-      .limit(1)
-      .execute();
+      .limit(1);
 
     if (!contact.length) {
       const newContact = await db

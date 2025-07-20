@@ -1,5 +1,5 @@
-import { InboxesTable, InboxMessagesTable } from "@/db/schema";
 import { NotFoundError } from "./errors";
+import { InboxesTable, InboxMessagesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
@@ -17,6 +17,7 @@ export const addInboxMessage = async ({
   createdAt?: Date;
 }) => {
   const db = getDb();
+
   const inbox = await db
     .select({ id: InboxesTable.id })
     .from(InboxesTable)

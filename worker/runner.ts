@@ -4,8 +4,8 @@ import { createFileLogger, getVersion, Logger } from './utils';
 import { postgresSession } from './database';
 import { RoutineJob } from './routine-job';
 import { checkAndRebootIfNeeded } from './reboot-manager';
-import { RoutineJobsTable } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { RoutineJobsTable } from "../db/schema";
 
 dotenv.config();
 

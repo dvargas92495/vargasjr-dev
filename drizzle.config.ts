@@ -2,14 +2,11 @@ import type { Config } from "drizzle-kit";
 
 const databaseUrl = process.env.POSTGRES_URL;
 
-const config: Config = !databaseUrl ? {
-  schema: "./db/sqlite-schema.ts",
-  out: "./db/migrations",
-  dialect: "sqlite",
-  dbCredentials: {
-    url: "./local.db",
-  },
-} : {
+if (!databaseUrl) {
+  throw new Error("POSTGRES_URL environment variable is required");
+}
+
+const config: Config = {
   schema: "./db/schema.ts",
   out: "./db/migrations",
   dialect: "postgresql",

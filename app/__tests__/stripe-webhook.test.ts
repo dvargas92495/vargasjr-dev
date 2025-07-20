@@ -81,15 +81,6 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
 }));
 
-const { mockAddInboxMessage, mockPostSlackMessage } = vi.hoisted(() => ({
-  mockAddInboxMessage: vi.fn(),
-  mockPostSlackMessage: vi.fn()
-}));
-
-vi.mock("@/server", () => ({
-  addInboxMessage: mockAddInboxMessage,
-  postSlackMessage: mockPostSlackMessage
-}));
 
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
