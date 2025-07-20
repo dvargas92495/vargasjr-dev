@@ -30,8 +30,7 @@
     "agent:agent": "tsx worker/cli.ts agent",
     "agent:reboot": "tsx worker/cli.ts reboot",
     "agent:publish": "npx tsx scripts/publish-agent.ts",
-    "connect": "npx tsx scripts/ssh-connect.ts",
-    "test-lambda-email": "tsx scripts/test-lambda-email.ts"
+    "connect": "npx tsx scripts/ssh-connect.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",

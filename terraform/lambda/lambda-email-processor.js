@@ -18,19 +18,21 @@ exports.handler = async (event) => {
         hmac.update(body);
         const signature = hmac.digest('base64');
         
-        const getWebhookUrl = () => {
-            const testWebhookUrl = process.env.TEST_WEBHOOK_URL;
-            const isTestMode = process.env.LAMBDA_TEST_MODE === 'true';
+        const getWebhookUrl = (sesData) => {
+            const subject = sesData.mail.commonHeaders.subject || '';
+            const previewMatch = subject.match(/\[PREVIEW:\s*([^\]]+)\]/i);
             
-            if (isTestMode && testWebhookUrl) {
-                console.log('Using test webhook URL:', testWebhookUrl);
-                return testWebhookUrl;
+            if (previewMatch) {
+                const branchName = previewMatch[1].trim();
+                console.log('Detected preview branch:', branchName);
+                const sanitizedBranch = branchName.replace(/[^a-zA-Z0-9-]/g, '-');
+                return `https://vargasjr-git-${sanitizedBranch}.vercel.app/api/ses/webhook`;
             }
             
             return process.env.WEBHOOK_URL;
         };
 
-        const webhookUrl = new URL(getWebhookUrl());
+        const webhookUrl = new URL(getWebhookUrl(event.Records[0].ses));
         const options = {
             hostname: webhookUrl.hostname,
             port: 443,
