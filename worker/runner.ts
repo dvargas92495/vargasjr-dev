@@ -77,9 +77,10 @@ export class AgentRunner {
 
         for (const job of this.routineJobs) {
           if (job.shouldRun()) {
-            job.run().then(outputs => {
+            job.run().then(result => {
+              const { outputs, executionId } = result || {};
               if (outputs) {
-                this.logger.info(`Routine job ${job.getName()} completed with outputs: ${JSON.stringify(outputs)}`);
+                this.logger.info(`Routine job ${job.getName()} completed with outputs: ${JSON.stringify(outputs)} (execution ID: ${executionId || 'unknown'})`);
               }
             }).catch(error => {
               this.logger.error(`Routine job ${job.getName()} failed: ${error}`);
