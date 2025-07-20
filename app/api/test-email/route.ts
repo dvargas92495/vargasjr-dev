@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { z } from "zod";
-import { execSync } from "child_process";
 import { LAMBDA_FUNCTION_NAMES } from "../../lib/constants";
 
 const testRequestSchema = z.object({
@@ -10,19 +9,22 @@ const testRequestSchema = z.object({
 });
 
 function getCurrentBranch(): string {
-  try {
-    const branchName = execSync('git branch --show-current', {
-      encoding: 'utf8'
-    }).trim();
-    
-    if (!branchName) {
-      throw new Error('Could not determine current branch name');
-    }
-    
-    return branchName;
-  } catch (error) {
-    throw new Error(`Failed to get current branch: ${error}`);
+  const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
+  if (commitRef) {
+    return commitRef.replace('refs/heads/', '');
   }
+  
+  const githubHeadRef = process.env.GITHUB_HEAD_REF;
+  if (githubHeadRef) {
+    return githubHeadRef;
+  }
+  
+  const branchName = process.env.BRANCH_NAME;
+  if (branchName) {
+    return branchName;
+  }
+  
+  return 'main';
 }
 
 export async function POST(request: Request) {
