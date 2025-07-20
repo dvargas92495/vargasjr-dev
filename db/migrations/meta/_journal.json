@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1753042770490,
+      "tag": "0000_spicy_squirrel_girl",
+      "breakpoints": true
+    }
+  ]
+}
