@@ -15,6 +15,7 @@ export default function TestEmailPage() {
       const formData = new FormData(e.currentTarget);
       const testSubject = formData.get("testSubject");
       const testSender = formData.get("testSender");
+      const testBody = formData.get("testBody");
 
       try {
         const response = await fetch("/api/test-email", {
@@ -25,6 +26,7 @@ export default function TestEmailPage() {
           body: JSON.stringify({
             testSubject: testSubject?.toString(),
             testSender: testSender?.toString(),
+            testBody: testBody?.toString(),
           }),
         });
 
@@ -62,13 +64,27 @@ export default function TestEmailPage() {
           <label htmlFor="testSender" className="block mb-1">
             Test Sender Email *
           </label>
-          <textarea
+          <input
+            type="email"
             id="testSender"
             name="testSender"
             required
             placeholder="test@example.com"
             className="w-full p-2 border rounded text-black"
-            rows={3}
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="testBody" className="block mb-1">
+            Test Email Body *
+          </label>
+          <textarea
+            id="testBody"
+            name="testBody"
+            required
+            placeholder="Enter the email body content..."
+            className="w-full p-2 border rounded text-black"
+            rows={5}
           />
         </div>
         
@@ -84,7 +100,7 @@ export default function TestEmailPage() {
       {result && (
         <div className="mt-6 p-4 border rounded">
           <h3 className="font-semibold mb-2">Test Result:</h3>
-          <pre className="text-sm bg-gray-100 p-2 rounded overflow-auto">
+          <pre className="text-sm bg-gray-800 text-gray-100 p-2 rounded overflow-auto">
             {JSON.stringify(result, null, 2) as string}
           </pre>
         </div>

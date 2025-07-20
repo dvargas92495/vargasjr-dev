@@ -5,7 +5,8 @@ import { LAMBDA_FUNCTION_NAMES } from "../../lib/constants";
 
 const testRequestSchema = z.object({
   testSubject: z.string().min(1),
-  testSender: z.string().email().min(1)
+  testSender: z.string().email().min(1),
+  testBody: z.string().min(1)
 });
 
 function getCurrentBranch(): string {
@@ -30,7 +31,7 @@ function getCurrentBranch(): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { testSubject, testSender } = testRequestSchema.parse(body);
+    const { testSubject, testSender, testBody } = testRequestSchema.parse(body);
 
     const currentBranch = getCurrentBranch();
     const lambdaClient = new LambdaClient({ region: "us-east-1" });
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
               from: [testSender],
               subject: testSubject,
               to: ["hello@vargasjr.dev"]
-            }
+            },
+            content: testBody
           },
           receipt: {
             recipients: ["hello@vargasjr.dev"],
@@ -70,7 +72,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error testing email processing:", error);
     return NextResponse.json(
-      { error: "Failed to test email processing" },
+      { 
+        error: "Failed to test email processing",
+        details: error instanceof Error ? error.message : String(error),
+        success: false
+      },
       { status: 500 }
     );
   }
