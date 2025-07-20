@@ -5,3 +5,7 @@ export const AWS_S3_BUCKETS = {
 } as const;
 
 export const VARGASJR_IMAGE_NAME = 'vargasjr-workspace';
+
+export const LAMBDA_FUNCTION_NAMES = {
+  EMAIL_PROCESSOR: 'vargas-jr-email-processor',
+} as const;
