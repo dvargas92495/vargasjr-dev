@@ -88,6 +88,8 @@ export class RoutineJob {
   async run(): Promise<any> {
     this.logger.info(`Running Routine Job ${this.name}`);
     
+    let executionId: string | null = null;
+    
     try {
       const apiKey = process.env.VELLUM_API_KEY;
       if (!apiKey) {
@@ -106,8 +108,14 @@ export class RoutineJob {
       let workflowOutputs: any = null;
 
       for await (const event of stream) {
+        if (!executionId && event.executionId) {
+          executionId = event.executionId;
+          this.logger.info(`Workflow ${this.name} initiated with execution ID: ${executionId}`);
+        }
+
         if (event.type === 'WORKFLOW') {
           if (event.data.error) {
+            this.logger.error(`Workflow ${this.name} (${executionId}) failed: ${event.data.error.message}`);
             throw new Error(`Workflow ${this.name} failed: ${event.data.error.message}`);
           }
           
@@ -117,10 +125,10 @@ export class RoutineJob {
         }
       }
 
-      this.logger.info(`Completed Routine Job ${this.name}`);
-      return workflowOutputs;
+      this.logger.info(`Completed Routine Job ${this.name} (${executionId})`);
+      return { outputs: workflowOutputs, executionId };
     } catch (error) {
-      this.logger.error(`Failed to execute workflow ${this.name}: ${error}`);
+      this.logger.error(`Failed to execute workflow ${this.name} (${executionId || 'unknown execution'}): ${error}`);
       throw error;
     }
   }
