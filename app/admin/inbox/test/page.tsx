@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 
-export default function TestLambdaPage() {
+export default function TestEmailPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
 
@@ -13,7 +13,6 @@ export default function TestLambdaPage() {
       setResult(null);
 
       const formData = new FormData(e.currentTarget);
-      const previewBranchName = formData.get("previewBranchName");
       const testSubject = formData.get("testSubject");
       const testSender = formData.get("testSender");
 
@@ -24,16 +23,15 @@ export default function TestLambdaPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            previewBranchName: previewBranchName?.toString(),
-            testSubject: testSubject?.toString() || undefined,
-            testSender: testSender?.toString() || undefined,
+            testSubject: testSubject?.toString(),
+            testSender: testSender?.toString(),
           }),
         });
 
         const data = await response.json();
         setResult(data);
       } catch {
-        setResult({ error: "Failed to test Lambda function" });
+        setResult({ error: "Failed to test email processing" });
       } finally {
         setIsLoading(false);
       }
@@ -43,49 +41,34 @@ export default function TestLambdaPage() {
 
   return (
     <div className="max-w-2xl w-full">
-      <h2 className="text-xl font-bold mb-4">Test Lambda Email Processing</h2>
-      <p className="text-sm text-gray-600 mb-6">
-        Test the Lambda function with a preview branch by sending a simulated email.
-      </p>
+      <h2 className="text-xl font-bold mb-4">Test Email Processing</h2>
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
-          <label htmlFor="previewBranchName" className="block mb-1">
-            Preview Branch Name *
-          </label>
-          <input
-            type="text"
-            id="previewBranchName"
-            name="previewBranchName"
-            required
-            placeholder="feature-branch-name"
-            className="w-full p-2 border rounded text-black"
-          />
-        </div>
-        
-        <div>
           <label htmlFor="testSubject" className="block mb-1">
-            Test Subject (optional)
+            Test Subject *
           </label>
           <input
             type="text"
             id="testSubject"
             name="testSubject"
-            placeholder="Will auto-generate with [PREVIEW: branch-name] if empty"
+            required
+            placeholder="Enter test email subject"
             className="w-full p-2 border rounded text-black"
           />
         </div>
         
         <div>
           <label htmlFor="testSender" className="block mb-1">
-            Test Sender Email (optional)
+            Test Sender Email *
           </label>
-          <input
-            type="email"
+          <textarea
             id="testSender"
             name="testSender"
+            required
             placeholder="test@example.com"
             className="w-full p-2 border rounded text-black"
+            rows={3}
           />
         </div>
         
@@ -94,7 +77,7 @@ export default function TestLambdaPage() {
           disabled={isLoading}
           className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 disabled:opacity-50"
         >
-          {isLoading ? "Testing..." : "Test Lambda Function"}
+          {isLoading ? "Testing..." : "Test Email Processing"}
         </button>
       </form>
 

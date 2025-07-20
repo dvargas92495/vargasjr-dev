@@ -1,19 +1,36 @@
 import { NextResponse } from "next/server";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { z } from "zod";
+import { execSync } from "child_process";
 import { LAMBDA_FUNCTION_NAMES } from "../../lib/constants";
 
 const testRequestSchema = z.object({
-  previewBranchName: z.string().min(1),
-  testSubject: z.string().optional(),
-  testSender: z.string().email().optional()
+  testSubject: z.string().min(1),
+  testSender: z.string().email().min(1)
 });
+
+function getCurrentBranch(): string {
+  try {
+    const branchName = execSync('git branch --show-current', {
+      encoding: 'utf8'
+    }).trim();
+    
+    if (!branchName) {
+      throw new Error('Could not determine current branch name');
+    }
+    
+    return branchName;
+  } catch (error) {
+    throw new Error(`Failed to get current branch: ${error}`);
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { previewBranchName, testSubject, testSender } = testRequestSchema.parse(body);
+    const { testSubject, testSender } = testRequestSchema.parse(body);
 
+    const currentBranch = getCurrentBranch();
     const lambdaClient = new LambdaClient({ region: "us-east-1" });
     
     const testEvent = {
@@ -22,8 +39,8 @@ export async function POST(request: Request) {
           mail: {
             messageId: `test-${Date.now()}`,
             commonHeaders: {
-              from: [testSender || "test@example.com"],
-              subject: testSubject || `[PREVIEW: ${previewBranchName}] Test Email for Preview Branch`,
+              from: [testSender],
+              subject: testSubject,
               to: ["hello@vargasjr.dev"]
             }
           },
@@ -45,13 +62,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       messageId: testEvent.Records[0].ses.mail.messageId,
-      previewBranchName,
+      currentBranch,
       lambdaResponse: response
     });
   } catch (error) {
-    console.error("Error testing Lambda:", error);
+    console.error("Error testing email processing:", error);
     return NextResponse.json(
-      { error: "Failed to test Lambda function" },
+      { error: "Failed to test email processing" },
       { status: 500 }
     );
   }
