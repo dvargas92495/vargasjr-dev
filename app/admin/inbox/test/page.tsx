@@ -102,7 +102,7 @@ export default function TestLambdaPage() {
         <div className="mt-6 p-4 border rounded">
           <h3 className="font-semibold mb-2">Test Result:</h3>
           <pre className="text-sm bg-gray-100 p-2 rounded overflow-auto">
-            {JSON.stringify(result, null, 2)}
+            {JSON.stringify(result, null, 2) as string}
           </pre>
         </div>
       )}
