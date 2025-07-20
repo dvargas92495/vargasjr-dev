@@ -10,7 +10,6 @@ interface WorkflowStatus {
   status: 'idle' | 'testing' | 'completed' | 'error';
   message: string;
   executionId?: string;
-  executionUrl?: string;
   outputs?: unknown;
   error?: string;
 }
@@ -35,8 +34,7 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
         setWorkflowStatus({
           status: 'testing',
           message: data.message,
-          executionId: data.executionId,
-          executionUrl: data.executionUrl
+          executionId: data.executionId
         });
       });
 
@@ -116,11 +114,11 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
         )}
       </div>
 
-      {workflowStatus.executionUrl && (
+      {workflowStatus.executionId && (
         <div className="mt-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
           <h3 className="font-semibold">Execution Link:</h3>
           <a
-            href={workflowStatus.executionUrl}
+            href={`/workflows/executions/${workflowStatus.executionId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-800 underline"

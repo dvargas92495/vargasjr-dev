@@ -54,7 +54,6 @@ export async function GET(
               executionId = event.executionId;
               sendEvent('workflow-initiated', {
                 executionId,
-                executionUrl: `/workflows/executions/${executionId}`,
                 message: `Workflow ${routineJob.name} initiated`
               });
             }
