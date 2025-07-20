@@ -87,6 +87,7 @@ export async function GET(
           }
         } catch (error) {
           sendEvent('workflow-error', {
+            executionId,
             error: error instanceof Error ? error.message : 'Unknown error',
             message: `Failed to execute workflow ${routineJob.name}`
           });
