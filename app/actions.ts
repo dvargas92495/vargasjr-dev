@@ -5,7 +5,6 @@ import { addInboxMessage } from "@/server";
 import { ChatSessionsTable, ContactsTable, RoutineJobsTable, JobsTable } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db/connection";
-import { VellumClient } from 'vellum-ai';
 import { convertPriorityToLabel } from "@/server";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
@@ -60,38 +59,6 @@ export async function getRoutineJob(id: string) {
   };
 }
 
-export async function testRoutineJobWorkflow(id: string) {
-  const db = getDb();
-  const routineJob = await db
-    .select()
-    .from(RoutineJobsTable)
-    .where(eq(RoutineJobsTable.id, id))
-    .then((results) => results[0]);
-
-  if (!routineJob) {
-    throw new Error("Routine job not found");
-  }
-
-  const apiKey = process.env.VELLUM_API_KEY;
-  if (!apiKey) {
-    throw new Error("VELLUM_API_KEY environment variable is required");
-  }
-
-  const vellumClient = new VellumClient({
-    apiKey: apiKey,
-  });
-
-  const result = await vellumClient.executeWorkflow({
-    workflowDeploymentName: routineJob.name,
-    inputs: [],
-  });
-
-  return {
-    success: true,
-    outputs: result.data || null,
-    message: `Workflow ${routineJob.name} executed successfully`
-  };
-}
 
 export async function getJobs() {
   const db = getDb();
