@@ -40,13 +40,13 @@ export async function GET(
           controller.enqueue(encoder.encode(message));
         };
 
+        let executionId: string | null = null;
+
         try {
           const workflowStream = await vellumClient.executeWorkflowStream({
             workflowDeploymentName: routineJob.name,
             inputs: [],
           });
-
-          let executionId: string | null = null;
           let workflowOutputs: unknown = null;
 
           for await (const event of workflowStream) {
