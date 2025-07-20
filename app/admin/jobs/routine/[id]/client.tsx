@@ -1,7 +1,5 @@
-"use client";
-
-import React, { useState } from "react";
-import { testRoutineJobWorkflow } from "@/app/actions";
+import React from "react";
+import TestButton from "./test-button";
 
 interface RoutineJob {
   id: string;
@@ -17,25 +15,6 @@ interface RoutineJobDetailClientProps {
 }
 
 export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailClientProps) {
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; outputs?: unknown; message: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleTest = async () => {
-    setTesting(true);
-    setTestResult(null);
-    setError(null);
-
-    try {
-      const result = await testRoutineJobWorkflow(routineJob.id);
-      setTestResult(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Test failed');
-    } finally {
-      setTesting(false);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-4 p-6">
       <h2 className="text-xl font-bold">Routine Job Details</h2>
@@ -70,13 +49,7 @@ export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailC
       </div>
 
       <div className="flex gap-4">
-        <button
-          onClick={handleTest}
-          disabled={testing}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          {testing ? 'Testing...' : 'Test Workflow'}
-        </button>
+        <TestButton routineJobId={routineJob.id} />
         
         {routineJob.sandboxUrl && (
           <a
@@ -89,24 +62,6 @@ export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailC
           </a>
         )}
       </div>
-
-      {error && (
-        <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
-      {testResult && (
-        <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          <h3 className="font-semibold">Test Result:</h3>
-          <p>{testResult.message}</p>
-          {testResult.outputs !== undefined && (
-            <pre className="mt-2 text-sm bg-white p-2 rounded">
-              {JSON.stringify(testResult.outputs, null, 2)}
-            </pre>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 import React from "react";
 import JobRow from "@/components/job-row";
+import RoutineJobRow from "@/components/routine-job-row";
 import Link from "next/link";
 import { JobsTable, RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
 import { desc } from "drizzle-orm";
-import { getVellumSandboxUrlServer } from "@/app/lib/vellum-server-utils";
 
 export default async function JobsPage() {
   const db = getDb();
@@ -28,17 +28,7 @@ export default async function JobsPage() {
 
   const routineJobs = await db.select().from(RoutineJobsTable);
   
-  const routineJobsWithSandbox = await Promise.all(
-    routineJobs.map(async (job) => {
-      const sandboxUrl = await getVellumSandboxUrlServer(job.name);
-      return {
-        ...job,
-        sandboxUrl,
-      };
-    })
-  );
-
-  const routineJobsWithStringDates = routineJobsWithSandbox.map(job => ({
+  const routineJobsWithStringDates = routineJobs.map(job => ({
     ...job,
     createdAt: job.createdAt.toISOString(),
   }));
@@ -86,39 +76,7 @@ export default async function JobsPage() {
             </thead>
             <tbody>
               {routineJobsWithStringDates.map((job) => (
-                <tr key={job.id}>
-                  <td className="px-6 py-4 border-b">{job.name}</td>
-                  <td className="px-6 py-4 border-b">{job.cronExpression}</td>
-                  <td className="px-6 py-4 border-b">
-                    {job.enabled ? (
-                      <span className="text-green-600 font-semibold">✓ Enabled</span>
-                    ) : (
-                      <span className="text-red-600 font-semibold">✗ Disabled</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 border-b">
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/admin/jobs/routine/${job.id}`}
-                        className="text-blue-600 hover:text-blue-800 inline-block min-h-[44px] flex items-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        View Details
-                      </Link>
-                      {job.sandboxUrl && (
-                        <a
-                          href={job.sandboxUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-600 hover:text-green-800 inline-block min-h-[44px] flex items-center"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Sandbox
-                        </a>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                <RoutineJobRow key={job.id} job={job} />
               ))}
             </tbody>
           </table>
