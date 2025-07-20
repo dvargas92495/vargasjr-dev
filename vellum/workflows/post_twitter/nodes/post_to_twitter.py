@@ -1,5 +1,6 @@
 import os
 from logging import Logger
+import logging
 import tweepy
 from vellum.workflows.nodes import BaseNode
 from .select_tweet import SelectTweet
@@ -14,7 +15,7 @@ class PostToTwitter(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
-        logger: Logger = getattr(self._context, "logger")
+        logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         
         twitter_app = get_application_by_name("Twitter")
         if not twitter_app:

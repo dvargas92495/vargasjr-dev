@@ -35,7 +35,7 @@ class GetVenmoScreenshots(BaseNode):
         image_blocks: list[ImagePromptBlock]
 
     def run(self) -> Outputs:
-        logger: logging.Logger = getattr(self._context, "logger")
+        logger: logging.Logger = getattr(self._context, "logger", logging.getLogger(__name__))
 
         session = boto3.Session()
         s3 = session.client("s3")

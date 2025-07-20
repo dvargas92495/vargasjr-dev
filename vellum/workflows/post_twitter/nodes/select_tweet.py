@@ -1,5 +1,6 @@
 import random
 from logging import Logger
+import logging
 from vellum.workflows.nodes import BaseNode
 from .generate_tweet_content import GenerateTweetContent
 from ..models import TweetContent
@@ -13,6 +14,6 @@ class SelectTweet(BaseNode):
 
     def run(self) -> Outputs:
         selected_tweet = TweetContent.model_validate(random.choice(self.raw_tweets))
-        logger: Logger = getattr(self._context, "logger")
+        logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         logger.info(f"Selected tweet: {selected_tweet.text}")
         return self.Outputs(selected_tweet=selected_tweet)
