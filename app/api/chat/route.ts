@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
-import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NotFoundError } from "@/server/errors";
 import { getDb } from "@/db/connection";
@@ -17,12 +16,27 @@ export async function POST(request: Request) {
       .parse(body);
 
     const db = getDb();
+    const isPostgres = !!process.env.POSTGRES_URL;
+    
+    let ChatSessionsTable, InboxesTable, ContactsTable;
+    
+    if (isPostgres) {
+      const schema = await import("@/db/schema");
+      ChatSessionsTable = schema.ChatSessionsTable;
+      InboxesTable = schema.InboxesTable;
+      ContactsTable = schema.ContactsTable;
+    } else {
+      const schema = await import("@/db/sqlite-schema");
+      ChatSessionsTable = schema.ChatSessionsTable;
+      InboxesTable = schema.InboxesTable;
+      ContactsTable = schema.ContactsTable;
+    }
+
     let inbox = await db
       .select({ id: InboxesTable.id })
       .from(InboxesTable)
       .where(eq(InboxesTable.type, "CHAT_SESSION"))
-      .limit(1)
-      .execute();
+      .limit(1);
 
     if (!inbox.length) {
       const newInbox = await db
@@ -30,7 +44,7 @@ export async function POST(request: Request) {
         .values({
           name: "chat-sessions",
           type: "CHAT_SESSION",
-          config: {},
+          config: JSON.stringify({}),
         })
         .returning({ id: InboxesTable.id });
       inbox = newInbox;
@@ -40,8 +54,7 @@ export async function POST(request: Request) {
       .select({ id: ContactsTable.id })
       .from(ContactsTable)
       .where(eq(ContactsTable.email, email))
-      .limit(1)
-      .execute();
+      .limit(1);
 
     if (!contact.length) {
       const newContact = await db

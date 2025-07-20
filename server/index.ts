@@ -21,8 +21,7 @@ export const addInboxMessage = async ({
     .select({ id: InboxesTable.id })
     .from(InboxesTable)
     .where(eq(InboxesTable.name, inboxName))
-    .limit(1)
-    .execute();
+    .limit(1);
 
   if (!inbox.length) {
     throw new NotFoundError("Inbox not found");

@@ -57,12 +57,38 @@ vi.mock("drizzle-orm/vercel-postgres", () => ({
   }))
 }));
 
+vi.mock("drizzle-orm/better-sqlite3", () => ({
+  drizzle: vi.fn(() => ({
+    select: mockSelect,
+    insert: mockInsert
+  }))
+}));
+
+vi.mock("better-sqlite3", () => {
+  return {
+    default: vi.fn(() => ({
+      prepare: vi.fn(),
+      close: vi.fn()
+    }))
+  };
+});
+
 vi.mock("@vercel/postgres", () => ({
   sql: vi.fn()
 }));
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
+}));
+
+const { mockAddInboxMessage, mockPostSlackMessage } = vi.hoisted(() => ({
+  mockAddInboxMessage: vi.fn(),
+  mockPostSlackMessage: vi.fn()
+}));
+
+vi.mock("@/server", () => ({
+  addInboxMessage: mockAddInboxMessage,
+  postSlackMessage: mockPostSlackMessage
 }));
 
 const mockEnv = vi.hoisted(() => ({
@@ -86,7 +112,7 @@ describe("Stripe Webhook", () => {
     mockReturning.mockClear();
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
-    process.env.POSTGRES_URL = "postgresql://test:test@localhost:5432/test";
+    delete process.env.POSTGRES_URL;
     
     mockUpdate.mockResolvedValue({});
     mockRetrieve.mockResolvedValue({

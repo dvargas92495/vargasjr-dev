@@ -31,12 +31,38 @@ vi.mock("drizzle-orm/vercel-postgres", () => ({
   }))
 }));
 
+vi.mock("drizzle-orm/better-sqlite3", () => ({
+  drizzle: vi.fn(() => ({
+    select: mockSelect,
+    insert: mockInsert
+  }))
+}));
+
+vi.mock("better-sqlite3", () => {
+  return {
+    default: vi.fn(() => ({
+      prepare: vi.fn(),
+      close: vi.fn()
+    }))
+  };
+});
+
 vi.mock("@vercel/postgres", () => ({
   sql: vi.fn()
 }));
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn()
+}));
+
+const { mockAddInboxMessage, mockPostSlackMessage } = vi.hoisted(() => ({
+  mockAddInboxMessage: vi.fn(),
+  mockPostSlackMessage: vi.fn()
+}));
+
+vi.mock("@/server", () => ({
+  addInboxMessage: mockAddInboxMessage,
+  postSlackMessage: mockPostSlackMessage
 }));
 
 describe("SES Webhook", () => {
@@ -49,8 +75,11 @@ describe("SES Webhook", () => {
     mockExecute.mockClear();
     mockInsert.mockClear();
     mockValues.mockClear();
+    mockAddInboxMessage.mockClear();
     process.env.SES_WEBHOOK_SECRET = mockEnv.SES_WEBHOOK_SECRET;
-    process.env.POSTGRES_URL = "postgresql://test:test@localhost:5432/test";
+    delete process.env.POSTGRES_URL;
+    
+    mockAddInboxMessage.mockResolvedValue(undefined);
   });
 
   it("should return 500 when SES_WEBHOOK_SECRET is missing", async () => {
@@ -265,11 +294,8 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockSelect.mockReturnValue({ from: mockFrom });
-    mockFrom.mockReturnValue({ where: mockWhere });
-    mockWhere.mockReturnValue({ limit: mockLimit });
-    mockLimit.mockReturnValue({ execute: mockExecute });
-    mockExecute.mockResolvedValue([]);
+    const { NotFoundError } = await import("@/server/errors");
+    mockAddInboxMessage.mockRejectedValue(new NotFoundError("Inbox not found"));
 
     const response = await POST(request);
     const data = await response.json();
@@ -309,11 +335,7 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature }
     });
 
-    mockSelect.mockReturnValue({ from: mockFrom });
-    mockFrom.mockReturnValue({ where: mockWhere });
-    mockWhere.mockReturnValue({ limit: mockLimit });
-    mockLimit.mockReturnValue({ execute: mockExecute });
-    mockExecute.mockRejectedValue(new Error("Database connection failed"));
+    mockAddInboxMessage.mockRejectedValue(new Error("Database connection failed"));
 
     const response = await POST(request);
     const data = await response.json();
