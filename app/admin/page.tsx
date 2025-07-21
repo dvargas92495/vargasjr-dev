@@ -4,7 +4,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 
-async function getCurrentPRNumber(environmentPrefix: string): Promise<string | null> {
+async function getCurrentPRNumber(): Promise<string | null> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
@@ -25,10 +25,6 @@ async function getCurrentPRNumber(environmentPrefix: string): Promise<string | n
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
-    if (environmentPrefix === '') {
-      console.log('⚠️ Production environment detected, skipping GitHub API lookup');
-      return null;
-    }
     
     if (!githubToken) {
       throw new Error("GITHUB_TOKEN environment variable is not defined");
@@ -89,11 +85,13 @@ export default async function AdminPage() {
   let currentPRNumber: string | null = null;
   let prNumberError: string | null = null;
   
-  try {
-    currentPRNumber = await getCurrentPRNumber(environmentPrefix);
-  } catch (error) {
-    console.error('Failed to get PR number:', error);
-    prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+  if (environmentPrefix !== '') {
+    try {
+      currentPRNumber = await getCurrentPRNumber();
+    } catch (error) {
+      console.error('Failed to get PR number:', error);
+      prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+    }
   }
   
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;

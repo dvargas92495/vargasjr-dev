@@ -18,7 +18,7 @@ const CreateAgentButton = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: "production" }),
+        body: JSON.stringify({}),
       });
       
       const result = await response.json();
