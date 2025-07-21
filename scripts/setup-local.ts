@@ -27,7 +27,7 @@ class LocalSetup {
   }
 
   private isPostgresUrlSet(): boolean {
-    const postgresUrl = process.env.POSTGRES_URL;
+    const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
     if (postgresUrl) {
       console.log(`Found POSTGRES_URL: ${postgresUrl.replace(/:[^:@]*@/, ':***@')}`);
       return true;

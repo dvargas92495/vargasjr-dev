@@ -63,9 +63,11 @@ jobs:
       - name: Generate and apply migrations
         run: npm run db:generate
         env:
+          NEON_URL: ${{ secrets.NEON_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           
       - name: Apply database migrations
         run: npm run run-migrations
         env:
+          NEON_URL: ${{ secrets.NEON_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}

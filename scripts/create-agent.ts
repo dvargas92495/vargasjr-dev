@@ -376,7 +376,7 @@ class VargasJRAgentCreator {
       if (this.config.prNumber) {
         postgresUrl = await getNeonPreviewDatabaseUrl();
       } else {
-        postgresUrl = process.env.POSTGRES_URL || '';
+        postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL || '';
       }
 
       let envContent = `POSTGRES_URL=${postgresUrl}

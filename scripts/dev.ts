@@ -6,7 +6,7 @@ import LocalSetup from './setup-local';
 async function main() {
   console.log('🚀 Starting development server...\n');
 
-  if (!process.env.POSTGRES_URL) {
+  if (!(process.env.NEON_URL || process.env.POSTGRES_URL)) {
     console.log('⚠️  POSTGRES_URL not found in environment variables.');
     console.log('🔧 Running local setup to configure PostgreSQL...\n');
     

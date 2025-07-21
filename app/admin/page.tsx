@@ -90,10 +90,13 @@ export default async function AdminPage() {
     prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
   }
   
-  const postgresUrl = process.env.POSTGRES_URL;
-  const scrubbedPostgresUrl = postgresUrl 
-    ? postgresUrl.replace(/:[^:@]*@/, ':***@')
+  const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
+  
+  const scrubPassword = (url: string | undefined) => url 
+    ? url.replace(/:[^:@]*@/, ':***@')
     : 'Not set';
+    
+  const scrubbedPostgresUrl = scrubPassword(postgresUrl);
   
   if (environmentPrefix === 'PREVIEW' && !currentPRNumber) {
     return (

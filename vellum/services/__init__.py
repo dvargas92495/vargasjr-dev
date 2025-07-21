@@ -29,7 +29,7 @@ def to_dollar_float(value: str) -> float:
 
 def postgres_session(expire_on_commit: bool = True):
     """Get a SQLModel Session using the POSTGRES_URL environment variable"""
-    url = os.getenv("POSTGRES_URL")
+    url = os.getenv("NEON_URL") or os.getenv("POSTGRES_URL")
     if not url:
         raise ValueError("POSTGRES_URL is not set")
 
