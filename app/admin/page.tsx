@@ -3,6 +3,7 @@ import CreateAgentButton from "@/components/create-agent-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
+import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 
 async function getCurrentPRNumber(): Promise<string | null> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
@@ -127,7 +128,7 @@ export default async function AdminPage() {
   
   const filters = [
     { Name: "tag:Project", Values: ["VargasJR"] },
-    { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+    { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
   ];
   
   if (environmentPrefix === '') {
@@ -237,6 +238,9 @@ export default async function AdminPage() {
           <InstanceCard key={instance.InstanceId} instance={instance} />
         ))
       )}
+      {instances.some(instance => 
+        ["pending", "stopping", "shutting-down"].includes(instance.State?.Name || "")
+      ) && <TransitionalStateRefresh />}
     </div>
   );
 }
