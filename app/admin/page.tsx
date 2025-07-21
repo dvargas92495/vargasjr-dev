@@ -1,9 +1,10 @@
 import InstanceCard from "@/components/instance-card";
+import CreateAgentButton from "@/components/create-agent-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 
-async function getCurrentPRNumber(): Promise<string | null> {
+async function getCurrentPRNumber(environmentPrefix: string): Promise<string | null> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
@@ -23,6 +24,11 @@ async function getCurrentPRNumber(): Promise<string | null> {
     
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
+    
+    if (environmentPrefix === '') {
+      console.log('⚠️ Production environment detected, skipping GitHub API lookup');
+      return null;
+    }
     
     if (!githubToken) {
       throw new Error("GITHUB_TOKEN environment variable is not defined");
@@ -84,7 +90,7 @@ export default async function AdminPage() {
   let prNumberError: string | null = null;
   
   try {
-    currentPRNumber = await getCurrentPRNumber();
+    currentPRNumber = await getCurrentPRNumber(environmentPrefix);
   } catch (error) {
     console.error('Failed to get PR number:', error);
     prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
@@ -228,10 +234,11 @@ export default async function AdminPage() {
           </div>
           {environmentPrefix === '' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm text-blue-800">
+              <p className="text-sm text-blue-800 mb-3">
                 <strong>Production Environment:</strong> No production instances are currently running. 
-                You may need to create a production agent using the create-agent script.
+                You can create a production agent using the button below.
               </p>
+              <CreateAgentButton />
             </div>
           )}
         </div>
