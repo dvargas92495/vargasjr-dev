@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { HashtagIcon, LockClosedIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface Channel {
@@ -67,6 +67,49 @@ export default function SlackSimulatorClient() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [directMessagesExpanded, setDirectMessagesExpanded] = useState(true);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!message.trim() || isLoading) return;
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch("/api/test-slack", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          channel: selectedChannel.name,
+          message: message.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const newMessage: Message = {
+          id: `msg-${Date.now()}`,
+          user: "David Vargas",
+          avatar: "DV",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          content: message.trim()
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+        setMessage("");
+      } else {
+        console.error("Failed to send message:", data.error);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [message, selectedChannel.name, isLoading]);
 
   return (
     <div className="h-full flex flex-col">
@@ -218,7 +261,7 @@ export default function SlackSimulatorClient() {
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 bg-white">
             <div className="space-y-4">
-              {mockMessages.map((message) => (
+              {messages.map((message) => (
                 <div key={message.id} className="flex gap-3 hover:bg-gray-50 p-2 rounded">
                   <div className="w-9 h-9 bg-purple-500 rounded flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                     {message.avatar}
@@ -246,16 +289,28 @@ export default function SlackSimulatorClient() {
                     placeholder={`Message #${selectedChannel.name}`}
                     className="w-full resize-none border-0 outline-none text-sm"
                     rows={1}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                     onInput={(e) => {
                       const target = e.target as HTMLTextAreaElement;
                       target.style.height = 'auto';
                       target.style.height = target.scrollHeight + 'px';
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                   />
                 </div>
               </div>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                Send
+              <button 
+                onClick={handleSendMessage}
+                disabled={!message.trim() || isLoading}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Sending..." : "Send"}
               </button>
             </div>
           </div>
