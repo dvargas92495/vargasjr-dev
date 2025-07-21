@@ -1,44 +1,76 @@
 import InstanceCard from "@/components/instance-card";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
+import { retryWithBackoff } from "@/scripts/utils";
 
 async function getCurrentPRNumber(): Promise<string | null> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
+    console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
   
   const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
     const branchName = commitRef.replace('refs/heads/', '');
+    
+    if (branchName.startsWith('devin/')) {
+      const prNumber = branchName.replace('devin/', '').split('-')[0];
+      if (prNumber && /^\d+$/.test(prNumber)) {
+        console.log(`✅ Found PR from branch name regex: ${prNumber}`);
+        return prNumber;
+      }
+    }
+    
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
+    if (!githubToken) {
+      throw new Error("GITHUB_TOKEN environment variable is not defined");
+    }
+    if (!githubRepo) {
+      throw new Error("GITHUB_REPOSITORY environment variable is not defined");
+    }
+    if (!branchName) {
+      throw new Error("Branch name could not be determined from VERCEL_GIT_COMMIT_REF");
+    }
+    
     if (githubToken && githubRepo && branchName) {
       try {
-        const [owner] = githubRepo.split('/');
-        const headFilter = `${owner}:${branchName}`;
-        
-        const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
-          headers: {
-            "Authorization": `Bearer ${githubToken}`,
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
+        const prNumber = await retryWithBackoff(async () => {
+          const [owner] = githubRepo.split('/');
+          const headFilter = `${owner}:${branchName}`;
+          
+          const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+            headers: {
+              "Authorization": `Bearer ${githubToken}`,
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28"
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
           }
-        });
-        
-        if (response.ok) {
+          
           const prs = await response.json();
           if (prs.length === 1) {
             console.log(`✅ Found PR #${prs[0].number} for branch: ${branchName}`);
             return prs[0].number.toString();
+          } else if (prs.length === 0) {
+            throw new Error(`No open PRs found for branch: ${branchName}`);
+          } else {
+            throw new Error(`Multiple open PRs found for branch: ${branchName}`);
           }
-        }
+        }, 3, 2000);
+        
+        return prNumber;
       } catch (error) {
-        console.warn(`⚠️ GitHub API lookup failed: ${error}`);
+        console.warn(`⚠️ GitHub API lookup failed after retries: ${error}`);
       }
     }
   }
   
+  console.warn('⚠️ Unable to determine PR number from any method');
   return null;
 }
 
@@ -48,7 +80,15 @@ export default async function AdminPage() {
   });
   
   const environmentPrefix = getEnvironmentPrefix();
-  const currentPRNumber = await getCurrentPRNumber();
+  let currentPRNumber: string | null = null;
+  let prNumberError: string | null = null;
+  
+  try {
+    currentPRNumber = await getCurrentPRNumber();
+  } catch (error) {
+    console.error('Failed to get PR number:', error);
+    prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+  }
   
   const postgresUrl = process.env.POSTGRES_URL;
   const scrubbedPostgresUrl = postgresUrl 
@@ -132,6 +172,24 @@ export default async function AdminPage() {
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
       </div>
+      
+      {/* Environment Variable Errors */}
+      {prNumberError && (
+        <div className="bg-red-50 border border-red-200 p-6 rounded-lg w-full max-w-2xl">
+          <h3 className="font-semibold text-red-800 mb-2">Environment Configuration Error</h3>
+          <p className="text-sm text-red-600 mb-3">
+            Failed to determine PR number due to missing or invalid environment variables.
+          </p>
+          <div className="text-sm text-red-500 font-mono bg-red-100 p-2 rounded">
+            {prNumberError}
+          </div>
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-sm text-yellow-800">
+              <strong>Required for PR environments:</strong> GITHUB_TOKEN, GITHUB_REPOSITORY, and VERCEL_GIT_COMMIT_REF must be properly configured.
+            </p>
+          </div>
+        </div>
+      )}
       
       {/* Instances Section */}
       {errorMessage ? (

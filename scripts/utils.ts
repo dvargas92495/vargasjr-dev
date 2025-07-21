@@ -352,6 +352,15 @@ export interface HealthCheckResult {
       lastAssociationExecutionDate?: Date;
       troubleshooting?: string[];
     };
+    healthcheck?: {
+      environmentVariables?: {
+        critical?: Record<string, boolean>;
+        optional?: Record<string, boolean>;
+      };
+      processes?: string;
+      memory?: string;
+      fatalErrors?: boolean;
+    };
     troubleshooting?: string[];
   };
 }
@@ -551,93 +560,110 @@ export async function checkInstanceHealth(
       const sendCommandStartTime = Date.now();
       const directoryName = `vargasjr_dev_agent-*`;
 
-      const commandResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: [`cd /home/ubuntu/${directoryName} && npm run healthcheck`],
-        },
-        TimeoutSeconds: 30,
-      });
-      const sendCommandDuration = Date.now() - sendCommandStartTime;
-      const commandId = commandResult.Command?.CommandId;
-      console.log(`[Health Check] SSM Send Command - Duration: ${sendCommandDuration}ms, CommandId: ${commandId}`);
-      if (!commandId) {
-        throw new Error("Failed to get command ID from SSM");
-      }
-
-      const pollingStartTime = Date.now();
-      let attempts = 0;
-      const maxAttempts = 20;
-      let commandOutput = "";
-
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        try {
-          const outputResult = await ssm.getCommandInvocation({
-            CommandId: commandId,
-            InstanceId: instanceId,
-          });
-
-          if (outputResult.Status === "Success") {
-            commandOutput = outputResult.StandardOutputContent || "";
-            break;
-          } else if (outputResult.Status === "Failed") {
-            const errorDetails =
-              outputResult.StandardErrorContent || "No error details available";
-            const outputDetails =
-              outputResult.StandardOutputContent || "No output";
-            
-            const exitCode = outputResult.ResponseCode || 1;
-            const isFatalError = exitCode === 2;
-            
-            if (isFatalError) {
-              throw new Error(
-                `Fatal error detected (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
-              );
-            }
-            
-            throw new Error(
-              `SSM command failed (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
-            );
-          }
-        } catch (outputError) {
-          if (attempts === maxAttempts - 1) {
-            throw outputError;
-          }
-          console.error(
-            `[Health Check] Attempt ${attempts + 1}/${maxAttempts} Error: ${
-              outputError instanceof Error
-                ? outputError.message
-                : String(outputError)
-            }`
-          );
+      const ssmOperation = async () => {
+        const commandResult = await ssm.sendCommand({
+          InstanceIds: [instanceId],
+          DocumentName: "AWS-RunShellScript",
+          Parameters: {
+            commands: [`cd /home/ubuntu/${directoryName} && timeout 5s npm run healthcheck`],
+          },
+          TimeoutSeconds: 30,
+        });
+        const sendCommandDuration = Date.now() - sendCommandStartTime;
+        const commandId = commandResult.Command?.CommandId;
+        console.log(`[Health Check] SSM Send Command - Duration: ${sendCommandDuration}ms, CommandId: ${commandId}`);
+        if (!commandId) {
+          throw new Error("Failed to get command ID from SSM");
         }
 
-        attempts++;
-      }
+        const pollingStartTime = Date.now();
+        let attempts = 0;
+        const maxAttempts = 20;
+        let commandOutput = "";
 
-      const pollingDuration = Date.now() - pollingStartTime;
-      console.log(
-        `[Health Check] SSM Polling Loop - Total duration: ${pollingDuration}ms, Attempts: ${
-          attempts + 1
-        }/${maxAttempts}, Final Status: ${commandOutput ? 'Success' : 'Timeout'}`
-      );
+        while (attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      if (attempts >= maxAttempts) {
-        throw new Error("SSM command timed out");
-      }
+          try {
+            const outputResult = await ssm.getCommandInvocation({
+              CommandId: commandId,
+              InstanceId: instanceId,
+            });
+
+            if (outputResult.Status === "Success") {
+              commandOutput = outputResult.StandardOutputContent || "";
+              break;
+            } else if (outputResult.Status === "Failed") {
+              const errorDetails =
+                outputResult.StandardErrorContent || "No error details available";
+              const outputDetails =
+                outputResult.StandardOutputContent || "No output";
+              
+              const exitCode = outputResult.ResponseCode || 1;
+              const isFatalError = exitCode === 2;
+              
+              if (isFatalError) {
+                throw new Error(
+                  `Fatal error detected (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
+                );
+              }
+              
+              throw new Error(
+                `SSM command failed (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
+              );
+            }
+          } catch (outputError) {
+            if (attempts === maxAttempts - 1) {
+              throw outputError;
+            }
+            console.error(
+              `[Health Check] Attempt ${attempts + 1}/${maxAttempts} Error: ${
+                outputError instanceof Error
+                  ? outputError.message
+                  : String(outputError)
+              }`
+            );
+          }
+
+          attempts++;
+        }
+
+        const pollingDuration = Date.now() - pollingStartTime;
+        console.log(
+          `[Health Check] SSM Polling Loop - Total duration: ${pollingDuration}ms, Attempts: ${
+            attempts + 1
+          }/${maxAttempts}, Final Status: ${commandOutput ? 'Success' : 'Timeout'}`
+        );
+
+        if (attempts >= maxAttempts) {
+          throw new Error("SSM command timed out");
+        }
+
+        return commandOutput;
+      };
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("SSM health check timed out after 15 seconds"));
+        }, 15000);
+      });
+
+      const commandOutput = await Promise.race([ssmOperation(), timeoutPromise]);
 
       const hasAgentSession =
         commandOutput.includes("agent-") || commandOutput.includes("\tagent\t");
 
+      const diagnosticInfo = parseHealthcheckOutput(commandOutput);
+      const troubleshootingSteps = generateTroubleshootingSteps(commandOutput, hasAgentSession);
+
       return {
         instanceId,
         status: hasAgentSession ? "healthy" : "unhealthy",
-        error: hasAgentSession ? undefined : "No agent screen session found",
+        error: hasAgentSession ? undefined : generateDetailedErrorMessage(commandOutput),
         diagnostics: {
-          ssm: ssmValidation.diagnostics
+          ssm: ssmValidation.diagnostics,
+          healthcheck: diagnosticInfo,
+          troubleshooting: troubleshootingSteps
         }
       };
     } catch (ssmError) {
@@ -661,7 +687,12 @@ export async function checkInstanceHealth(
         error: `SSM Command Failed: ${errorMessage}`,
         diagnostics: {
           ssm: ssmValidation.diagnostics,
-          troubleshooting: ssmValidation.diagnostics?.troubleshooting || []
+          troubleshooting: [
+            ...ssmValidation.diagnostics?.troubleshooting || [],
+            'Check SSM agent connectivity and permissions',
+            'Verify instance is running and accessible',
+            'Review CloudWatch logs for SSM command execution'
+          ]
         }
       };
     }
@@ -675,6 +706,92 @@ export async function checkInstanceHealth(
           : "Health check failed"
     };
   }
+}
+
+function parseHealthcheckOutput(output: string): any {
+  const diagnostics: any = {};
+  
+  if (output.includes('Environment Variables Check')) {
+    const envSection = output.split('--- Environment Variables Check ---')[1]?.split('---')[0];
+    if (envSection) {
+      diagnostics.environmentVariables = {
+        critical: extractEnvVarStatus(envSection, ['AGENT_ENVIRONMENT', 'DATABASE_URL', 'VELLUM_API_KEY']),
+        optional: extractEnvVarStatus(envSection, ['PR_NUMBER', 'GITHUB_TOKEN'])
+      };
+    }
+  }
+  
+  if (output.includes('Process Information')) {
+    diagnostics.processes = output.includes('Agent-related processes found') ? 'found' : 'none';
+  }
+  
+  if (output.includes('Memory usage:')) {
+    const memoryMatch = output.match(/Memory usage:\s*\n([^\n]+)/);
+    if (memoryMatch) {
+      diagnostics.memory = memoryMatch[1].trim();
+    }
+  }
+  
+  if (output.includes('FATAL ERROR') || output.includes('💀')) {
+    diagnostics.fatalErrors = true;
+  }
+  
+  return diagnostics;
+}
+
+function extractEnvVarStatus(section: string, varNames: string[]): Record<string, boolean> {
+  const status: Record<string, boolean> = {};
+  varNames.forEach(varName => {
+    status[varName] = section.includes(`${varName}: ✓ Set`);
+  });
+  return status;
+}
+
+function generateDetailedErrorMessage(output: string): string {
+  if (output.includes('💀 FATAL ERROR')) {
+    return 'Agent has fatal errors - check logs for critical issues';
+  }
+  
+  if (output.includes('No agent-related processes found')) {
+    return 'Agent process not running - may have crashed or failed to start';
+  }
+  
+  if (output.includes('No screen sessions found')) {
+    return 'No screen sessions found - agent may not have started properly';
+  }
+  
+  if (output.includes('Missing') && output.includes('environment variables')) {
+    return 'Missing critical environment variables - check agent configuration';
+  }
+  
+  return 'Agent not running - check screen sessions and process status';
+}
+
+function generateTroubleshootingSteps(output: string, hasAgentSession: boolean): string[] {
+  const steps: string[] = [];
+  
+  if (output.includes('💀 FATAL ERROR')) {
+    steps.push('Check error.log and agent.log for critical errors');
+    steps.push('Verify all environment variables are properly set');
+    steps.push('Check database connectivity');
+    steps.push('Restart the agent process');
+  } else if (!hasAgentSession) {
+    steps.push('Check if agent screen session exists: screen -ls');
+    steps.push('Restart agent: cd /home/ubuntu/vargasjr_dev_agent-* && npm run agent:start');
+    steps.push('Check agent logs: tail -f agent.log error.log');
+    steps.push('Verify environment variables are set');
+  }
+  
+  if (output.includes('Missing') && output.includes('environment variables')) {
+    steps.unshift('Set missing environment variables in .env file');
+  }
+  
+  if (output.includes('No agent-related processes found')) {
+    steps.push('Check system resources: free -h && df -h');
+    steps.push('Verify node_modules are installed: npm install');
+  }
+  
+  return steps;
 }
 
 export async function findOrCreateSSMInstanceProfile(): Promise<string> {
@@ -699,7 +816,7 @@ export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   }
 }
 
-async function retryWithBackoff<T>(
+export async function retryWithBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   baseDelayMs: number = 1000
@@ -731,7 +848,7 @@ async function retryWithBackoff<T>(
   throw lastError;
 }
 
-function isRetryableError(error: any): boolean {
+export function isRetryableError(error: any): boolean {
   if (error.name === 'TypeError' && error.message.includes('fetch')) {
     return true;
   }

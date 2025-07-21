@@ -16,6 +16,15 @@ interface HealthStatus {
       associationStatus?: string;
       lastAssociationExecutionDate?: Date;
     };
+    healthcheck?: {
+      environmentVariables?: {
+        critical?: Record<string, boolean>;
+        optional?: Record<string, boolean>;
+      };
+      processes?: string;
+      memory?: string;
+      fatalErrors?: boolean;
+    };
     troubleshooting?: string[];
   };
 }
@@ -123,7 +132,7 @@ const HealthStatusIndicator = ({
       {healthStatus.diagnostics?.ssm && (
         <div className="ml-5 mt-2 text-xs">
           <details className="cursor-pointer">
-            <summary className="text-blue-600 hover:text-blue-800">SSM Debug Info</summary>
+            <summary className="text-blue-600 hover:text-blue-800">Diagnostic Information</summary>
             <div className="mt-2 p-2 bg-gray-50 border rounded text-gray-700">
               <div className="grid grid-cols-2 gap-1 mb-2">
                 <div>Status: <span className="font-mono">{healthStatus.diagnostics.ssm.pingStatus || 'Unknown'}</span></div>
@@ -131,12 +140,28 @@ const HealthStatusIndicator = ({
                 <div>Platform: <span className="font-mono">{healthStatus.diagnostics.ssm.platformType || 'Unknown'}</span></div>
                 <div>Last Ping: <span className="font-mono">{healthStatus.diagnostics.ssm.timeSinceLastPing || 'Unknown'}</span></div>
               </div>
+              
+              {healthStatus.diagnostics.healthcheck && (
+                <div className="mb-2 border-t pt-2">
+                  <div className="font-medium mb-1">Agent Health:</div>
+                  {healthStatus.diagnostics.healthcheck.processes && (
+                    <div>Processes: <span className="font-mono">{healthStatus.diagnostics.healthcheck.processes}</span></div>
+                  )}
+                  {healthStatus.diagnostics.healthcheck.memory && (
+                    <div>Memory: <span className="font-mono text-xs">{healthStatus.diagnostics.healthcheck.memory}</span></div>
+                  )}
+                  {healthStatus.diagnostics.healthcheck.fatalErrors && (
+                    <div className="text-red-600 font-medium">⚠️ Fatal errors detected in logs</div>
+                  )}
+                </div>
+              )}
+              
               {healthStatus.diagnostics.troubleshooting && healthStatus.diagnostics.troubleshooting.length > 0 && (
-                <div>
+                <div className="border-t pt-2">
                   <div className="font-medium mb-1">Troubleshooting Steps:</div>
                   <ol className="list-decimal list-inside space-y-1">
                     {healthStatus.diagnostics.troubleshooting.map((step: string, index: number) => (
-                      <li key={index}>{step}</li>
+                      <li key={index} className="text-sm">{step}</li>
                     ))}
                   </ol>
                 </div>
