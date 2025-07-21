@@ -24,9 +24,8 @@ on:
   workflow_dispatch:
     inputs:
       agent_name:
-        description: 'Agent name to create (e.g., main for production)'
+        description: 'Agent name to create (e.g., vargas-jr for production)'
         required: false
-        default: 'main'
         type: string
 
 jobs:
@@ -113,7 +112,7 @@ jobs:
   create-production-agent:
     runs-on: ubuntu-latest
     needs: [lint, publish-agent]
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.agent_name == 'main'
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -124,7 +123,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Create production agent
-        run: npm run create-agent -- ${{ github.event.inputs.agent_name }}
+        run: npm run create-agent -- ${{ github.event.inputs.agent_name || '' }}
         env:
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
