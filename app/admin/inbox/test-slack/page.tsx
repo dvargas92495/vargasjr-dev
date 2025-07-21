@@ -89,7 +89,7 @@ export default function TestSlackPage() {
       {result && (
         <div className="mt-6 p-4 border rounded">
           <h3 className="font-semibold mb-2">Test Result:</h3>
-          <pre className="text-sm bg-gray-100 p-2 rounded overflow-auto">
+          <pre className="text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-2 rounded overflow-auto">
             {JSON.stringify(result, null, 2) as string}
           </pre>
         </div>
