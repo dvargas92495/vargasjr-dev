@@ -70,6 +70,15 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
                   Jobs
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/simulator"
+                  className="block p-3 hover:bg-gray-200 hover:text-black rounded text-white"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  Simulator
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
@@ -117,6 +126,14 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
                 className="block p-2 hover:bg-gray-200 hover:text-black rounded"
               >
                 Jobs
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/simulator"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+              >
+                Simulator
               </Link>
             </li>
           </ul>
