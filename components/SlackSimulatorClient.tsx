@@ -20,11 +20,8 @@ interface Message {
 
 const mockChannels: Channel[] = [
   { id: "1", name: "general", isPrivate: false, unreadCount: 3 },
-  { id: "2", name: "random", isPrivate: false },
-  { id: "3", name: "development", isPrivate: false, unreadCount: 1 },
-  { id: "4", name: "design", isPrivate: false },
-  { id: "5", name: "sales-alerts", isPrivate: true, unreadCount: 2 },
-  { id: "6", name: "admin-only", isPrivate: true },
+  { id: "2", name: "eng-alerts", isPrivate: false, unreadCount: 1 },
+  { id: "3", name: "sales-alerts", isPrivate: true, unreadCount: 2 },
 ];
 
 const mockMessages: Message[] = [
@@ -65,14 +62,14 @@ const mockMessages: Message[] = [
   }
 ];
 
-export default function SlackSimulatorPage() {
+export default function SlackSimulatorClient() {
   const [selectedChannel, setSelectedChannel] = useState<Channel>(mockChannels[0]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [directMessagesExpanded, setDirectMessagesExpanded] = useState(true);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
       <div className="bg-purple-700 text-white px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
