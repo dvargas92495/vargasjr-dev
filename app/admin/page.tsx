@@ -13,14 +13,6 @@ async function getCurrentPRNumber(): Promise<string | null> {
   if (commitRef) {
     const branchName = commitRef.replace('refs/heads/', '');
     
-    if (branchName.startsWith('devin/')) {
-      const prNumber = branchName.replace('devin/', '').split('-')[0];
-      if (prNumber && /^\d+$/.test(prNumber)) {
-        console.log(`✅ Found PR from branch name regex: ${prNumber}`);
-        return prNumber;
-      }
-    }
-    
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
