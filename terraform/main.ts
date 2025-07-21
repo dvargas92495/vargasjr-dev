@@ -332,7 +332,7 @@ phases:
 const app = new App();
 
 const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
-const prNumber = process.env.VERCEL_GIT_COMMIT_REF?.replace('refs/heads/devin/', '').split('-')[0];
+const prNumber = process.env.VERCEL_GIT_PULL_REQUEST_ID;
 
 new VargasJRInfrastructureStack(app, `vargasjr-${environment}`, {
   environment,
