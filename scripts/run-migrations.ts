@@ -42,7 +42,7 @@ class MigrationRunner {
   private async introspectProductionDatabase(): Promise<void> {
     console.log("=== Introspecting production database schema ===");
     
-    let postgresUrl = process.env.POSTGRES_URL;
+    let postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
     
     if (this.isPreviewMode && !postgresUrl) {
       postgresUrl = await getNeonPreviewDatabaseUrl();
@@ -80,7 +80,7 @@ class MigrationRunner {
       console.log("Note: drizzle-kit generate completed with warnings (this is normal)");
     }
 
-    let postgresUrl = process.env.POSTGRES_URL;
+    let postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
     
     if (this.isPreviewMode && !postgresUrl) {
       postgresUrl = await getNeonPreviewDatabaseUrl();

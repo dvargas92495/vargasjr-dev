@@ -50,17 +50,13 @@ export default async function AdminPage() {
   const environmentPrefix = getEnvironmentPrefix();
   const currentPRNumber = await getCurrentPRNumber();
   
-  const postgresUrl = process.env.POSTGRES_URL;
-  const neonUrl = process.env.NEON_URL;
-  const neonDatabaseUrl = process.env.NEON_DATABASE_URL;
+  const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
   
   const scrubPassword = (url: string | undefined) => url 
     ? url.replace(/:[^:@]*@/, ':***@')
     : 'Not set';
     
   const scrubbedPostgresUrl = scrubPassword(postgresUrl);
-  const scrubbedNeonUrl = scrubPassword(neonUrl);
-  const scrubbedNeonDatabaseUrl = scrubPassword(neonDatabaseUrl);
   
   if (environmentPrefix === 'PREVIEW' && !currentPRNumber) {
     return (
@@ -75,8 +71,6 @@ export default async function AdminPage() {
             <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot;</div>
             <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
             <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
-            <div><strong>Neon URL:</strong> {scrubbedNeonUrl}</div>
-            <div><strong>Neon Database URL:</strong> {scrubbedNeonDatabaseUrl}</div>
             <div><strong>Total Instances Found:</strong> 0</div>
           </div>
         </div>
@@ -138,8 +132,6 @@ export default async function AdminPage() {
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
           <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
           <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
-          <div><strong>Neon URL:</strong> {scrubbedNeonUrl}</div>
-          <div><strong>Neon Database URL:</strong> {scrubbedNeonDatabaseUrl}</div>
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
       </div>

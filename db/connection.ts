@@ -4,7 +4,7 @@ import { sql } from "@vercel/postgres";
 import { Pool } from "pg";
 
 export function createDatabaseConnection() {
-  const postgresUrl = process.env.POSTGRES_URL;
+  const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
 
   if (!postgresUrl) {
     throw new Error("POSTGRES_URL environment variable is required");
