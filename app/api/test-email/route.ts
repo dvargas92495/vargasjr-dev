@@ -63,11 +63,25 @@ export async function POST(request: Request) {
 
     const response = await lambdaClient.send(invokeCommand);
     
+    let deserializedPayload;
+    try {
+      if (response.Payload) {
+        const decoder = new TextDecoder('utf-8');
+        const payloadString = decoder.decode(response.Payload);
+        deserializedPayload = JSON.parse(payloadString);
+      } else {
+        deserializedPayload = null;
+      }
+    } catch (error) {
+      console.error("Error deserializing Lambda payload:", error);
+      deserializedPayload = { error: "Failed to deserialize payload" };
+    }
+    
     return NextResponse.json({ 
       success: true, 
       messageId: testEvent.Records[0].ses.mail.messageId,
       currentBranch,
-      lambdaResponse: response
+      payload: deserializedPayload
     });
   } catch (error) {
     console.error("Error testing email processing:", error);
