@@ -560,83 +560,95 @@ export async function checkInstanceHealth(
       const sendCommandStartTime = Date.now();
       const directoryName = `vargasjr_dev_agent-*`;
 
-      const commandResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: [`cd /home/ubuntu/${directoryName} && npm run healthcheck`],
-        },
-        TimeoutSeconds: 30,
-      });
-      const sendCommandDuration = Date.now() - sendCommandStartTime;
-      const commandId = commandResult.Command?.CommandId;
-      console.log(`[Health Check] SSM Send Command - Duration: ${sendCommandDuration}ms, CommandId: ${commandId}`);
-      if (!commandId) {
-        throw new Error("Failed to get command ID from SSM");
-      }
-
-      const pollingStartTime = Date.now();
-      let attempts = 0;
-      const maxAttempts = 20;
-      let commandOutput = "";
-
-      while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        try {
-          const outputResult = await ssm.getCommandInvocation({
-            CommandId: commandId,
-            InstanceId: instanceId,
-          });
-
-          if (outputResult.Status === "Success") {
-            commandOutput = outputResult.StandardOutputContent || "";
-            break;
-          } else if (outputResult.Status === "Failed") {
-            const errorDetails =
-              outputResult.StandardErrorContent || "No error details available";
-            const outputDetails =
-              outputResult.StandardOutputContent || "No output";
-            
-            const exitCode = outputResult.ResponseCode || 1;
-            const isFatalError = exitCode === 2;
-            
-            if (isFatalError) {
-              throw new Error(
-                `Fatal error detected (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
-              );
-            }
-            
-            throw new Error(
-              `SSM command failed (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
-            );
-          }
-        } catch (outputError) {
-          if (attempts === maxAttempts - 1) {
-            throw outputError;
-          }
-          console.error(
-            `[Health Check] Attempt ${attempts + 1}/${maxAttempts} Error: ${
-              outputError instanceof Error
-                ? outputError.message
-                : String(outputError)
-            }`
-          );
+      const ssmOperation = async () => {
+        const commandResult = await ssm.sendCommand({
+          InstanceIds: [instanceId],
+          DocumentName: "AWS-RunShellScript",
+          Parameters: {
+            commands: [`cd /home/ubuntu/${directoryName} && timeout 5s npm run healthcheck`],
+          },
+          TimeoutSeconds: 30,
+        });
+        const sendCommandDuration = Date.now() - sendCommandStartTime;
+        const commandId = commandResult.Command?.CommandId;
+        console.log(`[Health Check] SSM Send Command - Duration: ${sendCommandDuration}ms, CommandId: ${commandId}`);
+        if (!commandId) {
+          throw new Error("Failed to get command ID from SSM");
         }
 
-        attempts++;
-      }
+        const pollingStartTime = Date.now();
+        let attempts = 0;
+        const maxAttempts = 20;
+        let commandOutput = "";
 
-      const pollingDuration = Date.now() - pollingStartTime;
-      console.log(
-        `[Health Check] SSM Polling Loop - Total duration: ${pollingDuration}ms, Attempts: ${
-          attempts + 1
-        }/${maxAttempts}, Final Status: ${commandOutput ? 'Success' : 'Timeout'}`
-      );
+        while (attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      if (attempts >= maxAttempts) {
-        throw new Error("SSM command timed out");
-      }
+          try {
+            const outputResult = await ssm.getCommandInvocation({
+              CommandId: commandId,
+              InstanceId: instanceId,
+            });
+
+            if (outputResult.Status === "Success") {
+              commandOutput = outputResult.StandardOutputContent || "";
+              break;
+            } else if (outputResult.Status === "Failed") {
+              const errorDetails =
+                outputResult.StandardErrorContent || "No error details available";
+              const outputDetails =
+                outputResult.StandardOutputContent || "No output";
+              
+              const exitCode = outputResult.ResponseCode || 1;
+              const isFatalError = exitCode === 2;
+              
+              if (isFatalError) {
+                throw new Error(
+                  `Fatal error detected (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
+                );
+              }
+              
+              throw new Error(
+                `SSM command failed (exit code ${exitCode}): ${errorDetails}\nCommand output: ${outputDetails}`
+              );
+            }
+          } catch (outputError) {
+            if (attempts === maxAttempts - 1) {
+              throw outputError;
+            }
+            console.error(
+              `[Health Check] Attempt ${attempts + 1}/${maxAttempts} Error: ${
+                outputError instanceof Error
+                  ? outputError.message
+                  : String(outputError)
+              }`
+            );
+          }
+
+          attempts++;
+        }
+
+        const pollingDuration = Date.now() - pollingStartTime;
+        console.log(
+          `[Health Check] SSM Polling Loop - Total duration: ${pollingDuration}ms, Attempts: ${
+            attempts + 1
+          }/${maxAttempts}, Final Status: ${commandOutput ? 'Success' : 'Timeout'}`
+        );
+
+        if (attempts >= maxAttempts) {
+          throw new Error("SSM command timed out");
+        }
+
+        return commandOutput;
+      };
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("SSM health check timed out after 15 seconds"));
+        }, 15000);
+      });
+
+      const commandOutput = await Promise.race([ssmOperation(), timeoutPromise]);
 
       const hasAgentSession =
         commandOutput.includes("agent-") || commandOutput.includes("\tagent\t");
