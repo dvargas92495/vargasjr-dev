@@ -804,7 +804,7 @@ export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   }
 }
 
-async function retryWithBackoff<T>(
+export async function retryWithBackoff<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   baseDelayMs: number = 1000
@@ -836,7 +836,7 @@ async function retryWithBackoff<T>(
   throw lastError;
 }
 
-function isRetryableError(error: any): boolean {
+export function isRetryableError(error: any): boolean {
   if (error.name === 'TypeError' && error.message.includes('fetch')) {
     return true;
   }

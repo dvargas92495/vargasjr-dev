@@ -1,44 +1,66 @@
 import InstanceCard from "@/components/instance-card";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
+import { retryWithBackoff } from "@/scripts/utils";
 
 async function getCurrentPRNumber(): Promise<string | null> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
+    console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
   
   const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
     const branchName = commitRef.replace('refs/heads/', '');
+    
+    if (branchName.startsWith('devin/')) {
+      const prNumber = branchName.replace('devin/', '').split('-')[0];
+      if (prNumber && /^\d+$/.test(prNumber)) {
+        console.log(`✅ Found PR from branch name regex: ${prNumber}`);
+        return prNumber;
+      }
+    }
+    
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
     if (githubToken && githubRepo && branchName) {
       try {
-        const [owner] = githubRepo.split('/');
-        const headFilter = `${owner}:${branchName}`;
-        
-        const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
-          headers: {
-            "Authorization": `Bearer ${githubToken}`,
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
+        const prNumber = await retryWithBackoff(async () => {
+          const [owner] = githubRepo.split('/');
+          const headFilter = `${owner}:${branchName}`;
+          
+          const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+            headers: {
+              "Authorization": `Bearer ${githubToken}`,
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28"
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
           }
-        });
-        
-        if (response.ok) {
+          
           const prs = await response.json();
           if (prs.length === 1) {
             console.log(`✅ Found PR #${prs[0].number} for branch: ${branchName}`);
             return prs[0].number.toString();
+          } else if (prs.length === 0) {
+            throw new Error(`No open PRs found for branch: ${branchName}`);
+          } else {
+            throw new Error(`Multiple open PRs found for branch: ${branchName}`);
           }
-        }
+        }, 3, 2000);
+        
+        return prNumber;
       } catch (error) {
-        console.warn(`⚠️ GitHub API lookup failed: ${error}`);
+        console.warn(`⚠️ GitHub API lookup failed after retries: ${error}`);
       }
     }
   }
   
+  console.warn('⚠️ Unable to determine PR number from any method');
   return null;
 }
 
