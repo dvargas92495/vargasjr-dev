@@ -104,7 +104,7 @@ export default async function AdminPage() {
           <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
           <div className="text-sm font-mono space-y-1 text-gray-700">
             <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot;</div>
-            <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+            <div><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? 'ERROR' : 'undefined')}</div>
             <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
             <div><strong>Total Instances Found:</strong> 0</div>
           </div>
@@ -165,7 +165,7 @@ export default async function AdminPage() {
         <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
         <div className="text-sm font-mono space-y-1 text-gray-700">
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
-          <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+          <div><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? 'ERROR' : 'undefined')}</div>
           <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
