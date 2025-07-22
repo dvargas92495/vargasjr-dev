@@ -715,17 +715,20 @@ AGENT_ENVIRONMENT=production`;
   }
 }
 
+const DEFAULT_PRODUCTION_AGENT_NAME = "vargas-jr";
+
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length !== 1) {
-    console.error("Usage: npx tsx scripts/create-agent.ts <agent-name>");
+  if (args.length > 1) {
+    console.error("Usage: npx tsx scripts/create-agent.ts [agent-name]");
     console.error("Example: npx tsx scripts/create-agent.ts my-agent");
     console.error("Example: npx tsx scripts/create-agent.ts pr-123");
+    console.error("Example: npx tsx scripts/create-agent.ts (uses default production agent)");
     process.exit(1);
   }
 
-  const agentName = args[0];
+  const agentName = args[0] || DEFAULT_PRODUCTION_AGENT_NAME;
 
   if (!/^[a-zA-Z0-9-]+$/.test(agentName)) {
     console.error("Agent name must contain only letters, numbers, and hyphens");

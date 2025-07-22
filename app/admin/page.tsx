@@ -1,4 +1,5 @@
 import InstanceCard from "@/components/instance-card";
+import CreateAgentButton from "@/components/create-agent-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
@@ -15,6 +16,7 @@ async function getCurrentPRNumber(): Promise<string | null> {
     
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
+    
     
     if (!githubToken) {
       throw new Error("GITHUB_TOKEN environment variable is not defined");
@@ -75,11 +77,13 @@ export default async function AdminPage() {
   let currentPRNumber: string | null = null;
   let prNumberError: string | null = null;
   
-  try {
-    currentPRNumber = await getCurrentPRNumber();
-  } catch (error) {
-    console.error('Failed to get PR number:', error);
-    prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+  if (environmentPrefix !== '') {
+    try {
+      currentPRNumber = await getCurrentPRNumber();
+    } catch (error) {
+      console.error('Failed to get PR number:', error);
+      prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+    }
   }
   
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
@@ -220,10 +224,11 @@ export default async function AdminPage() {
           </div>
           {environmentPrefix === '' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm text-blue-800">
+              <p className="text-sm text-blue-800 mb-3">
                 <strong>Production Environment:</strong> No production instances are currently running. 
-                You may need to create a production agent using the create-agent script.
+                You can create a production agent using the button below.
               </p>
+              <CreateAgentButton />
             </div>
           )}
         </div>
