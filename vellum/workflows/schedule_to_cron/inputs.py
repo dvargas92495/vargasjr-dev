@@ -1,5 +1,5 @@
-from vellum.workflows.state import BaseState
+from vellum.workflows.inputs import BaseInputs
 
 
-class ScheduleToCronInputs(BaseState):
+class ScheduleToCronInputs(BaseInputs):
     schedule_description: str
