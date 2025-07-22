@@ -4,7 +4,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 
-async function getCurrentPRNumber(): Promise<string | null> {
+async function getCurrentPRNumber(): Promise<string> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
@@ -59,13 +59,12 @@ async function getCurrentPRNumber(): Promise<string | null> {
         
         return prNumber;
       } catch (error) {
-        console.warn(`⚠️ GitHub API lookup failed after retries: ${error}`);
+        throw new Error(`GitHub API lookup failed after retries: ${error}`);
       }
     }
   }
   
-  console.warn('⚠️ Unable to determine PR number from any method');
-  return null;
+  throw new Error('Unable to determine PR number from any method - no VERCEL_GIT_PULL_REQUEST_ID and no valid VERCEL_GIT_COMMIT_REF found');
 }
 
 export default async function AdminPage() {
@@ -74,7 +73,7 @@ export default async function AdminPage() {
   });
   
   const environmentPrefix = getEnvironmentPrefix();
-  let currentPRNumber: string | null = null;
+  let currentPRNumber: string | undefined;
   let prNumberError: string | null = null;
   
   if (environmentPrefix !== '') {
