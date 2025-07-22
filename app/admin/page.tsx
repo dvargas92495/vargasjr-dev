@@ -5,6 +5,10 @@ import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 
 async function getCurrentPRNumber(): Promise<string> {
+  console.log(`🔍 DEBUG: getCurrentPRNumber() called`);
+  console.log(`🔍 DEBUG: VERCEL_GIT_PULL_REQUEST_ID = "${process.env.VERCEL_GIT_PULL_REQUEST_ID}"`);
+  console.log(`🔍 DEBUG: VERCEL_GIT_COMMIT_REF = "${process.env.VERCEL_GIT_COMMIT_REF}"`);
+  
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
@@ -78,10 +82,13 @@ export default async function AdminPage() {
   
   if (environmentPrefix !== '') {
     try {
+      console.log(`🔍 DEBUG: About to call getCurrentPRNumber() for environment: ${environmentPrefix}`);
       currentPRNumber = await getCurrentPRNumber();
+      console.log(`🔍 DEBUG: getCurrentPRNumber() returned: "${currentPRNumber}" (type: ${typeof currentPRNumber})`);
     } catch (error) {
       console.error('Failed to get PR number:', error);
       prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+      console.log(`🔍 DEBUG: getCurrentPRNumber() threw error, prNumberError set to: "${prNumberError}"`);
     }
   }
   
