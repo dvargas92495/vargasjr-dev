@@ -70,11 +70,13 @@ export default function SlackSimulatorClient() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isLoading) return;
 
     setIsLoading(true);
+    setError(null);
     
     try {
       const response = await fetch("/api/test-slack", {
@@ -102,10 +104,10 @@ export default function SlackSimulatorClient() {
         setMessages(prev => [...prev, newMessage]);
         setMessage("");
       } else {
-        console.error("Failed to send message:", data.error);
+        setError(data.error || "Failed to send message");
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      setError(error instanceof Error ? error.message : "Network error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -282,12 +284,30 @@ export default function SlackSimulatorClient() {
 
           {/* Message Input */}
           <div className="border-t border-gray-200 p-4 bg-white">
+            {error && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm text-red-700">{error}</span>
+                  <button
+                    onClick={() => setError(null)}
+                    className="ml-auto text-red-500 hover:text-red-700"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="border border-gray-300 rounded-lg p-3 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500">
                   <textarea
                     placeholder={`Message #${selectedChannel.name}`}
-                    className="w-full resize-none border-0 outline-none text-sm"
+                    className="w-full resize-none border-0 outline-none text-sm text-gray-900 placeholder-gray-500"
                     rows={1}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
