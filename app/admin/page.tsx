@@ -9,7 +9,7 @@ async function getCurrentPRNumber(): Promise<string> {
   console.log(`🔍 DEBUG: VERCEL_GIT_PULL_REQUEST_ID = "${process.env.VERCEL_GIT_PULL_REQUEST_ID}"`);
   console.log(`🔍 DEBUG: VERCEL_GIT_COMMIT_REF = "${process.env.VERCEL_GIT_COMMIT_REF}"`);
   
-  if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
+  if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
