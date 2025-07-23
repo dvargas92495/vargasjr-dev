@@ -4,29 +4,34 @@ import { VellumClient } from 'vellum-ai';
 export async function GET() {
   try {
     const apiKey = process.env.VELLUM_API_KEY;
+    
     if (!apiKey) {
+      console.error("VELLUM_API_KEY environment variable is missing");
       return NextResponse.json(
-        { error: "Vellum API key not configured" },
+        { error: "VELLUM_API_KEY environment variable is required" },
         { status: 500 }
       );
     }
 
-    const vellum = new VellumClient({ apiKey });
-    const response = await vellum.workflowDeployments.list();
-    const deployments = response.results || [];
-
-    return NextResponse.json({ 
-      deployments: deployments.map(d => ({
-        id: d.id,
-        name: d.name,
-        label: d.label,
-        status: d.status,
-      }))
+    const vellumClient = new VellumClient({
+      apiKey: apiKey,
     });
+
+    const response = await vellumClient.workflowDeployments.list();
+    
+    return NextResponse.json(response.results || []);
   } catch (error) {
-    console.error("Failed to fetch workflow deployments", error);
+    console.error("Failed to fetch workflow deployments:", error);
+    console.error("Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Failed to fetch workflow deployments", 
+        details: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     );
   }

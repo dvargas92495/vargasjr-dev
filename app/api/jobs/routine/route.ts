@@ -1,56 +1,49 @@
 import { NextResponse } from "next/server";
-import { z, ZodError } from "zod";
 import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
-import formatZodError from "@/utils/format-zod-error";
 
 export async function GET() {
   try {
     const db = getDb();
-    const jobs = await db.select().from(RoutineJobsTable).execute();
-    
-    return NextResponse.json({ jobs });
+    const routineJobs = await db.select().from(RoutineJobsTable);
+    return NextResponse.json(routineJobs);
   } catch (error) {
-    console.error("Failed to fetch routine jobs", error);
+    console.error("Failed to fetch routine jobs:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to fetch routine jobs", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
 }
 
-const createJobSchema = z.object({
-  name: z.string().min(1),
-  cronExpression: z.string().min(1),
-});
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, cronExpression } = createJobSchema.parse(body);
+    const { name, cronExpression } = body;
+
+    if (!name || !cronExpression) {
+      return NextResponse.json(
+        { error: "Name and cronExpression are required" },
+        { status: 400 }
+      );
+    }
 
     const db = getDb();
-    const [newJob] = await db
+    const newRoutineJob = await db
       .insert(RoutineJobsTable)
       .values({
         name,
         cronExpression,
         enabled: true,
       })
-      .returning();
+      .returning()
+      .execute();
 
-    return NextResponse.json({ success: true, job: newJob });
+    return NextResponse.json(newRoutineJob[0]);
   } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: `Invalid request body: ${formatZodError(error)}` },
-        { status: 400 }
-      );
-    }
-
-    console.error("Failed to create routine job", error);
+    console.error("Failed to create routine job:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to create routine job", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
