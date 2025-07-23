@@ -1,5 +1,6 @@
 import InstanceCard from "@/components/instance-card";
 import CreateAgentButton from "@/components/create-agent-button";
+import ApprovePRButton from "@/components/approve-pr-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
@@ -162,7 +163,12 @@ export default async function AdminPage() {
         <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
         <div className="text-sm font-mono space-y-1 text-gray-700">
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
-          <div><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? 'ERROR' : 'undefined')}</div>
+          <div className="flex items-center gap-2">
+            <span><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? 'ERROR' : 'undefined')}</span>
+            {environmentPrefix === 'PREVIEW' && currentPRNumber && (
+              <ApprovePRButton prNumber={currentPRNumber} />
+            )}
+          </div>
           <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
