@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
-// @ts-expect-error - jsonwebtoken types are available through twilio dependency
-import jwt from "jsonwebtoken";
+import { getGitHubAuthHeaders } from "../../../lib/github-auth";
 
 const VERCEL_TEAM_ID = "team_36iZPJkU2LLMsHZqJZXMZppe";
-const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
-const GITHUB_INSTALLATION_ID = process.env.GITHUB_INSTALLATION_ID;
 
 interface VercelDeployment {
   id: string;
@@ -174,53 +171,18 @@ async function fetchVercelBuildLogs(deploymentId: string): Promise<string> {
   }
 }
 
-async function generateGitHubAppToken(): Promise<string> {
-  const privateKey = process.env.GITHUB_PRIVATE_KEY;
-  
-  if (!privateKey || !GITHUB_APP_ID || !GITHUB_INSTALLATION_ID) {
-    throw new Error("Missing GitHub App configuration: GITHUB_PRIVATE_KEY, GITHUB_APP_ID, or GITHUB_INSTALLATION_ID");
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    iat: now - 60,
-    exp: now + (10 * 60),
-    iss: GITHUB_APP_ID
-  };
-
-  const jwtToken = jwt.sign(payload, privateKey, { algorithm: 'RS256' });
-
-  const response = await fetch(`https://api.github.com/app/installations/${GITHUB_INSTALLATION_ID}/access_tokens`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${jwtToken}`,
-      'Accept': 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-      'X-GitHub-Api-Version': '2022-11-28'
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to get GitHub installation token: ${response.status} ${response.statusText}`);
-  }
-
-  const tokenData = await response.json();
-  return tokenData.token;
-}
 
 async function postGitHubPRComment(prNumber: string, comment: string): Promise<void> {
   const githubRepo = process.env.GITHUB_REPOSITORY || "dvargas92495/vargasjr-dev";
   
   try {
-    const token = await generateGitHubAppToken();
+    const headers = await getGitHubAuthHeaders();
     
     const response = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github+json',
+        ...headers,
         'Content-Type': 'application/json',
-        'X-GitHub-Api-Version': '2022-11-28',
         'User-Agent': 'vargasjr-dev-vercel-webhook/1.0'
       },
       body: JSON.stringify({
