@@ -387,7 +387,7 @@ VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
         envContent += `
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
-GITHUB_TOKEN=${envVars.GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''}`;
+GITHUB_TOKEN=${envVars.GITHUB_TOKEN || ''}`;
       } else {
         envContent += `
 AGENT_ENVIRONMENT=production`;

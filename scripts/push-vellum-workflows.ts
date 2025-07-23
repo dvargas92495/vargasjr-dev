@@ -4,6 +4,7 @@ import { execSync } from "child_process";
 import { readdirSync, statSync, existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { postGitHubComment } from "./utils";
+import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 class VellumWorkflowPusher {
   private agentDir: string;
@@ -297,10 +298,12 @@ class VellumWorkflowPusher {
       if (gitStatus) {
         console.log("🔍 Detected changes in vellum.lock.json, creating PR...");
         
-        const githubToken = process.env.GITHUB_TOKEN;
-        if (!githubToken) {
-          console.log("⚠️  Skipping PR creation - missing GitHub token");
-          console.log("ℹ️  Lock file changes detected but cannot create PR without GITHUB_TOKEN");
+        try {
+          await getGitHubAuthHeaders();
+        } catch (authError) {
+          console.log("⚠️  Skipping PR creation - GitHub authentication failed");
+          console.log("ℹ️  Lock file changes detected but cannot create PR without GitHub App authentication");
+          console.error("Authentication error:", authError);
           return;
         }
         
@@ -314,6 +317,9 @@ class VellumWorkflowPusher {
         
         const prTitle = "Update vellum.lock.json with new workflow changes";
         const prBody = "This PR updates the vellum.lock.json file with new workflow changes to resolve SDK version mismatches.";
+        
+        const headers = await getGitHubAuthHeaders();
+        const githubToken = headers.Authorization.replace('Bearer ', '');
         
         execSync(`gh pr create --title "${prTitle}" --body "${prBody}" --head ${branchName} --base main`, {
           cwd: process.cwd(),

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getGitHubAuthHeaders } from "../../lib/github-auth";
 
 const PRODUCTION_AGENT_NAME = "vargas-jr";
 
@@ -12,11 +13,12 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const headers = await getGitHubAuthHeaders();
+    
     const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/ci.yaml/dispatches`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
+        ...headers,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
