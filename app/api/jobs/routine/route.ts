@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
+import { VellumClient } from 'vellum-ai';
 
 export async function GET() {
   try {
@@ -36,12 +37,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const { VellumClient } = await import('vellum-ai');
     const vellumClient = new VellumClient({ apiKey });
 
     let cronExpression: string;
     try {
-      const stream = await vellumClient.executeWorkflowStream({
+      const response = await vellumClient.executeWorkflow({
         workflowDeploymentName: "workflows.schedule_to_cron",
         inputs: [
           {
@@ -52,26 +52,16 @@ export async function POST(request: Request) {
         ],
       });
 
-      let extractedCron: string | undefined;
-      for await (const event of stream) {
-        if (event.type === 'WORKFLOW') {
-          if (event.data.error) {
-            throw new Error(`Workflow failed: ${event.data.error.message}`);
-          }
-          if (event.data.state === 'FULFILLED' && event.data.outputs) {
-            const cronOutput = event.data.outputs.find((output: { name: string; value: unknown }) => output.name === 'cron_expression');
-            if (cronOutput && typeof cronOutput.value === 'string') {
-              extractedCron = cronOutput.value;
-            }
-          }
-        }
+      if (response.data.state !== 'FULFILLED' || !response.data.outputs) {
+        throw new Error('Workflow execution failed or returned no outputs');
       }
 
-      if (!extractedCron) {
+      const cronOutput = response.data.outputs.find((output) => output.name === 'cron_expression');
+      if (!cronOutput || typeof cronOutput.value !== 'string') {
         throw new Error('Failed to generate cron expression from natural language');
       }
 
-      cronExpression = extractedCron;
+      cronExpression = cronOutput.value;
     } catch (error) {
       console.error("Failed to convert schedule description to cron:", error);
       return NextResponse.json(
