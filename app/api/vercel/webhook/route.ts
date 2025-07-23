@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
-const jwt = require("jsonwebtoken");
+// @ts-ignore - jsonwebtoken types are available through twilio dependency
+import jwt from "jsonwebtoken";
 
 const VERCEL_TEAM_ID = "team_36iZPJkU2LLMsHZqJZXMZppe";
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
