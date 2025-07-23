@@ -5,8 +5,8 @@ import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 
-async function getCurrentPRNumber(): Promise<string | null> {
-  if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
+async function getCurrentPRNumber(): Promise<string> {
+  if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
@@ -59,13 +59,12 @@ async function getCurrentPRNumber(): Promise<string | null> {
         
         return prNumber;
       } catch (error) {
-        console.warn(`⚠️ GitHub API lookup failed after retries: ${error}`);
+        throw new Error(`GitHub API lookup failed after retries: ${error}`);
       }
     }
   }
   
-  console.warn('⚠️ Unable to determine PR number from any method');
-  return null;
+  throw new Error('Unable to determine PR number from any method - no VERCEL_GIT_PULL_REQUEST_ID and no valid VERCEL_GIT_COMMIT_REF found');
 }
 
 export default async function AdminPage() {
@@ -74,7 +73,7 @@ export default async function AdminPage() {
   });
   
   const environmentPrefix = getEnvironmentPrefix();
-  let currentPRNumber: string | null = null;
+  let currentPRNumber: string | undefined;
   let prNumberError: string | null = null;
   
   if (environmentPrefix !== '') {
@@ -104,7 +103,7 @@ export default async function AdminPage() {
           <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
           <div className="text-sm font-mono space-y-1 text-gray-700">
             <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot;</div>
-            <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+            <div><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? 'ERROR' : 'undefined')}</div>
             <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
             <div><strong>Total Instances Found:</strong> 0</div>
           </div>
@@ -163,7 +162,7 @@ export default async function AdminPage() {
         <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
         <div className="text-sm font-mono space-y-1 text-gray-700">
           <div><strong>Environment Prefix:</strong> &quot;{environmentPrefix}&quot; {environmentPrefix === '' ? '(empty string = production)' : ''}</div>
-          <div><strong>Current PR Number:</strong> {currentPRNumber || 'null'}</div>
+          <div><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? 'ERROR' : 'undefined')}</div>
           <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
           <div><strong>Total Instances Found:</strong> {instances.length}</div>
         </div>
