@@ -1,5 +1,8 @@
 import jwt from 'jsonwebtoken';
 
+const GITHUB_APP_ID = '1344447';
+const GITHUB_INSTALLATION_ID = '77219262';
+
 interface GitHubAppConfig {
   appId: string;
   privateKey: string;
@@ -16,13 +19,13 @@ export class GitHubAppAuth {
 
   constructor() {
     this.config = {
-      appId: process.env.GITHUB_APP_ID || '',
+      appId: GITHUB_APP_ID,
       privateKey: process.env.GITHUB_PRIVATE_KEY || '',
-      installationId: process.env.GITHUB_INSTALLATION_ID || '',
+      installationId: GITHUB_INSTALLATION_ID,
     };
 
-    if (!this.config.appId || !this.config.privateKey || !this.config.installationId) {
-      throw new Error('GitHub App configuration missing. Required: GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_INSTALLATION_ID');
+    if (!this.config.privateKey) {
+      throw new Error('GitHub App configuration missing. Required: GITHUB_PRIVATE_KEY');
     }
   }
 
