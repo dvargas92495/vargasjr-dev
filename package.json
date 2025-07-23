@@ -60,7 +60,7 @@
     "tsscmp": "^1.0.6",
     "twilio": "^5.4.0",
     "uuid": "^11.1.0",
-    "vellum-ai": "^0.14.89",
+    "vellum-ai": "^1.0.5",
     "typescript": "^5",
     "zod": "^3.24.1"
   },
