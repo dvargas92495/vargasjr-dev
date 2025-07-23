@@ -151,7 +151,7 @@ export default function SlackSimulatorClient() {
           </div>
 
           {/* Channels Section */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 lg:overflow-y-auto">
             <div className="p-2">
               <button
                 onClick={() => setChannelsExpanded(!channelsExpanded)}
