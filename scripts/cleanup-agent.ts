@@ -32,7 +32,8 @@ class VargasJRAgentCleanup {
       ]);
       
       if (instances.length === 0) {
-        console.log(`No instances found for PR ${this.config.prNumber}`);
+        console.log(`ℹ️ No instances found for PR ${this.config.prNumber} - this is expected if no preview agent was created`);
+        console.log(`✅ Cleanup completed successfully (no resources to clean up)`);
         return;
       }
       
