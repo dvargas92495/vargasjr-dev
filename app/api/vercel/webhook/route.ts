@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
-import { postGitHubComment } from "../../../../scripts/utils";
+const jwt = require("jsonwebtoken");
+
+const VERCEL_TEAM_ID = "team_36iZPJkU2LLMsHZqJZXMZppe";
+const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
+const GITHUB_INSTALLATION_ID = process.env.GITHUB_INSTALLATION_ID;
 
 interface VercelDeployment {
   id: string;
@@ -91,13 +95,6 @@ export async function POST(request: Request) {
 }
 
 async function handleDeploymentError(payload: VercelWebhookPayload) {
-  console.log("Deployment error:", {
-    deploymentId: payload.payload.deployment.id,
-    deploymentUrl: payload.payload.deployment.url,
-    dashboardLink: payload.payload.links.deployment,
-    target: payload.payload.target
-  });
-
   try {
     const prNumber = extractPRNumber(payload.payload.deployment.meta);
     
@@ -110,13 +107,7 @@ async function handleDeploymentError(payload: VercelWebhookPayload) {
     
     const comment = formatBuildLogsComment(payload, buildLogs);
     
-    await postGitHubComment(
-      comment,
-      "vargasjr-dev-vercel-webhook/1.0",
-      "Posted Vercel build logs to PR"
-    );
-
-    console.log(`Successfully posted build logs to PR #${prNumber}`);
+    await postGitHubPRComment(prNumber, comment);
     
   } catch (error) {
     console.error("Error handling deployment error:", error);
@@ -130,24 +121,11 @@ function extractPRNumber(meta: Record<string, string>): string | null {
                    meta.pullRequestId ||
                    meta.prNumber;
   
-  if (prNumber) {
-    return prNumber;
-  }
-
-  const branchName = meta.githubCommitRef || meta.gitBranch || meta.branch;
-  if (branchName) {
-    const prMatch = branchName.match(/pr[/-](\d+)/i);
-    if (prMatch) {
-      return prMatch[1];
-    }
-  }
-
-  return null;
+  return prNumber || null;
 }
 
 async function fetchVercelBuildLogs(deploymentId: string): Promise<string> {
   const vercelToken = process.env.VERCEL_TOKEN;
-  const vercelTeamId = process.env.VERCEL_TEAM_ID;
   
   if (!vercelToken) {
     throw new Error("VERCEL_TOKEN environment variable is not set");
@@ -157,9 +135,7 @@ async function fetchVercelBuildLogs(deploymentId: string): Promise<string> {
     const url = new URL(`https://api.vercel.com/v3/deployments/${deploymentId}/events`);
     url.searchParams.set('builds', '1');
     url.searchParams.set('statusCode', '5xx');
-    if (vercelTeamId) {
-      url.searchParams.set('teamId', vercelTeamId);
-    }
+    url.searchParams.set('teamId', VERCEL_TEAM_ID);
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -194,6 +170,71 @@ async function fetchVercelBuildLogs(deploymentId: string): Promise<string> {
   } catch (error) {
     console.error("Error fetching Vercel build logs:", error);
     return `Error fetching build logs: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
+async function generateGitHubAppToken(): Promise<string> {
+  const privateKey = process.env.GITHUB_PRIVATE_KEY;
+  
+  if (!privateKey || !GITHUB_APP_ID || !GITHUB_INSTALLATION_ID) {
+    throw new Error("Missing GitHub App configuration: GITHUB_PRIVATE_KEY, GITHUB_APP_ID, or GITHUB_INSTALLATION_ID");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iat: now - 60,
+    exp: now + (10 * 60),
+    iss: GITHUB_APP_ID
+  };
+
+  const jwtToken = jwt.sign(payload, privateKey, { algorithm: 'RS256' });
+
+  const response = await fetch(`https://api.github.com/app/installations/${GITHUB_INSTALLATION_ID}/access_tokens`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${jwtToken}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get GitHub installation token: ${response.status} ${response.statusText}`);
+  }
+
+  const tokenData = await response.json();
+  return tokenData.token;
+}
+
+async function postGitHubPRComment(prNumber: string, comment: string): Promise<void> {
+  const githubRepo = process.env.GITHUB_REPOSITORY || "dvargas92495/vargasjr-dev";
+  
+  try {
+    const token = await generateGitHubAppToken();
+    
+    const response = await fetch(`https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'vargasjr-dev-vercel-webhook/1.0'
+      },
+      body: JSON.stringify({
+        body: comment
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to post GitHub comment: ${response.status} ${response.statusText}`);
+    }
+
+    console.log(`✅ Posted Vercel build logs to PR #${prNumber}`);
+  } catch (error) {
+    console.error("Failed to post GitHub comment:", error);
+    throw error;
   }
 }
 

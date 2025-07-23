@@ -20,13 +20,3 @@ The `/scripts` directory contains TypeScript utilities for various operational t
 - `push-vellum-workflows.ts` - Pushes all Vellum workflows to the platform
 
 All scripts can be run via npm scripts defined in `package.json`.
-
-## Environment Variables
-
-The following environment variables are required for Vercel webhook integration:
-
-- `VERCEL_WEBHOOK_SECRET` - Secret key for webhook signature verification
-- `VERCEL_TOKEN` - Vercel API token with deployment read access
-- `VERCEL_TEAM_ID` - (Optional) Vercel team ID for team-scoped access
-- `GITHUB_TOKEN` - GitHub token for posting PR comments
-- `GITHUB_REPOSITORY` - GitHub repository in owner/repo format
