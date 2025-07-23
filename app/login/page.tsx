@@ -9,6 +9,26 @@ export default function LoginPage() {
   const [token, setToken] = useState("");
   const [isAutoLogging, setIsAutoLogging] = useState(false);
   const [hasStoredToken, setHasStoredToken] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState("");
+
+  const validateToken = useCallback(async (tokenValue: string): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/validate-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: tokenValue }),
+      });
+
+      const result = await response.json();
+      return result.valid === true;
+    } catch (error) {
+      console.error("Token validation failed:", error);
+      return false;
+    }
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -17,18 +37,30 @@ export default function LoginPage() {
       const tokenValue = formData.get("token")?.toString() || token;
 
       if (tokenValue) {
-        localStorage.setItem("admin-token", tokenValue);
-        setCookie("admin-token", tokenValue);
-        router.push("/admin");
+        setIsValidating(true);
+        setValidationError("");
+
+        const isValid = await validateToken(tokenValue);
+        
+        if (isValid) {
+          localStorage.setItem("admin-token", tokenValue);
+          setCookie("admin-token", tokenValue);
+          router.push("/admin");
+        } else {
+          setValidationError("Invalid token. Please try again.");
+        }
+        
+        setIsValidating(false);
       }
     },
-    [router, token]
+    [router, token, validateToken]
   );
 
   const clearStoredToken = useCallback(() => {
     localStorage.removeItem("admin-token");
     setToken("");
     setHasStoredToken(false);
+    setValidationError("");
   }, []);
 
   useEffect(() => {
@@ -38,10 +70,20 @@ export default function LoginPage() {
       setHasStoredToken(true);
       setIsAutoLogging(true);
       
-      setCookie("admin-token", storedToken);
-      router.push("/admin");
+      validateToken(storedToken).then((isValid) => {
+        if (isValid) {
+          setCookie("admin-token", storedToken);
+          router.push("/admin");
+        } else {
+          localStorage.removeItem("admin-token");
+          setToken("");
+          setHasStoredToken(false);
+          setValidationError("Stored token is invalid. Please login again.");
+        }
+        setIsAutoLogging(false);
+      });
     }
-  }, [router]);
+  }, [router, validateToken]);
 
   return (
     <div className="min-h-screen grid place-items-center p-8">
@@ -57,15 +99,19 @@ export default function LoginPage() {
           placeholder="Enter admin token"
           className="p-2 border rounded text-black"
           required
-          disabled={isAutoLogging}
+          disabled={isAutoLogging || isValidating}
         />
         <button
           type="submit"
           className="bg-primary text-white p-2 rounded hover:bg-opacity-90 disabled:opacity-50"
-          disabled={isAutoLogging}
+          disabled={isAutoLogging || isValidating}
         >
-          {isAutoLogging ? "Auto-logging in..." : "Login"}
+          {isAutoLogging ? "Auto-logging in..." : isValidating ? "Validating..." : "Login"}
         </button>
+        
+        {validationError && (
+          <p className="text-red-500 text-sm">{validationError}</p>
+        )}
         
         {hasStoredToken && (
           <button
