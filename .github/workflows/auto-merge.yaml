@@ -18,19 +18,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Wait for status checks
-        uses: lewagon/wait-on-check-action@v1.3.1
+      - name: Wait for all other checks to succeed
+        uses: lewagon/wait-on-check-action@v1.4.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          check-name: 'lint'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-
-      - name: Wait for publish-agent check
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          check-name: 'publish-agent'
+          running-workflow-name: 'auto-merge'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
