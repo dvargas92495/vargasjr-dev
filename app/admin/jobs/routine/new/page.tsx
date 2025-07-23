@@ -40,16 +40,17 @@ export default function NewRoutineJobPage() {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name");
-      const cronExpression = formData.get("cronExpression");
+      const scheduleDescription = formData.get("scheduleDescription");
 
-      if (name && cronExpression) {
+      const workflowName = name || "test-workflow";
+      if (scheduleDescription) {
         try {
           const response = await fetch('/api/jobs/routine', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name, cronExpression }),
+            body: JSON.stringify({ name: workflowName, scheduleDescription }),
           });
 
           if (!response.ok) {
@@ -85,7 +86,6 @@ export default function NewRoutineJobPage() {
           <select
             id="name"
             name="name"
-            required
             className="w-full p-2 border rounded text-black"
           >
             <option value="">Select a workflow deployment</option>
@@ -97,15 +97,15 @@ export default function NewRoutineJobPage() {
           </select>
         </div>
         <div>
-          <label htmlFor="cronExpression" className="block mb-1">
-            Cron Expression
+          <label htmlFor="scheduleDescription" className="block mb-1">
+            Schedule Description
           </label>
           <input
             type="text"
-            id="cronExpression"
-            name="cronExpression"
+            id="scheduleDescription"
+            name="scheduleDescription"
             required
-            placeholder="e.g., 0 9 * * 1-5"
+            placeholder="e.g., every Monday at 5pm, daily at 9am, every weekday at 8:30am"
             className="w-full p-2 border rounded text-black"
           />
         </div>
