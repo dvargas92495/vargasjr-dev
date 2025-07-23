@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
-// @ts-ignore - jsonwebtoken types are available through twilio dependency
+// @ts-expect-error - jsonwebtoken types are available through twilio dependency
 import jwt from "jsonwebtoken";
 
 const VERCEL_TEAM_ID = "team_36iZPJkU2LLMsHZqJZXMZppe";
