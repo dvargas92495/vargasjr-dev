@@ -64,8 +64,11 @@ export async function POST(request: Request) {
       cronExpression = cronOutput.value;
     } catch (error) {
       console.error("Failed to convert schedule description to cron:", error);
+      const userMessage = error instanceof Error && error.message.includes('Failed to generate cron expression') 
+        ? 'Unable to understand the schedule description. Please try a clearer format like "every Monday at 5pm" or "daily at 9am"'
+        : 'Failed to convert schedule description to cron expression';
       return NextResponse.json(
-        { error: "Failed to convert schedule description to cron expression", details: error instanceof Error ? error.message : String(error) },
+        { error: userMessage, details: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
@@ -84,8 +87,11 @@ export async function POST(request: Request) {
     return NextResponse.json(newRoutineJob[0]);
   } catch (error) {
     console.error("Failed to create routine job:", error);
+    const userMessage = error instanceof Error && error.message.includes('duplicate key') 
+      ? 'A routine job with this name already exists. Please choose a different name.'
+      : 'Failed to create routine job';
     return NextResponse.json(
-      { error: "Failed to create routine job", details: error instanceof Error ? error.message : String(error) },
+      { error: userMessage, details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
