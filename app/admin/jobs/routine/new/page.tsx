@@ -10,6 +10,11 @@ interface WorkflowDeployment {
   label: string;
 }
 
+interface ApiErrorResponse {
+  error: string;
+  details?: string;
+}
+
 export default function NewRoutineJobPage() {
   const router = useRouter();
   const [workflowDeployments, setWorkflowDeployments] = useState<WorkflowDeployment[]>([]);
@@ -54,7 +59,9 @@ export default function NewRoutineJobPage() {
           });
 
           if (!response.ok) {
-            throw new Error('Failed to create routine job');
+            const errorData: ApiErrorResponse = await response.json();
+            const errorMessage = errorData.details || errorData.error || 'Failed to create routine job';
+            throw new Error(errorMessage);
           }
 
           router.push("/admin/jobs");
