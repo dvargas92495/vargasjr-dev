@@ -1,11 +1,12 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { setCookie } from "cookies-next";
 import SearchParamError from "@/components/search-param-error";
 
 export default function LoginPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [token, setToken] = useState("");
   const [isAutoLogging, setIsAutoLogging] = useState(false);
   const [hasStoredToken, setHasStoredToken] = useState(false);
@@ -79,11 +80,17 @@ export default function LoginPage() {
           setToken("");
           setHasStoredToken(false);
           setValidationError("Stored token is invalid. Please login again.");
+          setIsAutoLogging(false);
         }
-        setIsAutoLogging(false);
       });
     }
   }, [router, validateToken]);
+
+  useEffect(() => {
+    if (isAutoLogging && pathname === "/admin") {
+      setIsAutoLogging(false);
+    }
+  }, [pathname, isAutoLogging]);
 
   return (
     <div className="min-h-screen grid place-items-center p-8">
