@@ -157,15 +157,14 @@ export async function POST(request: Request) {
 
     if (!webhookResponse.ok) {
       console.error(`[${requestId}] Webhook returned error status:`, webhookResponse.status, webhookResult);
-      return NextResponse.json(
-        createNetworkErrorResponse(
-          "Slack webhook returned error status",
-          webhookResponse.status,
-          JSON.stringify(webhookResult),
-          webhookUrl
-        ),
-        { status: 500 }
+      const errorResponse = createNetworkErrorResponse(
+        "Slack webhook returned error status",
+        webhookResponse.status,
+        JSON.stringify(webhookResult),
+        webhookUrl
       );
+      console.log(`[${requestId}] Returning detailed error response:`, JSON.stringify(errorResponse, null, 2));
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
     console.log(`[${requestId}] Webhook test completed successfully`);

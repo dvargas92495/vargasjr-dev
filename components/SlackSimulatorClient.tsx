@@ -108,8 +108,14 @@ export default function SlackSimulatorClient() {
         if (data.details) {
           errorMessage += `: ${data.details}`;
         }
+        if (data.code) {
+          errorMessage += ` [${data.code}]`;
+        }
         if (data.troubleshooting && data.troubleshooting.length > 0) {
-          errorMessage += ` (${data.troubleshooting[0]})`;
+          errorMessage += `\n\nTroubleshooting:\n• ${data.troubleshooting.join('\n• ')}`;
+        }
+        if (data.diagnostics && Object.keys(data.diagnostics).length > 0) {
+          errorMessage += `\n\nDiagnostics: ${JSON.stringify(data.diagnostics, null, 2)}`;
         }
         setError(errorMessage);
       }
