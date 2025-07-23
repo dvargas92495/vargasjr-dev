@@ -156,7 +156,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         {/* Desktop header */}
         <h1 className="hidden lg:block text-2xl font-bold mb-6">Admin Dashboard</h1>
         
-        <div className="overflow-x-auto flex flex-col flex-1">{children}</div>
+        <div className="lg:overflow-x-auto flex flex-col flex-1">{children}</div>
       </div>
     </div>
   );
