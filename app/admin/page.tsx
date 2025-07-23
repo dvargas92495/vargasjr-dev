@@ -5,6 +5,7 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
+import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 
 async function getCurrentPRNumber(): Promise<string> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
@@ -16,12 +17,8 @@ async function getCurrentPRNumber(): Promise<string> {
   if (commitRef) {
     const branchName = commitRef.replace('refs/heads/', '');
     
-    const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
-    if (!githubToken) {
-      throw new Error("GITHUB_TOKEN environment variable is not defined");
-    }
     if (!githubRepo) {
       throw new Error("GITHUB_REPOSITORY environment variable is not defined");
     }
@@ -29,18 +26,15 @@ async function getCurrentPRNumber(): Promise<string> {
       throw new Error("Branch name could not be determined from VERCEL_GIT_COMMIT_REF");
     }
     
-    if (githubToken && githubRepo && branchName) {
+    if (githubRepo && branchName) {
       try {
         const prNumber = await retryWithBackoff(async () => {
           const [owner] = githubRepo.split('/');
           const headFilter = `${owner}:${branchName}`;
           
+          const headers = await getGitHubAuthHeaders();
           const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
-            headers: {
-              "Authorization": `Bearer ${githubToken}`,
-              "Accept": "application/vnd.github+json",
-              "X-GitHub-Api-Version": "2022-11-28"
-            }
+            headers
           });
           
           if (!response.ok) {
@@ -185,7 +179,7 @@ export default async function AdminPage() {
           </div>
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm text-yellow-800">
-              <strong>Required for PR environments:</strong> GITHUB_TOKEN, GITHUB_REPOSITORY, and VERCEL_GIT_COMMIT_REF must be properly configured.
+              <strong>Required for PR environments:</strong> GitHub App authentication (GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_INSTALLATION_ID), GITHUB_REPOSITORY, and VERCEL_GIT_COMMIT_REF must be properly configured.
             </p>
           </div>
         </div>

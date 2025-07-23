@@ -2,6 +2,7 @@
 
 import { EC2 } from "@aws-sdk/client-ec2";
 import { findInstancesByFilters, terminateInstances, deleteKeyPair, deleteSecret } from "./utils";
+import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface CleanupConfig {
   prNumber: string;
@@ -63,19 +64,18 @@ class VargasJRAgentCleanup {
   }
 
   async getPRDetails(): Promise<{ repository: string; branch: string } | null> {
-    const githubToken = process.env.GITHUB_TOKEN;
     const githubRepository = process.env.GITHUB_REPOSITORY;
     
-    if (!githubToken || !githubRepository) {
-      console.log("⚠️  Missing GITHUB_TOKEN or GITHUB_REPOSITORY environment variables");
+    if (!githubRepository) {
+      console.log("⚠️  Missing GITHUB_REPOSITORY environment variable");
       return null;
     }
 
     try {
+      const headers = await getGitHubAuthHeaders();
       const response = await fetch(`https://api.github.com/repos/${githubRepository}/pulls/${this.config.prNumber}`, {
         headers: {
-          'Authorization': `Bearer ${githubToken}`,
-          'Accept': 'application/vnd.github.v3+json',
+          ...headers,
           'User-Agent': 'VargasJR-Cleanup-Agent'
         }
       });
@@ -167,20 +167,14 @@ class VargasJRAgentCleanup {
       return;
     }
 
-    const githubToken = process.env.GITHUB_TOKEN;
-    if (!githubToken) {
-      console.log("⚠️  Skipping branch deletion - missing GitHub token");
-      return;
-    }
-
     console.log(`Deleting branch: ${prDetails.branch} from repository: ${prDetails.repository}`);
     
     try {
+      const headers = await getGitHubAuthHeaders();
       const response = await fetch(`https://api.github.com/repos/${prDetails.repository}/git/refs/heads/${prDetails.branch}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${githubToken}`,
-          'Accept': 'application/vnd.github.v3+json',
+          ...headers,
           'User-Agent': 'VargasJR-Cleanup-Agent'
         }
       });
@@ -215,7 +209,7 @@ async function main() {
   if (!prNumber) {
     console.error("Usage: npx tsx scripts/cleanup-agent.ts --pr <pr-number>");
     console.error("Example: npx tsx scripts/cleanup-agent.ts --pr 123");
-    console.error("Note: Requires GITHUB_TOKEN and GITHUB_REPOSITORY environment variables");
+    console.error("Note: Requires GITHUB_REPOSITORY environment variable and GitHub App configuration");
     process.exit(1);
   }
   

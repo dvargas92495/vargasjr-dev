@@ -3,6 +3,7 @@ import { SSM } from "@aws-sdk/client-ssm";
 import { IAMClient, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
+import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 export interface EC2Instance {
   InstanceId?: string;
@@ -870,13 +871,11 @@ export async function postGitHubComment(
   userAgent: string,
   successMessage: string = "Posted comment to PR"
 ): Promise<void> {
-  const githubToken = process.env.GITHUB_TOKEN;
   const githubRepo = process.env.GITHUB_REPOSITORY;
   const eventName = process.env.GITHUB_EVENT_NAME;
   const eventPath = process.env.GITHUB_EVENT_PATH;
 
   if (
-    !githubToken ||
     !githubRepo ||
     eventName !== "pull_request" ||
     !eventPath
@@ -897,12 +896,14 @@ export async function postGitHubComment(
     }
 
     await retryWithBackoff(async () => {
+      const headers = await getGitHubAuthHeaders();
+      
       const response = await fetch(
         `https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${githubToken}`,
+            ...headers,
             "Content-Type": "application/json",
             "User-Agent": userAgent,
           },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getGitHubAuthHeaders } from "../../../lib/github-auth";
 
 export async function POST(request: Request) {
   try {
@@ -16,43 +17,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "PR number is required" }, { status: 400 });
     }
 
-    const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
-
-    if (!githubToken) {
-      return NextResponse.json({ error: "GitHub token not configured" }, { status: 500 });
-    }
 
     if (!githubRepo) {
       return NextResponse.json({ error: "GitHub repository not configured" }, { status: 500 });
     }
 
-    const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls/${prNumber}/reviews`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${githubToken}`,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      },
-      body: JSON.stringify({
-        event: 'APPROVE'
-      }),
-    });
+    try {
+      const headers = await getGitHubAuthHeaders();
+      
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls/${prNumber}/reviews`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event: 'APPROVE'
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('GitHub API error:', errorText);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('GitHub API error:', errorText);
+        return NextResponse.json(
+          { error: "Failed to approve PR" },
+          { status: response.status }
+        );
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        message: `PR #${prNumber} approved successfully` 
+      });
+    } catch (authError) {
+      console.error('GitHub authentication error:', authError);
       return NextResponse.json(
-        { error: "Failed to approve PR" },
-        { status: response.status }
+        { error: "GitHub authentication failed" },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: `PR #${prNumber} approved successfully` 
-    });
 
   } catch (error) {
     console.error('PR approval error:', error);

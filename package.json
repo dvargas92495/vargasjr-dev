@@ -59,9 +59,9 @@
     "stripe": "^18.2.0",
     "tsscmp": "^1.0.6",
     "twilio": "^5.4.0",
+    "typescript": "^5",
     "uuid": "^11.1.0",
     "vellum-ai": "^1.0.5",
-    "typescript": "^5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -70,6 +70,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

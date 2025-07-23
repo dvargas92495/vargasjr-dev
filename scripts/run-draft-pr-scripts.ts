@@ -4,6 +4,7 @@ import { execSync, spawn } from "child_process";
 import { readdirSync, statSync, existsSync, readFileSync } from "fs";
 import { join, extname, relative } from "path";
 import { postGitHubComment } from "./utils";
+import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface ScriptResult {
   scriptPath: string;
@@ -110,23 +111,19 @@ class DraftPRScriptRunner {
   private async findPRByBranch(): Promise<string> {
     console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
     
-    const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
-    if (!githubToken || !githubRepo) {
-      throw new Error("GitHub environment variables not available");
+    if (!githubRepo) {
+      throw new Error("GitHub repository environment variable not available");
     }
     
     const [owner, repo] = githubRepo.split('/');
     const headFilter = `${owner}:${this.branchName}`;
     
     try {
+      const headers = await getGitHubAuthHeaders();
       const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
-        headers: {
-          "Authorization": `Bearer ${githubToken}`,
-          "Accept": "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28"
-        }
+        headers
       });
       
       if (!response.ok) {
@@ -159,21 +156,17 @@ class DraftPRScriptRunner {
 
 
   private async getAddedFilesInPR(): Promise<string[]> {
-    const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
-    if (!githubToken || !githubRepo || !this.prNumber) {
-      console.warn('GitHub environment variables or PR number not available, falling back to empty array');
+    if (!githubRepo || !this.prNumber) {
+      console.warn('GitHub repository environment variable or PR number not available, falling back to empty array');
       return [];
     }
     
     try {
+      const headers = await getGitHubAuthHeaders();
       const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}/files`, {
-        headers: {
-          "Authorization": `Bearer ${githubToken}`,
-          "Accept": "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28"
-        }
+        headers
       });
       
       if (!response.ok) {
@@ -386,10 +379,9 @@ class DraftPRScriptRunner {
   }
 
   private async postComment(content: string): Promise<void> {
-    const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
     
-    if (!githubToken || !githubRepo) {
+    if (!githubRepo) {
       console.log("⚠️ Not in GitHub Actions environment, skipping comment posting");
       console.log("📝 Comment content that would be posted:");
       console.log("=" + "=".repeat(50));
