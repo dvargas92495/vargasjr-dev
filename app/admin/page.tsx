@@ -3,6 +3,7 @@ import CreateAgentButton from "@/components/create-agent-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
+import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 
 async function getCurrentPRNumber(): Promise<string | null> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID) {
@@ -16,7 +17,6 @@ async function getCurrentPRNumber(): Promise<string | null> {
     
     const githubToken = process.env.GITHUB_TOKEN;
     const githubRepo = process.env.GITHUB_REPOSITORY;
-    
     
     if (!githubToken) {
       throw new Error("GITHUB_TOKEN environment variable is not defined");
@@ -87,7 +87,7 @@ export default async function AdminPage() {
   }
   
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
-  
+
   const scrubPassword = (url: string | undefined) => url 
     ? url.replace(/:[^:@]*@/, ':***@')
     : 'Not set';
@@ -100,7 +100,6 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-bold">Vargas JR</h1>
         <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
         
-        {/* Environment Info */}
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
           <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
           <div className="text-sm font-mono space-y-1 text-gray-700">
@@ -111,7 +110,6 @@ export default async function AdminPage() {
           </div>
         </div>
         
-        {/* No instances message for preview without PR */}
         <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-2xl">
           <h3 className="font-semibold text-gray-800 mb-2">No Instances Available</h3>
           <p className="text-sm text-gray-600 mb-3">
@@ -127,7 +125,7 @@ export default async function AdminPage() {
   
   const filters = [
     { Name: "tag:Project", Values: ["VargasJR"] },
-    { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+    { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
   ];
   
   if (environmentPrefix === '') {
@@ -161,7 +159,6 @@ export default async function AdminPage() {
       <h1 className="text-2xl font-bold">Vargas JR</h1>
       <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
       
-      {/* Environment Info */}
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
         <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
         <div className="text-sm font-mono space-y-1 text-gray-700">
@@ -172,7 +169,6 @@ export default async function AdminPage() {
         </div>
       </div>
       
-      {/* Environment Variable Errors */}
       {prNumberError && (
         <div className="bg-red-50 border border-red-200 p-6 rounded-lg w-full max-w-2xl">
           <h3 className="font-semibold text-red-800 mb-2">Environment Configuration Error</h3>
@@ -190,7 +186,6 @@ export default async function AdminPage() {
         </div>
       )}
       
-      {/* Instances Section */}
       {errorMessage ? (
         <div className="bg-red-50 border border-red-200 p-6 rounded-lg w-full max-w-2xl">
           <h3 className="font-semibold text-red-800 mb-2">Unable to Query Instances</h3>
@@ -219,7 +214,7 @@ export default async function AdminPage() {
               <li>Project: VargasJR</li>
               {environmentPrefix === '' && <li>Type: main</li>}
               {environmentPrefix === 'PREVIEW' && currentPRNumber && <li>PRNumber: {currentPRNumber}</li>}
-              <li>State: running, stopped, or pending</li>
+              <li>State: running, stopped, pending, stopping, or shutting-down</li>
             </ul>
           </div>
           {environmentPrefix === '' && (
@@ -237,6 +232,9 @@ export default async function AdminPage() {
           <InstanceCard key={instance.InstanceId} instance={instance} />
         ))
       )}
+      {instances.some(instance => 
+        ["pending", "stopping", "shutting-down"].includes(instance.State?.Name || "")
+      ) && <TransitionalStateRefresh />}
     </div>
   );
 }

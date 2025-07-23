@@ -5,7 +5,7 @@ import StopInstanceButton from "@/components/stop-instance-button";
 import StartInstanceButton from "@/components/start-instance-button";
 import RebootInstanceButton from "@/components/reboot-instance-button";
 import HealthStatusIndicator from "@/components/health-status-indicator";
-import PendingInstanceRefresh from "@/components/pending-instance-refresh";
+import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import CopyableText from "@/components/copyable-text";
 
 interface InstanceCardProps {
@@ -86,7 +86,9 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
         {instanceState === "running" && instanceId && healthStatus.status === "unhealthy" && (
           <RebootInstanceButton id={instanceId} />
         )}
-        {instanceState === "pending" && <PendingInstanceRefresh />}
+        {(instanceState === "pending" || instanceState === "stopping" || instanceState === "shutting-down") && (
+          <TransitionalStateRefresh />
+        )}
       </div>
     </div>
   );
