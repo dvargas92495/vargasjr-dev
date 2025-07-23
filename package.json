@@ -12,7 +12,7 @@
     "ssh": "ssh -i ~/.ssh/vargasjr-dev.pem ubuntu@ec2-34-239-127-55.compute-1.amazonaws.com",
     "test": "vitest run",
     "create-agent": "npx tsx scripts/create-agent.ts",
-    "cleanup-agent": "npx tsx scripts/cleanup-agent.ts",
+    "cleanup-pr": "npx tsx scripts/cleanup-pr.ts",
     "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts",
     "one-time-migration": "npx tsx scripts/run-draft-pr-scripts.ts",
     "run-migrations": "npx tsx scripts/run-migrations.ts",
