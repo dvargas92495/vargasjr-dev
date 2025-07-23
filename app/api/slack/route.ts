@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
 import tsscmp from "tsscmp";
 import { addInboxMessage } from "@/server";
+import { createErrorResponse } from "@/utils/error-response";
 
 const verifyErrorPrefix = "Failed to verify authenticity";
 
@@ -81,10 +82,47 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Error processing Slack webhook:", error);
-    return NextResponse.json(
-      { error: "Failed to process Slack webhook" },
-      { status: 500 }
-    );
+    const requestId = `slack-webhook-${Date.now()}`;
+    console.error(`[${requestId}] Error processing Slack webhook:`, error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    if (errorStack) {
+      console.error(`[${requestId}] Error stack:`, errorStack);
+    }
+
+    let errorResponse;
+    if (error instanceof Error && error.message.startsWith(verifyErrorPrefix)) {
+      errorResponse = createErrorResponse("Slack webhook verification failed", {
+        code: "VERIFICATION_FAILED",
+        details: error.message,
+        requestId,
+        diagnostics: {
+          errorType: "signature_verification",
+          timestamp: new Date().toISOString()
+        },
+        troubleshooting: [
+          "Verify SLACK_SIGNING_SECRET environment variable is correct",
+          "Check that request headers include x-slack-signature and x-slack-request-timestamp",
+          "Ensure request is not older than 5 minutes",
+          "Verify the request body matches what Slack sent"
+        ]
+      });
+    } else {
+      errorResponse = createErrorResponse("Failed to process Slack webhook", {
+        code: "PROCESSING_ERROR",
+        details: error instanceof Error ? error.message : "Unknown error occurred",
+        requestId,
+        diagnostics: {
+          errorName: error instanceof Error ? error.name : "Unknown",
+          errorStack: errorStack
+        },
+        troubleshooting: [
+          "Check server logs for detailed error information",
+          "Verify database connectivity",
+          "Ensure inbox configuration is correct"
+        ]
+      });
+    }
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }

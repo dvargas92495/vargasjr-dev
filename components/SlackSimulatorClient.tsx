@@ -104,10 +104,24 @@ export default function SlackSimulatorClient() {
         setMessages(prev => [...prev, newMessage]);
         setMessage("");
       } else {
-        setError(data.error || "Failed to send message");
+        let errorMessage = data.error || "Failed to send message";
+        if (data.details) {
+          errorMessage += `: ${data.details}`;
+        }
+        if (data.troubleshooting && data.troubleshooting.length > 0) {
+          errorMessage += ` (${data.troubleshooting[0]})`;
+        }
+        setError(errorMessage);
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Network error occurred");
+      let errorMessage = "Network error occurred";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        if (error.message.includes('fetch')) {
+          errorMessage = "Unable to connect to server. Please check your internet connection.";
+        }
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
