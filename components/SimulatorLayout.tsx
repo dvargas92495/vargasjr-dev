@@ -23,15 +23,8 @@ export default function SimulatorLayout({ title, description, children }: Simula
         </div>
       </div>
 
-      <div className="bg-white border border-gray-300 rounded-lg">
-        <div className="bg-gray-500 px-6 py-3 rounded-t-lg">
-          <h2 className="text-lg font-semibold text-white">Preview Environment</h2>
-        </div>
-        <div className="p-6">
-          <div className="bg-gray-50 border border-gray-200 rounded p-4">
-            {children}
-          </div>
-        </div>
+      <div>
+        {children}
       </div>
     </div>
   );
