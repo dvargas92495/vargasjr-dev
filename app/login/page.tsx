@@ -66,9 +66,9 @@ export default function LoginPage() {
   useEffect(() => {
     const storedToken = localStorage.getItem("admin-token");
     if (storedToken) {
+      setIsAutoLogging(true);
       setToken(storedToken);
       setHasStoredToken(true);
-      setIsAutoLogging(true);
       
       validateToken(storedToken).then((isValid) => {
         if (isValid) {
