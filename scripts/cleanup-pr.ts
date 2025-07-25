@@ -32,21 +32,21 @@ class VargasJRAgentCleanup {
       ]);
       
       if (instances.length === 0) {
-        console.log(`No instances found for PR ${this.config.prNumber}`);
-        return;
-      }
-      
-      const instanceIds = instances
-        .map(instance => instance.InstanceId)
-        .filter((id): id is string => !!id);
+        console.log(`ℹ️ No instances found for PR ${this.config.prNumber} - this is expected if no preview agent was created`);
+        console.log(`⚠️ Skipping instance termination and key pair deletion - no instances found`);
+      } else {
+        const instanceIds = instances
+          .map(instance => instance.InstanceId)
+          .filter((id): id is string => !!id);
 
-      if (instanceIds.length > 0) {
-        console.log(`Terminating instances: ${instanceIds.join(", ")}`);
-        await terminateInstances(this.ec2, instanceIds);
-        console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
-      }
+        if (instanceIds.length > 0) {
+          console.log(`Terminating instances: ${instanceIds.join(", ")}`);
+          await terminateInstances(this.ec2, instanceIds);
+          console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
+        }
 
-      await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
+        await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
+      }
       
       const secretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
       await deleteSecret(secretName, this.config.region);
@@ -76,7 +76,7 @@ class VargasJRAgentCleanup {
       const response = await fetch(`https://api.github.com/repos/${githubRepository}/pulls/${this.config.prNumber}`, {
         headers: {
           ...headers,
-          'User-Agent': 'VargasJR-Cleanup-Agent'
+          'User-Agent': 'VargasJR-Cleanup-PR'
         }
       });
 
@@ -175,7 +175,7 @@ class VargasJRAgentCleanup {
         method: 'DELETE',
         headers: {
           ...headers,
-          'User-Agent': 'VargasJR-Cleanup-Agent'
+          'User-Agent': 'VargasJR-Cleanup-PR'
         }
       });
 
@@ -207,8 +207,8 @@ async function main() {
   }
   
   if (!prNumber) {
-    console.error("Usage: npx tsx scripts/cleanup-agent.ts --pr <pr-number>");
-    console.error("Example: npx tsx scripts/cleanup-agent.ts --pr 123");
+    console.error("Usage: npx tsx scripts/cleanup-pr.ts --pr <pr-number>");
+    console.error("Example: npx tsx scripts/cleanup-pr.ts --pr 123");
     console.error("Note: Requires GITHUB_REPOSITORY environment variable and GitHub App configuration");
     process.exit(1);
   }
