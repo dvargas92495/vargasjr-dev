@@ -147,12 +147,35 @@ export async function POST(request: Request) {
       const event = body.event;
 
       if (event.type === "message") {
-        await addInboxMessage({
-          body: event.text,
-          source: event.user,
-          inboxName: `slack-${event.channel}`,
-          createdAt: new Date(event.ts * 1000),
-        });
+        try {
+          await addInboxMessage({
+            body: event.text,
+            source: event.user,
+            inboxName: `slack-${event.channel}`,
+            createdAt: new Date(event.ts * 1000),
+          });
+        } catch (dbError) {
+          console.error(`[${requestId}] Database error adding inbox message:`, dbError);
+          return NextResponse.json(
+            createErrorResponse("Failed to save message to inbox", {
+              code: "DATABASE_ERROR",
+              details: dbError instanceof Error ? dbError.message : "Unknown database error",
+              requestId,
+              diagnostics: {
+                inboxName: `slack-${event.channel}`,
+                eventType: event.type,
+                errorName: dbError instanceof Error ? dbError.name : "Unknown"
+              },
+              troubleshooting: [
+                "Check if POSTGRES_URL environment variable is set",
+                "Verify database connection is working",
+                "Ensure the inbox exists in the database",
+                "Check database logs for connection issues"
+              ]
+            }),
+            { status: 500 }
+          );
+        }
 
         return NextResponse.json({ ok: true });
       }
