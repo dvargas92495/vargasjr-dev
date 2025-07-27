@@ -81,7 +81,24 @@ export async function POST(request: Request) {
     
     let signature;
     try {
-      const testSecret = "test-slack-secret";
+      const testSecret = process.env.SLACK_SIGNING_SECRET;
+      if (!testSecret) {
+        console.error(`[${requestId}] SLACK_SIGNING_SECRET environment variable is not set`);
+        return NextResponse.json(
+          createErrorResponse("Missing Slack signing secret", {
+            code: "MISSING_SECRET",
+            details: "SLACK_SIGNING_SECRET environment variable is required for test endpoint",
+            requestId,
+            troubleshooting: [
+              "Set SLACK_SIGNING_SECRET environment variable",
+              "Check your environment configuration",
+              "Ensure the secret matches your Slack app configuration"
+            ]
+          }),
+          { status: 500 }
+        );
+      }
+      
       const signatureVersion = "v0";
       const hmac = createHmac("sha256", testSecret);
       hmac.update(`${signatureVersion}:${timestamp}:${eventBody}`);
