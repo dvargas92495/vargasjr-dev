@@ -871,7 +871,7 @@ export async function postGitHubComment(
   userAgent: string,
   successMessage: string = "Posted comment to PR"
 ): Promise<void> {
-  const githubRepo = process.env.GITHUB_REPOSITORY;
+  const githubRepo = "dvargas92495/vargasjr-dev";
   const eventName = process.env.GITHUB_EVENT_NAME;
   const eventPath = process.env.GITHUB_EVENT_PATH;
 

@@ -15,7 +15,7 @@ export async function POST() {
 
     const headers = await getGitHubAuthHeaders();
     
-    const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/ci.yaml/dispatches`, {
+    const response = await fetch(`https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/ci.yaml/dispatches`, {
       method: 'POST',
       headers: {
         ...headers,

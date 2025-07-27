@@ -17,11 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "PR number is required" }, { status: 400 });
     }
 
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-
-    if (!githubRepo) {
-      return NextResponse.json({ error: "GitHub repository not configured" }, { status: 500 });
-    }
+    const githubRepo = "dvargas92495/vargasjr-dev";
 
     try {
       const headers = await getGitHubAuthHeaders();

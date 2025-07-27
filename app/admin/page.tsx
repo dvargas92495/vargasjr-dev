@@ -17,11 +17,7 @@ async function getCurrentPRNumber(): Promise<string> {
   if (commitRef) {
     const branchName = commitRef.replace('refs/heads/', '');
     
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-    
-    if (!githubRepo) {
-      throw new Error("GITHUB_REPOSITORY environment variable is not defined");
-    }
+    const githubRepo = "dvargas92495/vargasjr-dev";
     if (!branchName) {
       throw new Error("Branch name could not be determined from VERCEL_GIT_COMMIT_REF");
     }

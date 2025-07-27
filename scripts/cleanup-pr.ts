@@ -64,12 +64,7 @@ class VargasJRAgentCleanup {
   }
 
   async getPRDetails(): Promise<{ repository: string; branch: string } | null> {
-    const githubRepository = process.env.GITHUB_REPOSITORY;
-    
-    if (!githubRepository) {
-      console.log("⚠️  Missing GITHUB_REPOSITORY environment variable");
-      return null;
-    }
+    const githubRepository = "dvargas92495/vargasjr-dev";
 
     try {
       const headers = await getGitHubAuthHeaders();
@@ -209,7 +204,7 @@ async function main() {
   if (!prNumber) {
     console.error("Usage: npx tsx scripts/cleanup-pr.ts --pr <pr-number>");
     console.error("Example: npx tsx scripts/cleanup-pr.ts --pr 123");
-    console.error("Note: Requires GITHUB_REPOSITORY environment variable and GitHub App configuration");
+    console.error("Note: Requires GitHub App configuration");
     process.exit(1);
   }
   
