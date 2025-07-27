@@ -2,29 +2,65 @@ import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
 import tsscmp from "tsscmp";
 import { addInboxMessage } from "@/server";
-
-const verifyErrorPrefix = "Failed to verify authenticity";
+import { createErrorResponse } from "@/utils/error-response";
 
 export async function POST(request: Request) {
+  const requestId = `slack-webhook-${Date.now()}`;
+  
   try {
     const rawBody = await request.text();
     const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
     if (!slackSigningSecret) {
-      throw new Error(`${verifyErrorPrefix}: SLACK_SIGNING_SECRET is not set`);
+      console.error(`[${requestId}] SLACK_SIGNING_SECRET environment variable is not set`);
+      return NextResponse.json(
+        createErrorResponse("Missing Slack signing secret", {
+          code: "MISSING_SECRET",
+          details: "SLACK_SIGNING_SECRET environment variable is required for webhook processing",
+          requestId,
+          troubleshooting: [
+            "Set SLACK_SIGNING_SECRET environment variable in your deployment",
+            "Check your environment configuration",
+            "Ensure the secret matches your Slack app configuration"
+          ]
+        }),
+        { status: 500 }
+      );
     }
 
     const slackTimestamp = request.headers.get("x-slack-request-timestamp");
     const slackSignature = request.headers.get("x-slack-signature");
 
     if (!slackSignature) {
-      throw new Error(
-        `${verifyErrorPrefix}: header x-slack-signature is required`
+      console.error(`[${requestId}] Missing x-slack-signature header`);
+      return NextResponse.json(
+        createErrorResponse("Missing signature header", {
+          code: "MISSING_SIGNATURE",
+          details: "x-slack-signature header is required for webhook verification",
+          requestId,
+          troubleshooting: [
+            "Ensure the request includes x-slack-signature header",
+            "Check if the request is coming from Slack",
+            "Verify webhook configuration in Slack app settings"
+          ]
+        }),
+        { status: 400 }
       );
     }
 
-    if (Number.isNaN(slackTimestamp)) {
-      throw new Error(
-        `${verifyErrorPrefix}: header x-slack-request-timestamp did not have the expected type (${slackTimestamp})`
+    if (!slackTimestamp || Number.isNaN(Number(slackTimestamp))) {
+      console.error(`[${requestId}] Invalid x-slack-request-timestamp header: ${slackTimestamp}`);
+      return NextResponse.json(
+        createErrorResponse("Invalid timestamp header", {
+          code: "INVALID_TIMESTAMP",
+          details: `x-slack-request-timestamp header must be a valid number, got: ${slackTimestamp}`,
+          requestId,
+          troubleshooting: [
+            "Ensure the request includes valid x-slack-request-timestamp header",
+            "Check if the request is coming from Slack",
+            "Verify the timestamp is a Unix timestamp in seconds"
+          ]
+        }),
+        { status: 400 }
       );
     }
 
@@ -38,8 +74,24 @@ export async function POST(request: Request) {
 
     // Rule 1: Check staleness
     if (Number(slackTimestamp) < fiveMinutesAgoSec) {
-      throw new Error(
-        `${verifyErrorPrefix}: x-slack-request-timestamp must differ from system time by no more than ${requestTimestampMaxDeltaMin} minutes or request is stale`
+      console.error(`[${requestId}] Request is stale: timestamp ${slackTimestamp} is older than ${requestTimestampMaxDeltaMin} minutes`);
+      return NextResponse.json(
+        createErrorResponse("Request timestamp is stale", {
+          code: "STALE_REQUEST",
+          details: `Request timestamp must be within ${requestTimestampMaxDeltaMin} minutes of current time`,
+          requestId,
+          diagnostics: {
+            requestTimestamp: slackTimestamp,
+            currentTime: Math.floor(nowMs / 1000),
+            maxAge: `${requestTimestampMaxDeltaMin} minutes`
+          },
+          troubleshooting: [
+            "Ensure system clocks are synchronized",
+            "Check if the request is being replayed",
+            "Verify the webhook is being sent promptly by Slack"
+          ]
+        }),
+        { status: 400 }
       );
     }
 
@@ -48,14 +100,39 @@ export async function POST(request: Request) {
     const [signatureVersion, signatureHash] = slackSignature.split("=");
     // Only handle known versions
     if (signatureVersion !== "v0") {
-      throw new Error(`${verifyErrorPrefix}: unknown signature version`);
+      console.error(`[${requestId}] Unknown signature version: ${signatureVersion}`);
+      return NextResponse.json(
+        createErrorResponse("Unknown signature version", {
+          code: "UNKNOWN_SIGNATURE_VERSION",
+          details: `Only signature version 'v0' is supported, got: ${signatureVersion}`,
+          requestId,
+          troubleshooting: [
+            "Check Slack webhook documentation for supported signature versions",
+            "Verify the webhook configuration in Slack app settings"
+          ]
+        }),
+        { status: 400 }
+      );
     }
     // Compute our own signature hash using raw body (consistent with test endpoint)
     const hmac = createHmac("sha256", slackSigningSecret);
     hmac.update(`${signatureVersion}:${slackTimestamp}:${rawBody}`);
     const ourSignatureHash = hmac.digest("hex");
     if (!signatureHash || !tsscmp(signatureHash, ourSignatureHash)) {
-      throw new Error(`${verifyErrorPrefix}: signature mismatch`);
+      console.error(`[${requestId}] Signature verification failed`);
+      return NextResponse.json(
+        createErrorResponse("Signature verification failed", {
+          code: "SIGNATURE_MISMATCH",
+          details: "The request signature does not match the expected signature",
+          requestId,
+          troubleshooting: [
+            "Verify SLACK_SIGNING_SECRET matches your Slack app configuration",
+            "Check if the request body was modified in transit",
+            "Ensure the signature calculation uses the raw request body"
+          ]
+        }),
+        { status: 401 }
+      );
     }
 
     const body = JSON.parse(rawBody);
@@ -83,9 +160,27 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Error processing Slack webhook:", error);
+    console.error(`[${requestId}] Unexpected error processing Slack webhook:`, error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    if (errorStack) {
+      console.error(`[${requestId}] Error stack:`, errorStack);
+    }
+    
     return NextResponse.json(
-      { error: "Failed to process Slack webhook" },
+      createErrorResponse("Failed to process Slack webhook", {
+        code: "UNEXPECTED_ERROR",
+        details: error instanceof Error ? error.message : "Unknown error occurred",
+        requestId,
+        diagnostics: {
+          errorName: error instanceof Error ? error.name : "Unknown",
+          errorStack: errorStack
+        },
+        troubleshooting: [
+          "Check server logs for detailed error information",
+          "Verify all required environment variables are set",
+          "Ensure the webhook payload is valid JSON"
+        ]
+      }),
       { status: 500 }
     );
   }
