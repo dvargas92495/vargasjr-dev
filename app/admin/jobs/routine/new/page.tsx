@@ -19,6 +19,7 @@ export default function NewRoutineJobPage() {
   const router = useRouter();
   const [workflowDeployments, setWorkflowDeployments] = useState<WorkflowDeployment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,9 @@ export default function NewRoutineJobPage() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      setPending(true);
+      setError(null);
+      
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name");
       const scheduleDescription = formData.get("scheduleDescription");
@@ -67,7 +71,11 @@ export default function NewRoutineJobPage() {
           router.push("/admin/jobs");
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to create routine job');
+        } finally {
+          setPending(false);
         }
+      } else {
+        setPending(false);
       }
     },
     [router]
@@ -118,9 +126,10 @@ export default function NewRoutineJobPage() {
         </div>
         <button
           type="submit"
-          className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+          disabled={pending}
+          className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 disabled:opacity-50"
         >
-          Create Routine Job
+          {pending ? "Creating Routine Job..." : "Create Routine Job"}
         </button>
       </form>
     </div>

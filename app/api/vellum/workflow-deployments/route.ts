@@ -8,7 +8,7 @@ export async function GET() {
     if (!apiKey) {
       console.error("VELLUM_API_KEY environment variable is missing");
       return NextResponse.json(
-        { error: "VELLUM_API_KEY environment variable is required" },
+        { error: "VELLUM_API_KEY environment variable is required. Please add it to your .env file for local development." },
         { status: 500 }
       );
     }
