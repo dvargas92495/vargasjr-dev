@@ -7,7 +7,7 @@ const verifyErrorPrefix = "Failed to verify authenticity";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
     const slackSigningSecret = process.env.SLACK_SIGNING_SECRET;
     if (!slackSigningSecret) {
       throw new Error(`${verifyErrorPrefix}: SLACK_SIGNING_SECRET is not set`);
@@ -50,13 +50,15 @@ export async function POST(request: Request) {
     if (signatureVersion !== "v0") {
       throw new Error(`${verifyErrorPrefix}: unknown signature version`);
     }
-    // Compute our own signature hash
+    // Compute our own signature hash using raw body (consistent with test endpoint)
     const hmac = createHmac("sha256", slackSigningSecret);
-    hmac.update(`${signatureVersion}:${slackTimestamp}:${body}`);
+    hmac.update(`${signatureVersion}:${slackTimestamp}:${rawBody}`);
     const ourSignatureHash = hmac.digest("hex");
     if (!signatureHash || !tsscmp(signatureHash, ourSignatureHash)) {
       throw new Error(`${verifyErrorPrefix}: signature mismatch`);
     }
+
+    const body = JSON.parse(rawBody);
 
     // Handle different types of events
     if (body.type === "url_verification") {
