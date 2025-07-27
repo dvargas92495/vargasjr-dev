@@ -175,7 +175,7 @@ export default async function AdminPage() {
           </div>
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm text-yellow-800">
-              <strong>Required for PR environments:</strong> GitHub App authentication (GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_INSTALLATION_ID), GITHUB_REPOSITORY, and VERCEL_GIT_COMMIT_REF must be properly configured.
+              <strong>Required for PR environments:</strong> GitHub App authentication (GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_INSTALLATION_ID) and VERCEL_GIT_COMMIT_REF must be properly configured.
             </p>
           </div>
         </div>
