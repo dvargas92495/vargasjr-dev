@@ -173,7 +173,7 @@ async function fetchVercelBuildLogs(deploymentId: string): Promise<string> {
 
 
 async function postGitHubPRComment(prNumber: string, comment: string): Promise<void> {
-  const githubRepo = process.env.GITHUB_REPOSITORY || "dvargas92495/vargasjr-dev";
+  const githubRepo = "dvargas92495/vargasjr-dev";
   
   try {
     const headers = await getGitHubAuthHeaders();

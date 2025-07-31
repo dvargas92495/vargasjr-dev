@@ -111,11 +111,7 @@ class DraftPRScriptRunner {
   private async findPRByBranch(): Promise<string> {
     console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
     
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-    
-    if (!githubRepo) {
-      throw new Error("GitHub repository environment variable not available");
-    }
+    const githubRepo = "dvargas92495/vargasjr-dev";
     
     const [owner, repo] = githubRepo.split('/');
     const headFilter = `${owner}:${this.branchName}`;
@@ -156,10 +152,10 @@ class DraftPRScriptRunner {
 
 
   private async getAddedFilesInPR(): Promise<string[]> {
-    const githubRepo = process.env.GITHUB_REPOSITORY;
+    const githubRepo = "dvargas92495/vargasjr-dev";
     
-    if (!githubRepo || !this.prNumber) {
-      console.warn('GitHub repository environment variable or PR number not available, falling back to empty array');
+    if (!this.prNumber) {
+      console.warn('PR number not available, falling back to empty array');
       return [];
     }
     
@@ -379,16 +375,7 @@ class DraftPRScriptRunner {
   }
 
   private async postComment(content: string): Promise<void> {
-    const githubRepo = process.env.GITHUB_REPOSITORY;
-    
-    if (!githubRepo) {
-      console.log("⚠️ Not in GitHub Actions environment, skipping comment posting");
-      console.log("📝 Comment content that would be posted:");
-      console.log("=" + "=".repeat(50));
-      console.log(content);
-      console.log("=" + "=".repeat(50));
-      return;
-    }
+    const githubRepo = "dvargas92495/vargasjr-dev";
     
     if (!this.prNumber) {
       console.log("⚠️ No PR number available, skipping comment posting");
