@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
 import { addInboxMessage } from "@/server";
 import { NotFoundError } from "@/server/errors";
+import { InboxesTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/db/connection";
 
 interface SESMail {
   messageId: string;
@@ -76,10 +79,30 @@ export async function POST(request: Request) {
     
     const emailBody = `Subject: ${subject}\nMessage ID: ${messageId}\nTimestamp: ${sesNotification.receipt.timestamp}`;
 
+    const db = getDb();
+    let inbox = await db
+      .select({ id: InboxesTable.id })
+      .from(InboxesTable)
+      .where(eq(InboxesTable.name, "email"))
+      .limit(1)
+      .execute();
+
+    if (!inbox.length) {
+      const newInbox = await db
+        .insert(InboxesTable)
+        .values({
+          name: "email",
+          type: "EMAIL",
+          config: {},
+        })
+        .returning({ id: InboxesTable.id });
+      inbox = newInbox;
+    }
+
     await addInboxMessage({
       body: emailBody,
       source: sender,
-      inboxName: "ses-email",
+      inboxName: "email",
     });
 
     return NextResponse.json({ received: true });
