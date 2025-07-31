@@ -135,7 +135,29 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = JSON.parse(rawBody);
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (jsonError) {
+      console.error(`[${requestId}] Failed to parse request body as JSON:`, jsonError);
+      return NextResponse.json(
+        createErrorResponse("Invalid JSON in request body", {
+          code: "INVALID_JSON",
+          details: jsonError instanceof Error ? jsonError.message : "Request body is not valid JSON",
+          requestId,
+          diagnostics: {
+            rawBodyPreview: rawBody.substring(0, 200),
+            bodyLength: rawBody.length
+          },
+          troubleshooting: [
+            "Ensure the request body contains valid JSON",
+            "Check if the request is properly formatted",
+            "Verify the Content-Type header is application/json"
+          ]
+        }),
+        { status: 400 }
+      );
+    }
 
     // Handle different types of events
     if (body.type === "url_verification") {
