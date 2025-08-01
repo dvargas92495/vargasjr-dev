@@ -53,7 +53,10 @@ export async function POST(request: Request) {
       });
 
       if (response.data.state !== 'FULFILLED') {
-        throw new Error('Workflow execution failed');
+        const errorMessage = response.data.error 
+          ? `Workflow execution failed: ${response.data.error}` 
+          : 'Workflow execution failed';
+        throw new Error(errorMessage);
       }
 
       if (!response.data.outputs) {
