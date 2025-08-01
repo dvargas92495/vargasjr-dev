@@ -5,6 +5,8 @@ import { getDb } from "@/db/connection";
 import { BlogPostsTable } from "@/db/schema";
 import { desc, isNotNull } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Blog() {
   const db = getDb();
   
