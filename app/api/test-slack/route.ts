@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { createHmac } from "node:crypto";
-import { createErrorResponse, createNetworkErrorResponse } from "@/utils/error-response";
+import { createErrorResponse } from "@/utils/error-response";
 import formatZodError from "@/utils/format-zod-error";
+import { internalFetch } from "@/utils/internal-fetch";
 
 const testRequestSchema = z.object({
   channel: z.string().min(1),
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
 
     let webhookResponse;
     try {
-      webhookResponse = await fetch(webhookUrl, {
+      webhookResponse = await internalFetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,15 +134,23 @@ export async function POST(request: Request) {
         },
         body: eventBody
       });
-    } catch (networkError) {
-      console.error(`[${requestId}] Network error calling webhook:`, networkError);
+    } catch (internalError) {
+      console.error(`[${requestId}] Error calling internal webhook:`, internalError);
       return NextResponse.json(
-        createNetworkErrorResponse(
-          "Failed to call Slack webhook endpoint",
-          undefined,
-          undefined,
-          webhookUrl
-        ),
+        createErrorResponse("Failed to call internal webhook", {
+          code: "INTERNAL_WEBHOOK_ERROR",
+          details: internalError instanceof Error ? internalError.message : "Error calling internal webhook handler",
+          requestId,
+          diagnostics: {
+            webhookUrl,
+            errorName: internalError instanceof Error ? internalError.name : "Unknown"
+          },
+          troubleshooting: [
+            "Check if the internal route handler exists",
+            "Verify the route module can be imported",
+            "Check for errors in the target endpoint"
+          ]
+        }),
         { status: 500 }
       );
     }
