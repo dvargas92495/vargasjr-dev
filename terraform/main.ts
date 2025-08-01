@@ -128,6 +128,11 @@ class VargasJRInfrastructureStack extends TerraformStack {
   }
 
   private createEmailLambdaResources(tags: Record<string, string>) {
+    const sesWebhookSecret = process.env.SES_WEBHOOK_SECRET;
+    if (!sesWebhookSecret) {
+      throw new Error("SES_WEBHOOK_SECRET environment variable is required but not defined");
+    }
+
     const lambdaRole = new IamRole(this, "EmailLambdaRole", {
       name: "vargas-jr-email-lambda-role",
       assumeRolePolicy: JSON.stringify({
@@ -165,7 +170,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
       environment: {
         variables: {
           WEBHOOK_URL: this.getWebhookUrl(),
-          SES_WEBHOOK_SECRET: process.env.SES_WEBHOOK_SECRET || ''
+          SES_WEBHOOK_SECRET: sesWebhookSecret
         }
       },
       filename: lambdaAsset.path,
