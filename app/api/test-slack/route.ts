@@ -146,42 +146,81 @@ export async function POST(request: Request) {
       );
     }
 
-    let webhookResult;
+    let responseText;
     try {
-      webhookResult = await webhookResponse.json();
-    } catch (parseError) {
-      console.error(`[${requestId}] Failed to parse webhook response:`, parseError);
-      const responseText = await webhookResponse.text().catch(() => "Unable to read response");
+      responseText = await webhookResponse.text();
+    } catch (readError) {
+      console.error(`[${requestId}] Failed to read webhook response:`, readError);
       return NextResponse.json(
-        createErrorResponse("Failed to parse webhook response", {
-          code: "RESPONSE_PARSE_ERROR",
-          details: parseError instanceof Error ? parseError.message : "Invalid JSON response",
+        createErrorResponse("Failed to read webhook response", {
+          code: "RESPONSE_READ_ERROR",
+          details: readError instanceof Error ? readError.message : "Unable to read response body",
           requestId,
           diagnostics: {
             statusCode: webhookResponse.status,
             statusText: webhookResponse.statusText,
-            responseText: responseText.substring(0, 500),
             headers: Object.fromEntries(webhookResponse.headers.entries())
           },
           troubleshooting: [
-            "Check if the webhook endpoint returns valid JSON",
-            "Verify the webhook endpoint is functioning correctly"
+            "Check if the webhook endpoint is accessible",
+            "Verify network connectivity to the webhook endpoint"
           ]
         }),
         { status: 500 }
       );
     }
 
-    if (!webhookResponse.ok) {
-      console.error(`[${requestId}] Webhook returned error status:`, webhookResponse.status, webhookResult);
-      const errorResponse = createNetworkErrorResponse(
-        "Slack webhook returned error status",
-        webhookResponse.status,
-        JSON.stringify(webhookResult),
-        webhookUrl
+    let webhookResult;
+    const contentType = webhookResponse.headers.get("content-type") || "";
+    const isJsonResponse = contentType.includes("application/json");
+    
+    if (webhookResponse.ok && isJsonResponse) {
+      try {
+        webhookResult = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`[${requestId}] Failed to parse JSON webhook response:`, parseError);
+        return NextResponse.json(
+          createErrorResponse("Failed to parse webhook response", {
+            code: "RESPONSE_PARSE_ERROR",
+            details: parseError instanceof Error ? parseError.message : "Invalid JSON response",
+            requestId,
+            diagnostics: {
+              statusCode: webhookResponse.status,
+              statusText: webhookResponse.statusText,
+              responseText: responseText.substring(0, 500),
+              contentType: contentType,
+              headers: Object.fromEntries(webhookResponse.headers.entries())
+            },
+            troubleshooting: [
+              "Check if the webhook endpoint returns valid JSON",
+              "Verify the webhook endpoint is functioning correctly"
+            ]
+          }),
+          { status: 500 }
+        );
+      }
+    } else {
+      console.error(`[${requestId}] Webhook returned non-JSON or error response:`, webhookResponse.status, responseText.substring(0, 200));
+      return NextResponse.json(
+        createErrorResponse("Webhook returned error response", {
+          code: "WEBHOOK_ERROR_RESPONSE",
+          details: `Webhook returned ${webhookResponse.status} ${webhookResponse.statusText}`,
+          requestId,
+          diagnostics: {
+            statusCode: webhookResponse.status,
+            statusText: webhookResponse.statusText,
+            responseText: responseText.substring(0, 500),
+            contentType: contentType,
+            headers: Object.fromEntries(webhookResponse.headers.entries())
+          },
+          troubleshooting: [
+            "Check if SLACK_SIGNING_SECRET is correctly set",
+            "Verify the webhook endpoint is functioning correctly",
+            "Check server logs for detailed error information"
+          ]
+        }),
+        { status: 500 }
       );
-      console.log(`[${requestId}] Returning detailed error response:`, JSON.stringify(errorResponse, null, 2));
-      return NextResponse.json(errorResponse, { status: 500 });
     }
 
     console.log(`[${requestId}] Webhook test completed successfully`);
