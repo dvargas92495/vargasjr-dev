@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { createHmac } from "node:crypto";
-import { createErrorResponse, createNetworkErrorResponse } from "@/utils/error-response";
+import { createErrorResponse } from "@/utils/error-response";
 import formatZodError from "@/utils/format-zod-error";
+import { internalFetch } from "@/utils/internal-fetch";
 
 const testRequestSchema = z.object({
   channel: z.string().min(1),
@@ -81,7 +82,24 @@ export async function POST(request: Request) {
     
     let signature;
     try {
-      const testSecret = "test-slack-secret";
+      const testSecret = process.env.SLACK_SIGNING_SECRET;
+      if (!testSecret) {
+        console.error(`[${requestId}] SLACK_SIGNING_SECRET environment variable is not set`);
+        return NextResponse.json(
+          createErrorResponse("Missing Slack signing secret", {
+            code: "MISSING_SECRET",
+            details: "SLACK_SIGNING_SECRET environment variable is required for test endpoint",
+            requestId,
+            troubleshooting: [
+              "Set SLACK_SIGNING_SECRET environment variable",
+              "Check your environment configuration",
+              "Ensure the secret matches your Slack app configuration"
+            ]
+          }),
+          { status: 500 }
+        );
+      }
+      
       const signatureVersion = "v0";
       const hmac = createHmac("sha256", testSecret);
       hmac.update(`${signatureVersion}:${timestamp}:${eventBody}`);
@@ -107,7 +125,7 @@ export async function POST(request: Request) {
 
     let webhookResponse;
     try {
-      webhookResponse = await fetch(webhookUrl, {
+      webhookResponse = await internalFetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,55 +134,102 @@ export async function POST(request: Request) {
         },
         body: eventBody
       });
-    } catch (networkError) {
-      console.error(`[${requestId}] Network error calling webhook:`, networkError);
+    } catch (internalError) {
+      console.error(`[${requestId}] Error calling internal webhook:`, internalError);
       return NextResponse.json(
-        createNetworkErrorResponse(
-          "Failed to call Slack webhook endpoint",
-          undefined,
-          undefined,
-          webhookUrl
-        ),
-        { status: 500 }
-      );
-    }
-
-    let webhookResult;
-    try {
-      webhookResult = await webhookResponse.json();
-    } catch (parseError) {
-      console.error(`[${requestId}] Failed to parse webhook response:`, parseError);
-      const responseText = await webhookResponse.text().catch(() => "Unable to read response");
-      return NextResponse.json(
-        createErrorResponse("Failed to parse webhook response", {
-          code: "RESPONSE_PARSE_ERROR",
-          details: parseError instanceof Error ? parseError.message : "Invalid JSON response",
+        createErrorResponse("Failed to call internal webhook", {
+          code: "INTERNAL_WEBHOOK_ERROR",
+          details: internalError instanceof Error ? internalError.message : "Error calling internal webhook handler",
           requestId,
           diagnostics: {
-            statusCode: webhookResponse.status,
-            statusText: webhookResponse.statusText,
-            responseText: responseText.substring(0, 500),
-            headers: Object.fromEntries(webhookResponse.headers.entries())
+            webhookUrl,
+            errorName: internalError instanceof Error ? internalError.name : "Unknown"
           },
           troubleshooting: [
-            "Check if the webhook endpoint returns valid JSON",
-            "Verify the webhook endpoint is functioning correctly"
+            "Check if the internal route handler exists",
+            "Verify the route module can be imported",
+            "Check for errors in the target endpoint"
           ]
         }),
         { status: 500 }
       );
     }
 
-    if (!webhookResponse.ok) {
-      console.error(`[${requestId}] Webhook returned error status:`, webhookResponse.status, webhookResult);
-      const errorResponse = createNetworkErrorResponse(
-        "Slack webhook returned error status",
-        webhookResponse.status,
-        JSON.stringify(webhookResult),
-        webhookUrl
+    let responseText;
+    try {
+      responseText = await webhookResponse.text();
+    } catch (readError) {
+      console.error(`[${requestId}] Failed to read webhook response:`, readError);
+      return NextResponse.json(
+        createErrorResponse("Failed to read webhook response", {
+          code: "RESPONSE_READ_ERROR",
+          details: readError instanceof Error ? readError.message : "Unable to read response body",
+          requestId,
+          diagnostics: {
+            statusCode: webhookResponse.status,
+            statusText: webhookResponse.statusText,
+            headers: Object.fromEntries(webhookResponse.headers.entries())
+          },
+          troubleshooting: [
+            "Check if the webhook endpoint is accessible",
+            "Verify network connectivity to the webhook endpoint"
+          ]
+        }),
+        { status: 500 }
       );
-      console.log(`[${requestId}] Returning detailed error response:`, JSON.stringify(errorResponse, null, 2));
-      return NextResponse.json(errorResponse, { status: 500 });
+    }
+
+    let webhookResult;
+    const contentType = webhookResponse.headers.get("content-type") || "";
+    const isJsonResponse = contentType.includes("application/json");
+    
+    if (webhookResponse.ok && isJsonResponse) {
+      try {
+        webhookResult = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`[${requestId}] Failed to parse JSON webhook response:`, parseError);
+        return NextResponse.json(
+          createErrorResponse("Failed to parse webhook response", {
+            code: "RESPONSE_PARSE_ERROR",
+            details: parseError instanceof Error ? parseError.message : "Invalid JSON response",
+            requestId,
+            diagnostics: {
+              statusCode: webhookResponse.status,
+              statusText: webhookResponse.statusText,
+              responseText: responseText.substring(0, 500),
+              contentType: contentType,
+              headers: Object.fromEntries(webhookResponse.headers.entries())
+            },
+            troubleshooting: [
+              "Check if the webhook endpoint returns valid JSON",
+              "Verify the webhook endpoint is functioning correctly"
+            ]
+          }),
+          { status: 500 }
+        );
+      }
+    } else {
+      console.error(`[${requestId}] Webhook returned non-JSON or error response:`, webhookResponse.status, responseText.substring(0, 200));
+      return NextResponse.json(
+        createErrorResponse("Webhook returned error response", {
+          code: "WEBHOOK_ERROR_RESPONSE",
+          details: `Webhook returned ${webhookResponse.status} ${webhookResponse.statusText}`,
+          requestId,
+          diagnostics: {
+            statusCode: webhookResponse.status,
+            statusText: webhookResponse.statusText,
+            responseText: responseText.substring(0, 500),
+            contentType: contentType,
+            headers: Object.fromEntries(webhookResponse.headers.entries())
+          },
+          troubleshooting: [
+            "Check if SLACK_SIGNING_SECRET is correctly set",
+            "Verify the webhook endpoint is functioning correctly",
+            "Check server logs for detailed error information"
+          ]
+        }),
+        { status: 500 }
+      );
     }
 
     console.log(`[${requestId}] Webhook test completed successfully`);
