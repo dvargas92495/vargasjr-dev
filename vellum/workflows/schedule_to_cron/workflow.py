@@ -3,7 +3,7 @@ from vellum import ChatMessagePromptBlock, JinjaPromptBlock, PromptParameters
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import InlinePromptNode
 from vellum.workflows.state import BaseState
-from .inputs import ScheduleToCronInputs
+from .inputs import Inputs
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ Convert the following schedule description to a cron expression. Return ONLY the
         ),
     ]
     prompt_inputs = {
-        "schedule_description": ScheduleToCronInputs.schedule_description,
+        "schedule_description": Inputs.schedule_description,
     }
     functions = [
         generate_cron_expression,
@@ -75,7 +75,7 @@ Convert the following schedule description to a cron expression. Return ONLY the
     )
 
 
-class ScheduleToCronWorkflow(BaseWorkflow[ScheduleToCronInputs, BaseState]):
+class ScheduleToCronWorkflow(BaseWorkflow[Inputs, BaseState]):
     graph = ScheduleToCronNode
 
     class Outputs(BaseWorkflow.Outputs):
