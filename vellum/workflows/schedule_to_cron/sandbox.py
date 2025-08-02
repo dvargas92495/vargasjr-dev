@@ -2,7 +2,7 @@
 
 import asyncio
 from .workflow import ScheduleToCronWorkflow
-from .inputs import ScheduleToCronInputs
+from .inputs import Inputs
 
 
 async def main():
@@ -23,7 +23,7 @@ async def main():
     for test_case in test_cases:
         print(f"\nTesting: '{test_case}'")
         try:
-            inputs = ScheduleToCronInputs(schedule_description=test_case)
+            inputs = Inputs(schedule_description=test_case)
             result = await workflow.run(inputs=inputs)
             print(f"Result: {result.outputs.cron_expression}")
         except Exception as e:

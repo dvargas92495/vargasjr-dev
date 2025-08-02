@@ -1,4 +1,4 @@
 from .workflow import CreateDevinChatWorkflow
-from .inputs import CreateDevinChatInputs
+from .inputs import Inputs
 
-__all__ = ["CreateDevinChatWorkflow", "CreateDevinChatInputs"]
+__all__ = ["CreateDevinChatWorkflow", "Inputs"]
