@@ -53,9 +53,19 @@ export async function POST(request: Request) {
       });
 
       if (response.data.state !== 'FULFILLED') {
-        const errorMessage = response.data.error 
-          ? `Workflow execution failed: ${response.data.error}` 
-          : 'Workflow execution failed';
+        let errorMessage = 'Workflow execution failed';
+        if (response.data.error) {
+          const errorParts = [];
+          if (response.data.error.message) {
+            errorParts.push(response.data.error.message);
+          }
+          if (response.data.error.code) {
+            errorParts.push(`(Code: ${response.data.error.code})`);
+          }
+          if (errorParts.length > 0) {
+            errorMessage = `Workflow execution failed: ${errorParts.join(' ')}`;
+          }
+        }
         throw new Error(errorMessage);
       }
 
