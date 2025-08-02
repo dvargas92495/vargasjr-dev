@@ -7,17 +7,13 @@ import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
+import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface AgentConfig {
   name: string;
   instanceType?: string;
   region?: string;
   prNumber?: string;
-}
-
-interface InstanceTypeConfig {
-  type: string;
-  vcpus: number;
 }
 
 interface TimingResult {
@@ -29,22 +25,10 @@ interface TimingResult {
 class VargasJRAgentCreator {
   private ec2: EC2;
   private config: AgentConfig;
-  private readonly instanceTypeFallbacks: InstanceTypeConfig[] = [
-    { type: "t3.micro", vcpus: 2 },
-    { type: "t3.nano", vcpus: 2 },
-    { type: "t2.micro", vcpus: 1 },
-    { type: "t2.nano", vcpus: 1 }
-  ];
-  private readonly regionFallbacks: string[] = [
-    "us-east-1",
-    "us-west-2", 
-    "us-east-2",
-    "us-west-1"
-  ];
 
   constructor(config: AgentConfig) {
     this.config = {
-      instanceType: config.prNumber ? "t3.micro" : "t3.micro",
+      instanceType: config.prNumber ? "t3.small" : "t3.micro",
       region: "us-east-1",
       ...config
     };
@@ -149,53 +133,29 @@ class VargasJRAgentCreator {
   }
 
   private async deleteExistingInstances(instanceName: string): Promise<void> {
-    console.log(`🔍 Searching for existing instances across all regions...`);
-    
-    let totalInstancesFound = 0;
-    let totalInstancesTerminated = 0;
+    const existingInstances = await findInstancesByFilters(this.ec2, [
+      { Name: "tag:Name", Values: [instanceName] },
+      { Name: "tag:Project", Values: ["VargasJR"] },
+      { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+    ]);
 
-    for (const region of this.regionFallbacks) {
-      try {
-        const regionalEc2 = new EC2({ region });
-        
-        const existingInstances = await findInstancesByFilters(regionalEc2, [
-          { Name: "tag:Name", Values: [instanceName] },
-          { Name: "tag:Project", Values: ["VargasJR"] },
-          { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-        ]);
-
-        if (existingInstances.length === 0) {
-          console.log(`No existing instances found in ${region}`);
-          continue;
-        }
-
-        totalInstancesFound += existingInstances.length;
-        console.log(`Found ${existingInstances.length} existing instance(s) in ${region} with name: ${instanceName}`);
-
-        const instanceIds = existingInstances
-          .map((instance: any) => instance.InstanceId)
-          .filter((id: any): id is string => !!id);
-
-        if (instanceIds.length > 0) {
-          console.log(`Terminating instances in ${region}: ${instanceIds.join(", ")}`);
-          await terminateInstances(regionalEc2, instanceIds);
-          console.log(`✅ Instances terminated in ${region}: ${instanceIds.join(", ")}`);
-
-          await waitForInstancesTerminated(regionalEc2, instanceIds);
-          totalInstancesTerminated += instanceIds.length;
-        }
-      } catch (error) {
-        console.warn(`⚠️  Failed to check/cleanup instances in ${region}: ${this.formatError(error)}`);
-      }
+    if (existingInstances.length === 0) {
+      console.log(`No existing instances found with name: ${instanceName}`);
+      return;
     }
 
-    if (totalInstancesFound === 0) {
-      console.log(`No existing instances found with name: ${instanceName} across all regions`);
-    } else {
-      console.log(`✅ Cleanup complete: ${totalInstancesTerminated}/${totalInstancesFound} instances terminated across all regions`);
-      
-      console.log("Waiting additional time for AWS to fully process terminations...");
-      await new Promise(resolve => setTimeout(resolve, 10000));
+    console.log(`Found ${existingInstances.length} existing instance(s) with name: ${instanceName}`);
+
+    const instanceIds = existingInstances
+      .map((instance: any) => instance.InstanceId)
+      .filter((id: any): id is string => !!id);
+
+    if (instanceIds.length > 0) {
+      console.log(`Terminating instances: ${instanceIds.join(", ")}`);
+      await terminateInstances(this.ec2, instanceIds);
+      console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
+
+      await waitForInstancesTerminated(this.ec2, instanceIds);
     }
   }
 
@@ -279,6 +239,61 @@ class VargasJRAgentCreator {
     return customAmiId;
   }
 
+  private async getOpenPRNumbers(): Promise<string[]> {
+    const githubRepo = "dvargas92495/vargasjr-dev";
+    
+    try {
+      const headers = await getGitHubAuthHeaders();
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?state=open`, {
+        headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.statusText}`);
+      }
+      
+      const prs = await response.json();
+      return prs.map((pr: any) => pr.number.toString());
+    } catch (error) {
+      console.warn(`⚠️  Failed to fetch open PRs from GitHub: ${error}`);
+      return [];
+    }
+  }
+
+  private async findOrphanedInstances(): Promise<string[]> {
+    console.log(`🔍 Searching for orphaned instances across all regions...`);
+    
+    const openPRNumbers = await this.getOpenPRNumbers();
+    console.log(`Found ${openPRNumbers.length} open PRs: ${openPRNumbers.join(", ")}`);
+    
+    const orphanedInstanceIds: string[] = [];
+    const regions = ["us-east-1", "us-west-2", "us-east-2", "us-west-1"];
+    
+    for (const region of regions) {
+      try {
+        const regionalEc2 = new EC2({ region });
+        
+        const allInstances = await findInstancesByFilters(regionalEc2, [
+          { Name: "tag:Project", Values: ["VargasJR"] },
+          { Name: "tag:Type", Values: ["preview"] },
+          { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+        ]);
+        
+        for (const instance of allInstances) {
+          const prNumberTag = instance.Tags?.find((tag: any) => tag.Key === "PRNumber")?.Value;
+          if (prNumberTag && !openPRNumbers.includes(prNumberTag)) {
+            console.log(`Found orphaned instance in ${region}: ${instance.InstanceId} (PR #${prNumberTag})`);
+            orphanedInstanceIds.push(instance.InstanceId!);
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️  Failed to check instances in ${region}: ${this.formatError(error)}`);
+      }
+    }
+    
+    return orphanedInstanceIds;
+  }
+
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
 
@@ -297,99 +312,93 @@ class VargasJRAgentCreator {
 
     const imageId = await this.getLatestCustomAMI();
 
-    return await this.createInstanceWithFallbacks(imageId, keyPairName, securityGroupId, iamInstanceProfile);
+    try {
+      return await this.createSingleInstance(imageId, keyPairName, securityGroupId, iamInstanceProfile);
+    } catch (error: any) {
+      const errorMessage = this.formatError(error);
+      
+      if (error.name === "VcpuLimitExceeded" || errorMessage.includes("VcpuLimitExceeded")) {
+        console.log(`⚠️  vCPU limit exceeded, attempting to clean up orphaned instances...`);
+        
+        const orphanedInstanceIds = await this.findOrphanedInstances();
+        
+        if (orphanedInstanceIds.length === 0) {
+          throw new Error(`vCPU limit exceeded and no orphaned instances found to clean up. Please manually increase vCPU limits or terminate unused instances.`);
+        }
+        
+        console.log(`Terminating ${orphanedInstanceIds.length} orphaned instance(s): ${orphanedInstanceIds.join(", ")}`);
+        
+        const regions = ["us-east-1", "us-west-2", "us-east-2", "us-west-1"];
+        for (const region of regions) {
+          const regionalEc2 = new EC2({ region });
+          const regionalInstances = await findInstancesByFilters(regionalEc2, [
+            { Name: "instance-id", Values: orphanedInstanceIds },
+            { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+          ]);
+          
+          const regionalInstanceIds = regionalInstances.map((instance: any) => instance.InstanceId).filter(Boolean);
+          
+          if (regionalInstanceIds.length > 0) {
+            await terminateInstances(regionalEc2, regionalInstanceIds);
+            await waitForInstancesTerminated(regionalEc2, regionalInstanceIds);
+          }
+        }
+        
+        console.log(`✅ Cleanup complete. Retrying instance creation...`);
+        
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        
+        return await this.createSingleInstance(imageId, keyPairName, securityGroupId, iamInstanceProfile);
+      } else {
+        throw error;
+      }
+    }
   }
 
-  private async createInstanceWithFallbacks(
+  private async createSingleInstance(
     imageId: string, 
     keyPairName: string, 
     securityGroupId: string, 
     iamInstanceProfile?: string
   ): Promise<string> {
-    const maxRetries = 3;
-    let lastError: any;
-
-    for (const region of this.regionFallbacks) {
-      console.log(`Trying region: ${region}`);
-      
-      if (region !== this.config.region) {
-        this.ec2 = new EC2({ region });
-      }
-
-      for (const instanceTypeConfig of this.instanceTypeFallbacks) {
-        console.log(`Trying instance type: ${instanceTypeConfig.type} (${instanceTypeConfig.vcpus} vCPUs)`);
-        
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            const result = await this.ec2.runInstances({
-              ImageId: imageId,
-              InstanceType: instanceTypeConfig.type as any,
-              KeyName: keyPairName,
-              SecurityGroupIds: [securityGroupId],
-              ...(iamInstanceProfile && {
-                IamInstanceProfile: {
-                  Name: iamInstanceProfile
-                }
-              }),
-              MetadataOptions: {
-                HttpTokens: "required",
-                HttpPutResponseHopLimit: 1,
-                HttpEndpoint: "enabled"
-              },
-              MinCount: 1,
-              MaxCount: 1,
-              TagSpecifications: [
-                {
-                  ResourceType: "instance",
-                  Tags: [
-                    { Key: "Name", Value: this.config.prNumber ? `vargas-jr-pr-${this.config.prNumber}` : `vargas-jr-${this.config.name}` },
-                    { Key: "Project", Value: "VargasJR" },
-                    { Key: "CreatedBy", Value: "create-agent-script" },
-                    { Key: "PRNumber", Value: this.config.prNumber || "" },
-                    { Key: "Type", Value: this.config.prNumber ? "preview" : "main" },
-                    { Key: "InstanceType", Value: instanceTypeConfig.type },
-                    { Key: "Region", Value: region }
-                  ]
-                }
-              ]
-            });
-
-            const instanceId = result.Instances?.[0]?.InstanceId;
-            if (!instanceId) {
-              throw new Error("Failed to get instance ID");
-            }
-
-            console.log(`✅ EC2 instance created: ${instanceId} (${instanceTypeConfig.type} in ${region})`);
-            
-            this.config.region = region;
-            this.config.instanceType = instanceTypeConfig.type;
-            
-            return instanceId;
-
-          } catch (error: any) {
-            lastError = error;
-            const errorMessage = this.formatError(error);
-            
-            if (error.name === "VcpuLimitExceeded" || errorMessage.includes("VcpuLimitExceeded")) {
-              console.log(`⚠️  vCPU limit exceeded for ${instanceTypeConfig.type} in ${region}, trying next option...`);
-              break;
-            } else if (error.name === "InsufficientInstanceCapacity" || errorMessage.includes("InsufficientInstanceCapacity")) {
-              console.log(`⚠️  Insufficient capacity for ${instanceTypeConfig.type} in ${region}, trying next option...`);
-              break;
-            } else if (attempt < maxRetries) {
-              const waitTime = Math.pow(2, attempt) * 1000;
-              console.log(`⚠️  Attempt ${attempt}/${maxRetries} failed for ${instanceTypeConfig.type} in ${region}: ${errorMessage}`);
-              console.log(`Retrying in ${waitTime}ms...`);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
-            } else {
-              console.log(`❌ All ${maxRetries} attempts failed for ${instanceTypeConfig.type} in ${region}: ${errorMessage}`);
-            }
-          }
+    const result = await this.ec2.runInstances({
+      ImageId: imageId,
+      InstanceType: this.config.instanceType as any,
+      KeyName: keyPairName,
+      SecurityGroupIds: [securityGroupId],
+      ...(iamInstanceProfile && {
+        IamInstanceProfile: {
+          Name: iamInstanceProfile
         }
-      }
+      }),
+      MetadataOptions: {
+        HttpTokens: "required",
+        HttpPutResponseHopLimit: 1,
+        HttpEndpoint: "enabled"
+      },
+      MinCount: 1,
+      MaxCount: 1,
+      TagSpecifications: [
+        {
+          ResourceType: "instance",
+          Tags: [
+            { Key: "Name", Value: this.config.prNumber ? `vargas-jr-pr-${this.config.prNumber}` : `vargas-jr-${this.config.name}` },
+            { Key: "Project", Value: "VargasJR" },
+            { Key: "CreatedBy", Value: "create-agent-script" },
+            { Key: "PRNumber", Value: this.config.prNumber || "" },
+            { Key: "Type", Value: this.config.prNumber ? "preview" : "main" }
+          ]
+        }
+      ]
+    });
+
+    const instanceId = result.Instances?.[0]?.InstanceId;
+    if (!instanceId) {
+      throw new Error("Failed to get instance ID");
     }
 
-    throw new Error(`Failed to create instance after trying all fallback options. Last error: ${this.formatError(lastError)}`);
+    console.log(`✅ EC2 instance created: ${instanceId}`);
+    return instanceId;
   }
 
   private async waitForInstanceRunning(instanceId: string): Promise<void> {
