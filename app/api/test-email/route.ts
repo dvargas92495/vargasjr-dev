@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { z } from "zod";
 import { LAMBDA_FUNCTION_NAMES } from "../../lib/constants";
+import { getBaseUrl } from "../constants";
 
 const testRequestSchema = z.object({
   testSubject: z.string().min(1),
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
     const currentBranch = getCurrentBranch();
     const lambdaClient = new LambdaClient({ region: "us-east-1" });
     
+    let finalSubject = testSubject;
+    if (process.env.VERCEL_ENV !== 'production' && currentBranch !== 'main') {
+      finalSubject = `[PREVIEW: ${currentBranch}] ${testSubject}`;
+    }
+    
     const testEvent = {
       Records: [{
         ses: {
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
             messageId: `test-${Date.now()}`,
             commonHeaders: {
               from: [testSender],
-              subject: testSubject,
+              subject: finalSubject,
               to: ["hello@vargasjr.dev"]
             },
             content: testBody
@@ -81,6 +87,8 @@ export async function POST(request: Request) {
       success: true, 
       messageId: testEvent.Records[0].ses.mail.messageId,
       currentBranch,
+      finalSubject: testEvent.Records[0].ses.mail.commonHeaders.subject,
+      expectedWebhookUrl: getBaseUrl() + '/api/ses/webhook',
       payload: deserializedPayload
     });
   } catch (error) {
