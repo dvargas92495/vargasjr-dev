@@ -87,6 +87,7 @@ export default function SlackSimulatorClient() {
         body: JSON.stringify({
           channel: selectedChannel.name,
           message: message.trim(),
+          user: "David Vargas",
         }),
       });
 
