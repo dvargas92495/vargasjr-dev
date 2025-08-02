@@ -3,6 +3,8 @@
 import React, { useState, useCallback } from "react";
 import { HashtagIcon, LockClosedIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
+const CURRENT_USER = "David Vargas";
+
 interface Channel {
   id: string;
   name: string;
@@ -87,6 +89,7 @@ export default function SlackSimulatorClient() {
         body: JSON.stringify({
           channel: selectedChannel.name,
           message: message.trim(),
+          user: CURRENT_USER,
         }),
       });
 
@@ -95,7 +98,7 @@ export default function SlackSimulatorClient() {
       if (data.success) {
         const newMessage: Message = {
           id: `msg-${Date.now()}`,
-          user: "David Vargas",
+          user: CURRENT_USER,
           avatar: "DV",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           content: message.trim()
