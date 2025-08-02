@@ -162,6 +162,16 @@ export default function Home() {
           </svg>
           How I Handle Your Data
         </Link>
+        <Link
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          style={{ color: '#666' }}
+          href="/blog"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 2C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H3ZM4 4H12V12H4V4ZM5 6H11V7H5V6ZM5 8H11V9H5V8ZM5 10H9V11H5V10Z" fill="currentColor"/>
+          </svg>
+          Blog
+        </Link>
       </footer>
     </div>
   );
