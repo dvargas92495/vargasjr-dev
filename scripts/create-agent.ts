@@ -230,8 +230,10 @@ class VargasJRAgentCreator {
     );
     
     if (!sortedImages?.length) {
-      console.log(`⚠️  No custom VargasJR AMI found, falling back to Ubuntu 24.04 LTS AMI`);
-      return "ami-0e2c8caa4b6378d8c";
+      throw new Error(
+        `No custom VargasJR AMI found with name pattern '${VARGASJR_IMAGE_NAME}-*'. ` +
+        `Ensure Terraform has been deployed to create the custom AMI before running this script.`
+      );
     }
     
     const customAmiId = sortedImages[0].ImageId!;
@@ -261,34 +263,29 @@ class VargasJRAgentCreator {
   }
 
   private async findOrphanedInstances(): Promise<string[]> {
-    console.log(`🔍 Searching for orphaned instances across all regions...`);
+    console.log(`🔍 Searching for orphaned instances in us-east-1...`);
     
     const openPRNumbers = await this.getOpenPRNumbers();
     console.log(`Found ${openPRNumbers.length} open PRs: ${openPRNumbers.join(", ")}`);
     
     const orphanedInstanceIds: string[] = [];
-    const regions = ["us-east-1", "us-west-2", "us-east-2", "us-west-1"];
     
-    for (const region of regions) {
-      try {
-        const regionalEc2 = new EC2({ region });
-        
-        const allInstances = await findInstancesByFilters(regionalEc2, [
-          { Name: "tag:Project", Values: ["VargasJR"] },
-          { Name: "tag:Type", Values: ["preview"] },
-          { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-        ]);
-        
-        for (const instance of allInstances) {
-          const prNumberTag = instance.Tags?.find((tag: any) => tag.Key === "PRNumber")?.Value;
-          if (prNumberTag && !openPRNumbers.includes(prNumberTag)) {
-            console.log(`Found orphaned instance in ${region}: ${instance.InstanceId} (PR #${prNumberTag})`);
-            orphanedInstanceIds.push(instance.InstanceId!);
-          }
+    try {
+      const allInstances = await findInstancesByFilters(this.ec2, [
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "tag:Type", Values: ["preview"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+      ]);
+      
+      for (const instance of allInstances) {
+        const prNumberTag = instance.Tags?.find((tag: any) => tag.Key === "PRNumber")?.Value;
+        if (prNumberTag && !openPRNumbers.includes(prNumberTag)) {
+          console.log(`Found orphaned instance: ${instance.InstanceId} (PR #${prNumberTag})`);
+          orphanedInstanceIds.push(instance.InstanceId!);
         }
-      } catch (error) {
-        console.warn(`⚠️  Failed to check instances in ${region}: ${this.formatError(error)}`);
       }
+    } catch (error) {
+      console.warn(`⚠️  Failed to check instances: ${this.formatError(error)}`);
     }
     
     return orphanedInstanceIds;
@@ -328,20 +325,9 @@ class VargasJRAgentCreator {
         
         console.log(`Terminating ${orphanedInstanceIds.length} orphaned instance(s): ${orphanedInstanceIds.join(", ")}`);
         
-        const regions = ["us-east-1", "us-west-2", "us-east-2", "us-west-1"];
-        for (const region of regions) {
-          const regionalEc2 = new EC2({ region });
-          const regionalInstances = await findInstancesByFilters(regionalEc2, [
-            { Name: "instance-id", Values: orphanedInstanceIds },
-            { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
-          ]);
-          
-          const regionalInstanceIds = regionalInstances.map((instance: any) => instance.InstanceId).filter(Boolean);
-          
-          if (regionalInstanceIds.length > 0) {
-            await terminateInstances(regionalEc2, regionalInstanceIds);
-            await waitForInstancesTerminated(regionalEc2, regionalInstanceIds);
-          }
+        if (orphanedInstanceIds.length > 0) {
+          await terminateInstances(this.ec2, orphanedInstanceIds);
+          await waitForInstancesTerminated(this.ec2, orphanedInstanceIds);
         }
         
         console.log(`✅ Cleanup complete. Retrying instance creation...`);
