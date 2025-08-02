@@ -3,6 +3,9 @@ import { createHmac } from "node:crypto";
 import tsscmp from "tsscmp";
 import { addInboxMessage } from "@/server";
 import { createErrorResponse } from "@/utils/error-response";
+import { InboxesTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/db/connection";
 
 export async function POST(request: Request) {
   const requestId = `slack-webhook-${Date.now()}`;
@@ -170,10 +173,32 @@ export async function POST(request: Request) {
 
       if (event.type === "message") {
         try {
+          const inboxName = `slack-${event.channel}`;
+          
+          const db = getDb();
+          let inbox = await db
+            .select({ id: InboxesTable.id })
+            .from(InboxesTable)
+            .where(eq(InboxesTable.name, inboxName))
+            .limit(1)
+            .execute();
+
+          if (!inbox.length) {
+            const newInbox = await db
+              .insert(InboxesTable)
+              .values({
+                name: inboxName,
+                type: "SLACK",
+                config: {},
+              })
+              .returning({ id: InboxesTable.id });
+            inbox = newInbox;
+          }
+
           await addInboxMessage({
             body: event.text,
             source: event.user,
-            inboxName: `slack-${event.channel}`,
+            inboxName: inboxName,
             createdAt: new Date(event.ts * 1000),
           });
         } catch (dbError) {
