@@ -10,16 +10,28 @@ export const dynamic = 'force-dynamic';
 export default async function Blog() {
   const db = getDb();
   
-  const blogPosts = await db
-    .select({
-      id: BlogPostsTable.id,
-      title: BlogPostsTable.title,
-      excerpt: BlogPostsTable.excerpt,
-      publishedAt: BlogPostsTable.publishedAt,
-    })
-    .from(BlogPostsTable)
-    .where(isNotNull(BlogPostsTable.publishedAt))
-    .orderBy(desc(BlogPostsTable.publishedAt));
+  let blogPosts: Array<{
+    id: string;
+    title: string;
+    excerpt: string | null;
+    publishedAt: Date | null;
+  }> = [];
+  
+  try {
+    blogPosts = await db
+      .select({
+        id: BlogPostsTable.id,
+        title: BlogPostsTable.title,
+        excerpt: BlogPostsTable.excerpt,
+        publishedAt: BlogPostsTable.publishedAt,
+      })
+      .from(BlogPostsTable)
+      .where(isNotNull(BlogPostsTable.publishedAt))
+      .orderBy(desc(BlogPostsTable.publishedAt));
+  } catch (error) {
+    console.error('Failed to fetch blog posts:', error);
+    blogPosts = [];
+  }
 
   return (
     <div className="grid place-items-center min-h-screen p-8">
