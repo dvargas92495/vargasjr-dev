@@ -50,3 +50,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           VERCEL_ENV: production
+          SES_WEBHOOK_SECRET: ${{ secrets.SES_WEBHOOK_SECRET }}
