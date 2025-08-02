@@ -52,8 +52,33 @@ export async function POST(request: Request) {
         ],
       });
 
-      if (response.data.state !== 'FULFILLED' || !response.data.outputs) {
-        throw new Error('Workflow execution failed or returned no outputs');
+      if (response.data.state !== 'FULFILLED') {
+        let errorMessage = 'Workflow execution failed';
+        if (response.data.error) {
+          const errorParts = [];
+          if (response.data.error.message) {
+            errorParts.push(response.data.error.message);
+          }
+          if (response.data.error.code) {
+            errorParts.push(`(Code: ${response.data.error.code})`);
+          }
+          if (errorParts.length > 0) {
+            errorMessage = `Workflow execution failed: ${errorParts.join(' ')}`;
+          }
+        }
+        throw new Error(errorMessage);
+      }
+
+      if (!response.data.outputs) {
+        console.error('Workflow returned no outputs. Full response:', JSON.stringify(response.data, null, 2));
+        return NextResponse.json(
+          { 
+            error: 'Workflow execution failed or returned no outputs',
+            details: 'No outputs returned from workflow',
+            fullResponse: response.data
+          },
+          { status: 500 }
+        );
       }
 
       const cronOutput = response.data.outputs.find((output) => output.name === 'cron_expression');
