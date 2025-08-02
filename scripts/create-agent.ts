@@ -7,6 +7,7 @@ import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
+import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface AgentConfig {
   name: string;
@@ -240,6 +241,56 @@ class VargasJRAgentCreator {
     return customAmiId;
   }
 
+  private async getOpenPRNumbers(): Promise<string[]> {
+    const githubRepo = "dvargas92495/vargasjr-dev";
+    
+    try {
+      const headers = await getGitHubAuthHeaders();
+      const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?state=open`, {
+        headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.statusText}`);
+      }
+      
+      const prs = await response.json();
+      return prs.map((pr: any) => pr.number.toString());
+    } catch (error) {
+      console.warn(`⚠️  Failed to fetch open PRs from GitHub: ${error}`);
+      return [];
+    }
+  }
+
+  private async findOrphanedInstances(): Promise<string[]> {
+    console.log(`🔍 Searching for orphaned instances in us-east-1...`);
+    
+    const openPRNumbers = await this.getOpenPRNumbers();
+    console.log(`Found ${openPRNumbers.length} open PRs: ${openPRNumbers.join(", ")}`);
+    
+    const orphanedInstanceIds: string[] = [];
+    
+    try {
+      const allInstances = await findInstancesByFilters(this.ec2, [
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "tag:Type", Values: ["preview"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending"] }
+      ]);
+      
+      for (const instance of allInstances) {
+        const prNumberTag = instance.Tags?.find((tag: any) => tag.Key === "PRNumber")?.Value;
+        if (prNumberTag && !openPRNumbers.includes(prNumberTag)) {
+          console.log(`Found orphaned instance: ${instance.InstanceId} (PR #${prNumberTag})`);
+          orphanedInstanceIds.push(instance.InstanceId!);
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️  Failed to check instances: ${this.formatError(error)}`);
+    }
+    
+    return orphanedInstanceIds;
+  }
+
   private async createEC2Instance(keyPairName: string): Promise<string> {
     console.log("Creating EC2 instance...");
 
@@ -258,6 +309,44 @@ class VargasJRAgentCreator {
 
     const imageId = await this.getLatestCustomAMI();
 
+    try {
+      return await this.createSingleInstance(imageId, keyPairName, securityGroupId, iamInstanceProfile);
+    } catch (error: any) {
+      const errorMessage = this.formatError(error);
+      
+      if (error.name === "VcpuLimitExceeded" || errorMessage.includes("VcpuLimitExceeded")) {
+        console.log(`⚠️  vCPU limit exceeded, attempting to clean up orphaned instances...`);
+        
+        const orphanedInstanceIds = await this.findOrphanedInstances();
+        
+        if (orphanedInstanceIds.length === 0) {
+          throw new Error(`vCPU limit exceeded and no orphaned instances found to clean up. Please manually increase vCPU limits or terminate unused instances.`);
+        }
+        
+        console.log(`Terminating ${orphanedInstanceIds.length} orphaned instance(s): ${orphanedInstanceIds.join(", ")}`);
+        
+        if (orphanedInstanceIds.length > 0) {
+          await terminateInstances(this.ec2, orphanedInstanceIds);
+          await waitForInstancesTerminated(this.ec2, orphanedInstanceIds);
+        }
+        
+        console.log(`✅ Cleanup complete. Retrying instance creation...`);
+        
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        
+        return await this.createSingleInstance(imageId, keyPairName, securityGroupId, iamInstanceProfile);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  private async createSingleInstance(
+    imageId: string, 
+    keyPairName: string, 
+    securityGroupId: string, 
+    iamInstanceProfile?: string
+  ): Promise<string> {
     const result = await this.ec2.runInstances({
       ImageId: imageId,
       InstanceType: this.config.instanceType as any,
