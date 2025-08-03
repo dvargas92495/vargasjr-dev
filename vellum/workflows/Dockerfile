@@ -5,6 +5,7 @@ WORKDIR /app
 RUN pip install --upgrade pip && pip install poetry
 
 COPY pyproject.toml ./
+COPY poetry.lock ./
 COPY models ./models
 COPY services ./services
 COPY workflows ./workflows
