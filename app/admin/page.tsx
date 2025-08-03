@@ -7,6 +7,18 @@ import { retryWithBackoff } from "@/scripts/utils";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 
+async function checkWorkflowStatus() {
+  try {
+    const response = await fetch('/api/check-workflow-status');
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error('Failed to check workflow status:', error);
+  }
+  return { hasRunningWorkflow: false };
+}
+
 async function getCurrentPRNumber(): Promise<string> {
   if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
     console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
@@ -77,6 +89,8 @@ export default async function AdminPage() {
   }
   
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
+  
+  const workflowStatus = await checkWorkflowStatus();
 
   const scrubPassword = (url: string | undefined) => url 
     ? url.replace(/:[^:@]*@/, ':***@')
@@ -203,7 +217,7 @@ export default async function AdminPage() {
               <p className="text-sm text-blue-800 mb-3">
                 <strong>Production Environment:</strong> You can still create a production agent even without AWS credentials configured locally.
               </p>
-              <CreateAgentButton />
+              <CreateAgentButton initialWorkflowState={workflowStatus} />
             </div>
           )}
         </div>
@@ -228,7 +242,7 @@ export default async function AdminPage() {
                 <strong>Production Environment:</strong> No production instances are currently running. 
                 You can create a production agent using the button below.
               </p>
-              <CreateAgentButton />
+              <CreateAgentButton initialWorkflowState={workflowStatus} />
             </div>
           )}
         </div>

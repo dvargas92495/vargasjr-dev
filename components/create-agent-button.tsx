@@ -9,7 +9,17 @@ interface AgentCreationStatus {
   instanceId?: string;
 }
 
-const CreateAgentButton = () => {
+interface CreateAgentButtonProps {
+  initialWorkflowState?: {
+    hasRunningWorkflow: boolean;
+    workflowRunId?: number;
+    createdAt?: string;
+  };
+}
+
+const AGENT_CREATION_STORAGE_KEY = "agent-creation-state";
+
+const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}) => {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [message, setMessage] = useState("");
@@ -35,6 +45,7 @@ const CreateAgentButton = () => {
         if (status.status === "ready") {
           setIsCreating(false);
           setCreationStartTime(null);
+          localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
           if (pollingInterval) {
             clearInterval(pollingInterval);
             setPollingInterval(null);
@@ -45,6 +56,7 @@ const CreateAgentButton = () => {
         } else if (status.status === "error") {
           setIsCreating(false);
           setCreationStartTime(null);
+          localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
           if (pollingInterval) {
             clearInterval(pollingInterval);
             setPollingInterval(null);
@@ -72,6 +84,12 @@ const CreateAgentButton = () => {
     setMessage("");
     const startTime = Date.now();
     setCreationStartTime(startTime);
+    
+    localStorage.setItem(AGENT_CREATION_STORAGE_KEY, JSON.stringify({
+      isCreating: true,
+      creationStartTime: startTime,
+      message: ""
+    }));
     
     try {
       const response = await fetch("/api/create-agent", {
@@ -106,6 +124,43 @@ const CreateAgentButton = () => {
       }
     };
   }, [pollingInterval]);
+
+  useEffect(() => {
+    const storedState = localStorage.getItem(AGENT_CREATION_STORAGE_KEY);
+    if (storedState) {
+      try {
+        const { isCreating: storedIsCreating, creationStartTime: storedStartTime, message: storedMessage } = JSON.parse(storedState);
+        if (storedIsCreating && storedStartTime) {
+          setIsCreating(true);
+          setCreationStartTime(storedStartTime);
+          setMessage(storedMessage || "Resuming agent creation...");
+          startPolling();
+        }
+      } catch (error) {
+        console.error("Failed to restore creation state:", error);
+        localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
+      }
+    }
+  }, [startPolling]);
+
+  useEffect(() => {
+    if (initialWorkflowState?.hasRunningWorkflow && !isCreating) {
+      const workflowStartTime = initialWorkflowState.createdAt ? 
+        new Date(initialWorkflowState.createdAt).getTime() : Date.now();
+      
+      setIsCreating(true);
+      setCreationStartTime(workflowStartTime);
+      setMessage("Agent creation workflow is running...");
+      
+      localStorage.setItem(AGENT_CREATION_STORAGE_KEY, JSON.stringify({
+        isCreating: true,
+        creationStartTime: workflowStartTime,
+        message: "Agent creation workflow is running..."
+      }));
+      
+      startPolling();
+    }
+  }, [initialWorkflowState, isCreating, startPolling]);
 
   const getButtonText = () => {
     if (!isCreating) return "Create Agent";
