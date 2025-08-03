@@ -198,6 +198,14 @@ export default async function AdminPage() {
               to query EC2 instances. This error is expected in local development without AWS setup.
             </p>
           </div>
+          {environmentPrefix === '' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800 mb-3">
+                <strong>Production Environment:</strong> You can still create a production agent even without AWS credentials configured locally.
+              </p>
+              <CreateAgentButton />
+            </div>
+          )}
         </div>
       ) : instances.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-2xl">
