@@ -7,7 +7,8 @@ import { internalFetch } from "@/utils/internal-fetch";
 
 const testRequestSchema = z.object({
   channel: z.string().min(1),
-  message: z.string().min(1)
+  message: z.string().min(1),
+  user: z.string().min(1)
 });
 
 export async function POST(request: Request) {
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
             troubleshooting: [
               "Ensure 'channel' field is a non-empty string",
               "Ensure 'message' field is a non-empty string",
+              "Ensure 'user' field is a non-empty string",
               "Check the request payload structure"
             ]
           }),
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
       throw validationError;
     }
 
-    const { channel, message } = validatedData;
+    const { channel, message, user } = validatedData;
     const channelName = channel.startsWith("#") ? channel.slice(1) : channel;
     
     console.log(`[${requestId}] Creating test event for channel: ${channelName}`);
@@ -71,7 +73,7 @@ export async function POST(request: Request) {
       event: {
         type: "message",
         text: message,
-        user: "test-user",
+        user: user,
         channel: channelName,
         ts: Date.now() / 1000
       }
