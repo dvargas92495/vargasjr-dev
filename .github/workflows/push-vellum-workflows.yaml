@@ -5,16 +5,14 @@ on:
     branches:
       - main
     paths:
-      - 'vellum/workflows/**'
-      - '.github/workflows/push-vellum-workflows.yaml'
-      - 'scripts/push-vellum-workflows.ts'
-      - 'vellum/vellum.lock.json'
+      - "vellum/**"
+      - ".github/workflows/push-vellum-workflows.yaml"
+      - "scripts/push-vellum-workflows.ts"
   pull_request:
     paths:
-      - 'vellum/workflows/**'
-      - '.github/workflows/push-vellum-workflows.yaml'
-      - 'scripts/push-vellum-workflows.ts'
-      - 'vellum/vellum.lock.json'
+      - "vellum/**"
+      - ".github/workflows/push-vellum-workflows.yaml"
+      - "scripts/push-vellum-workflows.ts"
 
 permissions:
   contents: write
@@ -27,27 +25,27 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-          
+          node-version-file: ".nvmrc"
+
       - name: Install Node.js dependencies
         run: npm install
-      
+
       - name: Set up python
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
-          
+
       - name: Bootstrap poetry
         run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
-        
+
       - name: Install dependencies
         run: poetry install
         working-directory: vellum
-        
+
       - name: Preview workflows
         run: npm run push-vellum-workflows -- --preview
         env:
@@ -59,27 +57,27 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-          
+          node-version-file: ".nvmrc"
+
       - name: Install Node.js dependencies
         run: npm install
-      
+
       - name: Set up python
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
-          
+
       - name: Bootstrap poetry
         run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
-        
+
       - name: Install dependencies
         run: poetry install
         working-directory: vellum
-        
+
       - name: Push workflows to Vellum
         run: npm run push-vellum-workflows
         env:
