@@ -1,5 +1,39 @@
 #!/bin/bash
 
+get_github_installation_token() {
+    local private_key="$1"
+    local app_id="1344447"
+    local installation_id="77219262"
+    
+    local key_file=$(mktemp)
+    echo "$private_key" > "$key_file"
+    
+    local now=$(date +%s)
+    local iat=$((now - 60))
+    local exp=$((now + 600))
+    
+    local jwt_header='{"alg":"RS256","typ":"JWT"}'
+    local jwt_payload="{\"iat\":$iat,\"exp\":$exp,\"iss\":\"$app_id\"}"
+    
+    local jwt_header_b64=$(echo -n "$jwt_header" | base64 -w 0 | tr '+/' '-_' | tr -d '=')
+    local jwt_payload_b64=$(echo -n "$jwt_payload" | base64 -w 0 | tr '+/' '-_' | tr -d '=')
+    
+    local jwt_unsigned="$jwt_header_b64.$jwt_payload_b64"
+    local jwt_signature=$(echo -n "$jwt_unsigned" | openssl dgst -sha256 -sign "$key_file" -binary | base64 -w 0 | tr '+/' '-_' | tr -d '=')
+    
+    local jwt_token="$jwt_unsigned.$jwt_signature"
+    
+    rm "$key_file"
+    
+    local response=$(curl -s -X POST \
+        -H "Authorization: Bearer $jwt_token" \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "https://api.github.com/app/installations/$installation_id/access_tokens")
+    
+    echo "$response" | grep -o '"token":"[^"]*' | cut -d'"' -f4
+}
+
 source ~/.profile
 
 if [ -f ".env" ]; then
@@ -19,7 +53,14 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         ARTIFACT_NAME="dist-pr-$PR_NUMBER"
         REPO="dvargas92495/vargasjr-dev"
         
-        ARTIFACT_DATA=$(curl -s -H "Authorization: Bearer $GITHUB_PRIVATE_KEY" \
+        GITHUB_TOKEN=$(get_github_installation_token "$GITHUB_PRIVATE_KEY")
+        
+        if [ -z "$GITHUB_TOKEN" ]; then
+            echo "Error: Failed to get GitHub installation token"
+            exit 1
+        fi
+        
+        ARTIFACT_DATA=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$REPO/actions/artifacts?name=$ARTIFACT_NAME")
@@ -37,7 +78,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         echo "Downloading artifact ID: $ARTIFACT_ID"
         
-        DOWNLOAD_URL=$(curl -s -H "Authorization: Bearer $GITHUB_PRIVATE_KEY" \
+        DOWNLOAD_URL=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip" \
