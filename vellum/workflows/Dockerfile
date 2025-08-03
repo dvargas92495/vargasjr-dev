@@ -1,10 +1,11 @@
-FROM vellumai/python-workflow-runtime:0.14.89
+FROM vellumai/python-workflow-runtime:1.0.10
 
 WORKDIR /app
 
 RUN pip install --upgrade pip && pip install poetry
 
 COPY pyproject.toml ./
+COPY poetry.lock ./
 COPY models ./models
 COPY services ./services
 COPY workflows ./workflows
