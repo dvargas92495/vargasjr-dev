@@ -6,7 +6,7 @@ from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
 from vellum.workflows.state import BaseState
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
-from .inputs import CreateDevinChatInputs
+from .inputs import Inputs
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class DevinSessionResponse(UniversalBaseModel):
 
 
 class CreateDevinChatSessionNode(BaseNode):
-    issue_number = CreateDevinChatInputs.issue_number
+    issue_number = Inputs.issue_number
 
     class Outputs(BaseNode.Outputs):
         session_response: Optional[DevinSessionResponse]
@@ -77,7 +77,7 @@ Once the PR is merged, you may archive this session"""
             )
 
 
-class CreateDevinChatWorkflow(BaseWorkflow[CreateDevinChatInputs, BaseState]):
+class CreateDevinChatWorkflow(BaseWorkflow[Inputs, BaseState]):
     graph = CreateDevinChatSessionNode
 
     class Outputs(BaseWorkflow.Outputs):
