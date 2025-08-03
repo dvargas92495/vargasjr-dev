@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.0.69"
+version = "0.0.70"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -10,6 +10,7 @@ packages = [
     { include = "models" },
     { include = "services" },
     { include = "workflows" },
+    { include = "evals" },
 ]
 
 [tool.poetry.dependencies]
