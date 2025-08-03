@@ -36,7 +36,7 @@ jobs:
         id: run_scripts
         run: npm run one-time-migration -- --branch ${{ github.head_ref || github.ref_name }}${{ inputs.preview && ' --preview' || '' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_HEAD_REF: ${{ github.head_ref || github.ref_name }}
           GITHUB_EVENT_NAME: workflow_dispatch
