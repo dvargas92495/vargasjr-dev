@@ -69,11 +69,12 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
       });
 
       eventSource.onerror = () => {
-        setWorkflowStatus({
+        setWorkflowStatus(prev => ({
           status: 'error',
           message: 'Connection error occurred',
-          error: 'Failed to connect to streaming endpoint'
-        });
+          error: 'Failed to connect to streaming endpoint',
+          executionId: prev.executionId
+        }));
         eventSource.close();
       };
 
@@ -95,7 +96,7 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={handleTest}
           disabled={workflowStatus.status === 'testing'}
@@ -115,13 +116,13 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
       </div>
 
       {workflowStatus.executionId && (
-        <div className="mt-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+        <div className="mt-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded w-full">
           <h3 className="font-semibold">Execution Link:</h3>
           <a
             href={`https://app.vellum.ai/workflows/executions/${workflowStatus.executionId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline"
+            className="text-blue-600 hover:text-blue-800 underline break-all"
           >
             View Execution: {workflowStatus.executionId}
           </a>
@@ -129,7 +130,7 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
       )}
 
       {workflowStatus.message && (
-        <div className={`mt-4 p-4 rounded ${
+        <div className={`mt-4 p-4 rounded w-full ${
           workflowStatus.status === 'error' 
             ? 'bg-red-100 border border-red-400 text-red-700'
             : workflowStatus.status === 'completed'
