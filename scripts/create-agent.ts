@@ -476,7 +476,7 @@ VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
         envContent += `
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
-GITHUB_TOKEN=${envVars.GITHUB_TOKEN || ''}`;
+GITHUB_PRIVATE_KEY=${envVars.GITHUB_PRIVATE_KEY || ''}`;
       } else {
         envContent += `
 AGENT_ENVIRONMENT=production`;
@@ -754,7 +754,7 @@ AGENT_ENVIRONMENT=production`;
 
   private getEnvironmentVariables() {
     const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY', 'NEON_API_KEY'];
-    const optionalVars = ['GITHUB_TOKEN'];
+    const optionalVars = ['GITHUB_PRIVATE_KEY'];
     const envVars: Record<string, string> = {};
 
     for (const varName of requiredVars) {

@@ -11,15 +11,15 @@ rm -Rf vargasjr_dev_agent-*
 if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         echo "Detected preview environment for PR $PR_NUMBER"
         
-        if [ -z "$GITHUB_TOKEN" ]; then
-            echo "Error: GITHUB_TOKEN not set for preview environment"
+        if [ -z "$GITHUB_PRIVATE_KEY" ]; then
+            echo "Error: GITHUB_PRIVATE_KEY not set for preview environment"
             exit 1
         fi
         
         ARTIFACT_NAME="dist-pr-$PR_NUMBER"
         REPO="dvargas92495/vargasjr-dev"
         
-        ARTIFACT_DATA=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+        ARTIFACT_DATA=$(curl -s -H "Authorization: Bearer $GITHUB_PRIVATE_KEY" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$REPO/actions/artifacts?name=$ARTIFACT_NAME")
@@ -37,7 +37,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         echo "Downloading artifact ID: $ARTIFACT_ID"
         
-        DOWNLOAD_URL=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+        DOWNLOAD_URL=$(curl -s -H "Authorization: Bearer $GITHUB_PRIVATE_KEY" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip" \
