@@ -15,7 +15,7 @@ export default async function CRMPage() {
       <div className="flex-1">
         <table className="min-w-full border border-gray-300">
           <thead>
-            <tr className="bg-gray-500">
+            <tr className="bg-gray-500 text-white">
               <th className="px-6 py-3 border-b text-left">Name</th>
               <th className="px-6 py-3 border-b text-left">Email</th>
               <th className="px-6 py-3 border-b text-left">Phone</th>
