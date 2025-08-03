@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import DeleteApplicationButton from "@/components/delete-application-button";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 export default async function ApplicationDetailPage({
   params,
@@ -23,7 +25,14 @@ export default async function ApplicationDetailPage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-bold">Application Details</h2>
+      <div className="flex items-center gap-4">
+        <Link href="/admin/applications">
+          <button className="flex items-center gap-2 text-gray-300 hover:text-white">
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+        </Link>
+        <h2 className="text-xl font-bold">Application Details</h2>
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Name</label>
