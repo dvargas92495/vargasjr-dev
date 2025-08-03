@@ -8,6 +8,7 @@ COPY pyproject.toml ./
 COPY poetry.lock ./
 COPY models ./models
 COPY services ./services
+COPY evals ./evals
 COPY workflows ./workflows
 
 RUN poetry config virtualenvs.create false
