@@ -473,10 +473,12 @@ LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
 
       if (this.config.prNumber) {
+        const githubPrivateKey = envVars.GITHUB_PRIVATE_KEY || '';
+        const escapedGithubPrivateKey = githubPrivateKey.replace(/'/g, "'\"'\"'");
         envContent += `
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
-GITHUB_PRIVATE_KEY=${envVars.GITHUB_PRIVATE_KEY || ''}`;
+GITHUB_PRIVATE_KEY='${escapedGithubPrivateKey}'`;
       } else {
         envContent += `
 AGENT_ENVIRONMENT=production`;
