@@ -474,11 +474,16 @@ VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
 
       if (this.config.prNumber) {
         const githubPrivateKey = envVars.GITHUB_PRIVATE_KEY || '';
-        const escapedGithubPrivateKey = githubPrivateKey.replace(/'/g, "'\"'\"'");
+        const escapedGithubPrivateKey = githubPrivateKey
+          .replace(/\\/g, '\\\\')
+          .replace(/'/g, "\\'")
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
+          .replace(/\t/g, '\\t');
         envContent += `
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
-GITHUB_PRIVATE_KEY='${escapedGithubPrivateKey}'`;
+GITHUB_PRIVATE_KEY=$'${escapedGithubPrivateKey}'`;
       } else {
         envContent += `
 AGENT_ENVIRONMENT=production`;
