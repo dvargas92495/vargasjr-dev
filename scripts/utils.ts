@@ -717,7 +717,7 @@ function parseHealthcheckOutput(output: string): any {
     if (envSection) {
       diagnostics.environmentVariables = {
         critical: extractEnvVarStatus(envSection, ['AGENT_ENVIRONMENT', 'DATABASE_URL', 'VELLUM_API_KEY']),
-        optional: extractEnvVarStatus(envSection, ['PR_NUMBER', 'GITHUB_TOKEN'])
+        optional: extractEnvVarStatus(envSection, ['PR_NUMBER', 'GITHUB_PRIVATE_KEY'])
       };
     }
   }

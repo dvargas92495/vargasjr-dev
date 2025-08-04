@@ -23,7 +23,7 @@ async function runHealthcheck(): Promise<void> {
 
   console.log('--- Environment Variables Check ---');
   const criticalEnvVars = ['AGENT_ENVIRONMENT', 'DATABASE_URL', 'VELLUM_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'];
-  const optionalEnvVars = ['PR_NUMBER', 'GITHUB_TOKEN', 'NEON_API_KEY'];
+  const optionalEnvVars = ['PR_NUMBER', 'GITHUB_PRIVATE_KEY', 'NEON_API_KEY'];
   
   criticalEnvVars.forEach(varName => {
     const value = process.env[varName];

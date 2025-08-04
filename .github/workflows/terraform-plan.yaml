@@ -35,7 +35,7 @@ jobs:
       - name: Run Terraform Plan
         run: npm run terraform -- --preview
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
