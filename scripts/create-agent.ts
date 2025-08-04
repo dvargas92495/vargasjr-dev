@@ -37,7 +37,7 @@ class VargasJRAgentCreator {
 
   async createAgent(): Promise<void> {
     const agentName = this.config.prNumber ? `pr-${this.config.prNumber}` : this.config.name;
-    const instanceName = `vargas-jr-${agentName}`;
+    const instanceName = agentName.startsWith('vargas-jr') ? agentName : `vargas-jr-${agentName}`;
     const overallStartTime = Date.now();
     const timingResults: TimingResult[] = [];
     
