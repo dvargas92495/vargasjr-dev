@@ -91,7 +91,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             <li>
               <Link
                 href="/admin"
-                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 Dashboard
               </Link>
@@ -99,7 +99,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             <li>
               <Link
                 href="/admin/inboxes"
-                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 Inboxes
               </Link>
@@ -107,7 +107,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             <li>
               <Link
                 href="/admin/applications"
-                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 Applications
               </Link>
@@ -115,7 +115,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             <li>
               <Link
                 href="/admin/crm"
-                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 CRM
               </Link>
@@ -123,7 +123,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             <li>
               <Link
                 href="/admin/jobs"
-                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 Jobs
               </Link>
@@ -131,7 +131,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             <li>
               <Link
                 href="/admin/simulator"
-                className="block p-2 hover:bg-gray-200 hover:text-black rounded"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 Simulator
               </Link>

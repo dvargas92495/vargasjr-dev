@@ -46,7 +46,7 @@ export default async function JobsPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-300">
             <thead>
-              <tr className="bg-gray-500">
+              <tr className="bg-gray-500 text-white">
                 <th className="px-6 py-3 border-b text-left">Job Name</th>
                 <th className="px-6 py-3 border-b text-left">Due Date</th>
                 <th className="px-6 py-3 border-b text-left">Priority</th>
@@ -67,7 +67,7 @@ export default async function JobsPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-300">
             <thead>
-              <tr className="bg-gray-500">
+              <tr className="bg-gray-500 text-white">
                 <th className="px-6 py-3 border-b text-left">Name</th>
                 <th className="px-6 py-3 border-b text-left">Cron Expression</th>
                 <th className="px-6 py-3 border-b text-left">Status</th>
