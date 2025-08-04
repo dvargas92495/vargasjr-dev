@@ -15,19 +15,17 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
 
       - name: Wait for all other checks to succeed
         uses: lewagon/wait-on-check-action@v1.4.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           running-workflow-name: 'auto-merge'
-          repo-token: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 
       - name: Auto-merge PR
         run: |
           gh pr merge ${{ github.event.pull_request.number }} --auto --squash
         env:
-          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

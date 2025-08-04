@@ -7,7 +7,7 @@ import { execSync } from "child_process";
 import { tmpdir } from "os";
 import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
-import { getGitHubAuthHeaders } from "../app/lib/github-auth";
+import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
 
 interface AgentConfig {
   name: string;
@@ -473,17 +473,13 @@ LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
 
       if (this.config.prNumber) {
-        const githubPrivateKey = envVars.GITHUB_PRIVATE_KEY || '';
-        const escapedGithubPrivateKey = githubPrivateKey
-          .replace(/\\/g, '\\\\')
-          .replace(/'/g, "\\'")
-          .replace(/\n/g, '\\n')
-          .replace(/\r/g, '\\r')
-          .replace(/\t/g, '\\t');
+        const githubAuth = new GitHubAppAuth();
+        const githubToken = await githubAuth.getInstallationToken();
+        
         envContent += `
 AGENT_ENVIRONMENT=preview
 PR_NUMBER=${this.config.prNumber}
-GITHUB_PRIVATE_KEY=$'${escapedGithubPrivateKey}'`;
+GITHUB_TOKEN=${githubToken}`;
       } else {
         envContent += `
 AGENT_ENVIRONMENT=production`;
@@ -760,8 +756,8 @@ AGENT_ENVIRONMENT=production`;
   }
 
   private getEnvironmentVariables() {
-    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY', 'NEON_API_KEY'];
-    const optionalVars = ['GITHUB_PRIVATE_KEY'];
+    const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'VELLUM_API_KEY', 'NEON_API_KEY', 'GITHUB_PRIVATE_KEY'];
+    const optionalVars: string[] = [];
     const envVars: Record<string, string> = {};
 
     for (const varName of requiredVars) {

@@ -42,11 +42,10 @@ jobs:
         env:
           DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}
           
-      - name: Comment PR with knowledge preview
-        uses: JoseThen/comment-pr@v1.2.0
-        with:
-          file_path: knowledge-preview.txt
-          GITHUB_TOKEN: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
+      - name: Comment on PR with knowledge preview
+        run: npx tsx scripts/apply-knowledge.ts
+        env:
+          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
 
   apply-knowledge:
     runs-on: ubuntu-latest

@@ -1,60 +1,5 @@
 #!/bin/bash
 
-get_github_installation_token() {
-    local private_key="$1"
-    local app_id="1344447"
-    local installation_id="77219262"
-    
-    local key_file=$(mktemp)
-    echo -e "$private_key" > "$key_file"
-    
-    local now=$(date +%s)
-    local iat=$((now - 60))
-    local exp=$((now + 600))
-    
-    local jwt_header='{"alg":"RS256","typ":"JWT"}'
-    local jwt_payload="{\"iat\":$iat,\"exp\":$exp,\"iss\":\"$app_id\"}"
-    
-    local jwt_header_b64=$(echo -n "$jwt_header" | base64 -w 0 | tr '+/' '-_' | tr -d '=')
-    local jwt_payload_b64=$(echo -n "$jwt_payload" | base64 -w 0 | tr '+/' '-_' | tr -d '=')
-    
-    local jwt_unsigned="$jwt_header_b64.$jwt_payload_b64"
-    
-    local jwt_signature
-    if ! jwt_signature=$(echo -n "$jwt_unsigned" | openssl dgst -sha256 -sign "$key_file" -binary 2>/dev/null | base64 -w 0 | tr '+/' '-_' | tr -d '='); then
-        echo "Error: Failed to generate JWT signature with RSA private key" >&2
-        rm "$key_file"
-        return 1
-    fi
-    
-    local jwt_token="$jwt_unsigned.$jwt_signature"
-    rm "$key_file"
-    
-    local response
-    local http_code
-    response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X POST \
-        -H "Authorization: Bearer $jwt_token" \
-        -H "Accept: application/vnd.github+json" \
-        -H "X-GitHub-Api-Version: 2022-11-28" \
-        "https://api.github.com/app/installations/$installation_id/access_tokens")
-    
-    http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
-    response=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
-    
-    if [ "$http_code" != "201" ]; then
-        echo "Error: GitHub App token exchange failed with HTTP $http_code" >&2
-        return 1
-    fi
-    
-    local token=$(echo "$response" | grep -o '"token":"[^"]*' | cut -d'"' -f4)
-    if [ -z "$token" ]; then
-        echo "Error: Failed to extract installation token from API response" >&2
-        return 1
-    fi
-    
-    echo "$token"
-}
-
 source ~/.profile
 
 if [ -f ".env" ]; then
@@ -66,20 +11,13 @@ rm -Rf vargasjr_dev_agent-*
 if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         echo "Detected preview environment for PR $PR_NUMBER"
         
-        if [ -z "$GITHUB_PRIVATE_KEY" ]; then
-            echo "Error: GITHUB_PRIVATE_KEY not set for preview environment"
+        if [ -z "$GITHUB_TOKEN" ]; then
+            echo "Error: GITHUB_TOKEN not set for preview environment"
             exit 1
         fi
         
         ARTIFACT_NAME="dist-pr-$PR_NUMBER"
         REPO="dvargas92495/vargasjr-dev"
-        
-        GITHUB_TOKEN=$(get_github_installation_token "$GITHUB_PRIVATE_KEY")
-        
-        if [ -z "$GITHUB_TOKEN" ]; then
-            echo "Error: Failed to get GitHub installation token"
-            exit 1
-        fi
         
         ARTIFACT_DATA=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
