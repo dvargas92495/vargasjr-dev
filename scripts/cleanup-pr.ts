@@ -217,6 +217,8 @@ async function main() {
   await cleanup.cleanupAgent();
 }
 
+export { VargasJRAgentCleanup };
+
 if (require.main === module) {
   main().catch(console.error);
 }
