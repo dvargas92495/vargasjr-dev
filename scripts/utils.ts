@@ -716,8 +716,8 @@ function parseHealthcheckOutput(output: string): any {
     const envSection = output.split('--- Environment Variables Check ---')[1]?.split('---')[0];
     if (envSection) {
       diagnostics.environmentVariables = {
-        critical: extractEnvVarStatus(envSection, ['AGENT_ENVIRONMENT', 'DATABASE_URL', 'VELLUM_API_KEY']),
-        optional: extractEnvVarStatus(envSection, ['PR_NUMBER', 'GITHUB_PRIVATE_KEY'])
+        critical: extractEnvVarStatus(envSection, ['AGENT_ENVIRONMENT', 'DATABASE_URL', 'VELLUM_API_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']),
+        optional: extractEnvVarStatus(envSection, ['PR_NUMBER', 'GITHUB_PRIVATE_KEY', 'NEON_API_KEY'])
       };
     }
   }
@@ -730,6 +730,32 @@ function parseHealthcheckOutput(output: string): any {
     const memoryMatch = output.match(/Memory usage:\s*\n([^\n]+)/);
     if (memoryMatch) {
       diagnostics.memory = memoryMatch[1].trim();
+    }
+  }
+  
+  if (output.includes('Screen sessions:')) {
+    diagnostics.screenSessions = output.includes('Agent screen session detected: ✓ Yes');
+  }
+  
+  if (output.includes('Network Connectivity')) {
+    const networkSection = output.split('--- Network Connectivity ---')[1]?.split('---')[0];
+    if (networkSection) {
+      diagnostics.networkConnectivity = {
+        github: networkSection.includes('GitHub API response: 200'),
+        vellum: networkSection.includes('Vellum API response: 200')
+      };
+    }
+  }
+  
+  if (output.includes('File System Checks')) {
+    const fileSection = output.split('--- File System Checks ---')[1]?.split('---')[0];
+    if (fileSection) {
+      diagnostics.fileSystem = {
+        nodeModules: fileSection.includes('node_modules/: ✓ Exists'),
+        envFile: fileSection.includes('.env: ✓ Exists'),
+        errorLog: fileSection.includes('error.log: ✓ Exists'),
+        agentLog: fileSection.includes('agent.log: ✓ Exists')
+      };
     }
   }
   
@@ -750,19 +776,43 @@ function extractEnvVarStatus(section: string, varNames: string[]): Record<string
 
 function generateDetailedErrorMessage(output: string): string {
   if (output.includes('💀 FATAL ERROR')) {
+    if (output.includes('Missing') && output.includes('environment variables')) {
+      return 'Agent has fatal errors due to missing critical environment variables (DATABASE_URL, VELLUM_API_KEY, etc.)';
+    }
+    if (output.includes('Database connection') || output.includes('database')) {
+      return 'Agent has fatal errors - database connectivity issues detected';
+    }
     return 'Agent has fatal errors - check logs for critical issues';
   }
   
+  if (output.includes('✗ Missing') || (output.includes('Missing') && output.includes('environment variables'))) {
+    const missingVars = [];
+    if (output.includes('DATABASE_URL: ✗ Missing')) missingVars.push('DATABASE_URL');
+    if (output.includes('VELLUM_API_KEY: ✗ Missing')) missingVars.push('VELLUM_API_KEY');
+    if (output.includes('AGENT_ENVIRONMENT: ✗ Missing')) missingVars.push('AGENT_ENVIRONMENT');
+    if (missingVars.length > 0) {
+      return `Missing critical environment variables: ${missingVars.join(', ')} - agent cannot start`;
+    }
+    return 'Missing critical environment variables - check agent configuration';
+  }
+  
   if (output.includes('No agent-related processes found')) {
+    if (output.includes('node_modules/: ✗ Missing')) {
+      return 'Agent process not running - dependencies not installed (missing node_modules)';
+    }
     return 'Agent process not running - may have crashed or failed to start';
   }
   
-  if (output.includes('No screen sessions found')) {
-    return 'No screen sessions found - agent may not have started properly';
+  if (output.includes('No screen sessions found') || output.includes('screen command failed')) {
+    return 'No screen sessions found - agent may not have started properly or screen is not available';
   }
   
-  if (output.includes('Missing') && output.includes('environment variables')) {
-    return 'Missing critical environment variables - check agent configuration';
+  if (output.includes('GitHub API test failed') || output.includes('Vellum API test failed')) {
+    return 'Agent not running - network connectivity issues detected (GitHub/Vellum API unreachable)';
+  }
+  
+  if (output.includes('Memory usage:') && (output.includes('100%') || output.includes('full'))) {
+    return 'Agent not running - system may be out of memory or disk space';
   }
   
   return 'Agent not running - check screen sessions and process status';
@@ -772,24 +822,55 @@ function generateTroubleshootingSteps(output: string, hasAgentSession: boolean):
   const steps: string[] = [];
   
   if (output.includes('💀 FATAL ERROR')) {
-    steps.push('Check error.log and agent.log for critical errors');
-    steps.push('Verify all environment variables are properly set');
-    steps.push('Check database connectivity');
-    steps.push('Restart the agent process');
+    steps.push('Check error.log and agent.log for critical errors: tail -f error.log agent.log');
+    if (output.includes('Missing') && output.includes('environment variables')) {
+      steps.push('Set missing environment variables in .env file (DATABASE_URL, VELLUM_API_KEY, AGENT_ENVIRONMENT)');
+    }
+    if (output.includes('Database connection') || output.includes('database')) {
+      steps.push('Test database connectivity: check DATABASE_URL and network access');
+    }
+    steps.push('Verify all environment variables are properly set: cat .env');
+    steps.push('Restart the agent process: npm run agent:start');
   } else if (!hasAgentSession) {
+    if (output.includes('✗ Missing') || (output.includes('Missing') && output.includes('environment variables'))) {
+      const missingVars = [];
+      if (output.includes('DATABASE_URL: ✗ Missing')) missingVars.push('DATABASE_URL');
+      if (output.includes('VELLUM_API_KEY: ✗ Missing')) missingVars.push('VELLUM_API_KEY');
+      if (output.includes('AGENT_ENVIRONMENT: ✗ Missing')) missingVars.push('AGENT_ENVIRONMENT');
+      if (missingVars.length > 0) {
+        steps.push(`Set missing environment variables in .env file: ${missingVars.join(', ')}`);
+      } else {
+        steps.push('Set missing environment variables in .env file');
+      }
+    }
+    
+    if (output.includes('node_modules/: ✗ Missing')) {
+      steps.push('Install dependencies: npm install');
+    }
+    
     steps.push('Check if agent screen session exists: screen -ls');
     steps.push('Restart agent: cd /home/ubuntu/vargasjr_dev_agent-* && npm run agent:start');
     steps.push('Check agent logs: tail -f agent.log error.log');
-    steps.push('Verify environment variables are set');
-  }
-  
-  if (output.includes('Missing') && output.includes('environment variables')) {
-    steps.unshift('Set missing environment variables in .env file');
+    
+    if (output.includes('GitHub API test failed') || output.includes('Vellum API test failed')) {
+      steps.push('Check network connectivity: curl -I https://api.github.com && curl -I https://api.vellum.ai');
+      steps.push('Verify firewall and security group settings allow outbound HTTPS');
+    }
+    
+    if (output.includes('Memory usage:')) {
+      steps.push('Check system resources: free -h && df -h');
+      steps.push('Consider restarting the instance if resources are exhausted');
+    }
+    
+    steps.push('Verify environment variables are set: env | grep -E "(DATABASE_URL|VELLUM_API_KEY|AGENT_ENVIRONMENT)"');
   }
   
   if (output.includes('No agent-related processes found')) {
     steps.push('Check system resources: free -h && df -h');
-    steps.push('Verify node_modules are installed: npm install');
+    if (!output.includes('node_modules/: ✗ Missing')) {
+      steps.push('Verify node_modules are installed: ls -la node_modules');
+    }
+    steps.push('Check for any error logs: ls -la *.log');
   }
   
   return steps;
