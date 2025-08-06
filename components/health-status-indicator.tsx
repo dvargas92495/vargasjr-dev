@@ -25,6 +25,17 @@ interface HealthStatus {
       memory?: string;
       fatalErrors?: boolean;
     };
+    networkError?: {
+      message: string;
+      type: string;
+      statusCode?: number;
+      statusText?: string;
+      timing?: number;
+      connectivity: {
+        healthCheckApi: boolean;
+        basicConnectivity: boolean;
+      };
+    };
     troubleshooting?: string[];
   };
 }
@@ -36,6 +47,48 @@ interface HealthStatusIndicatorProps {
   instanceState: string;
   onHealthStatusChange?: (status: HealthStatus) => void;
 }
+
+const captureNetworkErrorDetails = async (error: unknown) => {
+  const startTime = Date.now();
+  
+  const errorInfo = {
+    message: "Network error occurred",
+    type: "unknown",
+    statusCode: undefined as number | undefined,
+    statusText: undefined as string | undefined,
+    timing: undefined as number | undefined,
+    connectivity: {
+      healthCheckApi: false,
+      basicConnectivity: false
+    }
+  };
+
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    errorInfo.type = "fetch_failed";
+    errorInfo.message = "Failed to connect to health check API";
+  } else if (error instanceof Error) {
+    errorInfo.message = error.message;
+    errorInfo.type = "request_error";
+  }
+
+  try {
+    const connectivityTest = await fetch('/api/health-check', { 
+      method: 'HEAD',
+      signal: AbortSignal.timeout(3000)
+    });
+    errorInfo.connectivity.basicConnectivity = true;
+    errorInfo.connectivity.healthCheckApi = connectivityTest.ok;
+    errorInfo.statusCode = connectivityTest.status;
+    errorInfo.statusText = connectivityTest.statusText;
+  } catch {
+    errorInfo.connectivity.basicConnectivity = false;
+    errorInfo.connectivity.healthCheckApi = false;
+  }
+
+  errorInfo.timing = Date.now() - startTime;
+  
+  return errorInfo;
+};
 
 const HealthStatusIndicator = ({ 
   instanceId, 
@@ -71,12 +124,34 @@ const HealthStatusIndicator = ({
         setHealthStatus(status);
         onHealthStatusChange?.(status);
       } else {
-        const status = { status: "error" as const, error: "Health check failed" };
+        const errorText = await response.text();
+        const errorDetails = await captureNetworkErrorDetails(
+          new Error(`HTTP ${response.status}: ${response.statusText}`)
+        );
+        errorDetails.statusCode = response.status;
+        errorDetails.statusText = response.statusText;
+        errorDetails.message = `Health check failed: ${errorText || response.statusText}`;
+        errorDetails.type = "http_error";
+        
+        const status = { 
+          status: "error" as const, 
+          error: errorDetails.message,
+          diagnostics: {
+            networkError: errorDetails
+          }
+        };
         setHealthStatus(status);
         onHealthStatusChange?.(status);
       }
-    } catch {
-      const status = { status: "error" as const, error: "Network error" };
+    } catch (error) {
+      const errorDetails = await captureNetworkErrorDetails(error);
+      const status = { 
+        status: "error" as const, 
+        error: errorDetails.message,
+        diagnostics: {
+          networkError: errorDetails
+        }
+      };
       setHealthStatus(status);
       onHealthStatusChange?.(status);
     }
@@ -129,17 +204,21 @@ const HealthStatusIndicator = ({
         </div>
       )}
       
-      {healthStatus.diagnostics?.ssm && (
+      {(healthStatus.diagnostics?.ssm || healthStatus.diagnostics?.networkError || (healthStatus.status === "offline" && healthStatus.diagnostics)) && (
         <div className="ml-5 mt-2 text-xs">
           <details className="cursor-pointer">
-            <summary className="text-blue-600 hover:text-blue-800">Diagnostic Information</summary>
+            <summary className="text-blue-600 hover:text-blue-800">
+              {healthStatus.diagnostics?.networkError ? 'Network Error Details' : 'Diagnostic Information'}
+            </summary>
             <div className="mt-2 p-2 bg-gray-50 border rounded text-gray-700">
-              <div className="grid grid-cols-2 gap-1 mb-2">
-                <div>Status: <span className="font-mono">{healthStatus.diagnostics.ssm.pingStatus || 'Unknown'}</span></div>
-                <div>Agent: <span className="font-mono">{healthStatus.diagnostics.ssm.agentVersion || 'Unknown'}</span></div>
-                <div>Platform: <span className="font-mono">{healthStatus.diagnostics.ssm.platformType || 'Unknown'}</span></div>
-                <div>Last Ping: <span className="font-mono">{healthStatus.diagnostics.ssm.timeSinceLastPing || 'Unknown'}</span></div>
-              </div>
+              {healthStatus.diagnostics?.ssm && (
+                <div className="grid grid-cols-2 gap-1 mb-2">
+                  <div>Status: <span className="font-mono">{healthStatus.diagnostics.ssm.pingStatus || 'Unknown'}</span></div>
+                  <div>Agent: <span className="font-mono">{healthStatus.diagnostics.ssm.agentVersion || 'Unknown'}</span></div>
+                  <div>Platform: <span className="font-mono">{healthStatus.diagnostics.ssm.platformType || 'Unknown'}</span></div>
+                  <div>Last Ping: <span className="font-mono">{healthStatus.diagnostics.ssm.timeSinceLastPing || 'Unknown'}</span></div>
+                </div>
+              )}
               
               {healthStatus.diagnostics.healthcheck && (
                 <div className="mb-2 border-t pt-2">
@@ -156,11 +235,39 @@ const HealthStatusIndicator = ({
                 </div>
               )}
               
-              {healthStatus.diagnostics.troubleshooting && healthStatus.diagnostics.troubleshooting.length > 0 && (
+              {healthStatus.diagnostics?.networkError && (
+                <div className="mb-2 border-t pt-2">
+                  <div className="font-medium mb-1">Network Error Details:</div>
+                  <div>Type: <span className="font-mono">{healthStatus.diagnostics.networkError.type}</span></div>
+                  {healthStatus.diagnostics.networkError.statusCode && (
+                    <div>Status: <span className="font-mono">{healthStatus.diagnostics.networkError.statusCode} {healthStatus.diagnostics.networkError.statusText}</span></div>
+                  )}
+                  {healthStatus.diagnostics.networkError.timing && (
+                    <div>Response Time: <span className="font-mono">{healthStatus.diagnostics.networkError.timing}ms</span></div>
+                  )}
+                  <div className="mt-1">
+                    <div>Health Check API: <span className={`font-mono ${healthStatus.diagnostics.networkError.connectivity.healthCheckApi ? 'text-green-600' : 'text-red-600'}`}>
+                      {healthStatus.diagnostics.networkError.connectivity.healthCheckApi ? '✓ Reachable' : '✗ Unreachable'}
+                    </span></div>
+                    <div>Basic Connectivity: <span className={`font-mono ${healthStatus.diagnostics.networkError.connectivity.basicConnectivity ? 'text-green-600' : 'text-red-600'}`}>
+                      {healthStatus.diagnostics.networkError.connectivity.basicConnectivity ? '✓ Working' : '✗ Failed'}
+                    </span></div>
+                  </div>
+                </div>
+              )}
+              
+              {((healthStatus.diagnostics?.troubleshooting && healthStatus.diagnostics.troubleshooting.length > 0) || healthStatus.diagnostics?.networkError) && (
                 <div className="border-t pt-2">
                   <div className="font-medium mb-1">Troubleshooting Steps:</div>
                   <ol className="list-decimal list-inside space-y-1">
-                    {healthStatus.diagnostics.troubleshooting.map((step: string, index: number) => (
+                    {healthStatus.diagnostics?.networkError && (
+                      <>
+                        <li className="text-sm">Check your internet connection</li>
+                        <li className="text-sm">Verify the health check API endpoint is accessible</li>
+                        <li className="text-sm">Check for firewall or proxy issues</li>
+                      </>
+                    )}
+                    {healthStatus.diagnostics?.troubleshooting?.map((step: string, index: number) => (
                       <li key={index} className="text-sm">{step}</li>
                     ))}
                   </ol>
