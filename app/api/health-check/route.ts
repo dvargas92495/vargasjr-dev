@@ -14,7 +14,7 @@ interface HealthCheckResult {
   status: "healthy" | "unhealthy" | "offline";
   error?: string;
   timestamp?: string;
-  diagnostics?: any;
+  diagnostics?: Record<string, unknown>;
 }
 
 async function checkInstanceHealthHTTP(
