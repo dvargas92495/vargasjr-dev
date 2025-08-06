@@ -87,6 +87,22 @@ export default function LoginPage() {
   }, [webauthn, router]);
 
   const handleRegisterFaceId = useCallback(async () => {
+    if (!token) {
+      setValidationError("Please enter your admin token first to set up Face ID");
+      setShowRegistrationPrompt(false);
+      return;
+    }
+
+    const isValid = await validateToken(token);
+    if (!isValid) {
+      setValidationError("Invalid token. Please enter a valid admin token to set up Face ID");
+      setShowRegistrationPrompt(false);
+      return;
+    }
+
+    localStorage.setItem("admin-token", token);
+    setCookie("admin-token", token);
+    
     webauthn.clearError();
     const success = await webauthn.register();
     
@@ -94,7 +110,7 @@ export default function LoginPage() {
       setShowRegistrationPrompt(false);
       router.push("/admin");
     }
-  }, [webauthn, router]);
+  }, [webauthn, router, token, validateToken]);
 
   const skipRegistration = useCallback(() => {
     setShowRegistrationPrompt(false);
@@ -169,20 +185,31 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center p-8">
       <div className="flex flex-col gap-4 w-full max-w-md">
-        {webauthn.status.isSupported && 
-         webauthn.status.isBiometricAvailable && 
-         webauthn.status.hasRegisteredCredential && (
+        {webauthn.status.isSupported && webauthn.status.isBiometricAvailable && (
           <div className="mb-4">
-            <button
-              onClick={handleFaceIdAuth}
-              disabled={webauthn.isAuthenticating || isAutoLogging}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {webauthn.isAuthenticating && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              )}
-              {webauthn.isAuthenticating ? "Authenticating..." : "🔐 Sign in with Face ID"}
-            </button>
+            {webauthn.status.hasRegisteredCredential ? (
+              <button
+                onClick={handleFaceIdAuth}
+                disabled={webauthn.isAuthenticating || isAutoLogging}
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {webauthn.isAuthenticating && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {webauthn.isAuthenticating ? "Authenticating..." : "🔐 Sign in with Face ID"}
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowRegistrationPrompt(true)}
+                disabled={webauthn.isLoading || isAutoLogging}
+                className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {webauthn.isLoading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {webauthn.isLoading ? "Loading..." : "🔐 Set up Face ID"}
+              </button>
+            )}
             
             <div className="flex items-center my-4">
               <div className="flex-1 border-t border-gray-300"></div>
