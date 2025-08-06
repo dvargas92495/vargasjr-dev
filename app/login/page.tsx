@@ -3,7 +3,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { setCookie } from "cookies-next";
 import SearchParamError from "@/components/search-param-error";
-import { useWebAuthn } from "../../hooks/useWebAuthn";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,9 +12,6 @@ export default function LoginPage() {
   const [hasStoredToken, setHasStoredToken] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState("");
-  const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
-  
-  const webauthn = useWebAuthn();
 
   const validateToken = useCallback(async (tokenValue: string): Promise<boolean> => {
     try {
@@ -50,14 +46,7 @@ export default function LoginPage() {
         if (isValid) {
           localStorage.setItem("admin-token", tokenValue);
           setCookie("admin-token", tokenValue);
-          
-          if (webauthn.status.isSupported && 
-              webauthn.status.isBiometricAvailable && 
-              !webauthn.status.hasRegisteredCredential) {
-            setShowRegistrationPrompt(true);
-          } else {
-            router.push("/admin");
-          }
+          router.push("/admin");
         } else {
           setValidationError("Invalid token. Please try again.");
         }
@@ -65,7 +54,7 @@ export default function LoginPage() {
         setIsValidating(false);
       }
     },
-    [router, token, validateToken, webauthn.status.isSupported, webauthn.status.isBiometricAvailable, webauthn.status.hasRegisteredCredential]
+    [router, token, validateToken]
   );
 
   const clearStoredToken = useCallback(() => {
@@ -76,46 +65,23 @@ export default function LoginPage() {
   }, []);
 
   const handleFaceIdAuth = useCallback(async () => {
-    if (!webauthn.status.hasRegisteredCredential) return;
-    
-    webauthn.clearError();
-    const success = await webauthn.authenticate();
-    
-    if (success) {
-      router.push("/admin");
-    }
-  }, [webauthn, router]);
+    setValidationError("Face ID authentication coming soon!");
+  }, []);
 
-  const handleRegisterFaceId = useCallback(async () => {
+  const handleSetupFaceId = useCallback(async () => {
     if (!token) {
       setValidationError("Please enter your admin token first to set up Face ID");
-      setShowRegistrationPrompt(false);
       return;
     }
 
     const isValid = await validateToken(token);
     if (!isValid) {
       setValidationError("Invalid token. Please enter a valid admin token to set up Face ID");
-      setShowRegistrationPrompt(false);
       return;
     }
 
-    localStorage.setItem("admin-token", token);
-    setCookie("admin-token", token);
-    
-    webauthn.clearError();
-    const success = await webauthn.register();
-    
-    if (success) {
-      setShowRegistrationPrompt(false);
-      router.push("/admin");
-    }
-  }, [webauthn, router, token, validateToken]);
-
-  const skipRegistration = useCallback(() => {
-    setShowRegistrationPrompt(false);
-    router.push("/admin");
-  }, [router]);
+    setValidationError("Face ID setup coming soon!");
+  }, [token, validateToken]);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("admin-token");
@@ -145,90 +111,9 @@ export default function LoginPage() {
     }
   }, [pathname, isAutoLogging]);
 
-  if (showRegistrationPrompt) {
-    return (
-      <div className="min-h-screen grid place-items-center p-8">
-        <div className="flex flex-col gap-4 w-full max-w-md text-center">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold mb-2">Set up Face ID</h2>
-            <p className="text-gray-600 text-sm">
-              Enable Face ID for faster and more secure login to your admin panel.
-            </p>
-          </div>
-          
-          <button
-            onClick={handleRegisterFaceId}
-            disabled={webauthn.isRegistering}
-            className="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {webauthn.isRegistering && (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            )}
-            {webauthn.isRegistering ? "Setting up Face ID..." : "Enable Face ID"}
-          </button>
-          
-          <button
-            onClick={skipRegistration}
-            className="text-gray-500 hover:text-gray-700 underline text-sm"
-          >
-            Skip for now
-          </button>
-          
-          {webauthn.error && (
-            <p className="text-red-500 text-sm">{webauthn.error}</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen grid place-items-center p-8">
       <div className="flex flex-col gap-4 w-full max-w-md">
-        {webauthn.status.isSupported && webauthn.status.isBiometricAvailable && (
-          <div className="mb-4">
-            {webauthn.status.hasRegisteredCredential ? (
-              <button
-                onClick={handleFaceIdAuth}
-                disabled={webauthn.isAuthenticating || isAutoLogging}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {webauthn.isAuthenticating && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {webauthn.isAuthenticating ? "Authenticating..." : "🔐 Sign in with Face ID"}
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowRegistrationPrompt(true)}
-                disabled={webauthn.isLoading || isAutoLogging}
-                className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {webauthn.isLoading && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
-                {webauthn.isLoading ? "Loading..." : "🔐 Set up Face ID"}
-              </button>
-            )}
-            
-            <div className="flex items-center my-4">
-              <div className="flex-1 border-t border-gray-300"></div>
-              <span className="px-3 text-gray-500 text-sm">or</span>
-              <div className="flex-1 border-t border-gray-300"></div>
-            </div>
-          </div>
-        )}
-        
-        <div className="mb-4 p-3 bg-gray-100 rounded text-xs text-gray-700">
-          <div className="font-semibold mb-2">WebAuthn Debug Status:</div>
-          <div>isSupported: {String(webauthn.status.isSupported)}</div>
-          <div>isBiometricAvailable: {String(webauthn.status.isBiometricAvailable)}</div>
-          <div>hasRegisteredCredential: {String(webauthn.status.hasRegisteredCredential)}</div>
-          <div>registeredAt: {webauthn.status.registeredAt || 'null'}</div>
-          <div>isLoading: {String(webauthn.isLoading)}</div>
-          <div>error: {webauthn.error || 'null'}</div>
-        </div>
-        
         <form
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
@@ -241,19 +126,31 @@ export default function LoginPage() {
             placeholder="Enter admin token"
             className="p-2 border rounded text-black"
             required
-            disabled={isAutoLogging || isValidating || webauthn.isAuthenticating}
+            disabled={isAutoLogging || isValidating}
           />
-          <button
-            type="submit"
-            className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 disabled:opacity-50"
-            disabled={isAutoLogging || isValidating || webauthn.isAuthenticating}
-          >
-            {isAutoLogging ? "Auto-logging in..." : isValidating ? "Validating..." : "Login with Token"}
-          </button>
+          
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
+              disabled={isAutoLogging || isValidating}
+            >
+              {isAutoLogging ? "Auto-logging in..." : isValidating ? "Validating..." : "Login"}
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleSetupFaceId}
+              className="bg-green-500 text-white p-2 rounded hover:bg-green-600 disabled:opacity-50 flex items-center gap-1"
+              disabled={isAutoLogging || isValidating}
+            >
+              🔐 Face ID
+            </button>
+          </div>
         </form>
         
-        {(validationError || webauthn.error) && (
-          <p className="text-red-500 text-sm">{validationError || webauthn.error}</p>
+        {validationError && (
+          <p className="text-red-500 text-sm">{validationError}</p>
         )}
         
         {hasStoredToken && (
