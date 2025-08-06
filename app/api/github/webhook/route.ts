@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
-import { getDb } from "@/db/connection";
-import { DevinSessionsTable } from "@/db/schema";
 
 interface GitHubIssue {
   number: number;
@@ -98,36 +96,6 @@ async function handleIssueOpened(payload: GitHubWebhookPayload) {
     repository: payload.repository.full_name,
     author: payload.issue.user.login
   });
-
-  try {
-    const vellumApiUrl = process.env.VELLUM_API_URL || 'https://api.vellum.ai';
-    const response = await fetch(`${vellumApiUrl}/v1/workflow-deployments/create-devin-chat/execute`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.VELLUM_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: { issue_number: payload.issue.number }
-      })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.outputs?.session_response?.session_id) {
-        const db = getDb();
-        await db.insert(DevinSessionsTable).values({
-          sessionId: result.outputs.session_response.session_id,
-          issueNumber: payload.issue.number.toString(),
-        });
-        console.log(`Stored Devin session mapping: ${result.outputs.session_response.session_id} -> issue #${payload.issue.number}`);
-      }
-    } else {
-      console.error('Failed to create Devin session:', response.status, await response.text());
-    }
-  } catch (error) {
-    console.error('Failed to create Devin session for issue:', error);
-  }
 }
 
 async function handleIssueClosed(payload: GitHubWebhookPayload) {

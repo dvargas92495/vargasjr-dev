@@ -153,13 +153,3 @@ export const BlogPostsTable = pgTable("blog_posts", {
 });
 
 export type BlogPost = typeof BlogPostsTable.$inferSelect;
-
-export const DevinSessionsTable = pgTable("devin_sessions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  sessionId: varchar("session_id").notNull().unique(),
-  issueNumber: varchar("issue_number").notNull(),
-  chatSessionId: uuid("chat_session_id").references(() => ChatSessionsTable.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export type DevinSession = typeof DevinSessionsTable.$inferSelect;

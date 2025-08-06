@@ -2,12 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { addInboxMessage } from "@/server";
-import { ChatSessionsTable, ContactsTable, RoutineJobsTable, JobsTable, DevinSessionsTable } from "@/db/schema";
+import { ChatSessionsTable, ContactsTable, RoutineJobsTable, JobsTable } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
-import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
-import { VargasJRAgentCleanup } from "@/scripts/cleanup-pr";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
@@ -33,11 +31,6 @@ export async function sendChatMessage(sessionId: string, formData: FormData) {
 
   const session = chatSession[0];
 
-  if (message.trim().toLowerCase() === 'archive') {
-    await handleArchiveMessage(sessionId);
-    return;
-  }
-
   await addInboxMessage({
     body: message.trim(),
     source: session.contactEmail || "Anonymous",
@@ -46,66 +39,6 @@ export async function sendChatMessage(sessionId: string, formData: FormData) {
   });
 
   revalidatePath(`/chat/${sessionId}`);
-}
-
-async function handleArchiveMessage(chatSessionId: string) {
-  const db = getDb();
-  
-  const devinSession = await db
-    .select()
-    .from(DevinSessionsTable)
-    .where(eq(DevinSessionsTable.chatSessionId, chatSessionId))
-    .limit(1);
-
-  if (!devinSession.length) {
-    console.log(`No Devin session found for chat session ${chatSessionId}`);
-    return;
-  }
-
-  const issueNumber = devinSession[0].issueNumber;
-  
-  const prNumber = await findPRForIssue(issueNumber);
-  
-  if (prNumber) {
-    console.log(`Triggering cleanup for PR #${prNumber} (issue #${issueNumber})`);
-    await triggerCleanup(prNumber);
-  } else {
-    console.log(`No PR found for issue #${issueNumber}, skipping cleanup`);
-  }
-}
-
-async function findPRForIssue(issueNumber: string): Promise<string | null> {
-  try {
-    const headers = await getGitHubAuthHeaders();
-    const response = await fetch(
-      `https://api.github.com/repos/dvargas92495/vargasjr-dev/pulls?state=all&sort=created&direction=desc`,
-      { headers }
-    );
-    
-    if (!response.ok) return null;
-    
-    const prs = await response.json();
-    const pr = prs.find((pr: { body?: string; title: string; number: number }) => 
-      pr.body && pr.body.includes(`closes #${issueNumber}`) ||
-      pr.body && pr.body.includes(`fixes #${issueNumber}`) ||
-      pr.title.includes(`#${issueNumber}`)
-    );
-    
-    return pr ? pr.number.toString() : null;
-  } catch (error) {
-    console.error('Error finding PR for issue:', error);
-    return null;
-  }
-}
-
-async function triggerCleanup(prNumber: string) {
-  try {
-    const cleanup = new VargasJRAgentCleanup({ prNumber });
-    await cleanup.cleanupAgent();
-    console.log(`✅ Cleanup completed for PR #${prNumber}`);
-  } catch (error) {
-    console.error(`❌ Cleanup failed for PR #${prNumber}:`, error);
-  }
 }
 
 export async function getRoutineJob(id: string) {
