@@ -241,27 +241,27 @@ class VargasJRAgentCleanup {
     }
 
     try {
-      console.log(`Archiving Devin session: ${sessionId}`);
+      console.log(`Sending archive message to Devin session: ${sessionId}`);
       
-      const response = await fetch(`https://api.devin.ai/v1/sessions/${sessionId}/tags`, {
-        method: "PUT",
+      const response = await fetch(`https://api.devin.ai/v1/sessions/${sessionId}/messages`, {
+        method: "POST",
         headers: {
           "Authorization": `Bearer ${devinApiToken}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          tags: ["archived", "cleanup-pr"]
+          message: "archive"
         })
       });
 
       if (response.ok) {
-        console.log(`✅ Devin session ${sessionId} marked as archived`);
+        console.log(`✅ Archive message sent to Devin session ${sessionId}`);
       } else {
         const errorText = await response.text();
-        console.error(`❌ Failed to archive Devin session ${sessionId}: ${response.status} ${errorText}`);
+        console.error(`❌ Failed to send archive message to Devin session ${sessionId}: ${response.status} ${errorText}`);
       }
     } catch (error) {
-      console.error(`❌ Error archiving Devin session ${sessionId}: ${error}`);
+      console.error(`❌ Error sending archive message to Devin session ${sessionId}: ${error}`);
     }
   }
 
@@ -294,8 +294,6 @@ async function main() {
   const cleanup = new VargasJRAgentCleanup({ prNumber });
   await cleanup.cleanupAgent();
 }
-
-export { VargasJRAgentCleanup };
 
 if (require.main === module) {
   main().catch(console.error);
