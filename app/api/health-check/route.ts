@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
-import { checkInstanceHealth } from "../../../scripts/utils";
+import { checkInstanceHealth } from "@/server/health";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     try {
       console.log(`[Health Check] Starting health check for instance: ${instanceId}`);
       const healthCheckStartTime = Date.now();
-      const healthResult = await checkInstanceHealth(instanceId);
+      const healthResult = await checkInstanceHealth(instanceId, "us-east-1", 1);
       const healthCheckDuration = Date.now() - healthCheckStartTime;
       
       console.log(`[Health Check] Health check completed in ${healthCheckDuration}ms`);

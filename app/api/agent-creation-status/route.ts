@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { EC2, Instance } from "@aws-sdk/client-ec2";
-import { checkInstanceHealth } from "@/scripts/utils";
+import { checkInstanceHealth } from "@/server/health";
 
 export async function POST(request: Request) {
   try {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     if (instanceState === "running") {
       try {
-        await checkInstanceHealth(latestInstance.InstanceId!, "us-east-1");
+        await checkInstanceHealth(latestInstance.InstanceId!, "us-east-1", 1);
         return NextResponse.json({
           status: "ready",
           message: "Agent is online and ready!",

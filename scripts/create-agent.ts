@@ -5,7 +5,8 @@ import { SSM } from "@aws-sdk/client-ssm";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, findOrCreateSSMInstanceProfile } from "./utils";
+import { checkInstanceHealth, validateSSMReadiness } from "../server/health";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
 
@@ -94,7 +95,7 @@ class VargasJRAgentCreator {
 
       startTime = Date.now();
       try {
-        await checkInstanceHealth(instanceId, this.config.region);
+        await checkInstanceHealth(instanceId, this.config.region, 20);
         timingResults.push({
           method: 'checkInstanceHealth',
           duration: Date.now() - startTime,
