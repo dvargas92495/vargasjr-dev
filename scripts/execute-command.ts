@@ -2,7 +2,7 @@
 
 import { EC2Client, DescribeInstancesCommand } from '@aws-sdk/client-ec2';
 import { SSMClient, SendCommandCommand, GetCommandInvocationCommand } from '@aws-sdk/client-ssm';
-import { getSecret } from './utils';
+import { getSecret, findPRNumberByBranch } from './utils';
 import { writeFileSync, unlinkSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { execSync } from 'child_process';
@@ -381,10 +381,11 @@ async function main() {
   let prNumber: string | undefined;
   const githubRef = process.env.GITHUB_REF;
   if (githubRef) {
-    const prMatch = githubRef.match(/refs\/heads\/.*pr[/-](\d+)/i);
-    if (prMatch) {
-      prNumber = prMatch[1];
-      console.log(`🔍 Inferred PR number from branch: ${prNumber}`);
+    const branchMatch = githubRef.match(/refs\/heads\/(.+)/);
+    if (branchMatch) {
+      const branchName = branchMatch[1];
+      console.log(`🔍 Detected branch: ${branchName}`);
+      prNumber = await findPRNumberByBranch(branchName) || undefined;
     }
   }
 

@@ -1011,6 +1011,43 @@ export async function postGitHubComment(
   }
 }
 
+export async function findPRNumberByBranch(branchName: string): Promise<string | null> {
+  console.log(`🔍 Finding PR for branch: ${branchName}...`);
+  
+  const githubRepo = "dvargas92495/vargasjr-dev";
+  const [owner, repo] = githubRepo.split('/');
+  const headFilter = `${owner}:${branchName}`;
+  
+  try {
+    const headers = await getGitHubAuthHeaders();
+    const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+      headers
+    });
+    
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.statusText}`);
+    }
+    
+    const prs = await response.json();
+    
+    if (prs.length === 0) {
+      console.log(`No open PRs found for branch: ${branchName}`);
+      return null;
+    }
+    
+    if (prs.length > 1) {
+      console.warn(`Multiple open PRs found for branch: ${branchName}. Using the first one.`);
+    }
+    
+    const pr = prs[0];
+    console.log(`✅ Found PR #${pr.number} for branch: ${branchName}`);
+    return pr.number.toString();
+  } catch (error) {
+    console.warn(`Failed to find PR for branch ${branchName}: ${error}`);
+    return null;
+  }
+}
+
 export abstract class OneTimeMigrationRunner {
   protected isPreviewMode: boolean;
   protected abstract migrationName: string;
