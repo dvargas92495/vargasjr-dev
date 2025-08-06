@@ -192,6 +192,16 @@ export default function LoginPage() {
           </div>
         )}
         
+        <div className="mb-4 p-3 bg-gray-100 rounded text-xs text-gray-700">
+          <div className="font-semibold mb-2">WebAuthn Debug Status:</div>
+          <div>isSupported: {String(webauthn.status.isSupported)}</div>
+          <div>isBiometricAvailable: {String(webauthn.status.isBiometricAvailable)}</div>
+          <div>hasRegisteredCredential: {String(webauthn.status.hasRegisteredCredential)}</div>
+          <div>registeredAt: {webauthn.status.registeredAt || 'null'}</div>
+          <div>isLoading: {String(webauthn.isLoading)}</div>
+          <div>error: {webauthn.error || 'null'}</div>
+        </div>
+        
         <form
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
