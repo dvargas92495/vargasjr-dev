@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { SSM } from "@aws-sdk/client-ssm";
-import { validateSSMReadiness } from "@/scripts/utils";
+import { validateSSMReadiness } from "@/server/health";
 
 const rebootSchema = z.object({
   instanceId: z.string(),
