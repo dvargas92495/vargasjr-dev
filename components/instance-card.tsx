@@ -80,7 +80,7 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
         {instanceState === "running" && instanceId && (
           <StopInstanceButton id={instanceId} />
         )}
-        {(instanceState === "stopped" || instanceState === "stopping") && instanceId && (
+        {instanceState === "stopped" && instanceId && (
           <StartInstanceButton id={instanceId} />
         )}
         {instanceState === "running" && instanceId && healthStatus.status === "unhealthy" && (

@@ -48,7 +48,7 @@ const HealthStatusIndicator = ({
 
   const checkHealth = useCallback(async () => {
     if (instanceState !== "running") {
-      const status = { status: "unhealthy" as const, error: "Instance not running" };
+      const status = { status: "unhealthy" as const, error: `Instance ${instanceState || 'unknown state'}` };
       setHealthStatus(status);
       onHealthStatusChange?.(status);
       return;
