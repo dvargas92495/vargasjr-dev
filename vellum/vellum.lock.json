@@ -15,7 +15,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.1",
+      "container_image_tag": "1.1.2",
       "workspace": "default",
       "target_directory": null
     },
@@ -33,7 +33,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.1",
+      "container_image_tag": "1.1.2",
       "workspace": "default",
       "target_directory": null
     },
@@ -51,7 +51,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.1",
+      "container_image_tag": "1.1.2",
       "workspace": "default",
       "target_directory": null
     },
@@ -69,7 +69,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.1",
+      "container_image_tag": "1.1.2",
       "workspace": "default",
       "target_directory": null
     },
@@ -87,7 +87,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.1",
+      "container_image_tag": "1.1.2",
       "workspace": "default",
       "target_directory": null
     },
@@ -100,6 +100,24 @@
           "id": "35056f18-4788-4055-b0b1-d0346e254be1",
           "label": null,
           "name": null,
+          "description": null,
+          "release_tags": null
+        }
+      ],
+      "container_image_name": null,
+      "container_image_tag": null,
+      "workspace": "default",
+      "target_directory": null
+    },
+    {
+      "module": "workflows.schedule_to_cron",
+      "workflow_sandbox_id": "e96d1006-a075-46f2-94fd-ee7408989ed2",
+      "ignore": null,
+      "deployments": [
+        {
+          "id": "820c2026-5766-4247-bb69-5051c6fb426b",
+          "label": null,
+          "name": "schedule-to-cron",
           "description": null,
           "release_tags": null
         }
@@ -123,7 +141,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.1",
+      "container_image_tag": "1.1.2",
       "workspace": "default",
       "target_directory": null
     },
