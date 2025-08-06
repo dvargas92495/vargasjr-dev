@@ -243,7 +243,7 @@ class VargasJRAgentCleanup {
     try {
       console.log(`Sending archive message to Devin session: ${sessionId}`);
       
-      const response = await fetch(`https://api.devin.ai/v1/sessions/${sessionId}/messages`, {
+      const response = await fetch(`https://api.devin.ai/v1/session/${sessionId}/message`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${devinApiToken}`,
