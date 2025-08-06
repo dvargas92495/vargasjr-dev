@@ -6,6 +6,7 @@ import { RoutineJob } from './routine-job';
 import { checkAndRebootIfNeeded } from './reboot-manager';
 import { RoutineJobsTable } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { HealthServer } from './health-server';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ export class AgentRunner {
   private updateInterval: number;
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
+  private healthServer?: HealthServer;
 
   constructor(config: AgentRunnerConfig = {}) {
     dotenv.config();
@@ -51,9 +53,22 @@ export class AgentRunner {
     });
 
     this.logger.info(`Initialized agent v${this.currentVersion}`);
+    
+    const healthPort = parseInt(process.env.HEALTH_PORT || '3001', 10);
+    this.healthServer = new HealthServer({
+      port: healthPort,
+      logger: this.logger
+    });
   }
 
-  public run(): void {
+  public async run(): Promise<void> {
+    try {
+      await this.healthServer?.start();
+      this.logger.info('Health server started successfully');
+    } catch (error) {
+      this.logger.error(`Failed to start health server: ${error}`);
+    }
+    
     this.mainThread();
   }
 
@@ -126,5 +141,23 @@ export class AgentRunner {
 
   private checkAndRebootIfNeeded(): void {
     checkAndRebootIfNeeded(this.logger);
+  }
+
+  public async stop(): Promise<void> {
+    this.logger.info('Stopping AgentRunner...');
+    
+    if (this.mainInterval) {
+      clearTimeout(this.mainInterval);
+    }
+    
+    this.cancelSignal.emit('cancel');
+    
+    try {
+      await this.healthServer?.stop();
+    } catch (error) {
+      this.logger.error(`Error stopping health server: ${error}`);
+    }
+    
+    this.logger.info('AgentRunner stopped');
   }
 }

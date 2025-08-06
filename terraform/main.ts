@@ -105,6 +105,16 @@ class VargasJRInfrastructureStack extends TerraformStack {
       securityGroupId: securityGroup.id,
     });
 
+    new SecurityGroupRule(this, "HealthCheckIngressRule", {
+      type: "ingress",
+      fromPort: 3001,
+      toPort: 3001,
+      protocol: "tcp",
+      cidrBlocks: ["0.0.0.0/0"],
+      description: "HTTP health check access from anywhere",
+      securityGroupId: securityGroup.id,
+    });
+
     new SecurityGroupRule(this, "AllEgressRule", {
       type: "egress",
       fromPort: 0,
