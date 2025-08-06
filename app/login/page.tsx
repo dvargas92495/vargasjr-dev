@@ -64,9 +64,6 @@ export default function LoginPage() {
     setValidationError("");
   }, []);
 
-  const handleFaceIdAuth = useCallback(async () => {
-    setValidationError("Face ID authentication coming soon!");
-  }, []);
 
   const handleSetupFaceId = useCallback(async () => {
     if (!token) {
