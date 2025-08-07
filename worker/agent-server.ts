@@ -1,6 +1,6 @@
 import express from 'express';
 import { Logger } from './utils';
-import { getHealthCheckData } from '../scripts/healthcheck';
+import { getHealthCheckData } from '../server/health-check';
 
 export interface AgentServerConfig {
   port: number;
