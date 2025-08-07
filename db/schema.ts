@@ -153,3 +153,12 @@ export const BlogPostsTable = pgTable("blog_posts", {
 });
 
 export type BlogPost = typeof BlogPostsTable.$inferSelect;
+
+export const WebAuthnCredentialsTable = pgTable("webauthn_credentials", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  credentialId: varchar("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: real("counter").notNull().default(0),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

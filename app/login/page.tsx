@@ -77,7 +77,73 @@ export default function LoginPage() {
       return;
     }
 
-    setValidationError("Face ID setup coming soon!");
+    try {
+      if (!window.PublicKeyCredential) {
+        setValidationError("WebAuthn is not supported in this browser");
+        return;
+      }
+
+      setValidationError("Setting up Face ID...");
+
+      const optionsResponse = await fetch("/api/webauthn/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!optionsResponse.ok) {
+        const errorData = await optionsResponse.json();
+        throw new Error(errorData.error || "Failed to get registration options");
+      }
+
+      const options = await optionsResponse.json();
+
+      const credential = await navigator.credentials.create({
+        publicKey: options.publicKey,
+      }) as PublicKeyCredential;
+
+      if (!credential) {
+        throw new Error("Failed to create credential");
+      }
+
+      const registerResponse = await fetch("/api/webauthn/register", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          credential: {
+            id: credential.id,
+            rawId: Array.from(new Uint8Array(credential.rawId)),
+            response: {
+              attestationObject: Array.from(new Uint8Array((credential.response as AuthenticatorAttestationResponse).attestationObject)),
+              clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON)),
+            },
+            type: credential.type,
+          },
+        }),
+      });
+
+      if (!registerResponse.ok) {
+        const errorData = await registerResponse.json();
+        throw new Error(errorData.error || "Failed to register credential");
+      }
+
+      localStorage.setItem("webauthn-credential-id", credential.id);
+      setValidationError("Face ID setup successful! You can now use biometric authentication.");
+    } catch (error: unknown) {
+      console.error("Face ID setup failed:", error);
+      if (error instanceof Error) {
+        if (error.name === "NotAllowedError") {
+          setValidationError("Face ID setup was cancelled or not allowed");
+        } else if (error.name === "NotSupportedError") {
+          setValidationError("Face ID is not supported on this device");
+        } else {
+          setValidationError(`Face ID setup failed: ${error.message}`);
+        }
+      } else {
+        setValidationError("Face ID setup failed with an unknown error");
+      }
+    }
   }, [token, validateToken]);
 
   useEffect(() => {
