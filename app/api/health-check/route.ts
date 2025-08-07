@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { EC2 } from "@aws-sdk/client-ec2";
+import { AGENT_SERVER_PORT } from "../../../server/constants";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -57,7 +58,7 @@ async function checkInstanceHealthHTTP(
       };
     }
     
-    const healthUrl = `http://${publicIp}:3001/health`;
+    const healthUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/health`;
     console.log(`[Health Check] Making HTTP request to: ${healthUrl}`);
     
     const controller = new AbortController();

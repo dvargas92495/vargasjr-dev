@@ -2,18 +2,18 @@ import express from 'express';
 import { Logger } from './utils';
 import { getHealthCheckData } from '../scripts/healthcheck';
 
-export interface HealthServerConfig {
+export interface AgentServerConfig {
   port: number;
   logger: Logger;
 }
 
-export class HealthServer {
+export class AgentServer {
   private app: express.Application;
   private server?: any;
   private logger: Logger;
   private port: number;
 
-  constructor(config: HealthServerConfig) {
+  constructor(config: AgentServerConfig) {
     this.app = express();
     this.logger = config.logger;
     this.port = config.port;

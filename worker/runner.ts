@@ -6,7 +6,8 @@ import { RoutineJob } from './routine-job';
 import { checkAndRebootIfNeeded } from './reboot-manager';
 import { RoutineJobsTable } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { HealthServer } from './health-server';
+import { AgentServer } from './health-server';
+import { AGENT_SERVER_PORT } from '../server/constants';
 
 dotenv.config();
 
@@ -27,7 +28,7 @@ export class AgentRunner {
   private updateInterval: number;
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
-  private healthServer?: HealthServer;
+  private healthServer?: AgentServer;
 
   constructor(config: AgentRunnerConfig = {}) {
     dotenv.config();
@@ -54,8 +55,8 @@ export class AgentRunner {
 
     this.logger.info(`Initialized agent v${this.currentVersion}`);
     
-    const healthPort = parseInt(process.env.HEALTH_PORT || '3001', 10);
-    this.healthServer = new HealthServer({
+    const healthPort = parseInt(process.env.HEALTH_PORT || AGENT_SERVER_PORT.toString(), 10);
+    this.healthServer = new AgentServer({
       port: healthPort,
       logger: this.logger
     });
