@@ -55,6 +55,8 @@ class VargasJRAgentCleanup {
       
       await this.deleteBranch();
       
+      await this.archiveDevinSession();
+      
       console.log(`✅ Cleanup completed for PR ${this.config.prNumber}`);
       
     } catch (error) {
@@ -184,6 +186,82 @@ class VargasJRAgentCleanup {
       }
     } catch (error) {
       console.error(`❌ Error deleting branch ${prDetails.branch}: ${error}`);
+    }
+  }
+
+  async archiveDevinSession(): Promise<void> {
+    const prDetails = await this.getPRDetails();
+    
+    if (!prDetails) {
+      console.log("⚠️  Skipping Devin session archival - unable to fetch PR details");
+      return;
+    }
+
+    try {
+      const headers = await getGitHubAuthHeaders();
+      const response = await fetch(`https://api.github.com/repos/${prDetails.repository}/pulls/${this.config.prNumber}`, {
+        headers: {
+          ...headers,
+          'User-Agent': 'VargasJR-Cleanup-PR'
+        }
+      });
+
+      if (!response.ok) {
+        console.log(`⚠️  Failed to fetch PR body for session archival: ${response.status}`);
+        return;
+      }
+
+      const prData = await response.json();
+      const prBody = prData.body || '';
+      
+      const sessionUrlRegex = /https:\/\/app\.devin\.ai\/sessions\/([a-f0-9-]+)/i;
+      const match = prBody.match(sessionUrlRegex);
+      
+      if (!match) {
+        console.log("ℹ️  No Devin session URL found in PR description - skipping session archival");
+        return;
+      }
+
+      const sessionId = match[1];
+      console.log(`Found Devin session ID: ${sessionId}`);
+      
+      await this.archiveSession(sessionId);
+      
+    } catch (error) {
+      console.error(`❌ Error during Devin session archival: ${error}`);
+    }
+  }
+
+  private async archiveSession(sessionId: string): Promise<void> {
+    const devinApiToken = process.env.DEVIN_API_TOKEN;
+    
+    if (!devinApiToken) {
+      console.log("⚠️  Skipping Devin session archival - missing DEVIN_API_TOKEN");
+      return;
+    }
+
+    try {
+      console.log(`Sending archive message to Devin session: ${sessionId}`);
+      
+      const response = await fetch(`https://api.devin.ai/v1/session/${sessionId}/message`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${devinApiToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: "archive"
+        })
+      });
+
+      if (response.ok) {
+        console.log(`✅ Archive message sent to Devin session ${sessionId}`);
+      } else {
+        const errorText = await response.text();
+        console.error(`❌ Failed to send archive message to Devin session ${sessionId}: ${response.status} ${errorText}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error sending archive message to Devin session ${sessionId}: ${error}`);
     }
   }
 
