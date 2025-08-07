@@ -64,6 +64,22 @@ export default function LoginPage() {
     setValidationError("");
   }, []);
 
+
+  const handleSetupFaceId = useCallback(async () => {
+    if (!token) {
+      setValidationError("Please enter your admin token first to set up Face ID");
+      return;
+    }
+
+    const isValid = await validateToken(token);
+    if (!isValid) {
+      setValidationError("Invalid token. Please enter a valid admin token to set up Face ID");
+      return;
+    }
+
+    setValidationError("Face ID setup coming soon!");
+  }, [token, validateToken]);
+
   useEffect(() => {
     const storedToken = localStorage.getItem("admin-token");
     if (storedToken) {
@@ -94,27 +110,41 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid place-items-center p-8">
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 w-full max-w-md"
-      >
-        <input
-          type="password"
-          name="token"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          placeholder="Enter admin token"
-          className="p-2 border rounded text-black"
-          required
-          disabled={isAutoLogging || isValidating}
-        />
-        <button
-          type="submit"
-          className="bg-primary text-white p-2 rounded hover:bg-opacity-90 disabled:opacity-50"
-          disabled={isAutoLogging || isValidating}
+      <div className="flex flex-col gap-4 w-full max-w-md">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4"
         >
-          {isAutoLogging ? "Auto-logging in..." : isValidating ? "Validating..." : "Login"}
-        </button>
+          <input
+            type="password"
+            name="token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="Enter admin token"
+            className="p-2 border rounded text-black"
+            required
+            disabled={isAutoLogging || isValidating}
+          />
+          
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
+              disabled={isAutoLogging || isValidating}
+            >
+              {isAutoLogging ? "Auto-logging in..." : isValidating ? "Validating..." : "Login"}
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleSetupFaceId}
+              className="bg-green-500 text-white p-2 rounded hover:bg-green-600 disabled:opacity-50 flex items-center gap-1"
+              disabled={isAutoLogging || isValidating}
+            >
+              🔐 Face ID
+            </button>
+          </div>
+        </form>
         
         {validationError && (
           <p className="text-red-500 text-sm">{validationError}</p>
@@ -133,7 +163,7 @@ export default function LoginPage() {
         <Suspense>
           <SearchParamError />
         </Suspense>
-      </form>
+      </div>
     </div>
   );
 }
