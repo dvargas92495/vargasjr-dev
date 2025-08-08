@@ -93,23 +93,12 @@ class VargasJRAgentCreator {
       timingResults.push(...setupTimingResults);
 
       startTime = Date.now();
-      try {
-        await checkInstanceHealth(instanceId, this.config.region);
-        timingResults.push({
-          method: 'checkInstanceHealth',
-          duration: Date.now() - startTime,
-          success: true
-        });
-      } catch (error) {
-        timingResults.push({
-          method: 'checkInstanceHealth',
-          duration: Date.now() - startTime,
-          success: false
-        });
-        const errorMessage = this.formatError(error);
-        console.error(`⚠️  Health check failed: ${errorMessage}`);
-        console.log("Continuing with agent setup despite health check failure...");
-      }
+      await this.waitForSSMReady(instanceId);
+      timingResults.push({
+        method: 'waitForSSMReady',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
       const totalDuration = Date.now() - overallStartTime;
       
@@ -450,15 +439,10 @@ class VargasJRAgentCreator {
     const setupTimingResults: TimingResult[] = [];
 
     try {
-      let startTime = Date.now();
-      await this.waitForSSMReady(instanceDetails.instanceId);
-      setupTimingResults.push({
-        method: 'setupInstance.waitForSSMReady',
-        duration: Date.now() - startTime,
-        success: true
-      });
+      console.log("Waiting for SSM agent to be ready for commands...");
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
-      startTime = Date.now();
+      let startTime = Date.now();
       const envVars = this.getEnvironmentVariables();
 
       let postgresUrl: string;
@@ -540,12 +524,6 @@ AGENT_ENVIRONMENT=production`;
       });
 
       console.log("✅ Instance setup complete!");
-
-      console.log("Waiting for SSM agent to register with Systems Manager...");
-      console.log("Note: Using snap-installed SSM agent service name for Ubuntu 24.04");
-      console.log("Note: MetadataOptions enforce IMDSv2 which is required for SSM registration");
-      console.log("Using IAM instance profile for reliable SSM registration");
-      await new Promise(resolve => setTimeout(resolve, 30000));
 
       return setupTimingResults;
 
