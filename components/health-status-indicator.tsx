@@ -35,6 +35,10 @@ interface HealthStatus {
         healthCheckApi: boolean;
         basicConnectivity: boolean;
       };
+      attemptedUrl?: string;
+      errorName?: string;
+      errorCode?: string | number;
+      timedOut?: boolean;
     };
     troubleshooting?: string[];
   };
@@ -239,11 +243,23 @@ const HealthStatusIndicator = ({
                 <div className="mb-2 border-t pt-2">
                   <div className="font-medium mb-1">Network Error Details:</div>
                   <div>Type: <span className="font-mono">{healthStatus.diagnostics.networkError.type}</span></div>
-                  {healthStatus.diagnostics.networkError.statusCode && (
+                  {healthStatus.diagnostics.networkError.statusCode !== undefined && (
                     <div>Status: <span className="font-mono">{healthStatus.diagnostics.networkError.statusCode} {healthStatus.diagnostics.networkError.statusText}</span></div>
                   )}
-                  {healthStatus.diagnostics.networkError.timing && (
+                  {healthStatus.diagnostics.networkError.timing !== undefined && (
                     <div>Response Time: <span className="font-mono">{healthStatus.diagnostics.networkError.timing}ms</span></div>
+                  )}
+                  {healthStatus.diagnostics.networkError.timedOut && (
+                    <div className="text-yellow-700">Timed Out: <span className="font-mono">Yes</span></div>
+                  )}
+                  {healthStatus.diagnostics.networkError.errorName && (
+                    <div>Error Name: <span className="font-mono">{healthStatus.diagnostics.networkError.errorName}</span></div>
+                  )}
+                  {healthStatus.diagnostics.networkError.errorCode !== undefined && (
+                    <div>Error Code: <span className="font-mono">{String(healthStatus.diagnostics.networkError.errorCode)}</span></div>
+                  )}
+                  {healthStatus.diagnostics.networkError.attemptedUrl && (
+                    <div>Attempted URL: <span className="font-mono break-all">{healthStatus.diagnostics.networkError.attemptedUrl}</span></div>
                   )}
                   <div className="mt-1">
                     <div>Health Check API: <span className={`font-mono ${healthStatus.diagnostics.networkError.connectivity.healthCheckApi ? 'text-green-600' : 'text-red-600'}`}>

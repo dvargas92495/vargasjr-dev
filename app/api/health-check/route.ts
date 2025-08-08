@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
-import { EC2 } from "@aws-sdk/client-ec2";
+import { EC2, type DescribeInstancesCommandOutput, type Instance as EC2Instance } from "@aws-sdk/client-ec2";
 import { AGENT_SERVER_PORT } from "../../../server/constants";
 
 const healthCheckSchema = z.object({
@@ -23,105 +23,193 @@ async function checkInstanceHealthHTTP(
   region: string = "us-east-1"
 ): Promise<HealthCheckResult> {
   const ec2 = new EC2({ region });
-  
   try {
     const instanceResult = await ec2.describeInstances({
       InstanceIds: [instanceId],
     });
-    
+
     const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
     if (!instance) {
       return {
         instanceId,
         status: "offline",
         error: "Instance not found",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
-    
+
     if (instance.State?.Name !== "running") {
       return {
         instanceId,
         status: "offline",
         error: `Instance is ${instance.State?.Name}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
-    
-    const publicIp = instance.PublicIpAddress;
+
+    const publicIp = instancePublicIp(instanceResult, instance) || instance.PublicIpAddress;
     if (!publicIp) {
       return {
         instanceId,
         status: "offline",
         error: "Instance has no public IP address",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
-    
+
     const healthUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/health`;
     console.log(`[Health Check] Making HTTP request to: ${healthUrl}`);
-    
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
+    const startedAt = Date.now();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
       const response = await fetch(healthUrl, {
-        method: 'GET',
+        method: "GET",
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json',
+          Accept: "application/json",
         },
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
+        const durationMs = Date.now() - startedAt;
+        let bodyText: string | undefined;
+        try {
+          bodyText = await response.text();
+        } catch {
+          bodyText = undefined;
+        }
         return {
           instanceId,
           status: "offline",
           error: `HTTP ${response.status}: ${response.statusText}`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          diagnostics: {
+            networkError: {
+              type: "http_error",
+              statusCode: response.status,
+              statusText: response.statusText,
+              message: bodyText || response.statusText,
+              timing: durationMs,
+              connectivity: {
+                healthCheckApi: false,
+                basicConnectivity: true,
+              },
+              attemptedUrl: healthUrl,
+            },
+          },
         };
       }
-      
-      const healthData = await response.json();
-      
+
+      let healthData: unknown;
+      try {
+        healthData = await response.json();
+      } catch (e) {
+        const durationMs = Date.now() - startedAt;
+        return {
+          instanceId,
+          status: "offline",
+          error: "Failed to parse health check response JSON",
+          timestamp: new Date().toISOString(),
+          diagnostics: {
+            networkError: {
+              type: "parse_error",
+              message:
+                e instanceof Error ? e.message : "Unknown JSON parse error",
+              timing: durationMs,
+              connectivity: {
+                healthCheckApi: true,
+                basicConnectivity: true,
+              },
+              attemptedUrl: healthUrl,
+            },
+          },
+        };
+      }
+
+      const hd = (healthData ?? {}) as Record<string, unknown>;
+      const statusStr = typeof hd.status === "string" ? hd.status : undefined;
+      const errorStr = typeof hd.error === "string" ? hd.error : undefined;
       return {
         instanceId,
-        status: healthData.status === "healthy" ? "healthy" : "unhealthy",
-        error: healthData.status !== "healthy" ? healthData.error : undefined,
+        status: statusStr === "healthy" ? "healthy" : "unhealthy",
+        error: statusStr !== "healthy" ? errorStr : undefined,
         timestamp: new Date().toISOString(),
-        diagnostics: healthData
+        diagnostics: hd,
       };
-      
     } catch (fetchError) {
       clearTimeout(timeoutId);
-      
-      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+      const durationMs = Date.now() - startedAt;
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
         return {
           instanceId,
           status: "offline",
           error: "Health check request timed out after 10 seconds",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          diagnostics: {
+            networkError: {
+              type: "fetch_failed",
+              message: "Request aborted due to timeout",
+              timing: durationMs,
+              connectivity: {
+                healthCheckApi: false,
+                basicConnectivity: false,
+              },
+              attemptedUrl: healthUrl,
+              errorName: fetchError.name,
+              timedOut: true,
+            },
+          },
         };
       }
-      
+
+      const errMsg =
+        fetchError instanceof Error ? fetchError.message : String(fetchError);
+      const errName = fetchError instanceof Error ? fetchError.name : "Error";
+      const errCodeUnknown = (fetchError && typeof fetchError === "object" && "code" in fetchError)
+        ? (fetchError as { code?: unknown }).code
+        : undefined;
+      const errCode = typeof errCodeUnknown === "string" || typeof errCodeUnknown === "number" ? errCodeUnknown : undefined;
+
       return {
         instanceId,
         status: "offline",
-        error: `HTTP request failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`,
-        timestamp: new Date().toISOString()
+        error: `HTTP request failed: ${errMsg}`,
+        timestamp: new Date().toISOString(),
+        diagnostics: {
+          networkError: {
+            type: "fetch_failed",
+            message: errMsg,
+            timing: durationMs,
+            connectivity: {
+              healthCheckApi: false,
+              basicConnectivity: false,
+            },
+            attemptedUrl: healthUrl,
+            errorName: errName,
+            errorCode: errCode,
+          },
+        },
       };
     }
-    
   } catch (error) {
     return {
       instanceId,
       status: "offline",
-      error: `Failed to get instance details: ${error instanceof Error ? error.message : String(error)}`,
-      timestamp: new Date().toISOString()
+      error: `Failed to get instance details: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      timestamp: new Date().toISOString(),
     };
   }
+}
+
+function instancePublicIp(_instanceResult: DescribeInstancesCommandOutput, instance: EC2Instance | undefined): string | undefined {
+  return instance?.PublicIpAddress;
 }
 
 export async function POST(request: Request) {
@@ -129,6 +217,7 @@ export async function POST(request: Request) {
   console.log(`[Health Check] Request started at ${new Date().toISOString()}`);
   
   try {
+
     const cookieStore = await cookies();
     const token = cookieStore.get("admin-token");
 
@@ -214,4 +303,7 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+export async function HEAD() {
+  return new Response(null, { status: 200 });
 }
