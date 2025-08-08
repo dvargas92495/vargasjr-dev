@@ -556,7 +556,7 @@ AGENT_ENVIRONMENT=production`;
   }
 
   private  async waitForSSMReady(instanceId: string): Promise<void> {
-    const maxAttempts = 20;
+    const maxAttempts = 5;
     let attempts = 0;
 
     console.log(`Waiting for instance to be ready: ${instanceId}`);
@@ -702,6 +702,26 @@ AGENT_ENVIRONMENT=production`;
       }, 60, false);
     } catch (error) {
       console.error(`Failed to check build artifacts: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n🔌 Checking active ports and services...');
+      await this.executeSSMCommand(instanceId, {
+        tag: 'PORT_CHECK',
+        command: 'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"'
+      }, 60, false);
+    } catch (error) {
+      console.error(`Failed to check ports: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n📋 Checking running processes...');
+      await this.executeSSMCommand(instanceId, {
+        tag: 'PROCESS_CHECK', 
+        command: 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20'
+      }, 60, false);
+    } catch (error) {
+      console.error(`Failed to check processes: ${this.formatError(error)}`);
     }
   }
 
