@@ -730,6 +730,26 @@ AGENT_ENVIRONMENT=production`;
     } catch (error) {
       console.error(`Failed to check processes: ${this.formatError(error)}`);
     }
+
+    try {
+      console.log('\n🔨 Checking TypeScript build capability...');
+      await this.executeSSMCommand(instanceId, {
+        tag: 'BUILD_ENV_CHECK',
+        command: 'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"'
+      }, 60, false);
+    } catch (error) {
+      console.error(`Failed to check build environment: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n📝 Checking for build logs and errors...');
+      await this.executeSSMCommand(instanceId, {
+        tag: 'BUILD_LOGS',
+        command: 'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"'
+      }, 60, false);
+    } catch (error) {
+      console.error(`Failed to check build logs: ${this.formatError(error)}`);
+    }
   }
 
   private async executeSCPCommand(keyPath: string, publicDns: string, localPath: string, remotePath: string): Promise<void> {
