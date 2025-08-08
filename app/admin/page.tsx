@@ -236,11 +236,10 @@ export default async function AdminPage() {
               <li>State: running, stopped, pending, stopping, or shutting-down</li>
             </ul>
           </div>
-          {environmentPrefix === '' && (
+          {(environmentPrefix === '' || (environmentPrefix === 'PREVIEW' && currentPRNumber)) && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-800 mb-3">
-                <strong>Production Environment:</strong> No production instances are currently running. 
-                You can create a production agent using the button below.
+                <strong>{environmentPrefix === 'PREVIEW' ? `Preview Environment (PR #${currentPRNumber})` : 'Production Environment'}:</strong> {environmentPrefix === 'PREVIEW' ? `No preview instances are currently running for this PR. You can create a preview agent using the button below.` : `No production instances are currently running. You can create a production agent using the button below.`}
               </p>
               <CreateAgentButton initialWorkflowState={workflowStatus} />
             </div>
