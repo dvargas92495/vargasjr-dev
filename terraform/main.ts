@@ -22,6 +22,7 @@ import { ImagebuilderInfrastructureConfiguration } from "@cdktf/provider-aws/lib
 import { ImagebuilderDistributionConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-distribution-configuration";
 import { ImagebuilderImage } from "@cdktf/provider-aws/lib/imagebuilder-image";
 import { AWS_S3_BUCKETS, VARGASJR_IMAGE_NAME } from "../app/lib/constants";
+import { AGENT_SERVER_PORT } from "../server/constants";
 
 
 interface VargasJRStackConfig {
@@ -102,6 +103,16 @@ class VargasJRInfrastructureStack extends TerraformStack {
       protocol: "tcp",
       cidrBlocks: ["0.0.0.0/0"],
       description: "SSH access from anywhere",
+      securityGroupId: securityGroup.id,
+    });
+
+    new SecurityGroupRule(this, "HealthCheckIngressRule", {
+      type: "ingress",
+      fromPort: AGENT_SERVER_PORT,
+      toPort: AGENT_SERVER_PORT,
+      protocol: "tcp",
+      cidrBlocks: ["0.0.0.0/0"],
+      description: "HTTP health check access from anywhere",
       securityGroupId: securityGroup.id,
     });
 
