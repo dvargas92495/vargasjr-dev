@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       publicKey: {
         ...options,
-        challenge: Array.from(Buffer.from(options.challenge, "base64")),
+        challenge: Array.from(Buffer.from(options.challenge, "base64url")),
         user: {
           ...options.user,
           id: Array.from(Buffer.from(options.user.id)),

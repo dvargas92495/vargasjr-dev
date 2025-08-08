@@ -44,10 +44,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       publicKey: {
         ...options,
-        challenge: Array.from(Buffer.from(options.challenge, "base64")),
+        challenge: Array.from(Buffer.from(options.challenge, "base64url")),
         allowCredentials: options.allowCredentials.map(cred => ({
           ...cred,
-          id: Array.from(Buffer.from(cred.id, "base64")),
+          id: Array.from(Buffer.from(cred.id, "base64url")),
         })),
       },
     });
