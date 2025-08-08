@@ -556,7 +556,7 @@ AGENT_ENVIRONMENT=production`;
   }
 
   private  async waitForSSMReady(instanceId: string): Promise<void> {
-    const maxAttempts = 40;
+    const maxAttempts = 20;
     let attempts = 0;
 
     console.log(`Waiting for instance to be ready: ${instanceId}`);
