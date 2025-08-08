@@ -258,7 +258,14 @@ class VargasJRAgentCleanup {
         console.log(`✅ Archive message sent to Devin session ${sessionId}`);
       } else {
         const errorText = await response.text();
-        console.error(`❌ Failed to send archive message to Devin session ${sessionId}: ${response.status} ${errorText}`);
+        const errorMessage = `❌ Failed to send archive message to Devin session ${sessionId}: ${response.status} ${errorText}`;
+        if (response.status >= 500) {
+          const headers = Object.fromEntries(response.headers.entries());
+          console.error(errorMessage);
+          console.error(`Response headers:`, headers);
+        } else {
+          console.error(errorMessage);
+        }
       }
     } catch (error) {
       console.error(`❌ Error sending archive message to Devin session ${sessionId}: ${error}`);
