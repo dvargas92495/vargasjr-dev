@@ -40,7 +40,6 @@ interface HealthStatus {
       errorCode?: string | number;
       timedOut?: boolean;
     };
-    troubleshooting?: string[];
   };
 }
 
@@ -272,23 +271,6 @@ const HealthStatusIndicator = ({
                 </div>
               )}
               
-              {((healthStatus.diagnostics?.troubleshooting && healthStatus.diagnostics.troubleshooting.length > 0) || healthStatus.diagnostics?.networkError) && (
-                <div className="border-t pt-2">
-                  <div className="font-medium mb-1">Troubleshooting Steps:</div>
-                  <ol className="list-decimal list-inside space-y-1">
-                    {healthStatus.diagnostics?.networkError && (
-                      <>
-                        <li className="text-sm">Check your internet connection</li>
-                        <li className="text-sm">Verify the health check API endpoint is accessible</li>
-                        <li className="text-sm">Check for firewall or proxy issues</li>
-                      </>
-                    )}
-                    {healthStatus.diagnostics?.troubleshooting?.map((step: string, index: number) => (
-                      <li key={index} className="text-sm">{step}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
             </div>
           </details>
         </div>
