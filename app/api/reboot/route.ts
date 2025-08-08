@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { SSM } from "@aws-sdk/client-ssm";
-import { validateSSMReadiness } from "@/scripts/utils";
+import { checkInstanceHealth } from "@/scripts/utils";
 
 const rebootSchema = z.object({
   instanceId: z.string(),
@@ -23,10 +23,10 @@ export async function POST(request: Request) {
     try {
       const ssm = new SSM({ region: "us-east-1" });
       
-      const ssmValidation = await validateSSMReadiness(instanceId);
-      if (!ssmValidation.ready) {
+      const healthCheck = await checkInstanceHealth(instanceId);
+      if (healthCheck.status !== "healthy") {
         return NextResponse.json({
-          error: `Cannot reboot agent: ${ssmValidation.error}`
+          error: `Cannot reboot agent: ${healthCheck.error}`
         }, { status: 400 });
       }
 

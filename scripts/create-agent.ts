@@ -5,7 +5,7 @@ import { SSM } from "@aws-sdk/client-ssm";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, validateSSMReadiness } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
 
@@ -555,35 +555,35 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async waitForSSMReady(instanceId: string): Promise<void> {
+  private  async waitForSSMReady(instanceId: string): Promise<void> {
     const maxAttempts = 40;
     let attempts = 0;
 
-    console.log(`Waiting for SSM agent to be ready on instance: ${instanceId}`);
+    console.log(`Waiting for instance to be ready: ${instanceId}`);
 
     while (attempts < maxAttempts) {
       try {
-        const ssmValidation = await validateSSMReadiness(instanceId);
-        if (ssmValidation.ready) {
-          console.log("✅ SSM is ready");
+        const healthResult = await checkInstanceHealth(instanceId, this.config.region);
+        if (healthResult.status === "healthy") {
+          console.log("✅ Instance health check passed");
           return;
         }
         
         attempts++;
         const waitTime = attempts < 10 ? 10 : 15;
-        console.log(`SSM not ready yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
-        console.log(`SSM error: ${ssmValidation.error}`);
+        console.log(`Instance not healthy yet, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        console.log(`Health check error: ${healthResult.error}`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       } catch (error) {
         attempts++;
         const waitTime = attempts < 10 ? 10 : 15;
-        console.log(`SSM validation failed, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
-        console.log(`SSM error: ${this.formatError(error)}`);
+        console.log(`Health check failed, attempt ${attempts}/${maxAttempts}. Waiting ${waitTime} seconds...`);
+        console.log(`Health check error: ${this.formatError(error)}`);
         await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
       }
     }
 
-    throw new Error("SSM failed to become ready within timeout (10 minutes). Check SSM agent installation and IAM permissions.");
+    throw new Error("Instance failed to become healthy within timeout (10 minutes). Check agent server startup and network connectivity.");
   }
 
   private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }, timeoutSeconds: number = 300, enableDiagnostics: boolean = true): Promise<void> {
