@@ -556,7 +556,7 @@ AGENT_ENVIRONMENT=production`;
   }
 
   private  async waitForSSMReady(instanceId: string): Promise<void> {
-    const maxAttempts = 5;
+    const maxAttempts = 8;
     let attempts = 0;
 
     console.log(`Waiting for instance to be ready: ${instanceId}`);
@@ -583,7 +583,14 @@ AGENT_ENVIRONMENT=production`;
       }
     }
 
-    throw new Error("Instance failed to become healthy within timeout (10 minutes). Check agent server startup and network connectivity.");
+    console.log('\n🔍 Health check failed after maximum attempts. Running diagnostic commands...');
+    try {
+      await this.executeDiagnosticCommands(instanceId);
+    } catch (diagnosticError) {
+      console.error(`Failed to run diagnostic commands: ${this.formatError(diagnosticError)}`);
+    }
+
+    throw new Error("Instance failed to become healthy within timeout. Check agent server startup and network connectivity. See diagnostic information above.");
   }
 
   private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }, timeoutSeconds: number = 300, enableDiagnostics: boolean = true): Promise<void> {
