@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { cookies } from "next/headers";
+import { terminateInstances, deleteKeyPair } from "@/scripts/utils";
 
 const instanceSchema = z.object({
   id: z.string(),
-  operation: z.enum(["STOP", "START"]),
+  operation: z.enum(["STOP", "START", "DELETE"]),
 });
 
 export async function POST(request: Request) {
@@ -39,6 +40,23 @@ export async function POST(request: Request) {
       const result = await ec2.startInstances({ InstanceIds: [id] });
       console.log(`[/api/instances] Start command result:`, result);
       return NextResponse.json({ success: true, message: "Instance start initiated", result });
+    } else if (operation === "DELETE") {
+      console.log(`[/api/instances] Deleting instance ${id}`);
+      
+      const instanceResult = await ec2.describeInstances({ InstanceIds: [id] });
+      const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
+      const instanceName = instance?.Tags?.find(tag => tag.Key === "Name")?.Value;
+      
+      await terminateInstances(ec2, [id]);
+      console.log(`[/api/instances] Instance ${id} termination initiated`);
+      
+      if (instanceName) {
+        const keyPairName = `${instanceName}-key`;
+        await deleteKeyPair(ec2, keyPairName);
+        console.log(`[/api/instances] Key pair ${keyPairName} deletion attempted`);
+      }
+      
+      return NextResponse.json({ success: true, message: "Instance deletion initiated" });
     }
 
     console.log(`[/api/instances] Invalid operation: ${operation}`);

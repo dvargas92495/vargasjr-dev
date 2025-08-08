@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import StopInstanceButton from "@/components/stop-instance-button";
 import StartInstanceButton from "@/components/start-instance-button";
 import RebootInstanceButton from "@/components/reboot-instance-button";
+import DeleteInstanceButton from "@/components/delete-instance-button";
 import HealthStatusIndicator from "@/components/health-status-indicator";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import CopyableText from "@/components/copyable-text";
@@ -81,7 +82,10 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
           <StopInstanceButton id={instanceId} />
         )}
         {instanceState === "stopped" && instanceId && (
-          <StartInstanceButton id={instanceId} />
+          <>
+            <StartInstanceButton id={instanceId} />
+            <DeleteInstanceButton id={instanceId} instanceName={instanceName} />
+          </>
         )}
         {instanceState === "running" && instanceId && healthStatus.status === "unhealthy" && (
           <RebootInstanceButton id={instanceId} />
