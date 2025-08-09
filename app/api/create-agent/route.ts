@@ -1,8 +1,51 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getGitHubAuthHeaders } from "../../lib/github-auth";
+import { getEnvironmentPrefix } from "../constants";
+import { retryWithBackoff } from "@/scripts/utils";
 
 const PRODUCTION_AGENT_NAME = "vargas-jr";
+
+async function getCurrentPRNumber(): Promise<string> {
+  if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
+    return process.env.VERCEL_GIT_PULL_REQUEST_ID;
+  }
+  
+  const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
+  if (commitRef) {
+    const branchName = commitRef.replace('refs/heads/', '');
+    const githubRepo = "dvargas92495/vargasjr-dev";
+    
+    if (githubRepo && branchName) {
+      const prNumber = await retryWithBackoff(async () => {
+        const [owner] = githubRepo.split('/');
+        const headFilter = `${owner}:${branchName}`;
+        
+        const headers = await getGitHubAuthHeaders();
+        const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+          headers
+        });
+        
+        if (!response.ok) {
+          throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const prs = await response.json();
+        if (prs.length === 1) {
+          return prs[0].number.toString();
+        } else if (prs.length === 0) {
+          throw new Error(`No open PRs found for branch: ${branchName}`);
+        } else {
+          throw new Error(`Multiple open PRs found for branch: ${branchName}`);
+        }
+      }, 3, 2000);
+      
+      return prNumber;
+    }
+  }
+  
+  throw new Error('Unable to determine PR number for preview environment');
+}
 
 export async function POST() {
   try {
@@ -11,6 +54,19 @@ export async function POST() {
 
     if (token?.value !== process.env.ADMIN_TOKEN) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const environmentPrefix = getEnvironmentPrefix();
+    let agentName: string;
+    let message: string;
+
+    if (environmentPrefix === 'PREVIEW') {
+      const prNumber = await getCurrentPRNumber();
+      agentName = `pr-${prNumber}`;
+      message = `Preview agent creation workflow dispatched for PR #${prNumber}. This process will take several minutes.`;
+    } else {
+      agentName = PRODUCTION_AGENT_NAME;
+      message = `Production agent creation workflow dispatched. This process will take several minutes.`;
     }
 
     const headers = await getGitHubAuthHeaders();
@@ -24,7 +80,7 @@ export async function POST() {
       body: JSON.stringify({
         ref: 'main',
         inputs: {
-          agent_name: PRODUCTION_AGENT_NAME
+          agent_name: agentName
         }
       }),
     });
@@ -40,7 +96,7 @@ export async function POST() {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Production agent creation workflow dispatched. This process will take several minutes.` 
+      message
     });
 
   } catch (error) {
