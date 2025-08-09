@@ -646,7 +646,7 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async executeDiagnosticCommands(instanceId: string): Promise<void> {
+  private async executeDiagnosticCommands(instanceId: string, keyPath?: string, publicDns?: string): Promise<void> {
     console.log('\n🔍 Executing diagnostic commands to gather error information...');
     
     try {
@@ -691,40 +691,56 @@ AGENT_ENVIRONMENT=production`;
 
     try {
       console.log('\n🔌 Checking active ports and services...');
-      await this.executeSSMCommand(instanceId, {
-        tag: 'PORT_CHECK',
-        command: 'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"'
-      }, 60, false);
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"', 'PORT_CHECK');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'PORT_CHECK',
+          command: 'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"'
+        }, 60, false);
+      }
     } catch (error) {
       console.error(`Failed to check ports: ${this.formatError(error)}`);
     }
 
     try {
       console.log('\n📋 Checking running processes...');
-      await this.executeSSMCommand(instanceId, {
-        tag: 'PROCESS_CHECK', 
-        command: 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20'
-      }, 60, false);
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20', 'PROCESS_CHECK');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'PROCESS_CHECK', 
+          command: 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20'
+        }, 60, false);
+      }
     } catch (error) {
       console.error(`Failed to check processes: ${this.formatError(error)}`);
     }
 
     try {
       console.log('\n🔨 Checking TypeScript build capability...');
-      await this.executeSSMCommand(instanceId, {
-        tag: 'BUILD_ENV_CHECK',
-        command: 'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"'
-      }, 60, false);
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"', 'BUILD_ENV_CHECK');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'BUILD_ENV_CHECK',
+          command: 'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"'
+        }, 60, false);
+      }
     } catch (error) {
       console.error(`Failed to check build environment: ${this.formatError(error)}`);
     }
 
     try {
       console.log('\n📝 Checking for build logs and errors...');
-      await this.executeSSMCommand(instanceId, {
-        tag: 'BUILD_LOGS',
-        command: 'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"'
-      }, 60, false);
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"', 'BUILD_LOGS');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'BUILD_LOGS',
+          command: 'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"'
+        }, 60, false);
+      }
     } catch (error) {
       console.error(`Failed to check build logs: ${this.formatError(error)}`);
     }
@@ -771,6 +787,38 @@ AGENT_ENVIRONMENT=production`;
           throw error;
         }
         console.log(`[SCP] SCP command failed, retrying... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
+  private async executeSSHCommand(keyPath: string, publicDns: string, command: string, tag: string): Promise<void> {
+    const maxAttempts = 3;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ConnectionAttempts=3 ubuntu@${publicDns} "${command}"`;
+        const result = execSync(sshCommand, { 
+          stdio: 'pipe', 
+          encoding: 'utf8',
+          timeout: 60000 
+        });
+        
+        if (result.trim()) {
+          result.split('\n').forEach(line => {
+            if (line.trim()) {
+              console.log(`[${tag}] ${line}`);
+            }
+          });
+        }
+        return;
+      } catch (error: any) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw new Error(`SSH command failed after ${maxAttempts} attempts: ${error.message}`);
+        }
+        console.log(`[${tag}] SSH command failed, retrying... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
