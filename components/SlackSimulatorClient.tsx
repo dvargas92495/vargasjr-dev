@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { HashtagIcon, LockClosedIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface User {
@@ -31,60 +31,94 @@ interface Message {
   content: string;
 }
 
-const mockChannels: Channel[] = [
-  { id: "1", name: "general", isPrivate: false, unreadCount: 3 },
-  { id: "2", name: "eng-alerts", isPrivate: false, unreadCount: 1 },
-  { id: "3", name: "sales-alerts", isPrivate: true, unreadCount: 2 },
-];
-
-const mockMessages: Message[] = [
-  {
-    id: "1",
-    user: "David Vargas",
-    avatar: "DV",
-    timestamp: "10:30 AM",
-    content: "Hey team! Just wanted to update everyone on the VargasJR development progress. We've made some great improvements to the agent system."
-  },
-  {
-    id: "2",
-    user: "Sarah Chen",
-    avatar: "SC",
-    timestamp: "10:32 AM",
-    content: "That's awesome! Can you share more details about the improvements?"
-  },
-  {
-    id: "3",
-    user: "Mike Johnson",
-    avatar: "MJ",
-    timestamp: "10:35 AM",
-    content: "I'm particularly interested in the performance optimizations 🚀"
-  },
-  {
-    id: "4",
-    user: "David Vargas",
-    avatar: "DV",
-    timestamp: "10:37 AM",
-    content: "Sure! We've improved the agent deployment speed by 40% and added better error handling. The new UI simulator is also looking great."
-  },
-  {
-    id: "5",
-    user: "Emily Rodriguez",
-    avatar: "ER",
-    timestamp: "10:40 AM",
-    content: "Love the progress! When can we expect the next release?"
-  }
-];
 
 export default function SlackSimulatorClient() {
-  const [selectedChannel, setSelectedChannel] = useState<Channel>(mockChannels[0]);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [directMessagesExpanded, setDirectMessagesExpanded] = useState(true);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User>(AVAILABLE_USERS[0]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        setIsLoadingData(true);
+        const response = await fetch("/api/slack/channels");
+        const data = await response.json();
+        
+        if (data.channels) {
+          setChannels(data.channels);
+          if (data.channels.length > 0) {
+            setSelectedChannel(data.channels[0]);
+          }
+        } else {
+          let errorMessage = "Failed to load channels";
+          if (data.error) {
+            errorMessage += `: ${data.error}`;
+          }
+          if (data.details) {
+            errorMessage += `\n\nDetails: ${data.details}`;
+          }
+          if (data.troubleshooting && data.troubleshooting.length > 0) {
+            errorMessage += `\n\nTroubleshooting:\n• ${data.troubleshooting.join('\n• ')}`;
+          }
+          if (data.diagnostics) {
+            errorMessage += `\n\nDiagnostics: ${JSON.stringify(data.diagnostics, null, 2)}`;
+          }
+          setError(errorMessage);
+        }
+      } catch (error) {
+        setError("Failed to load channels: " + (error instanceof Error ? error.message : "Unknown error"));
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchChannels();
+  }, []);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedChannel) return;
+      
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/slack/messages?channel=${selectedChannel.id}`);
+        const data = await response.json();
+        
+        if (data.messages) {
+          setMessages(data.messages);
+        } else {
+          let errorMessage = "Failed to load messages";
+          if (data.error) {
+            errorMessage += `: ${data.error}`;
+          }
+          if (data.details) {
+            errorMessage += `\n\nDetails: ${data.details}`;
+          }
+          if (data.troubleshooting && data.troubleshooting.length > 0) {
+            errorMessage += `\n\nTroubleshooting:\n• ${data.troubleshooting.join('\n• ')}`;
+          }
+          if (data.diagnostics) {
+            errorMessage += `\n\nDiagnostics: ${JSON.stringify(data.diagnostics, null, 2)}`;
+          }
+          setError(errorMessage);
+        }
+      } catch (error) {
+        setError("Failed to load messages: " + (error instanceof Error ? error.message : "Unknown error"));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedChannel]);
 
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isLoading) return;
@@ -99,7 +133,7 @@ export default function SlackSimulatorClient() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          channel: selectedChannel.name,
+          channel: selectedChannel?.name || "",
           message: message.trim(),
           user: selectedUser.name,
         }),
@@ -146,7 +180,7 @@ export default function SlackSimulatorClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [message, selectedChannel.name, selectedUser, isLoading]);
+  }, [message, selectedChannel?.name, selectedUser, isLoading]);
 
   return (
     <div className="h-full flex flex-col">
@@ -214,7 +248,7 @@ export default function SlackSimulatorClient() {
               
               {channelsExpanded && (
                 <div className="ml-2">
-                  {mockChannels.map((channel) => (
+                  {channels.map((channel) => (
                     <button
                       key={channel.id}
                       onClick={() => {
@@ -222,7 +256,7 @@ export default function SlackSimulatorClient() {
                         setSidebarOpen(false);
                       }}
                       className={`flex items-center gap-2 w-full p-2 rounded text-sm hover:bg-purple-700 ${
-                        selectedChannel.id === channel.id ? 'bg-purple-600' : ''
+                        selectedChannel?.id === channel.id ? 'bg-purple-600' : ''
                       }`}
                     >
                       {channel.isPrivate ? (
@@ -231,7 +265,7 @@ export default function SlackSimulatorClient() {
                         <HashtagIcon className="w-4 h-4 text-purple-300" />
                       )}
                       <span className="flex-1 text-left">{channel.name}</span>
-                      {channel.unreadCount && (
+                      {channel.unreadCount && channel.unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
                           {channel.unreadCount}
                         </span>
@@ -296,21 +330,54 @@ export default function SlackSimulatorClient() {
         <div className="flex-1 flex flex-col">
           {/* Channel Header */}
           <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-            {selectedChannel.isPrivate ? (
-              <LockClosedIcon className="w-5 h-5 text-gray-600" />
+            {selectedChannel ? (
+              <>
+                {selectedChannel.isPrivate ? (
+                  <LockClosedIcon className="w-5 h-5 text-gray-600" />
+                ) : (
+                  <HashtagIcon className="w-5 h-5 text-gray-600" />
+                )}
+                <h2 className="font-bold text-lg">{selectedChannel.name}</h2>
+                <div className="text-sm text-gray-500">
+                  {selectedChannel.isPrivate ? 'Private channel' : 'Public channel'}
+                </div>
+              </>
             ) : (
-              <HashtagIcon className="w-5 h-5 text-gray-600" />
+              <h2 className="font-bold text-lg">Loading...</h2>
             )}
-            <h2 className="font-bold text-lg">{selectedChannel.name}</h2>
-            <div className="text-sm text-gray-500">
-              {selectedChannel.isPrivate ? 'Private channel' : 'Public channel'}
-            </div>
           </div>
 
           {/* Messages Area */}
           <div className="flex-1 lg:overflow-y-auto p-4 bg-white">
-            <div className="space-y-4">
-              {messages.map((message) => (
+            {isLoadingData ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-gray-500">Loading channels and messages...</div>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className="mb-4">
+                    <svg className="w-12 h-12 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Slack Data</h3>
+                  <p className="text-sm text-gray-600 mb-4 whitespace-pre-line">{error}</p>
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setIsLoadingData(true);
+                      window.location.reload();
+                    }}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((message) => (
                 <div key={message.id} className="flex gap-3 hover:bg-gray-50 p-2 rounded">
                   <div className="w-9 h-9 bg-purple-500 rounded flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                     {message.avatar}
@@ -325,8 +392,9 @@ export default function SlackSimulatorClient() {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Message Input */}
@@ -353,7 +421,7 @@ export default function SlackSimulatorClient() {
               <div className="flex-1">
                 <div className="border border-gray-300 rounded-lg p-3 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500">
                   <textarea
-                    placeholder={`Message #${selectedChannel.name}`}
+                    placeholder={selectedChannel ? `Message #${selectedChannel.name}` : "Select a channel"}
                     className="w-full resize-none border-0 outline-none text-sm text-gray-900 placeholder-gray-500"
                     rows={1}
                     value={message}
