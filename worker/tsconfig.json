@@ -18,13 +18,13 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
+    "baseUrl": "..",
     "paths": {
       "@/*": ["./*"]
     },
     "outDir": "./dist",
     "rootDir": ".."
   },
-  "include": ["*.ts", "../db/*.ts", "../server/constants.ts", "../server/health-check.ts"],
+  "include": ["*.ts", "../db/*.ts", "../server/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
