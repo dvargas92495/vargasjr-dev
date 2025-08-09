@@ -3,7 +3,18 @@
 import React, { useState, useCallback } from "react";
 import { HashtagIcon, LockClosedIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
-const CURRENT_USER = "David Vargas";
+interface User {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+const AVAILABLE_USERS: User[] = [
+  { id: "david", name: "David Vargas", avatar: "DV" },
+  { id: "sarah", name: "Sarah Chen", avatar: "SC" },
+  { id: "mike", name: "Mike Johnson", avatar: "MJ" },
+  { id: "emily", name: "Emily Rodriguez", avatar: "ER" },
+];
 
 interface Channel {
   id: string;
@@ -73,6 +84,7 @@ export default function SlackSimulatorClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User>(AVAILABLE_USERS[0]);
 
   const handleSendMessage = useCallback(async () => {
     if (!message.trim() || isLoading) return;
@@ -89,7 +101,7 @@ export default function SlackSimulatorClient() {
         body: JSON.stringify({
           channel: selectedChannel.name,
           message: message.trim(),
-          user: CURRENT_USER,
+          user: selectedUser.name,
         }),
       });
 
@@ -98,8 +110,8 @@ export default function SlackSimulatorClient() {
       if (data.success) {
         const newMessage: Message = {
           id: `msg-${Date.now()}`,
-          user: CURRENT_USER,
-          avatar: "DV",
+          user: selectedUser.name,
+          avatar: selectedUser.avatar,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           content: message.trim()
         };
@@ -134,7 +146,7 @@ export default function SlackSimulatorClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [message, selectedChannel.name, isLoading]);
+  }, [message, selectedChannel.name, selectedUser, isLoading]);
 
   return (
     <div className="h-full flex flex-col">
@@ -152,8 +164,20 @@ export default function SlackSimulatorClient() {
           <h1 className="text-lg font-bold">VargasJR Workspace</h1>
         </div>
         <div className="flex items-center gap-2">
+          <select 
+            value={selectedUser.id}
+            onChange={(e) => {
+              const user = AVAILABLE_USERS.find(u => u.id === e.target.value);
+              if (user) setSelectedUser(user);
+            }}
+            className="bg-purple-600 text-white border border-purple-500 rounded px-2 py-1 text-sm"
+          >
+            {AVAILABLE_USERS.map(user => (
+              <option key={user.id} value={user.id}>{user.name}</option>
+            ))}
+          </select>
           <div className="w-8 h-8 bg-purple-500 rounded flex items-center justify-center text-sm font-semibold">
-            DV
+            {selectedUser.avatar}
           </div>
         </div>
       </div>
