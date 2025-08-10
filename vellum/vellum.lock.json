@@ -15,7 +15,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.2",
+      "container_image_tag": "1.1.4",
       "workspace": "default",
       "target_directory": null
     },
@@ -33,7 +33,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.2",
+      "container_image_tag": "1.1.4",
       "workspace": "default",
       "target_directory": null
     },
@@ -51,7 +51,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.2",
+      "container_image_tag": "1.1.4",
       "workspace": "default",
       "target_directory": null
     },
@@ -69,7 +69,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.2",
+      "container_image_tag": "1.1.4",
       "workspace": "default",
       "target_directory": null
     },
@@ -87,7 +87,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.2",
+      "container_image_tag": "1.1.4",
       "workspace": "default",
       "target_directory": null
     },
@@ -141,7 +141,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.2",
+      "container_image_tag": "1.1.4",
       "workspace": "default",
       "target_directory": null
     },
