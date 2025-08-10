@@ -93,23 +93,12 @@ class VargasJRAgentCreator {
       timingResults.push(...setupTimingResults);
 
       startTime = Date.now();
-      try {
-        await checkInstanceHealth(instanceId, this.config.region);
-        timingResults.push({
-          method: 'checkInstanceHealth',
-          duration: Date.now() - startTime,
-          success: true
-        });
-      } catch (error) {
-        timingResults.push({
-          method: 'checkInstanceHealth',
-          duration: Date.now() - startTime,
-          success: false
-        });
-        const errorMessage = this.formatError(error);
-        console.error(`⚠️  Health check failed: ${errorMessage}`);
-        console.log("Continuing with agent setup despite health check failure...");
-      }
+      await this.waitForSSMReady(instanceId);
+      timingResults.push({
+        method: 'waitForSSMReady',
+        duration: Date.now() - startTime,
+        success: true
+      });
 
       const totalDuration = Date.now() - overallStartTime;
       
@@ -450,15 +439,10 @@ class VargasJRAgentCreator {
     const setupTimingResults: TimingResult[] = [];
 
     try {
-      let startTime = Date.now();
-      await this.waitForSSMReady(instanceDetails.instanceId);
-      setupTimingResults.push({
-        method: 'setupInstance.waitForSSMReady',
-        duration: Date.now() - startTime,
-        success: true
-      });
+      console.log("Waiting for SSM agent to be ready for commands...");
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
-      startTime = Date.now();
+      let startTime = Date.now();
       const envVars = this.getEnvironmentVariables();
 
       let postgresUrl: string;
@@ -541,12 +525,6 @@ AGENT_ENVIRONMENT=production`;
 
       console.log("✅ Instance setup complete!");
 
-      console.log("Waiting for SSM agent to register with Systems Manager...");
-      console.log("Note: Using snap-installed SSM agent service name for Ubuntu 24.04");
-      console.log("Note: MetadataOptions enforce IMDSv2 which is required for SSM registration");
-      console.log("Using IAM instance profile for reliable SSM registration");
-      await new Promise(resolve => setTimeout(resolve, 30000));
-
       return setupTimingResults;
 
     } catch (error) {
@@ -556,7 +534,7 @@ AGENT_ENVIRONMENT=production`;
   }
 
   private  async waitForSSMReady(instanceId: string): Promise<void> {
-    const maxAttempts = 20;
+    const maxAttempts = 8;
     let attempts = 0;
 
     console.log(`Waiting for instance to be ready: ${instanceId}`);
@@ -583,7 +561,14 @@ AGENT_ENVIRONMENT=production`;
       }
     }
 
-    throw new Error("Instance failed to become healthy within timeout (10 minutes). Check agent server startup and network connectivity.");
+    console.log('\n🔍 Health check failed after maximum attempts. Running diagnostic commands...');
+    try {
+      await this.executeDiagnosticCommands(instanceId);
+    } catch (diagnosticError) {
+      console.error(`Failed to run diagnostic commands: ${this.formatError(diagnosticError)}`);
+    }
+
+    throw new Error("Instance failed to become healthy within timeout. Check agent server startup and network connectivity. See diagnostic information above.");
   }
 
   private async executeSSMCommand(instanceId: string, commandObj: { tag: string; command: string }, timeoutSeconds: number = 300, enableDiagnostics: boolean = true): Promise<void> {
@@ -661,7 +646,7 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async executeDiagnosticCommands(instanceId: string): Promise<void> {
+  private async executeDiagnosticCommands(instanceId: string, keyPath?: string, publicDns?: string): Promise<void> {
     console.log('\n🔍 Executing diagnostic commands to gather error information...');
     
     try {
@@ -702,6 +687,62 @@ AGENT_ENVIRONMENT=production`;
       }, 60, false);
     } catch (error) {
       console.error(`Failed to check build artifacts: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n🔌 Checking active ports and services...');
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"', 'PORT_CHECK');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'PORT_CHECK',
+          command: 'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"'
+        }, 60, false);
+      }
+    } catch (error) {
+      console.error(`Failed to check ports: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n📋 Checking running processes...');
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20', 'PROCESS_CHECK');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'PROCESS_CHECK', 
+          command: 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20'
+        }, 60, false);
+      }
+    } catch (error) {
+      console.error(`Failed to check processes: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n🔨 Checking TypeScript build capability...');
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"', 'BUILD_ENV_CHECK');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'BUILD_ENV_CHECK',
+          command: 'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"'
+        }, 60, false);
+      }
+    } catch (error) {
+      console.error(`Failed to check build environment: ${this.formatError(error)}`);
+    }
+
+    try {
+      console.log('\n📝 Checking for build logs and errors...');
+      if (keyPath && publicDns) {
+        await this.executeSSHCommand(keyPath, publicDns, 'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"', 'BUILD_LOGS');
+      } else {
+        await this.executeSSMCommand(instanceId, {
+          tag: 'BUILD_LOGS',
+          command: 'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"'
+        }, 60, false);
+      }
+    } catch (error) {
+      console.error(`Failed to check build logs: ${this.formatError(error)}`);
     }
   }
 
@@ -746,6 +787,38 @@ AGENT_ENVIRONMENT=production`;
           throw error;
         }
         console.log(`[SCP] SCP command failed, retrying... (${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
+    }
+  }
+
+  private async executeSSHCommand(keyPath: string, publicDns: string, command: string, tag: string): Promise<void> {
+    const maxAttempts = 3;
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ConnectionAttempts=3 ubuntu@${publicDns} "${command}"`;
+        const result = execSync(sshCommand, { 
+          stdio: 'pipe', 
+          encoding: 'utf8',
+          timeout: 60000 
+        });
+        
+        if (result.trim()) {
+          result.split('\n').forEach(line => {
+            if (line.trim()) {
+              console.log(`[${tag}] ${line}`);
+            }
+          });
+        }
+        return;
+      } catch (error: any) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw new Error(`SSH command failed after ${maxAttempts} attempts: ${error.message}`);
+        }
+        console.log(`[${tag}] SSH command failed, retrying... (${attempts}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
