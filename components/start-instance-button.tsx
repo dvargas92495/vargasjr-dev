@@ -1,10 +1,14 @@
 "use client";
 
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const StartInstanceButton = ({ id }: { id: string }) => {
   const router = useRouter();
+  const [pending, setPending] = useState(false);
+
   const startInstance = async () => {
+    setPending(true);
     console.log(`[StartInstanceButton] Starting instance ${id}`);
     try {
       const response = await fetch("/api/instances", {
@@ -30,14 +34,17 @@ const StartInstanceButton = ({ id }: { id: string }) => {
       console.error(`[StartInstanceButton] Network/fetch error:`, error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`Network error starting instance: ${errorMessage}`);
+    } finally {
+      setPending(false);
     }
   };
   return (
     <button
       onClick={startInstance}
-      className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+      disabled={pending}
+      className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 disabled:opacity-50"
     >
-      Start Instance
+      {pending ? "Starting..." : "Start Instance"}
     </button>
   );
 };
