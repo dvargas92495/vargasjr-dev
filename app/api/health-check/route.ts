@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { EC2, type DescribeInstancesCommandOutput, type Instance as EC2Instance } from "@aws-sdk/client-ec2";
 import { AGENT_SERVER_PORT } from "../../../server/constants";
+import { retryWithBackoff } from "../../../scripts/utils";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -24,9 +25,9 @@ async function checkInstanceHealthHTTP(
 ): Promise<HealthCheckResult> {
   const ec2 = new EC2({ region });
   try {
-    const instanceResult = await ec2.describeInstances({
-      InstanceIds: [instanceId],
-    });
+    const instanceResult = await retryWithBackoff(async () => {
+      return await ec2.describeInstances({ InstanceIds: [instanceId] });
+    }, 3, 2000);
 
     const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
     if (!instance) {

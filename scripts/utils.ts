@@ -10,14 +10,37 @@ export interface EC2Instance {
   State?: { Name?: string };
   Tags?: Array<{ Key?: string; Value?: string }>;
   ImageId?: string;
+  LaunchTime?: Date;
+  PublicDnsName?: string;
+  PublicIpAddress?: string;
+  SecurityGroups?: Array<{ GroupName?: string; GroupId?: string }>;
+}
+
+export async function findInstancesByFiltersWithRetry(
+  ec2: EC2,
+  filters: Array<{ Name: string; Values: string[] }>
+): Promise<EC2Instance[]> {
+  return await retryWithBackoff(async () => {
+    const result = await ec2.describeInstances({ Filters: filters });
+    return result.Reservations?.flatMap((r) => r.Instances || []) || [];
+  }, 3, 2000);
+}
+
+export async function describeInstancesWithRetry(
+  ec2: EC2,
+  instanceIds: string[]
+): Promise<EC2Instance[]> {
+  return await retryWithBackoff(async () => {
+    const result = await ec2.describeInstances({ InstanceIds: instanceIds });
+    return result.Reservations?.flatMap((r) => r.Instances || []) || [];
+  }, 3, 2000);
 }
 
 export async function findInstancesByFilters(
   ec2: EC2,
   filters: Array<{ Name: string; Values: string[] }>
 ): Promise<EC2Instance[]> {
-  const result = await ec2.describeInstances({ Filters: filters });
-  return result.Reservations?.flatMap((r) => r.Instances || []) || [];
+  return await findInstancesByFiltersWithRetry(ec2, filters);
 }
 
 export async function terminateInstances(
@@ -41,9 +64,7 @@ export async function waitForInstancesTerminated(
   let attempts = 0;
   while (attempts < maxAttempts) {
     try {
-      const result = await ec2.describeInstances({ InstanceIds: instanceIds });
-      const instances =
-        result.Reservations?.flatMap((r) => r.Instances || []) || [];
+      const instances = await describeInstancesWithRetry(ec2, instanceIds);
 
       const stillExists = instances.some(
         (instance) =>
@@ -381,9 +402,9 @@ export async function checkInstanceHealth(
   const ec2 = new EC2({ region });
   
   try {
-    const instanceResult = await ec2.describeInstances({
-      InstanceIds: [instanceId],
-    });
+    const instanceResult = await retryWithBackoff(async () => {
+      return await ec2.describeInstances({ InstanceIds: [instanceId] });
+    }, 3, 2000);
     
     const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
     if (!instance) {
@@ -540,6 +561,15 @@ export function isRetryableError(error: any): boolean {
       const status = parseInt(statusMatch[1]);
       return status >= 500 || status === 429;
     }
+    return true;
+  }
+  
+  if (error.name === 'ThrottlingException' || 
+      error.name === 'RequestLimitExceeded' || 
+      error.name === 'TooManyRequestsException' ||
+      (error.message && error.message.includes('Request limit exceeded')) ||
+      (error.message && error.message.includes('Throttling')) ||
+      (error.message && error.message.includes('Rate exceeded'))) {
     return true;
   }
   

@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import { EC2, Instance } from "@aws-sdk/client-ec2";
-import { getSecret } from "./utils";
+import { getSecret, retryWithBackoff, type EC2Instance } from "./utils";
 import { writeFileSync, unlinkSync } from "fs";
 import { tmpdir } from "os";
 import { execSync } from "child_process";
@@ -45,7 +45,7 @@ class VargasJRSSHConnector {
     }
   }
 
-  private async findInstance(): Promise<Instance> {
+  private async findInstance(): Promise<EC2Instance> {
     let filters;
     
     if (this.config.prNumber) {
@@ -64,8 +64,10 @@ class VargasJRSSHConnector {
       ];
     }
 
-    const result = await this.ec2.describeInstances({ Filters: filters });
-    const instances = result.Reservations?.flatMap((r) => r.Instances || []) || [];
+    const result = await retryWithBackoff(async () => {
+      return await this.ec2.describeInstances({ Filters: filters });
+    }, 3, 2000);
+    const instances: EC2Instance[] = result.Reservations?.flatMap((r) => r.Instances || []) || [];
     
     if (instances.length === 0) {
       const instanceType = this.config.prNumber ? `PR ${this.config.prNumber}` : "production";

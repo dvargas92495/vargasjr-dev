@@ -5,7 +5,7 @@ import { SSM } from "@aws-sdk/client-ssm";
 import { writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
-import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile } from "./utils";
+import { findInstancesByFilters, terminateInstances, waitForInstancesTerminated, findOrCreateSecurityGroup, createSecret, getNeonPreviewDatabaseUrl, checkInstanceHealth, findOrCreateSSMInstanceProfile, retryWithBackoff, describeInstancesWithRetry, type EC2Instance } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
 
@@ -387,11 +387,8 @@ class VargasJRAgentCreator {
 
     while (attempts < maxAttempts) {
       try {
-        const result = await this.ec2.describeInstances({
-          InstanceIds: [instanceId]
-        });
-
-        const instance = result.Reservations?.[0]?.Instances?.[0];
+        const instances: EC2Instance[] = await describeInstancesWithRetry(this.ec2, [instanceId]);
+        const instance = instances[0];
         if (instance?.State?.Name === "running") {
           console.log("✅ Instance is running");
           return;
@@ -415,11 +412,8 @@ class VargasJRAgentCreator {
   }
 
   private async getInstanceDetails(instanceId: string) {
-    const result = await this.ec2.describeInstances({
-      InstanceIds: [instanceId]
-    });
-
-    const instance = result.Reservations?.[0]?.Instances?.[0];
+    const instances: EC2Instance[] = await describeInstancesWithRetry(this.ec2, [instanceId]);
+    const instance = instances[0];
     if (!instance) {
       throw new Error("Failed to get instance details");
     }
