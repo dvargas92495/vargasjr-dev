@@ -3,7 +3,7 @@ import CreateAgentButton from "@/components/create-agent-button";
 import ApprovePRButton from "@/components/approve-pr-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
-import { retryWithBackoff, findInstancesByFiltersWithRetry } from "@/scripts/utils";
+import { retryWithBackoff } from "@/scripts/utils";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 
@@ -150,7 +150,9 @@ export default async function AdminPage() {
   let errorMessage: string | null = null;
   
   try {
-    instances = await findInstancesByFiltersWithRetry(ec2, filters);
+    instances = await ec2
+      .describeInstances({ Filters: filters })
+      .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
   } catch (error) {
     console.error('Failed to query EC2 instances:', error);
     errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

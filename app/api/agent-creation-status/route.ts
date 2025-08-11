@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { EC2 } from "@aws-sdk/client-ec2";
-import { checkInstanceHealth, findInstancesByFiltersWithRetry, type EC2Instance } from "@/scripts/utils";
+import { EC2, Instance } from "@aws-sdk/client-ec2";
+import { checkInstanceHealth } from "@/scripts/utils";
 
 export async function POST(request: Request) {
   try {
@@ -17,13 +17,15 @@ export async function POST(request: Request) {
 
     const ec2 = new EC2({ region: "us-east-1" });
     
-    const filters = [
-      { Name: "tag:Project", Values: ["VargasJR"] },
-      { Name: "tag:Type", Values: ["main"] },
-      { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
-    ];
+    const result = await ec2.describeInstances({
+      Filters: [
+        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "tag:Type", Values: ["main"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
+      ]
+    });
     
-    const instances: EC2Instance[] = await findInstancesByFiltersWithRetry(ec2, filters);
+    const instances: Instance[] = result.Reservations?.flatMap(r => r.Instances || []) || [];
 
     const recentInstances = instances.filter(instance => {
       const launchTime = instance.LaunchTime;

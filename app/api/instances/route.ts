@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { cookies } from "next/headers";
-import { terminateInstances, deleteKeyPair, retryWithBackoff } from "@/scripts/utils";
+import { terminateInstances, deleteKeyPair } from "@/scripts/utils";
 
 const instanceSchema = z.object({
   id: z.string(),
@@ -43,9 +43,7 @@ export async function POST(request: Request) {
     } else if (operation === "DELETE") {
       console.log(`[/api/instances] Deleting instance ${id}`);
       
-      const instanceResult = await retryWithBackoff(async () => {
-        return await ec2.describeInstances({ InstanceIds: [id] });
-      }, 3, 2000);
+      const instanceResult = await ec2.describeInstances({ InstanceIds: [id] });
       const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
       const instanceName = instance?.Tags?.find(tag => tag.Key === "Name")?.Value;
       
