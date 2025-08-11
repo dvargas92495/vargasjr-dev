@@ -62,6 +62,16 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
             setPollingInterval(null);
           }
         }
+      } else {
+        console.error(`Agent status check failed with status: ${response.status}`);
+        setMessage("Failed to check agent status. Please try again.");
+        setIsCreating(false);
+        setCreationStartTime(null);
+        localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          setPollingInterval(null);
+        }
       }
     } catch (error) {
       console.error("Failed to check agent status:", error);
