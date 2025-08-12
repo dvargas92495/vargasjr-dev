@@ -53,7 +53,13 @@ export async function GET(request: Request) {
     const data = await response.json();
     
     if (!data.ok) {
-      throw new Error(`Slack API error: ${data.error}`);
+      console.error(`[${requestId}] Slack API returned error:`, {
+        error: data.error,
+        warning: data.warning,
+        response_metadata: data.response_metadata,
+        full_response: data
+      });
+      throw new Error(`Slack API error: ${data.error}${data.warning ? ` (Warning: ${data.warning})` : ''}`);
     }
 
     const messages = data.messages.reverse().map((message: { ts: string; user?: string; text?: string }) => ({
@@ -70,17 +76,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ messages });
   } catch (error) {
     console.error(`[${requestId}] Error fetching Slack messages:`, error);
+    
+    const errorDetails = error instanceof Error ? error.message : "Unknown error";
+    const troubleshooting = [
+      "Check SLACK_BOT_TOKEN is valid",
+      "Verify bot has channels:history scope",
+      "Check channel ID is correct", 
+      "Ensure bot is member of the channel"
+    ];
+    
+    if (error instanceof Error) {
+      if (error.message.includes('invalid_auth')) {
+        troubleshooting.unshift("SLACK_BOT_TOKEN is invalid or expired");
+      } else if (error.message.includes('missing_scope')) {
+        troubleshooting.unshift("Bot needs 'channels:history' scope permission");
+      } else if (error.message.includes('channel_not_found')) {
+        troubleshooting.unshift("Channel does not exist or bot cannot access it");
+      } else if (error.message.includes('not_in_channel')) {
+        troubleshooting.unshift("Bot must be added to the channel to read messages");
+      }
+    }
+    
     return NextResponse.json(
       createErrorResponse("Failed to fetch Slack messages", {
         code: "FETCH_ERROR",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: errorDetails,
         requestId,
-        troubleshooting: [
-          "Check SLACK_BOT_TOKEN is valid",
-          "Verify bot has channels:history scope",
-          "Check channel ID is correct",
-          "Ensure bot is member of the channel"
-        ]
+        troubleshooting,
+        diagnostics: {
+          timestamp: new Date().toISOString(),
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          channelId: channelId,
+          slackTokenPresent: !!process.env.SLACK_BOT_TOKEN,
+          slackTokenLength: process.env.SLACK_BOT_TOKEN?.length || 0
+        }
       }),
       { status: 500 }
     );
