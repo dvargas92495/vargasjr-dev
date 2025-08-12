@@ -153,6 +153,17 @@ export default async function AdminPage() {
     instances = await ec2
       .describeInstances({ Filters: filters })
       .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
+    
+    if (instances.length === 0 && environmentPrefix === '') {
+      const legacyFilters = [
+        { Name: "tag:Name", Values: ["vargas-jr"] },
+        { Name: "tag:Type", Values: ["main"] },
+        { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
+      ];
+      instances = await ec2
+        .describeInstances({ Filters: legacyFilters })
+        .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
+    }
   } catch (error) {
     console.error('Failed to query EC2 instances:', error);
     errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -230,7 +241,7 @@ export default async function AdminPage() {
           <div className="text-sm text-gray-500">
             <p><strong>Expected tags:</strong></p>
             <ul className="list-disc list-inside ml-2 space-y-1">
-              <li>Project: VargasJR</li>
+              <li>Project: VargasJR (or Name: vargas-jr for legacy instances)</li>
               {environmentPrefix === '' && <li>Type: main</li>}
               {environmentPrefix === 'PREVIEW' && currentPRNumber && <li>PRNumber: {currentPRNumber}</li>}
               <li>State: running, stopped, pending, stopping, or shutting-down</li>

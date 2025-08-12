@@ -17,15 +17,25 @@ export async function POST(request: Request) {
 
     const ec2 = new EC2({ region: "us-east-1" });
     
-    const result = await ec2.describeInstances({
+    let result = await ec2.describeInstances({
       Filters: [
         { Name: "tag:Project", Values: ["VargasJR"] },
         { Name: "tag:Type", Values: ["main"] },
         { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
       ]
     });
-    
-    const instances: Instance[] = result.Reservations?.flatMap(r => r.Instances || []) || [];
+
+    let instances: Instance[] = result.Reservations?.flatMap(r => r.Instances || []) || [];
+    if (instances.length === 0) {
+      result = await ec2.describeInstances({
+        Filters: [
+          { Name: "tag:Name", Values: ["vargas-jr"] },
+          { Name: "tag:Type", Values: ["main"] },
+          { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
+        ]
+      });
+      instances = result.Reservations?.flatMap(r => r.Instances || []) || [];
+    }
 
     const recentInstances = instances.filter(instance => {
       const launchTime = instance.LaunchTime;
