@@ -98,8 +98,17 @@ export default function LoginPage() {
 
       const options = await optionsResponse.json();
 
+      const publicKeyOptions = {
+        ...options.publicKey,
+        challenge: new Uint8Array(options.publicKey.challenge).buffer,
+        user: {
+          ...options.publicKey.user,
+          id: new Uint8Array(options.publicKey.user.id).buffer,
+        },
+      };
+
       const credential = await navigator.credentials.create({
-        publicKey: options.publicKey,
+        publicKey: publicKeyOptions,
       }) as PublicKeyCredential;
 
       if (!credential) {
