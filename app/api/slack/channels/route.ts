@@ -38,7 +38,13 @@ export async function GET() {
     const data = await response.json();
     
     if (!data.ok) {
-      throw new Error(`Slack API error: ${data.error}`);
+      console.error(`[${requestId}] Slack API returned error:`, {
+        error: data.error,
+        warning: data.warning,
+        response_metadata: data.response_metadata,
+        full_response: data
+      });
+      throw new Error(`Slack API error: ${data.error}${data.warning ? ` (Warning: ${data.warning})` : ''}`);
     }
 
     const channels = data.channels.map((channel: { id: string; name: string; is_private?: boolean }) => ({
@@ -51,16 +57,36 @@ export async function GET() {
     return NextResponse.json({ channels });
   } catch (error) {
     console.error(`[${requestId}] Error fetching Slack channels:`, error);
+    
+    const errorDetails = error instanceof Error ? error.message : "Unknown error";
+    const troubleshooting = [
+      "Check SLACK_BOT_TOKEN is valid",
+      "Verify bot has channels:read scope", 
+      "Check network connectivity"
+    ];
+    
+    if (error instanceof Error) {
+      if (error.message.includes('invalid_auth')) {
+        troubleshooting.unshift("SLACK_BOT_TOKEN is invalid or expired");
+      } else if (error.message.includes('missing_scope')) {
+        troubleshooting.unshift("Bot needs 'channels:read' scope permission");
+      } else if (error.message.includes('account_inactive')) {
+        troubleshooting.unshift("Slack workspace or bot account is inactive");
+      }
+    }
+    
     return NextResponse.json(
       createErrorResponse("Failed to fetch Slack channels", {
         code: "FETCH_ERROR",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: errorDetails,
         requestId,
-        troubleshooting: [
-          "Check SLACK_BOT_TOKEN is valid",
-          "Verify bot has channels:read scope",
-          "Check network connectivity"
-        ]
+        troubleshooting,
+        diagnostics: {
+          timestamp: new Date().toISOString(),
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          slackTokenPresent: !!process.env.SLACK_BOT_TOKEN,
+          slackTokenLength: process.env.SLACK_BOT_TOKEN?.length || 0
+        }
       }),
       { status: 500 }
     );

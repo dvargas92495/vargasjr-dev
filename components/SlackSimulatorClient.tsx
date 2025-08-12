@@ -46,7 +46,20 @@ export default function SlackSimulatorClient() {
             setSelectedChannel(data.channels[0]);
           }
         } else {
-          setError("Failed to load channels: " + (data.error || "Unknown error"));
+          let errorMessage = "Failed to load channels";
+          if (data.error) {
+            errorMessage += `: ${data.error}`;
+          }
+          if (data.details) {
+            errorMessage += `\n\nDetails: ${data.details}`;
+          }
+          if (data.troubleshooting && data.troubleshooting.length > 0) {
+            errorMessage += `\n\nTroubleshooting:\n• ${data.troubleshooting.join('\n• ')}`;
+          }
+          if (data.diagnostics) {
+            errorMessage += `\n\nDiagnostics: ${JSON.stringify(data.diagnostics, null, 2)}`;
+          }
+          setError(errorMessage);
         }
       } catch (error) {
         setError("Failed to load channels: " + (error instanceof Error ? error.message : "Unknown error"));
@@ -302,6 +315,28 @@ export default function SlackSimulatorClient() {
             {isLoadingData ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-gray-500">Loading channels and messages...</div>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md">
+                  <div className="mb-4">
+                    <svg className="w-12 h-12 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Slack Data</h3>
+                  <p className="text-sm text-gray-600 mb-4 whitespace-pre-line">{error}</p>
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setIsLoadingData(true);
+                      window.location.reload();
+                    }}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
