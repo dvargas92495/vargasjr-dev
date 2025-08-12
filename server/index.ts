@@ -66,8 +66,8 @@ export const resolveSlackUser = async (userId: string): Promise<string> => {
         "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
       },
     });
-    const data = await response.json();
-    if (data.ok && data.user) {
+    const data = await response.json() as any;
+    if (data?.ok && data?.user) {
       return data.user.display_name || data.user.real_name || userId;
     }
   } catch (error) {
@@ -83,8 +83,8 @@ export const resolveSlackChannel = async (channelId: string): Promise<string> =>
         "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
       },
     });
-    const data = await response.json();
-    if (data.ok && data.channel) {
+    const data = await response.json() as any;
+    if (data?.ok && data?.channel) {
       return `Slack (#${data.channel.name})`;
     }
   } catch (error) {
