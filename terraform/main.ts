@@ -221,12 +221,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
   }
 
   private getWebhookUrl(): string {
-    const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
-    if (environment === 'production') {
-      return 'https://vargasjr.dev/api/ses/webhook';
-    } else {
-      return `https://${process.env.VERCEL_URL}/api/ses/webhook`;
-    }
+    return 'https://vargasjr.dev/api/ses/webhook';
   }
 
   private createCustomAMI(tags: Record<string, string>) {
@@ -352,12 +347,12 @@ phases:
 
 const app = new App();
 
-const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
+const environment = 'production';
 const prNumber = process.env.VERCEL_GIT_PULL_REQUEST_ID;
 
 new VargasJRInfrastructureStack(app, `vargasjr-${environment}`, {
   environment,
-  ...(environment === 'preview' && prNumber && { prNumber }),
+  ...(prNumber && { prNumber }),
 });
 
 app.synth();
