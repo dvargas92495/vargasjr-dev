@@ -15,6 +15,7 @@ import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy
 import { IamInstanceProfile } from "@cdktf/provider-aws/lib/iam-instance-profile";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
+import { SesActiveReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-active-receipt-rule-set";
 import { ImagebuilderImagePipeline } from "@cdktf/provider-aws/lib/imagebuilder-image-pipeline";
 import { ImagebuilderImageRecipe } from "@cdktf/provider-aws/lib/imagebuilder-image-recipe";
 import { ImagebuilderComponent } from "@cdktf/provider-aws/lib/imagebuilder-component";
@@ -212,6 +213,10 @@ class VargasJRInfrastructureStack extends TerraformStack {
           position: 1
         }
       ]
+    });
+
+    new SesActiveReceiptRuleSet(this, "ActiveEmailReceiptRuleSet", {
+      ruleSetName: receiptRuleSet.ruleSetName
     });
   }
 
