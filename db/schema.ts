@@ -124,17 +124,6 @@ export const RoutineJobsTable = pgTable("routine_jobs", {
 
 export type RoutineJob = typeof RoutineJobsTable.$inferSelect;
 
-export const RoutineJobExecutionsTable = pgTable("routine_job_executions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  routineJobId: uuid("routine_job_id")
-    .notNull()
-    .references(() => RoutineJobsTable.id),
-  executionId: varchar("execution_id").notNull(),
-  outputs: jsonb("outputs"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export type RoutineJobExecution = typeof RoutineJobExecutionsTable.$inferSelect;
 
 export const JobsTable = pgTable("jobs", {
   id: uuid("id").primaryKey().defaultRandom(),

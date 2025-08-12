@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db/connection";
-import { RoutineJobExecutionsTable } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { RoutineJobsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { VellumClient } from "vellum-ai";
 
 export async function GET(
   request: NextRequest,
@@ -11,24 +12,56 @@ export async function GET(
     const { id } = await params;
     
     const db = getDb();
-    const executions = await db
-      .select({
-        id: RoutineJobExecutionsTable.id,
-        executionId: RoutineJobExecutionsTable.executionId,
-        outputs: RoutineJobExecutionsTable.outputs,
-        createdAt: RoutineJobExecutionsTable.createdAt,
-      })
-      .from(RoutineJobExecutionsTable)
-      .where(eq(RoutineJobExecutionsTable.routineJobId, id))
-      .orderBy(desc(RoutineJobExecutionsTable.createdAt))
-      .limit(10);
+    const routineJob = await db
+      .select({ name: RoutineJobsTable.name })
+      .from(RoutineJobsTable)
+      .where(eq(RoutineJobsTable.id, id))
+      .limit(1);
 
-    const executionsWithFormattedDates = executions.map(execution => ({
-      ...execution,
-      createdAt: execution.createdAt.toISOString(),
-    }));
+    if (routineJob.length === 0) {
+      return NextResponse.json(
+        { error: "Routine job not found" },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json(executionsWithFormattedDates);
+    const workflowDeploymentName = routineJob[0].name;
+
+    const apiKey = process.env.VELLUM_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "VELLUM_API_KEY not configured" },
+        { status: 500 }
+      );
+    }
+
+    const vellumClient = new VellumClient({ apiKey });
+
+    const deployments = await vellumClient.workflowDeployments.list();
+    const deployment = deployments.results?.find(
+      (d) => d.name === workflowDeploymentName
+    );
+
+    if (!deployment) {
+      return NextResponse.json(
+        { error: "Workflow deployment not found" },
+        { status: 404 }
+      );
+    }
+
+    const executions = await vellumClient.workflowDeployments.listExecutions(
+      deployment.id,
+      { limit: 10 }
+    );
+
+    const transformedExecutions = executions.results?.map((execution) => ({
+      id: execution.spanId,
+      executionId: execution.spanId,
+      createdAt: execution.start,
+      outputs: null,
+    })) || [];
+
+    return NextResponse.json(transformedExecutions);
   } catch (error) {
     console.error("Error fetching routine job executions:", error);
     return NextResponse.json(

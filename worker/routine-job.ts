@@ -1,8 +1,5 @@
 import { Logger } from './utils';
 import { VellumClient } from 'vellum-ai';
-import { postgresSession } from './database';
-import { RoutineJobExecutionsTable, RoutineJobsTable } from '../db/schema';
-import { eq } from 'drizzle-orm';
 
 export class RoutineJob {
   private name: string;
@@ -129,23 +126,6 @@ export class RoutineJob {
       }
 
       this.logger.info(`Completed Routine Job ${this.name} (${executionId})`);
-      
-      try {
-        const db = postgresSession();
-        const routineJobRecord = await db.select().from(RoutineJobsTable).where(eq(RoutineJobsTable.name, this.name)).limit(1);
-        
-        if (routineJobRecord.length > 0) {
-          await db.insert(RoutineJobExecutionsTable).values({
-            routineJobId: routineJobRecord[0].id,
-            executionId: executionId!,
-            outputs: workflowOutputs,
-          });
-          this.logger.info(`Saved execution record for ${this.name} (${executionId})`);
-        }
-      } catch (dbError) {
-        this.logger.error(`Failed to save execution record for ${this.name} (${executionId}): ${dbError}`);
-      }
-      
       return { outputs: workflowOutputs, executionId };
     } catch (error) {
       this.logger.error(`Failed to execute workflow ${this.name} (${executionId || 'unknown execution'}): ${error}`);
