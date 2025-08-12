@@ -14,6 +14,7 @@
     "create-agent": "npx tsx scripts/create-agent.ts",
     "cleanup-pr": "npx tsx scripts/cleanup-pr.ts",
     "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts",
+    "merge": "npx tsx scripts/merge-pr.ts",
     "one-time-migration": "npx tsx scripts/run-draft-pr-scripts.ts",
     "run-migrations": "npx tsx scripts/run-migrations.ts",
     "terraform": "npx tsx scripts/run-terraform.ts",
