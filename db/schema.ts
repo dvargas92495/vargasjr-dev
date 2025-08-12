@@ -57,6 +57,8 @@ export const ContactsTable = pgTable("contacts", {
   email: varchar("email"),
   phoneNumber: varchar("phone_number"),
   fullName: varchar("full_name"),
+  slackId: varchar("slack_id"),
+  slackDisplayName: varchar("slack_display_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

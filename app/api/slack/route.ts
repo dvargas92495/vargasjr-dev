@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
 import tsscmp from "tsscmp";
-import { addInboxMessage, resolveSlackUser, resolveSlackChannel } from "@/server";
+import { addInboxMessage, upsertSlackContact, resolveSlackChannel } from "@/server";
 import { createErrorResponse } from "@/utils/error-response";
 import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
         try {
           const inboxName = `slack-${event.channel}`;
           const displayLabel = await resolveSlackChannel(event.channel);
-          const userDisplayName = await resolveSlackUser(event.user);
+          await upsertSlackContact(event.user);
           
           const db = getDb();
           let inbox = await db
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
 
           await addInboxMessage({
             body: event.text,
-            source: userDisplayName,
+            source: event.user,
             inboxName: inboxName,
             createdAt: new Date(event.ts * 1000),
           });
