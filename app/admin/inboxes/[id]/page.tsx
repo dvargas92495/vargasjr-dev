@@ -85,7 +85,4 @@ export default async function InboxPage({
       </div>
     </div>
   );
-      </div>
-    </div>
-  );
 }
