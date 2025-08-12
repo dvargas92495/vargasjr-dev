@@ -59,6 +59,40 @@ export const postSlackMessage = async ({
   return response.json();
 };
 
+export const resolveSlackUser = async (userId: string): Promise<string> => {
+  try {
+    const response = await fetch(`https://slack.com/api/users.info?user=${userId}`, {
+      headers: {
+        "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+      },
+    });
+    const data = await response.json();
+    if (data.ok && data.user) {
+      return data.user.display_name || data.user.real_name || userId;
+    }
+  } catch (error) {
+    console.error('Failed to resolve Slack user:', error);
+  }
+  return userId;
+};
+
+export const resolveSlackChannel = async (channelId: string): Promise<string> => {
+  try {
+    const response = await fetch(`https://slack.com/api/conversations.info?channel=${channelId}`, {
+      headers: {
+        "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+      },
+    });
+    const data = await response.json();
+    if (data.ok && data.channel) {
+      return `Slack (#${data.channel.name})`;
+    }
+  } catch (error) {
+    console.error('Failed to resolve Slack channel:', error);
+  }
+  return `slack-${channelId}`;
+};
+
 export const convertPriorityToLabel = (priority: number): 'High' | 'Medium' | 'Low' => {
   if (priority >= 0.75) return 'High';
   if (priority >= 0.40) return 'Medium';

@@ -15,7 +15,7 @@ const InboxRow = ({ inbox }: { inbox: Inbox }) => {
       className="hover:bg-gray-50 hover:cursor-pointer hover:text-black"
       onClick={handleClick}
     >
-      <td className="px-6 py-4 border-b">{inbox.name}</td>
+      <td className="px-6 py-4 border-b">{inbox.displayLabel || inbox.name}</td>
       <td className="px-6 py-4 border-b">
         {inbox.createdAt.toLocaleDateString()}
       </td>
