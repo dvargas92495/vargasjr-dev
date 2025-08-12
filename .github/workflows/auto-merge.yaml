@@ -37,14 +37,3 @@ jobs:
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
-      
-      - name: Cleanup PR resources (backup)
-        run: npm run cleanup-pr -- --pr ${{ github.event.pull_request.number }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
-          DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}

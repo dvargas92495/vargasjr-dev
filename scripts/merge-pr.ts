@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { getGitHubAuthHeaders } from '../app/lib/github-auth.js';
+import { getGitHubAuthHeaders } from '../app/lib/github-auth';
 
 async function mergePR() {
   const prNumber = process.argv[2];
