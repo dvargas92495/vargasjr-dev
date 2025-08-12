@@ -2,6 +2,7 @@ import {
   InboxMessageOperationsTable,
   InboxMessagesTable,
   OutboxMessagesTable,
+  ContactsTable,
 } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -22,10 +23,12 @@ export default async function InboxMessage({
     .select({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
+      displayName: ContactsTable.slackDisplayName,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
     .where(eq(InboxMessagesTable.id, messageId))
     .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(1);
@@ -70,7 +73,7 @@ export default async function InboxMessage({
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
         <div className="mb-4">
           <div className="text-sm text-gray-300">Source</div>
-          <div className="text-lg">{message.source}</div>
+          <div className="text-lg">{message.displayName || message.source}</div>
         </div>
 
         <div className="mb-4">

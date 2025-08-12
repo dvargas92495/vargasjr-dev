@@ -17,6 +17,7 @@ export const InboxTypesEnum = pgEnum("inbox_type", InboxTypes);
 export const InboxesTable = pgTable("inboxes", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name").notNull(),
+  displayLabel: varchar("display_label"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   type: InboxTypesEnum("type").notNull(),
   config: jsonb("config").notNull(),
@@ -56,6 +57,8 @@ export const ContactsTable = pgTable("contacts", {
   email: varchar("email"),
   phoneNumber: varchar("phone_number"),
   fullName: varchar("full_name"),
+  slackId: varchar("slack_id"),
+  slackDisplayName: varchar("slack_display_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

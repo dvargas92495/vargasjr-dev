@@ -38,9 +38,11 @@ export default async function ChatSessionPage({
       id: InboxMessagesTable.id,
       body: InboxMessagesTable.body,
       source: InboxMessagesTable.source,
+      displayName: ContactsTable.slackDisplayName,
       createdAt: InboxMessagesTable.createdAt,
     })
     .from(InboxMessagesTable)
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
     .orderBy(InboxMessagesTable.createdAt);
 
@@ -52,7 +54,7 @@ export default async function ChatSessionPage({
           {messages.map((message) => (
             <div key={message.id} className="bg-gray-700 rounded-lg p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-semibold text-blue-300">{message.source}</span>
+                <span className="font-semibold text-blue-300">{message.displayName || message.source}</span>
                 <span className="text-xs text-gray-400">
                   {message.createdAt.toLocaleString()}
                 </span>

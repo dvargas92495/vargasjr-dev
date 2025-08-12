@@ -2,6 +2,7 @@ import {
   InboxMessageOperationsTable,
   InboxMessagesTable,
   InboxesTable,
+  ContactsTable,
 } from "@/db/schema";
 import { desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -32,10 +33,12 @@ export default async function InboxPage({
     .select({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
+      displayName: ContactsTable.slackDisplayName,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(25);
@@ -65,13 +68,16 @@ export default async function InboxPage({
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
         </Link>
-        <h1 className="text-2xl font-bold">{inbox[0].name}</h1>
+        <h1 className="text-2xl font-bold">{inbox[0].displayLabel || inbox[0].name}</h1>
       </div>
       <div className="space-y-3">
         {messages.map((message) => (
           <MessageCard
             key={message.id}
-            message={message}
+            message={{
+              ...message,
+              source: message.displayName || message.source,
+            }}
             status={statuses[message.id] || "Unread"}
             inboxId={id}
           />

@@ -37,9 +37,11 @@ export async function GET(
         id: InboxMessagesTable.id,
         body: InboxMessagesTable.body,
         source: InboxMessagesTable.source,
+        displayName: ContactsTable.slackDisplayName,
         createdAt: InboxMessagesTable.createdAt,
       })
       .from(InboxMessagesTable)
+      .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
       .where(eq(InboxMessagesTable.inboxId, session.inboxId))
       .orderBy(InboxMessagesTable.createdAt);
 
@@ -55,7 +57,7 @@ export async function GET(
       messages: messages.map(msg => ({
         id: msg.id,
         body: msg.body,
-        source: msg.source,
+        source: msg.displayName || msg.source,
         createdAt: msg.createdAt.toISOString(),
       }))
     });
