@@ -1,5 +1,6 @@
 import React from "react";
 import TestButton from "./test-button";
+import ExecutionHistory from "./execution-history";
 
 interface RoutineJob {
   id: string;
@@ -62,6 +63,8 @@ export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailC
           </a>
         )}
       </div>
+
+      <ExecutionHistory routineJobId={routineJob.id} />
     </div>
   );
 }
