@@ -15,6 +15,7 @@ import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy
 import { IamInstanceProfile } from "@cdktf/provider-aws/lib/iam-instance-profile";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
+import { SesActiveReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-active-receipt-rule-set";
 import { ImagebuilderImagePipeline } from "@cdktf/provider-aws/lib/imagebuilder-image-pipeline";
 import { ImagebuilderImageRecipe } from "@cdktf/provider-aws/lib/imagebuilder-image-recipe";
 import { ImagebuilderComponent } from "@cdktf/provider-aws/lib/imagebuilder-component";
@@ -213,15 +214,14 @@ class VargasJRInfrastructureStack extends TerraformStack {
         }
       ]
     });
+
+    new SesActiveReceiptRuleSet(this, "ActiveEmailReceiptRuleSet", {
+      ruleSetName: receiptRuleSet.ruleSetName
+    });
   }
 
   private getWebhookUrl(): string {
-    const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
-    if (environment === 'production') {
-      return 'https://vargasjr.dev/api/ses/webhook';
-    } else {
-      return `https://${process.env.VERCEL_URL}/api/ses/webhook`;
-    }
+    return 'https://vargasjr.dev/api/ses/webhook';
   }
 
   private createCustomAMI(tags: Record<string, string>) {
@@ -347,12 +347,12 @@ phases:
 
 const app = new App();
 
-const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
+const environment = 'production';
 const prNumber = process.env.VERCEL_GIT_PULL_REQUEST_ID;
 
 new VargasJRInfrastructureStack(app, `vargasjr-${environment}`, {
   environment,
-  ...(environment === 'preview' && prNumber && { prNumber }),
+  ...(prNumber && { prNumber }),
 });
 
 app.synth();
