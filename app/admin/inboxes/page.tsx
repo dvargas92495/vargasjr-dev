@@ -1,4 +1,4 @@
-import { InboxesTable } from "@/db/schema";
+import { InboxesTable, type Inbox } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { getDb } from "@/db/connection";
 
 export default async function InboxesPage() {
   const db = getDb();
-  let allInboxes: any[] = [];
+  let allInboxes: Inbox[] = [];
   let error: string | null = null;
 
   try {
