@@ -49,7 +49,7 @@ export async function GET(
       );
     }
 
-    const executions = await vellumClient.workflowDeployments.listExecutions(
+    const executions = await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
       deployment.id,
       { limit: 10 }
     );
