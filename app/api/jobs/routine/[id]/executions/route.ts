@@ -58,7 +58,8 @@ export async function GET(
       id: execution.spanId,
       executionId: execution.spanId,
       createdAt: execution.start,
-      outputs: null,
+      outputs: execution.outputs,
+      error: execution.error,
     })) || [];
 
     return NextResponse.json(transformedExecutions);

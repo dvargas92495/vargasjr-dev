@@ -6,6 +6,7 @@ interface RoutineJobExecution {
   id: string;
   executionId: string;
   outputs: unknown;
+  error?: unknown;
   createdAt: string;
 }
 
@@ -87,8 +88,8 @@ export default function ExecutionHistory({ routineJobId }: ExecutionHistoryProps
                       {execution.executionId}
                     </a>
                   </td>
-                  <td className="py-2 px-4 text-sm text-green-600">
-                    Completed
+                  <td className={`py-2 px-4 text-sm ${execution.error ? 'text-red-600' : 'text-green-600'}`}>
+                    {execution.error ? 'Failure' : 'Success'}
                   </td>
                 </tr>
               ))}
