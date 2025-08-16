@@ -24,6 +24,7 @@ class VargasJRAgentCleanup {
   async cleanupAgent(): Promise<void> {
     console.log(`Cleaning up Vargas JR agent for PR: ${this.config.prNumber}`);
     
+    const secretName = `pr-${this.config.prNumber}-key`;
     try {
       const instances = await findInstancesByFilters(this.ec2, [
         { Name: "tag:Project", Values: ["VargasJR"] },
@@ -45,10 +46,9 @@ class VargasJRAgentCleanup {
           console.log(`✅ Instances terminated: ${instanceIds.join(", ")}`);
         }
 
-        await deleteKeyPair(this.ec2, `pr-${this.config.prNumber}-key`);
+        await deleteKeyPair(this.ec2, secretName);
       }
       
-      const secretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
       await deleteSecret(secretName, this.config.region);
       
       await this.deleteNeonBranch();

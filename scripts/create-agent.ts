@@ -164,9 +164,7 @@ class VargasJRAgentCreator {
         writeFileSync(keyPath, result.KeyMaterial, { mode: 0o600 });
         console.log(`✅ Key pair saved to ${keyPath}`);
 
-        const env = this.config.prNumber ? `pr-${this.config.prNumber}` : "prod";
-        const secretName = `vargasjr-${env}-${keyPairName}-pem`;
-        await createSecret(secretName, result.KeyMaterial, this.config.region);
+        await createSecret(keyPairName, result.KeyMaterial, this.config.region);
       }
     } catch (error: any) {
       if (error.name === "InvalidKeyPair.Duplicate") {

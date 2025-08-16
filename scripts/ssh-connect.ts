@@ -5,6 +5,7 @@ import { getSecret } from "./utils";
 import { writeFileSync, unlinkSync } from "fs";
 import { tmpdir } from "os";
 import { execSync } from "child_process";
+import * as dotenv from "dotenv";
 
 interface SSHConnectConfig {
   prNumber?: string;
@@ -58,7 +59,7 @@ class VargasJRSSHConnector {
     } else {
       console.log("Looking for production instance...");
       filters = [
-        { Name: "tag:Project", Values: ["VargasJR"] },
+        { Name: "tag:Name", Values: ["vargas-jr"] },
         { Name: "tag:Type", Values: ["main"] },
         { Name: "instance-state-name", Values: ["running"] }
       ];
@@ -94,9 +95,9 @@ class VargasJRSSHConnector {
     let secretName;
     
     if (this.config.prNumber) {
-      secretName = `vargasjr-pr-${this.config.prNumber}-pr-${this.config.prNumber}-key-pem`;
+      secretName = `pr-${this.config.prNumber}-key`;
     } else {
-      secretName = `vargasjr-prod-prod-key-pem`;
+      secretName = `vargas-jr-key`;
     }
 
     console.log(`Retrieving SSH key from secret: ${secretName}`);
@@ -165,6 +166,7 @@ class VargasJRSSHConnector {
 }
 
 async function main() {
+  dotenv.config();
   const args = process.argv.slice(2);
   
   let prNumber: string | undefined;
