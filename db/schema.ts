@@ -124,6 +124,7 @@ export const RoutineJobsTable = pgTable("routine_jobs", {
 
 export type RoutineJob = typeof RoutineJobsTable.$inferSelect;
 
+
 export const JobsTable = pgTable("jobs", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name").notNull(),
