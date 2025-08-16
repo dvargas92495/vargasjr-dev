@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getBaseUrl } from "@/app/api/constants";
 
 export interface PublicKeyCredentialCreationOptionsJSON {
   rp: {
@@ -35,6 +36,17 @@ export interface PublicKeyCredentialRequestOptionsJSON {
   userVerification: "required" | "preferred" | "discouraged";
 }
 
+function getRpId(): string {
+  const baseUrl = getBaseUrl();
+  try {
+    const url = new URL(baseUrl);
+    return url.hostname;
+  } catch (error) {
+    console.error("Failed to parse base URL for RPID:", error);
+    return "localhost";
+  }
+}
+
 export function generateChallenge(): string {
   return crypto.randomBytes(32).toString("base64url");
 }
@@ -43,7 +55,7 @@ export function generateRegistrationOptions(userId: string): PublicKeyCredential
   return {
     rp: {
       name: "VargasJR Admin",
-      id: "localhost",
+      id: getRpId(),
     },
     user: {
       id: userId,
@@ -69,7 +81,7 @@ export function generateAuthenticationOptions(credentialIds: string[]): PublicKe
   return {
     challenge: generateChallenge(),
     timeout: 60000,
-    rpId: "localhost",
+    rpId: getRpId(),
     allowCredentials: credentialIds.map(id => ({
       type: "public-key",
       id,
