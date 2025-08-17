@@ -80,12 +80,6 @@ class OrphanedSecretsCleanup extends OneTimeMigrationRunner {
     try {
       do {
         const command = new ListSecretsCommand({
-          Filters: [
-            {
-              Key: "name",
-              Values: ["vargasjr-pr-*-key-pem"]
-            }
-          ],
           NextToken: nextToken
         });
 
