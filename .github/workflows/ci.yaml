@@ -43,6 +43,8 @@ jobs:
         run: npm install
       - name: Run ESLint
         run: npm run lint
+      - name: Run Prettier check
+        run: npm run format:check
   test:
     runs-on: ubuntu-latest
     steps:
