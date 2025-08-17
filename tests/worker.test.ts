@@ -16,8 +16,6 @@ describe('Worker Health Check', () => {
     });
     
     await agentRunner.run();
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
   });
 
   afterAll(async () => {
