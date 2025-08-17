@@ -32,7 +32,12 @@ export default function NewRoutineJobPage() {
           throw new Error('Failed to fetch workflow deployments');
         }
         const data = await response.json();
-        setWorkflowDeployments(data);
+        const sortedData = data.sort((a: WorkflowDeployment, b: WorkflowDeployment) => {
+          const aLabel = a.label || a.name;
+          const bLabel = b.label || b.name;
+          return aLabel.localeCompare(bLabel);
+        });
+        setWorkflowDeployments(sortedData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
