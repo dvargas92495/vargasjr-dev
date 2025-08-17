@@ -3,9 +3,11 @@
 ## Version Management
 
 ### Vellum Directory Changes
+
 Always bump the patch version in `vellum/pyproject.toml` whenever making changes in the `/vellum` directory. This ensures proper versioning for agent releases.
 
 Example:
+
 ```toml
 # Before changes
 version = "0.0.63"
@@ -33,12 +35,14 @@ version = "0.0.64"
 ## Development Setup
 
 ### Frontend (Next.js)
+
 ```bash
 npm install
 npm run dev
 ```
 
 ### Vellum Workflows (Python)
+
 ```bash
 cd vellum
 poetry install
@@ -47,11 +51,13 @@ poetry install
 ## Testing Guidelines
 
 ### Mocking Best Practices
+
 We should never mock our own source code in tests. Instead, use database fixtures and mock external dependencies only.
 
 **This rule is automatically enforced by ESLint for test files.**
 
 **❌ Don't do this:**
+
 ```python
 @patch('src.services.get_application_by_name')
 def test_something(mock_get_app):
@@ -59,13 +65,14 @@ def test_something(mock_get_app):
 ```
 
 **✅ Do this instead:**
+
 ```python
 def test_something(mock_sql_session: Session):
     # Create real data in test database
     app = Application(name="Twitter", client_id="test")
     mock_sql_session.add(app)
     mock_sql_session.commit()
-    
+
     # Test with real database interactions
 ```
 

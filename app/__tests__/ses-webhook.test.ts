@@ -9,7 +9,7 @@ const {
   mockLimit,
   mockExecute,
   mockInsert,
-  mockValues
+  mockValues,
 } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockFrom: vi.fn(),
@@ -17,26 +17,26 @@ const {
   mockLimit: vi.fn(),
   mockExecute: vi.fn(),
   mockInsert: vi.fn(),
-  mockValues: vi.fn()
+  mockValues: vi.fn(),
 }));
 
 const mockEnv = vi.hoisted(() => ({
-  SES_WEBHOOK_SECRET: "test_ses_webhook_secret"
+  SES_WEBHOOK_SECRET: "test_ses_webhook_secret",
 }));
 
 vi.mock("drizzle-orm/vercel-postgres", () => ({
   drizzle: vi.fn(() => ({
     select: mockSelect,
-    insert: mockInsert
-  }))
+    insert: mockInsert,
+  })),
 }));
 
 vi.mock("@vercel/postgres", () => ({
-  sql: vi.fn()
+  sql: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
-  eq: vi.fn()
+  eq: vi.fn(),
 }));
 
 describe("SES Webhook", () => {
@@ -55,11 +55,11 @@ describe("SES Webhook", () => {
 
   it("should return 500 when SES_WEBHOOK_SECRET is missing", async () => {
     delete process.env.SES_WEBHOOK_SECRET;
-    
+
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "x-amz-sns-message-signature": "test_signature" }
+      headers: { "x-amz-sns-message-signature": "test_signature" },
     });
 
     const response = await POST(request);
@@ -72,7 +72,7 @@ describe("SES Webhook", () => {
   it("should return 400 when x-amz-sns-message-signature header is missing", async () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
-      body: JSON.stringify({ test: "data" })
+      body: JSON.stringify({ test: "data" }),
     });
 
     const response = await POST(request);
@@ -86,7 +86,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "x-amz-sns-message-signature": "invalid_signature" }
+      headers: { "x-amz-sns-message-signature": "invalid_signature" },
     });
 
     const response = await POST(request);
@@ -98,22 +98,24 @@ describe("SES Webhook", () => {
 
   it("should successfully process SES email notification", async () => {
     const mockPayload = {
-      Records: [{
-        ses: {
-          mail: {
-            messageId: "test-message-id-123",
-            commonHeaders: {
-              from: ["sender@example.com"],
-              subject: "Test Email Subject",
-              to: ["recipient@example.com"]
-            }
+      Records: [
+        {
+          ses: {
+            mail: {
+              messageId: "test-message-id-123",
+              commonHeaders: {
+                from: ["sender@example.com"],
+                subject: "Test Email Subject",
+                to: ["recipient@example.com"],
+              },
+            },
+            receipt: {
+              recipients: ["recipient@example.com"],
+              timestamp: "2023-12-01T10:00:00.000Z",
+            },
           },
-          receipt: {
-            recipients: ["recipient@example.com"],
-            timestamp: "2023-12-01T10:00:00.000Z"
-          }
-        }
-      }]
+        },
+      ],
     };
 
     const body = JSON.stringify(mockPayload);
@@ -124,7 +126,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { "x-amz-sns-message-signature": signature }
+      headers: { "x-amz-sns-message-signature": signature },
     });
 
     mockSelect.mockReturnValue({ from: mockFrom });
@@ -144,22 +146,24 @@ describe("SES Webhook", () => {
 
   it("should handle missing sender gracefully", async () => {
     const mockPayload = {
-      Records: [{
-        ses: {
-          mail: {
-            messageId: "test-message-id-456",
-            commonHeaders: {
-              from: [],
-              subject: "Test Email Subject",
-              to: ["recipient@example.com"]
-            }
+      Records: [
+        {
+          ses: {
+            mail: {
+              messageId: "test-message-id-456",
+              commonHeaders: {
+                from: [],
+                subject: "Test Email Subject",
+                to: ["recipient@example.com"],
+              },
+            },
+            receipt: {
+              recipients: ["recipient@example.com"],
+              timestamp: "2023-12-01T10:00:00.000Z",
+            },
           },
-          receipt: {
-            recipients: ["recipient@example.com"],
-            timestamp: "2023-12-01T10:00:00.000Z"
-          }
-        }
-      }]
+        },
+      ],
     };
 
     const body = JSON.stringify(mockPayload);
@@ -170,7 +174,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { "x-amz-sns-message-signature": signature }
+      headers: { "x-amz-sns-message-signature": signature },
     });
 
     mockSelect.mockReturnValue({ from: mockFrom });
@@ -190,22 +194,24 @@ describe("SES Webhook", () => {
 
   it("should handle missing subject gracefully", async () => {
     const mockPayload = {
-      Records: [{
-        ses: {
-          mail: {
-            messageId: "test-message-id-789",
-            commonHeaders: {
-              from: ["sender@example.com"],
-              subject: undefined,
-              to: ["recipient@example.com"]
-            }
+      Records: [
+        {
+          ses: {
+            mail: {
+              messageId: "test-message-id-789",
+              commonHeaders: {
+                from: ["sender@example.com"],
+                subject: undefined,
+                to: ["recipient@example.com"],
+              },
+            },
+            receipt: {
+              recipients: ["recipient@example.com"],
+              timestamp: "2023-12-01T10:00:00.000Z",
+            },
           },
-          receipt: {
-            recipients: ["recipient@example.com"],
-            timestamp: "2023-12-01T10:00:00.000Z"
-          }
-        }
-      }]
+        },
+      ],
     };
 
     const body = JSON.stringify(mockPayload);
@@ -216,7 +222,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { "x-amz-sns-message-signature": signature }
+      headers: { "x-amz-sns-message-signature": signature },
     });
 
     mockSelect.mockReturnValue({ from: mockFrom });
@@ -236,22 +242,24 @@ describe("SES Webhook", () => {
 
   it("should return 404 when inbox is not found", async () => {
     const mockPayload = {
-      Records: [{
-        ses: {
-          mail: {
-            messageId: "test-message-id-404",
-            commonHeaders: {
-              from: ["sender@example.com"],
-              subject: "Test Email Subject",
-              to: ["recipient@example.com"]
-            }
+      Records: [
+        {
+          ses: {
+            mail: {
+              messageId: "test-message-id-404",
+              commonHeaders: {
+                from: ["sender@example.com"],
+                subject: "Test Email Subject",
+                to: ["recipient@example.com"],
+              },
+            },
+            receipt: {
+              recipients: ["recipient@example.com"],
+              timestamp: "2023-12-01T10:00:00.000Z",
+            },
           },
-          receipt: {
-            recipients: ["recipient@example.com"],
-            timestamp: "2023-12-01T10:00:00.000Z"
-          }
-        }
-      }]
+        },
+      ],
     };
 
     const body = JSON.stringify(mockPayload);
@@ -262,7 +270,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { "x-amz-sns-message-signature": signature }
+      headers: { "x-amz-sns-message-signature": signature },
     });
 
     mockSelect.mockReturnValue({ from: mockFrom });
@@ -280,22 +288,24 @@ describe("SES Webhook", () => {
 
   it("should return 500 for general errors", async () => {
     const mockPayload = {
-      Records: [{
-        ses: {
-          mail: {
-            messageId: "test-message-id-error",
-            commonHeaders: {
-              from: ["sender@example.com"],
-              subject: "Test Email Subject",
-              to: ["recipient@example.com"]
-            }
+      Records: [
+        {
+          ses: {
+            mail: {
+              messageId: "test-message-id-error",
+              commonHeaders: {
+                from: ["sender@example.com"],
+                subject: "Test Email Subject",
+                to: ["recipient@example.com"],
+              },
+            },
+            receipt: {
+              recipients: ["recipient@example.com"],
+              timestamp: "2023-12-01T10:00:00.000Z",
+            },
           },
-          receipt: {
-            recipients: ["recipient@example.com"],
-            timestamp: "2023-12-01T10:00:00.000Z"
-          }
-        }
-      }]
+        },
+      ],
     };
 
     const body = JSON.stringify(mockPayload);
@@ -306,7 +316,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { "x-amz-sns-message-signature": signature }
+      headers: { "x-amz-sns-message-signature": signature },
     });
 
     mockSelect.mockReturnValue({ from: mockFrom });
@@ -331,7 +341,7 @@ describe("SES Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { "x-amz-sns-message-signature": signature }
+      headers: { "x-amz-sns-message-signature": signature },
     });
 
     const response = await POST(request);

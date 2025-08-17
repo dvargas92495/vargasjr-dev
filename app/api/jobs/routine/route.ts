@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
-import { VellumClient } from 'vellum-ai';
+import { VellumClient } from "vellum-ai";
 
 export async function GET() {
   try {
@@ -11,7 +11,10 @@ export async function GET() {
   } catch (error) {
     console.error("Failed to fetch routine jobs:", error);
     return NextResponse.json(
-      { error: "Failed to fetch routine jobs", details: error instanceof Error ? error.message : String(error) },
+      {
+        error: "Failed to fetch routine jobs",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
@@ -47,13 +50,13 @@ export async function POST(request: Request) {
           {
             name: "schedule_description",
             value: scheduleDescription,
-            type: "STRING"
-          }
+            type: "STRING",
+          },
         ],
       });
 
-      if (response.data.state !== 'FULFILLED') {
-        let errorMessage = 'Workflow execution failed';
+      if (response.data.state !== "FULFILLED") {
+        let errorMessage = "Workflow execution failed";
         if (response.data.error) {
           const errorParts = [];
           if (response.data.error.message) {
@@ -63,37 +66,49 @@ export async function POST(request: Request) {
             errorParts.push(`(Code: ${response.data.error.code})`);
           }
           if (errorParts.length > 0) {
-            errorMessage = `Workflow execution failed: ${errorParts.join(' ')}`;
+            errorMessage = `Workflow execution failed: ${errorParts.join(" ")}`;
           }
         }
         throw new Error(errorMessage);
       }
 
       if (!response.data.outputs) {
-        console.error('Workflow returned no outputs. Full response:', JSON.stringify(response.data, null, 2));
+        console.error(
+          "Workflow returned no outputs. Full response:",
+          JSON.stringify(response.data, null, 2)
+        );
         return NextResponse.json(
-          { 
-            error: 'Workflow execution failed or returned no outputs',
-            details: 'No outputs returned from workflow',
-            fullResponse: response.data
+          {
+            error: "Workflow execution failed or returned no outputs",
+            details: "No outputs returned from workflow",
+            fullResponse: response.data,
           },
           { status: 500 }
         );
       }
 
-      const cronOutput = response.data.outputs.find((output) => output.name === 'cron_expression');
-      if (!cronOutput || typeof cronOutput.value !== 'string') {
-        throw new Error('Failed to generate cron expression from natural language');
+      const cronOutput = response.data.outputs.find(
+        (output) => output.name === "cron_expression"
+      );
+      if (!cronOutput || typeof cronOutput.value !== "string") {
+        throw new Error(
+          "Failed to generate cron expression from natural language"
+        );
       }
 
       cronExpression = cronOutput.value;
     } catch (error) {
       console.error("Failed to convert schedule description to cron:", error);
-      const userMessage = error instanceof Error && error.message.includes('Failed to generate cron expression') 
-        ? 'Unable to understand the schedule description. Please try a clearer format like "every Monday at 5pm" or "daily at 9am"'
-        : 'Failed to convert schedule description to cron expression';
+      const userMessage =
+        error instanceof Error &&
+        error.message.includes("Failed to generate cron expression")
+          ? 'Unable to understand the schedule description. Please try a clearer format like "every Monday at 5pm" or "daily at 9am"'
+          : "Failed to convert schedule description to cron expression";
       return NextResponse.json(
-        { error: userMessage, details: error instanceof Error ? error.message : String(error) },
+        {
+          error: userMessage,
+          details: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }
@@ -112,11 +127,15 @@ export async function POST(request: Request) {
     return NextResponse.json(newRoutineJob[0]);
   } catch (error) {
     console.error("Failed to create routine job:", error);
-    const userMessage = error instanceof Error && error.message.includes('duplicate key') 
-      ? 'A routine job with this name already exists. Please choose a different name.'
-      : 'Failed to create routine job';
+    const userMessage =
+      error instanceof Error && error.message.includes("duplicate key")
+        ? "A routine job with this name already exists. Please choose a different name."
+        : "Failed to create routine job";
     return NextResponse.json(
-      { error: userMessage, details: error instanceof Error ? error.message : String(error) },
+      {
+        error: userMessage,
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

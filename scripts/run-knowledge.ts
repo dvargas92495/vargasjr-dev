@@ -40,18 +40,17 @@ class KnowledgeRunner {
     } else {
       console.log("🚀 Applying knowledge changes...");
     }
-    
+
     try {
       const currentKnowledge = await this.fetchCurrentKnowledge();
       const localKnowledge = this.loadLocalKnowledge();
       await this.generateKnowledgeDiff(currentKnowledge, localKnowledge);
-      
+
       if (this.isPreviewMode) {
         console.log("✅ Knowledge preview completed successfully!");
       } else {
         console.log("✅ Knowledge changes applied successfully!");
       }
-      
     } catch (error) {
       const action = this.isPreviewMode ? "preview" : "apply";
       console.error(`❌ Failed to ${action} knowledge changes: ${error}`);
@@ -61,7 +60,7 @@ class KnowledgeRunner {
 
   private async fetchCurrentKnowledge(): Promise<DevinKnowledge[]> {
     console.log("=== Fetching current knowledge from Devin API ===");
-    
+
     const devinApiToken = process.env.DEVIN_API_TOKEN;
     if (!devinApiToken) {
       throw new Error("DEVIN_API_TOKEN environment variable is required");
@@ -70,13 +69,15 @@ class KnowledgeRunner {
     try {
       const response = await fetch("https://api.devin.ai/v1/knowledge", {
         headers: {
-          "Authorization": `Bearer ${devinApiToken}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${devinApiToken}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`Devin API call failed: ${response.status} - ${response.statusText}`);
+        throw new Error(
+          `Devin API call failed: ${response.status} - ${response.statusText}`
+        );
       }
 
       const data: DevinApiResponse = await response.json();
@@ -89,14 +90,16 @@ class KnowledgeRunner {
 
   private loadLocalKnowledge(): KnowledgeFile[] {
     console.log("=== Loading local knowledge files ===");
-    
+
     if (!existsSync(this.knowledgeDir)) {
-      console.log("⚠️  No docs directory found - no local knowledge to process");
+      console.log(
+        "⚠️  No docs directory found - no local knowledge to process"
+      );
       return [];
     }
 
     const knowledgeFiles = readdirSync(this.knowledgeDir)
-      .filter(file => file.endsWith('.json'))
+      .filter((file) => file.endsWith(".json"))
       .sort();
 
     if (knowledgeFiles.length === 0) {
@@ -105,13 +108,13 @@ class KnowledgeRunner {
     }
 
     const localKnowledge: KnowledgeFile[] = [];
-    
+
     for (const file of knowledgeFiles) {
       try {
         const filePath = join(this.knowledgeDir, file);
-        const content = readFileSync(filePath, 'utf-8');
+        const content = readFileSync(filePath, "utf-8");
         const knowledge: KnowledgeFile = JSON.parse(content);
-        
+
         this.validateKnowledgeFile(knowledge, file);
         localKnowledge.push(knowledge);
         console.log(`✓ Loaded knowledge: ${knowledge.name}`);
@@ -124,24 +127,32 @@ class KnowledgeRunner {
     return localKnowledge;
   }
 
-  private validateKnowledgeFile(knowledge: KnowledgeFile, filename: string): void {
-    const required = ['name', 'body', 'trigger_description'];
+  private validateKnowledgeFile(
+    knowledge: KnowledgeFile,
+    filename: string
+  ): void {
+    const required = ["name", "body", "trigger_description"];
     for (const field of required) {
       if (!knowledge[field as keyof KnowledgeFile]) {
-        throw new Error(`Knowledge file ${filename} missing required field: ${field}`);
+        throw new Error(
+          `Knowledge file ${filename} missing required field: ${field}`
+        );
       }
     }
   }
 
-  private async generateKnowledgeDiff(currentKnowledge: DevinKnowledge[], localKnowledge: KnowledgeFile[]): Promise<void> {
+  private async generateKnowledgeDiff(
+    currentKnowledge: DevinKnowledge[],
+    localKnowledge: KnowledgeFile[]
+  ): Promise<void> {
     console.log("=== Generating knowledge diff ===");
-    
+
     const toCreate: KnowledgeFile[] = [];
     const toUpdate: { local: KnowledgeFile; current: DevinKnowledge }[] = [];
     const toDelete: DevinKnowledge[] = [];
 
     for (const local of localKnowledge) {
-      const existing = currentKnowledge.find(k => k.name === local.name);
+      const existing = currentKnowledge.find((k) => k.name === local.name);
       if (!existing) {
         toCreate.push(local);
       } else if (this.hasChanges(local, existing)) {
@@ -150,14 +161,14 @@ class KnowledgeRunner {
     }
 
     for (const current of currentKnowledge) {
-      const stillExists = localKnowledge.find(k => k.name === current.name);
+      const stillExists = localKnowledge.find((k) => k.name === current.name);
       if (!stillExists) {
         toDelete.push(current);
       }
     }
 
     await this.displayKnowledgeChanges(toCreate, toUpdate, toDelete);
-    
+
     if (!this.isPreviewMode) {
       await this.applyChanges(toCreate, toUpdate, toDelete);
     }
@@ -177,9 +188,15 @@ class KnowledgeRunner {
     toDelete: DevinKnowledge[]
   ): Promise<void> {
     console.log("=== Knowledge changes summary ===");
-    
-    if (toCreate.length === 0 && toUpdate.length === 0 && toDelete.length === 0) {
-      console.log("⚠️  No knowledge changes detected - all knowledge is up to date");
+
+    if (
+      toCreate.length === 0 &&
+      toUpdate.length === 0 &&
+      toDelete.length === 0
+    ) {
+      console.log(
+        "⚠️  No knowledge changes detected - all knowledge is up to date"
+      );
       return;
     }
 
@@ -188,7 +205,11 @@ class KnowledgeRunner {
       for (const knowledge of toCreate) {
         console.log(`  + ${knowledge.name}`);
         console.log(`    Trigger: ${knowledge.trigger_description}`);
-        console.log(`    Body: ${knowledge.body.substring(0, 100)}${knowledge.body.length > 100 ? '...' : ''}`);
+        console.log(
+          `    Body: ${knowledge.body.substring(0, 100)}${
+            knowledge.body.length > 100 ? "..." : ""
+          }`
+        );
       }
     }
 
@@ -197,10 +218,17 @@ class KnowledgeRunner {
       for (const { local, current } of toUpdate) {
         console.log(`  ~ ${local.name}`);
         if (local.body !== current.body) {
-          console.log(`    Body changed: ${current.body.substring(0, 50)}... → ${local.body.substring(0, 50)}...`);
+          console.log(
+            `    Body changed: ${current.body.substring(
+              0,
+              50
+            )}... → ${local.body.substring(0, 50)}...`
+          );
         }
         if (local.trigger_description !== current.trigger_description) {
-          console.log(`    Trigger changed: ${current.trigger_description} → ${local.trigger_description}`);
+          console.log(
+            `    Trigger changed: ${current.trigger_description} → ${local.trigger_description}`
+          );
         }
       }
     }
@@ -239,45 +267,57 @@ class KnowledgeRunner {
       const response = await fetch("https://api.devin.ai/v1/knowledge", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${devinApiToken}`,
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${devinApiToken}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(knowledge)
+        body: JSON.stringify(knowledge),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create knowledge ${knowledge.name}: ${response.status} - ${response.statusText}`);
+        throw new Error(
+          `Failed to create knowledge ${knowledge.name}: ${response.status} - ${response.statusText}`
+        );
       }
     }
 
     for (const { local, current } of toUpdate) {
       console.log(`Updating knowledge: ${local.name}`);
-      const response = await fetch(`https://api.devin.ai/v1/knowledge/${current.id}`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${devinApiToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(local)
-      });
+      const response = await fetch(
+        `https://api.devin.ai/v1/knowledge/${current.id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${devinApiToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(local),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to update knowledge ${local.name}: ${response.status} - ${response.statusText}`);
+        throw new Error(
+          `Failed to update knowledge ${local.name}: ${response.status} - ${response.statusText}`
+        );
       }
     }
 
     for (const knowledge of toDelete) {
       console.log(`Deleting knowledge: ${knowledge.name}`);
-      const response = await fetch(`https://api.devin.ai/v1/knowledge/${knowledge.id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${devinApiToken}`,
-          "Content-Type": "application/json"
+      const response = await fetch(
+        `https://api.devin.ai/v1/knowledge/${knowledge.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${devinApiToken}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to delete knowledge ${knowledge.name}: ${response.status} - ${response.statusText}`);
+        throw new Error(
+          `Failed to delete knowledge ${knowledge.name}: ${response.status} - ${response.statusText}`
+        );
       }
     }
 
@@ -287,8 +327,8 @@ class KnowledgeRunner {
 
 async function main() {
   const args = process.argv.slice(2);
-  const isPreviewMode = args.includes('--preview');
-  
+  const isPreviewMode = args.includes("--preview");
+
   const runner = new KnowledgeRunner(isPreviewMode);
   await runner.runKnowledge();
 }

@@ -33,29 +33,37 @@ export default async function ApplicationDetailPage({
         </Link>
         <h2 className="text-xl font-bold">Application Details</h2>
       </div>
-      
+
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
             <p className="mt-1 text-sm text-gray-900">{application.name}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Client ID</label>
-            <p className="mt-1 text-sm text-gray-900">{application.clientId || 'N/A'}</p>
+            <label className="block text-sm font-medium text-gray-700">
+              Client ID
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {application.clientId || "N/A"}
+            </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Created At</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Created At
+            </label>
             <p className="mt-1 text-sm text-gray-900">
               {application.createdAt.toLocaleDateString()}
             </p>
           </div>
         </div>
       </div>
-      
+
       <div className="mt-4">
-        <DeleteApplicationButton 
-          applicationId={application.id} 
+        <DeleteApplicationButton
+          applicationId={application.id}
           applicationName={application.name}
         />
       </div>

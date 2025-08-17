@@ -9,7 +9,7 @@ const ApplicationRow = ({ application }: { application: Application }) => {
   const handleClick = useCallback(() => {
     router.push(`/admin/applications/${application.id}`);
   }, [router, application.id]);
-  
+
   return (
     <tr
       key={application.id}

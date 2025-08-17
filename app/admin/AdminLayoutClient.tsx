@@ -5,14 +5,25 @@ import Link from "next/link";
 import { useState } from "react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
-export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+export default function AdminLayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen max-h-screen">
       {/* Mobile sidebar overlay */}
-      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+      <div
+        className={`fixed inset-0 z-50 lg:hidden ${
+          sidebarOpen ? "block" : "hidden"
+        }`}
+      >
+        <div
+          className="fixed inset-0 bg-gray-600 bg-opacity-75"
+          onClick={() => setSidebarOpen(false)}
+        />
         <div className="relative flex w-full max-w-xs flex-col bg-gray-500 p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">Menu</h2>
@@ -152,11 +163,15 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
           </button>
           <h1 className="text-xl font-bold">Admin Dashboard</h1>
         </div>
-        
+
         {/* Desktop header */}
-        <h1 className="hidden lg:block text-2xl font-bold mb-6">Admin Dashboard</h1>
-        
-        <div className="lg:overflow-x-auto flex flex-col flex-1">{children}</div>
+        <h1 className="hidden lg:block text-2xl font-bold mb-6">
+          Admin Dashboard
+        </h1>
+
+        <div className="lg:overflow-x-auto flex flex-col flex-1">
+          {children}
+        </div>
       </div>
     </div>
   );

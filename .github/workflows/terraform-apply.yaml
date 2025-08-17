@@ -5,15 +5,15 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/**'
-      - '.github/workflows/terraform-apply.yaml'
-      - 'scripts/run-terraform.ts'
+      - "terraform/**"
+      - ".github/workflows/terraform-apply.yaml"
+      - "scripts/run-terraform.ts"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
-        default: 'production'
+        default: "production"
         type: choice
         options:
           - production
@@ -29,15 +29,15 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-          
+          node-version-file: ".nvmrc"
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:

@@ -8,13 +8,13 @@ import { internalFetch } from "@/utils/internal-fetch";
 const testRequestSchema = z.object({
   channel: z.string().min(1),
   message: z.string().min(1),
-  user: z.string().min(1)
+  user: z.string().min(1),
 });
 
 export async function POST(request: Request) {
   const requestId = `test-slack-${Date.now()}`;
   console.log(`[${requestId}] Starting Slack webhook test`);
-  
+
   try {
     let body;
     try {
@@ -24,12 +24,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         createErrorResponse("Invalid JSON in request body", {
           code: "INVALID_JSON",
-          details: parseError instanceof Error ? parseError.message : "Request body is not valid JSON",
+          details:
+            parseError instanceof Error
+              ? parseError.message
+              : "Request body is not valid JSON",
           requestId,
           troubleshooting: [
             "Ensure request body contains valid JSON",
-            "Check Content-Type header is application/json"
-          ]
+            "Check Content-Type header is application/json",
+          ],
         }),
         { status: 400 }
       );
@@ -39,7 +42,10 @@ export async function POST(request: Request) {
     try {
       validatedData = testRequestSchema.parse(body);
     } catch (validationError) {
-      console.error(`[${requestId}] Request validation failed:`, validationError);
+      console.error(
+        `[${requestId}] Request validation failed:`,
+        validationError
+      );
       if (validationError instanceof ZodError) {
         return NextResponse.json(
           createErrorResponse("Request validation failed", {
@@ -48,14 +54,14 @@ export async function POST(request: Request) {
             requestId,
             diagnostics: {
               receivedData: body,
-              validationErrors: validationError.errors
+              validationErrors: validationError.errors,
             },
             troubleshooting: [
               "Ensure 'channel' field is a non-empty string",
               "Ensure 'message' field is a non-empty string",
               "Ensure 'user' field is a non-empty string",
-              "Check the request payload structure"
-            ]
+              "Check the request payload structure",
+            ],
           }),
           { status: 400 }
         );
@@ -65,9 +71,11 @@ export async function POST(request: Request) {
 
     const { channel, message, user } = validatedData;
     const channelName = channel.startsWith("#") ? channel.slice(1) : channel;
-    
-    console.log(`[${requestId}] Creating test event for channel: ${channelName}`);
-    
+
+    console.log(
+      `[${requestId}] Creating test event for channel: ${channelName}`
+    );
+
     const slackEvent = {
       type: "event_callback",
       event: {
@@ -75,54 +83,63 @@ export async function POST(request: Request) {
         text: message,
         user: user,
         channel: channelName,
-        ts: Date.now() / 1000
-      }
+        ts: Date.now() / 1000,
+      },
     };
 
     const eventBody = JSON.stringify(slackEvent);
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    
+
     let signature;
     try {
       const testSecret = process.env.SLACK_SIGNING_SECRET;
       if (!testSecret) {
-        console.error(`[${requestId}] SLACK_SIGNING_SECRET environment variable is not set`);
+        console.error(
+          `[${requestId}] SLACK_SIGNING_SECRET environment variable is not set`
+        );
         return NextResponse.json(
           createErrorResponse("Missing Slack signing secret", {
             code: "MISSING_SECRET",
-            details: "SLACK_SIGNING_SECRET environment variable is required for test endpoint",
+            details:
+              "SLACK_SIGNING_SECRET environment variable is required for test endpoint",
             requestId,
             troubleshooting: [
               "Set SLACK_SIGNING_SECRET environment variable",
               "Check your environment configuration",
-              "Ensure the secret matches your Slack app configuration"
-            ]
+              "Ensure the secret matches your Slack app configuration",
+            ],
           }),
           { status: 500 }
         );
       }
-      
+
       const signatureVersion = "v0";
       const hmac = createHmac("sha256", testSecret);
       hmac.update(`${signatureVersion}:${timestamp}:${eventBody}`);
       signature = `${signatureVersion}=${hmac.digest("hex")}`;
     } catch (signatureError) {
-      console.error(`[${requestId}] Failed to generate signature:`, signatureError);
+      console.error(
+        `[${requestId}] Failed to generate signature:`,
+        signatureError
+      );
       return NextResponse.json(
         createErrorResponse("Failed to generate webhook signature", {
           code: "SIGNATURE_ERROR",
-          details: signatureError instanceof Error ? signatureError.message : "Unknown signature error",
+          details:
+            signatureError instanceof Error
+              ? signatureError.message
+              : "Unknown signature error",
           requestId,
           troubleshooting: [
             "Check if crypto module is available",
-            "Verify signature generation logic"
-          ]
+            "Verify signature generation logic",
+          ],
         }),
         { status: 500 }
       );
     }
 
-    const webhookUrl = `${request.url.split('/api/')[0]}/api/slack`;
+    const webhookUrl = `${request.url.split("/api/")[0]}/api/slack`;
     console.log(`[${requestId}] Sending webhook request to: ${webhookUrl}`);
 
     let webhookResponse;
@@ -132,26 +149,33 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/json",
           "x-slack-request-timestamp": timestamp,
-          "x-slack-signature": signature
+          "x-slack-signature": signature,
         },
-        body: eventBody
+        body: eventBody,
       });
     } catch (internalError) {
-      console.error(`[${requestId}] Error calling internal webhook:`, internalError);
+      console.error(
+        `[${requestId}] Error calling internal webhook:`,
+        internalError
+      );
       return NextResponse.json(
         createErrorResponse("Failed to call internal webhook", {
           code: "INTERNAL_WEBHOOK_ERROR",
-          details: internalError instanceof Error ? internalError.message : "Error calling internal webhook handler",
+          details:
+            internalError instanceof Error
+              ? internalError.message
+              : "Error calling internal webhook handler",
           requestId,
           diagnostics: {
             webhookUrl,
-            errorName: internalError instanceof Error ? internalError.name : "Unknown"
+            errorName:
+              internalError instanceof Error ? internalError.name : "Unknown",
           },
           troubleshooting: [
             "Check if the internal route handler exists",
             "Verify the route module can be imported",
-            "Check for errors in the target endpoint"
-          ]
+            "Check for errors in the target endpoint",
+          ],
         }),
         { status: 500 }
       );
@@ -161,21 +185,27 @@ export async function POST(request: Request) {
     try {
       responseText = await webhookResponse.text();
     } catch (readError) {
-      console.error(`[${requestId}] Failed to read webhook response:`, readError);
+      console.error(
+        `[${requestId}] Failed to read webhook response:`,
+        readError
+      );
       return NextResponse.json(
         createErrorResponse("Failed to read webhook response", {
           code: "RESPONSE_READ_ERROR",
-          details: readError instanceof Error ? readError.message : "Unable to read response body",
+          details:
+            readError instanceof Error
+              ? readError.message
+              : "Unable to read response body",
           requestId,
           diagnostics: {
             statusCode: webhookResponse.status,
             statusText: webhookResponse.statusText,
-            headers: Object.fromEntries(webhookResponse.headers.entries())
+            headers: Object.fromEntries(webhookResponse.headers.entries()),
           },
           troubleshooting: [
             "Check if the webhook endpoint is accessible",
-            "Verify network connectivity to the webhook endpoint"
-          ]
+            "Verify network connectivity to the webhook endpoint",
+          ],
         }),
         { status: 500 }
       );
@@ -184,34 +214,44 @@ export async function POST(request: Request) {
     let webhookResult;
     const contentType = webhookResponse.headers.get("content-type") || "";
     const isJsonResponse = contentType.includes("application/json");
-    
+
     if (webhookResponse.ok && isJsonResponse) {
       try {
         webhookResult = JSON.parse(responseText);
       } catch (parseError) {
-        console.error(`[${requestId}] Failed to parse JSON webhook response:`, parseError);
+        console.error(
+          `[${requestId}] Failed to parse JSON webhook response:`,
+          parseError
+        );
         return NextResponse.json(
           createErrorResponse("Failed to parse webhook response", {
             code: "RESPONSE_PARSE_ERROR",
-            details: parseError instanceof Error ? parseError.message : "Invalid JSON response",
+            details:
+              parseError instanceof Error
+                ? parseError.message
+                : "Invalid JSON response",
             requestId,
             diagnostics: {
               statusCode: webhookResponse.status,
               statusText: webhookResponse.statusText,
               responseText: responseText.substring(0, 500),
               contentType: contentType,
-              headers: Object.fromEntries(webhookResponse.headers.entries())
+              headers: Object.fromEntries(webhookResponse.headers.entries()),
             },
             troubleshooting: [
               "Check if the webhook endpoint returns valid JSON",
-              "Verify the webhook endpoint is functioning correctly"
-            ]
+              "Verify the webhook endpoint is functioning correctly",
+            ],
           }),
           { status: 500 }
         );
       }
     } else {
-      console.error(`[${requestId}] Webhook returned non-JSON or error response:`, webhookResponse.status, responseText.substring(0, 200));
+      console.error(
+        `[${requestId}] Webhook returned non-JSON or error response:`,
+        webhookResponse.status,
+        responseText.substring(0, 200)
+      );
       return NextResponse.json(
         createErrorResponse("Webhook returned error response", {
           code: "WEBHOOK_ERROR_RESPONSE",
@@ -222,49 +262,53 @@ export async function POST(request: Request) {
             statusText: webhookResponse.statusText,
             responseText: responseText.substring(0, 500),
             contentType: contentType,
-            headers: Object.fromEntries(webhookResponse.headers.entries())
+            headers: Object.fromEntries(webhookResponse.headers.entries()),
           },
           troubleshooting: [
             "Check if SLACK_SIGNING_SECRET is correctly set",
             "Verify the webhook endpoint is functioning correctly",
-            "Check server logs for detailed error information"
-          ]
+            "Check server logs for detailed error information",
+          ],
         }),
         { status: 500 }
       );
     }
 
     console.log(`[${requestId}] Webhook test completed successfully`);
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       channel: `#${channelName}`,
       message: message,
       inboxName: `slack-${channelName}`,
       webhookResponse: webhookResult,
       messageId: `test-${Date.now()}`,
-      requestId
+      requestId,
     });
   } catch (error) {
-    console.error(`[${requestId}] Unexpected error testing Slack webhook:`, error);
+    console.error(
+      `[${requestId}] Unexpected error testing Slack webhook:`,
+      error
+    );
     const errorStack = error instanceof Error ? error.stack : undefined;
     if (errorStack) {
       console.error(`[${requestId}] Error stack:`, errorStack);
     }
-    
+
     return NextResponse.json(
       createErrorResponse("Failed to test Slack webhook", {
         code: "UNEXPECTED_ERROR",
-        details: error instanceof Error ? error.message : "Unknown error occurred",
+        details:
+          error instanceof Error ? error.message : "Unknown error occurred",
         requestId,
         diagnostics: {
           errorName: error instanceof Error ? error.name : "Unknown",
-          errorStack: errorStack
+          errorStack: errorStack,
         },
         troubleshooting: [
           "Check server logs for detailed error information",
           "Verify all required environment variables are set",
-          "Ensure the Slack webhook endpoint is accessible"
-        ]
+          "Ensure the Slack webhook endpoint is accessible",
+        ],
       }),
       { status: 500 }
     );

@@ -38,14 +38,16 @@ export async function POST(request: Request) {
       .from(WebAuthnCredentialsTable)
       .where(eq(WebAuthnCredentialsTable.userId, "admin"));
 
-    const credentialIds = credentials.map((c: { credentialId: string }) => c.credentialId);
+    const credentialIds = credentials.map(
+      (c: { credentialId: string }) => c.credentialId
+    );
     const options = generateAuthenticationOptions(credentialIds);
-    
+
     return NextResponse.json({
       publicKey: {
         ...options,
         challenge: Array.from(Buffer.from(options.challenge, "base64url")),
-        allowCredentials: options.allowCredentials.map(cred => ({
+        allowCredentials: options.allowCredentials.map((cred) => ({
           ...cred,
           id: Array.from(Buffer.from(cred.id, "base64url")),
         })),
@@ -54,9 +56,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request body",
-          validationErrors: error.errors 
+          validationErrors: error.errors,
         },
         { status: 400 }
       );
@@ -87,16 +89,19 @@ export async function PUT(request: Request) {
       .limit(1);
 
     if (storedCredential.length === 0) {
-      return NextResponse.json({ error: "Credential not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Credential not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ valid: true });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request body",
-          validationErrors: error.errors 
+          validationErrors: error.errors,
         },
         { status: 400 }
       );

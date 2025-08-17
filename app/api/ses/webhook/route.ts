@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.text();
     const sesWebhookSecret = process.env.SES_WEBHOOK_SECRET;
-    
+
     if (!sesWebhookSecret) {
       console.error("SES_WEBHOOK_SECRET environment variable is not set");
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     const snsSignature = request.headers.get("x-amz-sns-message-signature");
-    
+
     if (!snsSignature) {
       console.error("Missing x-amz-sns-message-signature header");
       return NextResponse.json(
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const hmac = createHmac("sha256", sesWebhookSecret);
     hmac.update(body);
     const expectedSignature = hmac.digest("base64");
-    
+
     if (snsSignature !== expectedSignature) {
       console.error("SES webhook signature verification failed");
       return NextResponse.json(
@@ -71,12 +71,14 @@ export async function POST(request: Request) {
     const payload = JSON.parse(body) as SNSEvent;
     const sesNotification = payload.Records[0].ses;
 
-    console.log(`Received SES webhook for message: ${sesNotification.mail.messageId}`);
+    console.log(
+      `Received SES webhook for message: ${sesNotification.mail.messageId}`
+    );
 
     const sender = sesNotification.mail.commonHeaders.from[0] || "unknown";
     const subject = sesNotification.mail.commonHeaders.subject || "No Subject";
     const messageId = sesNotification.mail.messageId;
-    
+
     const emailBody = `Subject: ${subject}\nMessage ID: ${messageId}\nTimestamp: ${sesNotification.receipt.timestamp}`;
 
     const db = getDb();

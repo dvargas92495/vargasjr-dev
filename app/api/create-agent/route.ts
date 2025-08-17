@@ -7,13 +7,16 @@ import { retryWithBackoff } from "@/scripts/utils";
 const PRODUCTION_AGENT_NAME = "vargas-jr";
 
 async function getCurrentPRNumber(): Promise<string> {
-  if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
+  if (
+    process.env.VERCEL_GIT_PULL_REQUEST_ID &&
+    process.env.VERCEL_GIT_PULL_REQUEST_ID !== "null"
+  ) {
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
-  
+
   const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
-    const branchName = commitRef.replace('refs/heads/', '');
+    const branchName = commitRef.replace("refs/heads/", "");
     const githubRepo = "dvargas92495/vargasjr-dev";
     
     if (!branchName) {
@@ -71,7 +74,7 @@ export async function POST() {
     let agentName: string;
     let message: string;
 
-    if (environmentPrefix === 'PREVIEW') {
+    if (environmentPrefix === "PREVIEW") {
       const prNumber = await getCurrentPRNumber();
       agentName = `pr-${prNumber}`;
       message = `Preview agent creation workflow dispatched for PR #${prNumber}. This process will take several minutes.`;
@@ -81,37 +84,39 @@ export async function POST() {
     }
 
     const headers = await getGitHubAuthHeaders();
-    
-    const response = await fetch(`https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/ci.yaml/dispatches`, {
-      method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs: {
-          agent_name: agentName
-        }
-      }),
-    });
+
+    const response = await fetch(
+      `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/ci.yaml/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ref: "main",
+          inputs: {
+            agent_name: agentName,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('GitHub API error:', errorText);
+      console.error("GitHub API error:", errorText);
       return NextResponse.json(
         { error: "Failed to dispatch workflow" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message
+    return NextResponse.json({
+      success: true,
+      message,
     });
-
   } catch (error) {
-    console.error('Agent creation error:', error);
+    console.error("Agent creation error:", error);
     return NextResponse.json(
       { error: "Agent creation failed to start" },
       { status: 500 }

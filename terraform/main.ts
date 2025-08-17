@@ -1,6 +1,12 @@
 import * as path from "path";
 import { Construct } from "constructs";
-import { App, TerraformStack, S3Backend, TerraformAsset, AssetType } from "cdktf";
+import {
+  App,
+  TerraformStack,
+  S3Backend,
+  TerraformAsset,
+  AssetType,
+} from "cdktf";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
 import { S3BucketVersioningA } from "@cdktf/provider-aws/lib/s3-bucket-versioning";
@@ -25,7 +31,6 @@ import { ImagebuilderImage } from "@cdktf/provider-aws/lib/imagebuilder-image";
 import { AWS_S3_BUCKETS, VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { AGENT_SERVER_PORT } from "../server/constants";
 
-
 interface VargasJRStackConfig {
   environment: "production" | "preview";
   prNumber?: string;
@@ -37,7 +42,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     super(scope, id);
 
     const region = config.region || "us-east-1";
-    
+
     new AwsProvider(this, "AWS", {
       region: region,
     });
@@ -142,7 +147,9 @@ class VargasJRInfrastructureStack extends TerraformStack {
   private createEmailLambdaResources(tags: Record<string, string>) {
     const sesWebhookSecret = process.env.SES_WEBHOOK_SECRET;
     if (!sesWebhookSecret) {
-      throw new Error("SES_WEBHOOK_SECRET environment variable is required but not defined");
+      throw new Error(
+        "SES_WEBHOOK_SECRET environment variable is required but not defined"
+      );
     }
 
     const lambdaRole = new IamRole(this, "EmailLambdaRole", {
@@ -154,19 +161,19 @@ class VargasJRInfrastructureStack extends TerraformStack {
             Action: "sts:AssumeRole",
             Effect: "Allow",
             Principal: {
-              Service: "lambda.amazonaws.com"
-            }
-          }
-        ]
+              Service: "lambda.amazonaws.com",
+            },
+          },
+        ],
       }),
-      tags
+      tags,
     });
 
     new IamRolePolicyAttachment(this, "EmailLambdaBasicExecution", {
       role: lambdaRole.name,
-      policyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      policyArn:
+        "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     });
-
 
     const lambdaAsset = new TerraformAsset(this, "EmailLambdaAsset", {
       path: "lambda",
@@ -182,23 +189,23 @@ class VargasJRInfrastructureStack extends TerraformStack {
       environment: {
         variables: {
           WEBHOOK_URL: this.getWebhookUrl(),
-          SES_WEBHOOK_SECRET: sesWebhookSecret
-        }
+          SES_WEBHOOK_SECRET: sesWebhookSecret,
+        },
       },
       filename: lambdaAsset.path,
       sourceCodeHash: lambdaAsset.assetHash,
-      tags
+      tags,
     });
 
     new LambdaPermission(this, "EmailLambdaSESPermission", {
       statementId: "AllowSESInvoke",
       action: "lambda:InvokeFunction",
       functionName: emailLambda.functionName,
-      principal: "ses.amazonaws.com"
+      principal: "ses.amazonaws.com",
     });
 
     const receiptRuleSet = new SesReceiptRuleSet(this, "EmailReceiptRuleSet", {
-      ruleSetName: "vargas-jr-email-rules"
+      ruleSetName: "vargas-jr-email-rules",
     });
 
     new SesReceiptRule(this, "EmailReceiptRule", {
@@ -210,18 +217,18 @@ class VargasJRInfrastructureStack extends TerraformStack {
         {
           functionArn: emailLambda.arn,
           invocationType: "Event",
-          position: 1
-        }
-      ]
+          position: 1,
+        },
+      ],
     });
 
     new SesActiveReceiptRuleSet(this, "ActiveEmailReceiptRuleSet", {
-      ruleSetName: receiptRuleSet.ruleSetName
+      ruleSetName: receiptRuleSet.ruleSetName,
     });
   }
 
   private getWebhookUrl(): string {
-    return 'https://vargasjr.dev/api/ses/webhook';
+    return "https://vargasjr.dev/api/ses/webhook";
   }
 
   private createCustomAMI(tags: Record<string, string>) {
@@ -234,29 +241,33 @@ class VargasJRInfrastructureStack extends TerraformStack {
             Action: "sts:AssumeRole",
             Effect: "Allow",
             Principal: {
-              Service: "ec2.amazonaws.com"
-            }
-          }
-        ]
+              Service: "ec2.amazonaws.com",
+            },
+          },
+        ],
       }),
-      tags
+      tags,
     });
 
     new IamRolePolicyAttachment(this, "ImageBuilderSSMPolicy", {
       role: imageBuilderRole.name,
-      policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      policyArn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
     });
 
     new IamRolePolicyAttachment(this, "ImageBuilderEC2Policy", {
       role: imageBuilderRole.name,
-      policyArn: "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder"
+      policyArn: "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder",
     });
 
-    const imageBuilderInstanceProfile = new IamInstanceProfile(this, "ImageBuilderInstanceProfile", {
-      name: "vargasjr-imagebuilder-instance-profile",
-      role: imageBuilderRole.name,
-      tags
-    });
+    const imageBuilderInstanceProfile = new IamInstanceProfile(
+      this,
+      "ImageBuilderInstanceProfile",
+      {
+        name: "vargasjr-imagebuilder-instance-profile",
+        role: imageBuilderRole.name,
+        tags,
+      }
+    );
 
     const nodeJsComponent = new ImagebuilderComponent(this, "NodeJSComponent", {
       name: VARGASJR_IMAGE_NAME,
@@ -291,63 +302,81 @@ phases:
             - systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
             - systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
 `,
-      tags
+      tags,
     });
 
-    const infraConfig = new ImagebuilderInfrastructureConfiguration(this, "VargasJRInfraConfig", {
-      name: "vargasjr-infra-config",
-      instanceProfileName: imageBuilderInstanceProfile.name,
-      instanceTypes: ["t3.medium"],
-      tags
-    });
+    const infraConfig = new ImagebuilderInfrastructureConfiguration(
+      this,
+      "VargasJRInfraConfig",
+      {
+        name: "vargasjr-infra-config",
+        instanceProfileName: imageBuilderInstanceProfile.name,
+        instanceTypes: ["t3.medium"],
+        tags,
+      }
+    );
 
-    const distConfig = new ImagebuilderDistributionConfiguration(this, "VargasJRDistConfig", {
-      name: "vargasjr-dist-config",
-      distribution: [{
-        amiDistributionConfiguration: {
-          name: `${VARGASJR_IMAGE_NAME}-{{ imagebuilder:buildDate }}`,
-          description: "VargasJR AMI with Node.js pre-installed"
-        },
-        region: "us-east-1"
-      }],
-      tags
-    });
+    const distConfig = new ImagebuilderDistributionConfiguration(
+      this,
+      "VargasJRDistConfig",
+      {
+        name: "vargasjr-dist-config",
+        distribution: [
+          {
+            amiDistributionConfiguration: {
+              name: `${VARGASJR_IMAGE_NAME}-{{ imagebuilder:buildDate }}`,
+              description: "VargasJR AMI with Node.js pre-installed",
+            },
+            region: "us-east-1",
+          },
+        ],
+        tags,
+      }
+    );
 
-    const imageRecipe = new ImagebuilderImageRecipe(this, "VargasJRImageRecipe", {
-      name: VARGASJR_IMAGE_NAME,
-      version: "1.0.0",
-      parentImage: "ami-0e2c8caa4b6378d8c",
-      component: [{
-        componentArn: nodeJsComponent.arn
-      }],
-      tags
-    });
+    const imageRecipe = new ImagebuilderImageRecipe(
+      this,
+      "VargasJRImageRecipe",
+      {
+        name: VARGASJR_IMAGE_NAME,
+        version: "1.0.0",
+        parentImage: "ami-0e2c8caa4b6378d8c",
+        component: [
+          {
+            componentArn: nodeJsComponent.arn,
+          },
+        ],
+        tags,
+      }
+    );
 
-    const imagePipeline = new ImagebuilderImagePipeline(this, "VargasJRImagePipeline", {
-      name: VARGASJR_IMAGE_NAME,
-      imageRecipeArn: imageRecipe.arn,
-      infrastructureConfigurationArn: infraConfig.arn,
-      distributionConfigurationArn: distConfig.arn,
-      status: "ENABLED",
-      tags
-    });
+    const imagePipeline = new ImagebuilderImagePipeline(
+      this,
+      "VargasJRImagePipeline",
+      {
+        name: VARGASJR_IMAGE_NAME,
+        imageRecipeArn: imageRecipe.arn,
+        infrastructureConfigurationArn: infraConfig.arn,
+        distributionConfigurationArn: distConfig.arn,
+        status: "ENABLED",
+        tags,
+      }
+    );
 
     const image = new ImagebuilderImage(this, "VargasJRImage", {
       imageRecipeArn: imageRecipe.arn,
       infrastructureConfigurationArn: infraConfig.arn,
       distributionConfigurationArn: distConfig.arn,
-      tags
+      tags,
     });
 
     return imagePipeline;
   }
-
-
 }
 
 const app = new App();
 
-const environment = 'production';
+const environment = "production";
 const prNumber = process.env.VERCEL_GIT_PULL_REQUEST_ID;
 
 new VargasJRInfrastructureStack(app, `vargasjr-${environment}`, {

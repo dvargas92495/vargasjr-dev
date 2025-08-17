@@ -15,26 +15,25 @@ const applicationSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, appType, clientId, clientSecret, accessToken, refreshToken } = applicationSchema.parse(body);
+    const { name, appType, clientId, clientSecret, accessToken, refreshToken } =
+      applicationSchema.parse(body);
 
     const db = getDb();
-    
+
     const [application] = await db
       .insert(ApplicationsTable)
       .values({ name, clientId, clientSecret })
       .returning({ id: ApplicationsTable.id });
 
     if (appType === "TWITTER" && (accessToken || refreshToken)) {
-      await db
-        .insert(ApplicationWorkspacesTable)
-        .values({
-          applicationId: application.id,
-          name: `${name} Workspace`,
-          clientId,
-          clientSecret,
-          accessToken,
-          refreshToken,
-        });
+      await db.insert(ApplicationWorkspacesTable).values({
+        applicationId: application.id,
+        name: `${name} Workspace`,
+        clientId,
+        clientSecret,
+        accessToken,
+        refreshToken,
+      });
     }
 
     return NextResponse.json({ id: application.id });
@@ -47,7 +46,10 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Failed to create application", details: error instanceof Error ? error.message : String(error) },
+      {
+        error: "Failed to create application",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

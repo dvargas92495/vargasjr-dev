@@ -27,12 +27,18 @@ export async function POST(
         contactEmail: ContactsTable.email,
       })
       .from(ChatSessionsTable)
-      .innerJoin(ContactsTable, eq(ChatSessionsTable.contactId, ContactsTable.id))
+      .innerJoin(
+        ContactsTable,
+        eq(ChatSessionsTable.contactId, ContactsTable.id)
+      )
       .where(eq(ChatSessionsTable.id, id))
       .limit(1);
 
     if (!chatSession.length) {
-      return NextResponse.json({ error: "Chat session not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Chat session not found" },
+        { status: 404 }
+      );
     }
 
     const session = chatSession[0];

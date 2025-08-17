@@ -9,31 +9,31 @@ import { addInboxMessage } from "@/server";
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const sessionId = searchParams.get('checkout_session_id');
-    
+    const sessionId = searchParams.get("checkout_session_id");
+
     if (!sessionId) {
       console.error("No checkout_session_id provided in success URL");
-      return NextResponse.redirect(new URL('/thank-you', request.url));
+      return NextResponse.redirect(new URL("/thank-you", request.url));
     }
 
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       console.error("STRIPE_SECRET_KEY not available");
-      return NextResponse.redirect(new URL('/thank-you', request.url));
+      return NextResponse.redirect(new URL("/thank-you", request.url));
     }
 
     const stripe = new Stripe(stripeSecretKey);
-    
+
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const customerEmail = session.customer_email;
-    
+
     if (!customerEmail) {
       console.error("No customer email found in checkout session");
-      return NextResponse.redirect(new URL('/thank-you', request.url));
+      return NextResponse.redirect(new URL("/thank-you", request.url));
     }
 
     const db = getDb();
-    
+
     let inbox = await db
       .select({ id: InboxesTable.id })
       .from(InboxesTable)
@@ -70,9 +70,9 @@ export async function GET(request: NextRequest) {
 
     const chatSession = await db
       .insert(ChatSessionsTable)
-      .values({ 
+      .values({
         inboxId: inbox[0].id,
-        contactId: contact[0].id
+        contactId: contact[0].id,
       })
       .returning({ id: ChatSessionsTable.id });
 
@@ -92,10 +92,11 @@ What would you like me to work on first?`;
       threadId: chatSession[0].id,
     });
 
-    return NextResponse.redirect(new URL(`/chat/${chatSession[0].id}`, request.url));
-    
+    return NextResponse.redirect(
+      new URL(`/chat/${chatSession[0].id}`, request.url)
+    );
   } catch (error) {
     console.error("Error in Stripe success handler:", error);
-    return NextResponse.redirect(new URL('/thank-you', request.url));
+    return NextResponse.redirect(new URL("/thank-you", request.url));
   }
 }

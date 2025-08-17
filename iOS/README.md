@@ -5,6 +5,7 @@ A native iOS application that provides a simple interface for interacting with t
 ## Overview
 
 This iOS app allows users to:
+
 - Start chat sessions with Vargas JR through a clean mobile interface
 - Send messages and receive AI-powered responses
 - View chat history optimized for iPhone screens
@@ -32,11 +33,13 @@ iOS/
 ## Prerequisites
 
 ### Hardware Requirements
+
 - **iPhone device** (for device testing)
 - **Mac with Xcode** (Intel or Apple Silicon)
 - **Minimum 8GB RAM** recommended for Xcode and iOS Simulator
 
 ### Software Requirements
+
 - **Xcode 15.0 or later** with iOS SDK
 - **macOS Ventura 13.0 or later**
 - **Apple Developer Account** (free or paid)
@@ -73,6 +76,7 @@ iOS/
 The iOS Simulator provides a convenient way to test the app without physical hardware.
 
 #### Setup Simulator
+
 1. In Xcode, go to **Window > Devices and Simulators**
 2. Click the **Simulators** tab
 3. Click **+** to add a new simulator
@@ -81,6 +85,7 @@ The iOS Simulator provides a convenient way to test the app without physical har
 6. Name it "iPhone Test" and click **Create**
 
 #### Run the App
+
 1. In Xcode, select the iPhone simulator from the scheme selector
 2. Press **⌘+R** or click the **Run** button
 3. The simulator will launch and install the app
@@ -91,12 +96,15 @@ The iOS Simulator provides a convenient way to test the app without physical har
 Testing on actual hardware provides the most accurate experience.
 
 #### Prerequisites for Device Testing
+
 1. **Apple Developer Account**: You need a free or paid Apple Developer account
 2. **iPhone with iOS 15.0+**: Ensure your device is updated
 3. **Same Apple ID**: Use the same Apple ID for your developer account and iPhone
 
 #### Device Setup
+
 1. **Enable Developer Mode**:
+
    - On iPhone: Settings > Privacy & Security > Developer Mode
    - Toggle "Developer Mode" on
    - Restart the device when prompted
@@ -108,6 +116,7 @@ Testing on actual hardware provides the most accurate experience.
    - Enter your Apple ID credentials if prompted
 
 #### Deploy to Device
+
 1. In Xcode, select your iPhone device from the scheme selector
 2. Ensure your development team is properly configured
 3. Press **⌘+R** to build and run
@@ -119,17 +128,21 @@ Testing on actual hardware provides the most accurate experience.
 The app integrates with the existing Vargas JR backend API:
 
 ### Endpoints Used
+
 - **POST** `/api/chat` - Create new chat sessions
 - **GET** `/api/chat/{id}` - Retrieve chat session details
 - **POST** `/api/contact` - Send contact messages
 
 ### Configuration
+
 The base API URL is configured in `ChatService.swift`:
+
 ```swift
 private let baseURL = "https://vargasjr.dev/api"
 ```
 
 For local development, you can change this to:
+
 ```swift
 private let baseURL = "http://localhost:3000/api"
 ```
@@ -139,21 +152,25 @@ private let baseURL = "http://localhost:3000/api"
 ### Common Issues
 
 #### "No matching provisioning profiles found"
+
 - Ensure you have a valid Apple Developer account
 - Check that your bundle identifier is unique
 - Verify your development team is selected in project settings
 
 #### "iOS Simulator not available"
+
 - Update Xcode to version 15.0 or later
 - Install iOS SDK through Xcode preferences
 - Restart Xcode after installation
 
 #### "App crashes on launch"
+
 - Check the Xcode console for error messages
 - Verify all required frameworks are linked
 - Ensure the Info.plist is properly configured
 
 #### "API calls failing"
+
 - Check network connectivity
 - Verify the API base URL is correct
 - Test API endpoints using curl or Postman
@@ -162,6 +179,7 @@ private let baseURL = "http://localhost:3000/api"
 ## Contributing
 
 When contributing to the iOS client:
+
 1. Follow Swift coding conventions
 2. Test on both simulator and device when possible
 3. Ensure API integration remains compatible with the existing backend

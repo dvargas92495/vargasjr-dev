@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.text();
     const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-    
+
     if (!githubWebhookSecret) {
       console.error("GITHUB_WEBHOOK_SECRET environment variable is not set");
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const githubSignature = request.headers.get("x-hub-signature-256");
-    
+
     if (!githubSignature) {
       console.error("Missing x-hub-signature-256 header");
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const hmac = createHmac("sha256", githubWebhookSecret);
     hmac.update(body);
     const expectedSignature = `sha256=${hmac.digest("hex")}`;
-    
+
     if (githubSignature !== expectedSignature) {
       console.error("GitHub webhook signature verification failed");
       return NextResponse.json(
@@ -94,7 +94,7 @@ async function handleIssueOpened(payload: GitHubWebhookPayload) {
     issueNumber: payload.issue.number,
     title: payload.issue.title,
     repository: payload.repository.full_name,
-    author: payload.issue.user.login
+    author: payload.issue.user.login,
   });
 }
 
@@ -103,6 +103,6 @@ async function handleIssueClosed(payload: GitHubWebhookPayload) {
     issueNumber: payload.issue.number,
     title: payload.issue.title,
     repository: payload.repository.full_name,
-    closedBy: payload.sender.login
+    closedBy: payload.sender.login,
   });
 }

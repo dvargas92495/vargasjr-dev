@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       preview:
-        description: 'Run in preview mode (show what would be executed without running)'
+        description: "Run in preview mode (show what would be executed without running)"
         required: false
         type: boolean
         default: false
@@ -18,15 +18,15 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-          
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-          
+          node-version-file: ".nvmrc"
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:

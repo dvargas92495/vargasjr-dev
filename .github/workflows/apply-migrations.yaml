@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'db/schema.ts'
-      - 'scripts/run-migrations.ts'
-      - '.github/workflows/apply-migrations.yaml'
+      - "db/schema.ts"
+      - "scripts/run-migrations.ts"
+      - ".github/workflows/apply-migrations.yaml"
   pull_request:
     paths:
-      - 'db/schema.ts'
-      - 'scripts/run-migrations.ts'
-      - '.github/workflows/apply-migrations.yaml'
+      - "db/schema.ts"
+      - "scripts/run-migrations.ts"
+      - ".github/workflows/apply-migrations.yaml"
 
 permissions:
   contents: read
@@ -24,15 +24,15 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-          
+          node-version-file: ".nvmrc"
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Run migration preview
         run: npm run run-migrations -- --preview
         env:
@@ -49,23 +49,21 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-          
+          node-version-file: ".nvmrc"
+
       - name: Install dependencies
         run: npm install
-        
 
-          
       - name: Generate and apply migrations
         run: npm run db:generate
         env:
           NEON_URL: ${{ secrets.NEON_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-          
+
       - name: Apply database migrations
         run: npm run run-migrations
         env:

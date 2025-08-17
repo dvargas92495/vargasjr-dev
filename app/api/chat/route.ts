@@ -53,9 +53,9 @@ export async function POST(request: Request) {
 
     const chatSession = await db
       .insert(ChatSessionsTable)
-      .values({ 
+      .values({
         inboxId: inbox[0].id,
-        contactId: contact[0].id
+        contactId: contact[0].id,
       })
       .returning({ id: ChatSessionsTable.id });
 

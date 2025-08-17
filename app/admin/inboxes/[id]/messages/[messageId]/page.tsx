@@ -28,7 +28,10 @@ export default async function InboxMessage({
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
-    .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
+    .leftJoin(
+      ContactsTable,
+      eq(InboxMessagesTable.source, ContactsTable.slackId)
+    )
     .where(eq(InboxMessagesTable.id, messageId))
     .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(1);

@@ -9,7 +9,7 @@ import { desc } from "drizzle-orm";
 
 export default async function JobsPage() {
   const db = getDb();
-  
+
   const jobs = await db
     .select({
       id: JobsTable.id,
@@ -21,20 +21,20 @@ export default async function JobsPage() {
     .from(JobsTable)
     .orderBy(desc(JobsTable.priority));
 
-  const jobsWithLabels = jobs.map(job => ({
+  const jobsWithLabels = jobs.map((job) => ({
     ...job,
     priority: convertPriorityToLabel(job.priority),
   }));
 
   const routineJobs = await db.select().from(RoutineJobsTable);
-  
-  const routineJobsWithStringDates = routineJobs.map(job => ({
+
+  const routineJobsWithStringDates = routineJobs.map((job) => ({
     ...job,
     createdAt: job.createdAt.toISOString(),
   }));
 
-  const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
-  
+  const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+
   const sortedJobs = [...jobsWithLabels].sort((a, b) => {
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
@@ -69,7 +69,9 @@ export default async function JobsPage() {
             <thead>
               <tr className="bg-gray-500 text-white">
                 <th className="px-6 py-3 border-b text-left">Name</th>
-                <th className="px-6 py-3 border-b text-left">Cron Expression</th>
+                <th className="px-6 py-3 border-b text-left">
+                  Cron Expression
+                </th>
                 <th className="px-6 py-3 border-b text-left">Status</th>
                 <th className="px-6 py-3 border-b text-left">Actions</th>
               </tr>

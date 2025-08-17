@@ -1,4 +1,4 @@
-import { VellumClient } from 'vellum-ai';
+import { VellumClient } from "vellum-ai";
 
 interface WorkflowDeployment {
   id: string;
@@ -6,10 +6,12 @@ interface WorkflowDeployment {
   workflow_sandbox_id?: string;
 }
 
-export async function getVellumSandboxUrlServer(workflowName: string): Promise<string | null> {
+export async function getVellumSandboxUrlServer(
+  workflowName: string
+): Promise<string | null> {
   try {
     const apiKey = process.env.VELLUM_API_KEY;
-    
+
     if (!apiKey) {
       console.error("VELLUM_API_KEY environment variable is missing");
       return null;
@@ -21,23 +23,25 @@ export async function getVellumSandboxUrlServer(workflowName: string): Promise<s
 
     const response = await vellumClient.workflowDeployments.list();
     const deployments: WorkflowDeployment[] = response.results || [];
-    const deployment = deployments.find(d => d.name === workflowName);
-    
+    const deployment = deployments.find((d) => d.name === workflowName);
+
     if (!deployment || !deployment.workflow_sandbox_id) {
       return null;
     }
 
     return `https://app.vellum.ai/workflow_sandboxes/${deployment.workflow_sandbox_id}`;
   } catch (error) {
-    console.error('Error fetching workflow deployments:', error);
+    console.error("Error fetching workflow deployments:", error);
     return null;
   }
 }
 
-export async function getAllWorkflowDeployments(): Promise<WorkflowDeployment[]> {
+export async function getAllWorkflowDeployments(): Promise<
+  WorkflowDeployment[]
+> {
   try {
     const apiKey = process.env.VELLUM_API_KEY;
-    
+
     if (!apiKey) {
       console.error("VELLUM_API_KEY environment variable is missing");
       return [];
@@ -50,7 +54,7 @@ export async function getAllWorkflowDeployments(): Promise<WorkflowDeployment[]>
     const response = await vellumClient.workflowDeployments.list();
     return response.results || [];
   } catch (error) {
-    console.error('Error fetching workflow deployments:', error);
+    console.error("Error fetching workflow deployments:", error);
     return [];
   }
 }

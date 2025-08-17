@@ -18,7 +18,8 @@ export default function GoogleForm() {
           className="w-full p-2 border rounded text-black font-mono text-sm"
         />
         <p className="text-sm text-gray-600 mt-1">
-          Paste the entire JSON content from your Google Cloud service account key file
+          Paste the entire JSON content from your Google Cloud service account
+          key file
         </p>
       </div>
     </>

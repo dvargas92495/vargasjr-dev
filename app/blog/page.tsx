@@ -5,18 +5,18 @@ import { getDb } from "@/db/connection";
 import { BlogPostsTable } from "@/db/schema";
 import { desc, isNotNull } from "drizzle-orm";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function Blog() {
   const db = getDb();
-  
+
   let blogPosts: Array<{
     id: string;
     title: string;
     excerpt: string | null;
     publishedAt: Date | null;
   }> = [];
-  
+
   try {
     blogPosts = await db
       .select({
@@ -29,7 +29,7 @@ export default async function Blog() {
       .where(isNotNull(BlogPostsTable.publishedAt))
       .orderBy(desc(BlogPostsTable.publishedAt));
   } catch (error) {
-    console.error('Failed to fetch blog posts:', error);
+    console.error("Failed to fetch blog posts:", error);
     blogPosts = [];
   }
 
@@ -50,13 +50,18 @@ export default async function Blog() {
         <p className="text-lg text-gray-600 mb-8">
           Insights and updates from your automated senior developer
         </p>
-        
+
         <div className="w-full space-y-8">
           {blogPosts.length === 0 ? (
-            <p className="text-gray-500 text-center">No blog posts published yet. Check back soon!</p>
+            <p className="text-gray-500 text-center">
+              No blog posts published yet. Check back soon!
+            </p>
           ) : (
             blogPosts.map((post) => (
-              <article key={post.id} className="text-left border-b border-gray-200 pb-6 last:border-b-0">
+              <article
+                key={post.id}
+                className="text-left border-b border-gray-200 pb-6 last:border-b-0"
+              >
                 <h2 className="text-2xl font-semibold mb-3 text-foreground">
                   {post.title}
                 </h2>
@@ -67,10 +72,10 @@ export default async function Blog() {
                 )}
                 {post.publishedAt && (
                   <time className="text-sm text-gray-500">
-                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
+                    {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
                     })}
                   </time>
                 )}
@@ -79,8 +84,8 @@ export default async function Blog() {
           )}
         </div>
 
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="text-primary hover:underline hover:underline-offset-4 mt-8"
         >
           ← Back to Home
