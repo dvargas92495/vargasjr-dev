@@ -36,8 +36,10 @@ async function getCurrentPRNumber(): Promise<string> {
 
     const githubRepo = "dvargas92495/vargasjr-dev";
     if (!branchName) {
-      console.log('⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback');
-      return 'local-dev';
+      console.log(
+        "⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback"
+      );
+      return "local-dev";
     }
 
     if (githubRepo && branchName) {
@@ -82,13 +84,15 @@ async function getCurrentPRNumber(): Promise<string> {
         return prNumber;
       } catch (error) {
         console.log(`⚠️ GitHub API lookup failed, using fallback: ${error}`);
-        return 'local-dev';
+        return "local-dev";
       }
     }
   }
-  
-  console.log('⚠️ Running in local development mode - no Vercel environment variables found');
-  return 'local-dev';
+
+  console.log(
+    "⚠️ Running in local development mode - no Vercel environment variables found"
+  );
+  return "local-dev";
 }
 
 export default async function AdminPage() {
