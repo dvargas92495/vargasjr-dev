@@ -16,35 +16,46 @@ async function getCurrentPRNumber(): Promise<string> {
     const branchName = commitRef.replace('refs/heads/', '');
     const githubRepo = "dvargas92495/vargasjr-dev";
     
+    if (!branchName) {
+      console.log('⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback');
+      return 'local-dev';
+    }
+    
     if (githubRepo && branchName) {
-      const prNumber = await retryWithBackoff(async () => {
-        const [owner] = githubRepo.split('/');
-        const headFilter = `${owner}:${branchName}`;
+      try {
+        const prNumber = await retryWithBackoff(async () => {
+          const [owner] = githubRepo.split('/');
+          const headFilter = `${owner}:${branchName}`;
+          
+          const headers = await getGitHubAuthHeaders();
+          const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
+            headers
+          });
+          
+          if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+          }
+          
+          const prs = await response.json();
+          if (prs.length === 1) {
+            return prs[0].number.toString();
+          } else if (prs.length === 0) {
+            throw new Error(`No open PRs found for branch: ${branchName}`);
+          } else {
+            throw new Error(`Multiple open PRs found for branch: ${branchName}`);
+          }
+        }, 3, 2000);
         
-        const headers = await getGitHubAuthHeaders();
-        const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
-          headers
-        });
-        
-        if (!response.ok) {
-          throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-        }
-        
-        const prs = await response.json();
-        if (prs.length === 1) {
-          return prs[0].number.toString();
-        } else if (prs.length === 0) {
-          throw new Error(`No open PRs found for branch: ${branchName}`);
-        } else {
-          throw new Error(`Multiple open PRs found for branch: ${branchName}`);
-        }
-      }, 3, 2000);
-      
-      return prNumber;
+        return prNumber;
+      } catch (error) {
+        console.log(`⚠️ GitHub API lookup failed, using fallback: ${error}`);
+        return 'local-dev';
+      }
     }
   }
   
-  throw new Error('Unable to determine PR number for preview environment');
+  console.log('⚠️ Running in local development mode - no Vercel environment variables found');
+  return 'local-dev';
 }
 
 export async function POST() {
