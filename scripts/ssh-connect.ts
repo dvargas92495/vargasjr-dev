@@ -20,7 +20,7 @@ class VargasJRSSHConnector {
   constructor(config: SSHConnectConfig) {
     this.config = {
       region: "us-east-1",
-      ...config
+      ...config,
     };
     this.ec2 = new EC2({ region: this.config.region });
   }
@@ -36,7 +36,11 @@ class VargasJRSSHConnector {
       const keyPath = await this.writeKeyToTempFile(keyMaterial);
 
       try {
-        await this.establishSSHConnection(instance.PublicDnsName || "", keyPath, this.config.command);
+        await this.establishSSHConnection(
+          instance.PublicDnsName || "",
+          keyPath,
+          this.config.command
+        );
       } finally {
         unlinkSync(keyPath);
       }
@@ -48,52 +52,63 @@ class VargasJRSSHConnector {
 
   private async findInstance(): Promise<Instance> {
     let filters;
-    
+
     if (this.config.prNumber) {
       console.log(`Looking for PR ${this.config.prNumber} instance...`);
       filters = [
         { Name: "tag:Project", Values: ["VargasJR"] },
         { Name: "tag:PRNumber", Values: [this.config.prNumber] },
-        { Name: "instance-state-name", Values: ["running"] }
+        { Name: "instance-state-name", Values: ["running"] },
       ];
     } else {
       console.log("Looking for production instance...");
       filters = [
         { Name: "tag:Name", Values: ["vargas-jr"] },
         { Name: "tag:Type", Values: ["main"] },
-        { Name: "instance-state-name", Values: ["running"] }
+        { Name: "instance-state-name", Values: ["running"] },
       ];
     }
 
     const result = await this.ec2.describeInstances({ Filters: filters });
-    const instances = result.Reservations?.flatMap((r) => r.Instances || []) || [];
-    
+    const instances =
+      result.Reservations?.flatMap((r) => r.Instances || []) || [];
+
     if (instances.length === 0) {
-      const instanceType = this.config.prNumber ? `PR ${this.config.prNumber}` : "production";
+      const instanceType = this.config.prNumber
+        ? `PR ${this.config.prNumber}`
+        : "production";
       throw new Error(`No running ${instanceType} instance found`);
     }
 
     if (instances.length > 1) {
-      const instanceType = this.config.prNumber ? `PR ${this.config.prNumber}` : "production";
-      console.warn(`⚠️  Multiple ${instanceType} instances found, using the first one`);
+      const instanceType = this.config.prNumber
+        ? `PR ${this.config.prNumber}`
+        : "production";
+      console.warn(
+        `⚠️  Multiple ${instanceType} instances found, using the first one`
+      );
     }
 
     const instance = instances[0];
     console.log(`✅ Found instance: ${instance.InstanceId}`);
     console.log(`   Public DNS: ${instance.PublicDnsName}`);
     console.log(`   Public IP: ${instance.PublicIpAddress}`);
-    console.log(`   Security Groups: ${instance.SecurityGroups?.map(sg => `${sg.GroupName} (${sg.GroupId})`).join(', ')}`);
-    
+    console.log(
+      `   Security Groups: ${instance.SecurityGroups?.map(
+        (sg) => `${sg.GroupName} (${sg.GroupId})`
+      ).join(", ")}`
+    );
+
     if (!instance.PublicDnsName) {
       throw new Error("Instance does not have a public DNS name");
     }
-    
+
     return instance;
   }
 
   private async getSSHKey(): Promise<string> {
     let secretName;
-    
+
     if (this.config.prNumber) {
       secretName = `pr-${this.config.prNumber}-key`;
     } else {
@@ -101,17 +116,8 @@ class VargasJRSSHConnector {
     }
 
     console.log(`Retrieving SSH key from secret: ${secretName}`);
-    
-    try {
-      return await getSecret(secretName, this.config.region);
-    } catch (error: any) {
-      if (this.config.prNumber && error.message?.includes('Secret not found')) {
-        const fallbackSecretName = `vargasjr-pr-${this.config.prNumber}-key-pem`;
-        console.log(`Primary secret not found, trying fallback: ${fallbackSecretName}`);
-        return await getSecret(fallbackSecretName, this.config.region);
-      }
-      throw error;
-    }
+
+    return await getSecret(secretName, this.config.region);
   }
 
   private async writeKeyToTempFile(keyMaterial: string): Promise<string> {
@@ -121,44 +127,68 @@ class VargasJRSSHConnector {
     return keyPath;
   }
 
-  private async establishSSHConnection(publicDns: string, keyPath: string, command?: string): Promise<void> {
+  private async establishSSHConnection(
+    publicDns: string,
+    keyPath: string,
+    command?: string
+  ): Promise<void> {
     if (!publicDns) {
       throw new Error("No public DNS name available for SSH connection");
     }
-    
+
     console.log(`🔗 Connecting to ubuntu@${publicDns}...`);
-    
+
     let sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ConnectionAttempts=3 ubuntu@${publicDns}`;
-    
+
     if (command) {
       sshCommand += ` "${command}"`;
       try {
-        execSync(sshCommand, { stdio: 'inherit', timeout: 60000 });
+        execSync(sshCommand, { stdio: "inherit", timeout: 60000 });
         console.log(`✅ Successfully executed SSH command: ${command}`);
       } catch (error: any) {
         console.error(`❌ Command execution failed: ${error.message}`);
-        if (error.signal === 'SIGTERM' || error.killed) {
-          throw new Error(`SSH command was terminated due to timeout. This indicates a network connectivity issue.`);
+        if (error.signal === "SIGTERM" || error.killed) {
+          throw new Error(
+            `SSH command was terminated due to timeout. This indicates a network connectivity issue.`
+          );
         }
-        if (error.message?.includes('timeout') || error.message?.includes('Connection timed out') || error.code === 'ETIMEDOUT') {
-          throw new Error(`SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`);
+        if (
+          error.message?.includes("timeout") ||
+          error.message?.includes("Connection timed out") ||
+          error.code === "ETIMEDOUT"
+        ) {
+          throw new Error(
+            `SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`
+          );
         }
-        throw new Error(`SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`);
+        throw new Error(
+          `SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`
+        );
       }
     } else {
       try {
-        execSync(sshCommand, { stdio: 'inherit', timeout: 60000 });
+        execSync(sshCommand, { stdio: "inherit", timeout: 60000 });
       } catch (error: any) {
         if (error.status === 130) {
           console.log("\n👋 SSH session ended");
         } else {
-          if (error.signal === 'SIGTERM' || error.killed) {
-            throw new Error(`SSH command was terminated due to timeout. This indicates a network connectivity issue.`);
+          if (error.signal === "SIGTERM" || error.killed) {
+            throw new Error(
+              `SSH command was terminated due to timeout. This indicates a network connectivity issue.`
+            );
           }
-          if (error.message?.includes('timeout') || error.message?.includes('Connection timed out') || error.code === 'ETIMEDOUT') {
-            throw new Error(`SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`);
+          if (
+            error.message?.includes("timeout") ||
+            error.message?.includes("Connection timed out") ||
+            error.code === "ETIMEDOUT"
+          ) {
+            throw new Error(
+              `SSH connection timed out to ${publicDns}. Network connectivity issue detected - the EC2 instance may have VPC/subnet/route table problems or need to be recreated.`
+            );
           }
-          throw new Error(`SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`);
+          throw new Error(
+            `SSH command failed: ${error.message} (code: ${error.code}, signal: ${error.signal})`
+          );
         }
       }
     }
@@ -168,10 +198,10 @@ class VargasJRSSHConnector {
 async function main() {
   dotenv.config();
   const args = process.argv.slice(2);
-  
+
   let prNumber: string | undefined;
   let command: string | undefined;
-  
+
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--pr" && i + 1 < args.length) {
       prNumber = args[i + 1];
@@ -183,7 +213,7 @@ async function main() {
       prNumber = args[i];
     }
   }
-  
+
   if (prNumber && !/^\d+$/.test(prNumber)) {
     console.error("PR number must be a valid number");
     process.exit(1);
