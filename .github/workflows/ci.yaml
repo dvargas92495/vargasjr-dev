@@ -55,7 +55,7 @@ jobs:
       - name: Install Node.js dependencies
         run: npm install
       - name: Run tests
-        run: npm test
+        run: npm test tests/
   publish-agent:
     runs-on: ubuntu-latest
     needs: [lint, test]
