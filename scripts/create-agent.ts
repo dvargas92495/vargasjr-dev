@@ -2,7 +2,7 @@
 
 import { EC2 } from "@aws-sdk/client-ec2";
 import { SSM } from "@aws-sdk/client-ssm";
-import { writeFileSync, mkdirSync } from "fs";
+import { writeFileSync } from "fs";
 import { execSync } from "child_process";
 import { tmpdir } from "os";
 import {
@@ -19,7 +19,6 @@ import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
 
 interface AgentConfig {
-  name: string;
   instanceType?: string;
   region?: string;
   prNumber?: string;
@@ -34,6 +33,8 @@ interface TimingResult {
 class VargasJRAgentCreator {
   private ec2: EC2;
   private config: AgentConfig;
+  private instanceName: string;
+  private keyPairName: string;
 
   constructor(config: AgentConfig) {
     this.config = {
@@ -42,29 +43,29 @@ class VargasJRAgentCreator {
       ...config,
     };
     this.ec2 = new EC2({ region: this.config.region });
+    this.instanceName = this.config.prNumber
+      ? `${DEFAULT_PRODUCTION_AGENT_NAME}-pr-${this.config.prNumber}`
+      : DEFAULT_PRODUCTION_AGENT_NAME;
+    this.keyPairName = `${this.instanceName}`;
   }
 
   async createAgent(): Promise<void> {
-    const instanceName = this.config.prNumber
-      ? `${DEFAULT_PRODUCTION_AGENT_NAME}-pr-${this.config.prNumber}`
-      : DEFAULT_PRODUCTION_AGENT_NAME;
     const overallStartTime = Date.now();
     const timingResults: TimingResult[] = [];
 
-    console.log(`Creating Vargas JR agent: ${instanceName}`);
+    console.log(`Creating Vargas JR agent: ${this.instanceName}`);
 
     try {
       let startTime = Date.now();
-      await this.deleteExistingInstances(instanceName);
+      await this.deleteExistingInstances();
       timingResults.push({
         method: "deleteExistingInstances",
         duration: Date.now() - startTime,
         success: true,
       });
 
-      const keyPairName = `${instanceName}-key`;
       startTime = Date.now();
-      await this.createKeyPair(keyPairName);
+      await this.createKeyPair();
       timingResults.push({
         method: "createKeyPair",
         duration: Date.now() - startTime,
@@ -75,7 +76,7 @@ class VargasJRAgentCreator {
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       startTime = Date.now();
-      const instanceId = await this.createEC2Instance(keyPairName);
+      const instanceId = await this.createEC2Instance();
       timingResults.push({
         method: "createEC2Instance",
         duration: Date.now() - startTime,
@@ -93,10 +94,7 @@ class VargasJRAgentCreator {
       const instanceDetails = await this.getInstanceDetails(instanceId);
 
       startTime = Date.now();
-      const setupTimingResults = await this.setupInstance(
-        instanceDetails,
-        keyPairName
-      );
+      const setupTimingResults = await this.setupInstance(instanceDetails);
       const setupDuration = Date.now() - startTime;
       timingResults.push({
         method: "setupInstance",
@@ -116,7 +114,7 @@ class VargasJRAgentCreator {
       const totalDuration = Date.now() - overallStartTime;
 
       console.log(
-        `✅ Agent ${instanceName} infrastructure and SSM setup completed successfully!`
+        `✅ Agent ${this.instanceName} infrastructure and SSM setup completed successfully!`
       );
       console.log(`Instance ID: ${instanceId}`);
       console.log(`Public DNS: ${instanceDetails.publicDns}`);
@@ -135,9 +133,9 @@ class VargasJRAgentCreator {
     }
   }
 
-  private async deleteExistingInstances(instanceName: string): Promise<void> {
+  private async deleteExistingInstances(): Promise<void> {
     const existingInstances = await findInstancesByFilters(this.ec2, [
-      { Name: "tag:Name", Values: [instanceName] },
+      { Name: "tag:Name", Values: [this.instanceName] },
       { Name: "tag:Project", Values: ["VargasJR"] },
       {
         Name: "instance-state-name",
@@ -146,12 +144,14 @@ class VargasJRAgentCreator {
     ]);
 
     if (existingInstances.length === 0) {
-      console.log(`No existing instances found with name: ${instanceName}`);
+      console.log(
+        `No existing instances found with name: ${this.instanceName}`
+      );
       return;
     }
 
     console.log(
-      `Found ${existingInstances.length} existing instance(s) with name: ${instanceName}`
+      `Found ${existingInstances.length} existing instance(s) with name: ${this.instanceName}`
     );
 
     const instanceIds = existingInstances
@@ -167,55 +167,55 @@ class VargasJRAgentCreator {
     }
   }
 
-  private async createKeyPair(keyPairName: string): Promise<void> {
-    console.log(`Creating key pair: ${keyPairName}`);
+  private async createKeyPair(): Promise<void> {
+    console.log(`Creating key pair: ${this.keyPairName}`);
 
     try {
       const result = await this.ec2.createKeyPair({
-        KeyName: keyPairName,
+        KeyName: this.keyPairName,
         KeyType: "rsa",
         KeyFormat: "pem",
       });
 
       if (result.KeyMaterial) {
-        const keyPath = `${tmpdir()}/${keyPairName}.pem`;
+        const keyPath = `${tmpdir()}/${this.keyPairName}.pem`;
 
         writeFileSync(keyPath, result.KeyMaterial, { mode: 0o600 });
         console.log(`✅ Key pair saved to ${keyPath}`);
 
-        await createSecret(keyPairName, result.KeyMaterial, this.config.region);
+        await createSecret(
+          this.keyPairName,
+          result.KeyMaterial,
+          this.config.region
+        );
       }
     } catch (error: any) {
       if (error.name === "InvalidKeyPair.Duplicate") {
         console.log(
-          `⚠️  Key pair ${keyPairName} already exists, skipping creation`
+          `⚠️  Key pair ${this.keyPairName} already exists, skipping creation`
         );
 
         console.log(
           `Deleting existing key pair to recreate with new material...`
         );
         try {
-          await this.ec2.deleteKeyPair({ KeyName: keyPairName });
-          console.log(`✅ Deleted existing key pair: ${keyPairName}`);
+          await this.ec2.deleteKeyPair({ KeyName: this.keyPairName });
+          console.log(`✅ Deleted existing key pair: ${this.keyPairName}`);
 
           const newResult = await this.ec2.createKeyPair({
-            KeyName: keyPairName,
+            KeyName: this.keyPairName,
             KeyType: "rsa",
             KeyFormat: "pem",
           });
 
           if (newResult.KeyMaterial) {
-            const keyPath = `${tmpdir()}/${keyPairName}.pem`;
+            const keyPath = `${tmpdir()}/${this.keyPairName}.pem`;
 
             writeFileSync(keyPath, newResult.KeyMaterial, { mode: 0o600 });
             console.log(`✅ Key pair recreated and saved to ${keyPath}`);
 
-            const env = this.config.prNumber
-              ? `pr-${this.config.prNumber}`
-              : "prod";
-            const secretName = `vargasjr-${env}-${keyPairName}-pem`;
             await createSecret(
-              secretName,
+              this.keyPairName,
               newResult.KeyMaterial,
               this.config.region
             );
@@ -321,7 +321,7 @@ class VargasJRAgentCreator {
     return orphanedInstanceIds;
   }
 
-  private async createEC2Instance(keyPairName: string): Promise<string> {
+  private async createEC2Instance(): Promise<string> {
     console.log("Creating EC2 instance...");
 
     const securityGroupId = await findOrCreateSecurityGroup(
@@ -345,7 +345,6 @@ class VargasJRAgentCreator {
     try {
       return await this.createSingleInstance(
         imageId,
-        keyPairName,
         securityGroupId,
         iamInstanceProfile
       );
@@ -385,7 +384,6 @@ class VargasJRAgentCreator {
 
         return await this.createSingleInstance(
           imageId,
-          keyPairName,
           securityGroupId,
           iamInstanceProfile
         );
@@ -397,14 +395,13 @@ class VargasJRAgentCreator {
 
   private async createSingleInstance(
     imageId: string,
-    keyPairName: string,
     securityGroupId: string,
     iamInstanceProfile?: string
   ): Promise<string> {
     const result = await this.ec2.runInstances({
       ImageId: imageId,
       InstanceType: this.config.instanceType as any,
-      KeyName: keyPairName,
+      KeyName: this.keyPairName,
       SecurityGroupIds: [securityGroupId],
       ...(iamInstanceProfile && {
         IamInstanceProfile: {
@@ -424,9 +421,7 @@ class VargasJRAgentCreator {
           Tags: [
             {
               Key: "Name",
-              Value: this.config.prNumber
-                ? `vargas-jr-pr-${this.config.prNumber}`
-                : `vargas-jr-${this.config.name}`,
+              Value: this.instanceName,
             },
             { Key: "Project", Value: "VargasJR" },
             { Key: "CreatedBy", Value: "create-agent-script" },
@@ -505,15 +500,12 @@ class VargasJRAgentCreator {
     };
   }
 
-  private async setupInstance(
-    instanceDetails: any,
-    keyPairName: string
-  ): Promise<TimingResult[]> {
+  private async setupInstance(instanceDetails: any): Promise<TimingResult[]> {
     console.log(
       `Basic setup for Vargas JR agent instance: ${instanceDetails.instanceId}`
     );
     console.log(`Instance available at: ${instanceDetails.publicDns}`);
-    console.log(`Key pair created: ${keyPairName}`);
+    console.log(`Key pair created: ${this.keyPairName}`);
 
     const setupTimingResults: TimingResult[] = [];
 
@@ -550,7 +542,7 @@ AGENT_ENVIRONMENT=production`;
 
       writeFileSync("/tmp/agent.env", envContent);
 
-      const keyPath = `${tmpdir()}/${keyPairName}.pem`;
+      const keyPath = `${tmpdir()}/${this.keyPairName}.pem`;
       console.log("Copying .env file to instance...");
       await this.executeSCPCommand(
         keyPath,
@@ -1189,7 +1181,6 @@ async function main() {
   const prNumber = prMatch ? prMatch[1] : undefined;
 
   const creator = new VargasJRAgentCreator({
-    name: agentName,
     prNumber: prNumber,
   });
   await creator.createAgent();
