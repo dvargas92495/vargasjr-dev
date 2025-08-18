@@ -138,11 +138,11 @@ const CreateAgentButton = ({
 
   useEffect(() => {
     return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [pollingInterval]);
+  }, []);
 
   useEffect(() => {
     const storedState = localStorage.getItem(AGENT_CREATION_STORAGE_KEY);
