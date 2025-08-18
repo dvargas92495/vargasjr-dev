@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 interface AgentCreationStatus {
@@ -28,9 +28,7 @@ const CreateAgentButton = ({
   const [creationStartTime, setCreationStartTime] = useState<number | null>(
     null
   );
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
-    null
-  );
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const checkAgentStatus = useCallback(async () => {
     if (!creationStartTime) return;
@@ -52,9 +50,9 @@ const CreateAgentButton = ({
           setIsCreating(false);
           setCreationStartTime(null);
           localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
           }
           setTimeout(() => {
             router.refresh();
@@ -63,9 +61,9 @@ const CreateAgentButton = ({
           setIsCreating(false);
           setCreationStartTime(null);
           localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
           }
         }
       } else {
@@ -76,26 +74,26 @@ const CreateAgentButton = ({
         setIsCreating(false);
         setCreationStartTime(null);
         localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
-        if (pollingInterval) {
-          clearInterval(pollingInterval);
-          setPollingInterval(null);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
         }
       }
     } catch (error) {
       console.error("Failed to check agent status:", error);
     }
-  }, [creationStartTime, pollingInterval, router]);
+  }, [creationStartTime, router]);
 
   const startPolling = useCallback(() => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
     }
 
     const interval = setInterval(checkAgentStatus, 30000);
-    setPollingInterval(interval);
+    pollingIntervalRef.current = interval;
 
     checkAgentStatus();
-  }, [checkAgentStatus, pollingInterval]);
+  }, [checkAgentStatus]);
 
   const createAgent = async () => {
     setIsCreating(true);
