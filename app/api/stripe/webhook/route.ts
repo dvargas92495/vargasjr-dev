@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.text();
     const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
+
     if (!stripeWebhookSecret) {
       console.error("STRIPE_WEBHOOK_SECRET environment variable is not set");
       return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const stripeSignature = request.headers.get("stripe-signature");
-    
+
     if (!stripeSignature) {
       console.error("Missing stripe-signature header");
       return NextResponse.json(
@@ -41,10 +41,14 @@ export async function POST(request: Request) {
     }
 
     const stripe = new Stripe(stripeSecretKey);
-    
+
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, stripeSignature, stripeWebhookSecret);
+      event = stripe.webhooks.constructEvent(
+        body,
+        stripeSignature,
+        stripeWebhookSecret
+      );
     } catch (err) {
       console.error("Webhook signature verification failed:", err);
       return NextResponse.json(
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
     console.log(`Received Stripe webhook event: ${event.type}`);
 
     switch (event.type) {
-      case 'checkout.session.completed':
+      case "checkout.session.completed":
         try {
           await handleVargasJrHired(event);
         } catch (error) {
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
           );
         }
         break;
-      case 'checkout.session.expired':
+      case "checkout.session.expired":
         await handleCheckoutCanceled(event);
         break;
       default:
@@ -84,52 +88,57 @@ export async function POST(request: Request) {
   }
 }
 
-async function getSubscriptionRate(stripe: Stripe, session: Stripe.Checkout.Session): Promise<string> {
+async function getSubscriptionRate(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session
+): Promise<string> {
   if (!session.subscription) {
     throw new Error("No subscription found on checkout session");
   }
-  
-  const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+
+  const subscription = await stripe.subscriptions.retrieve(
+    session.subscription as string
+  );
   if (!subscription.items.data[0]?.price.unit_amount) {
     throw new Error("No pricing information found on subscription");
   }
-  
+
   const amount = subscription.items.data[0].price.unit_amount / 100;
   return `$${amount.toLocaleString()} USD`;
 }
 
 async function handleVargasJrHired(event: Stripe.Event) {
   console.log("Processing checkout.session.completed event:", event.id);
-  
+
   try {
     const session = event.data.object as Stripe.Checkout.Session;
-    
+
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       console.error("STRIPE_SECRET_KEY not available for session retrieval");
       return;
     }
-    
+
     const stripe = new Stripe(stripeSecretKey);
     const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-      expand: ['customer']
+      expand: ["customer"],
     });
-    
+
     const customerEmail = fullSession.customer_email;
     if (!customerEmail) {
       console.error("No customer email found in checkout session");
       return;
     }
-    
+
     const db = getDb();
-    
+
     let contact = await db
       .select()
       .from(ContactsTable)
       .where(eq(ContactsTable.email, customerEmail))
       .limit(1)
       .execute();
-    
+
     if (contact.length === 0) {
       const newContact = await db
         .insert(ContactsTable)
@@ -138,24 +147,27 @@ async function handleVargasJrHired(event: Stripe.Event) {
         .execute();
       contact = newContact;
     }
-    
+
     const contactId = contact[0].id;
     const baseUrl = getBaseUrl();
     const environmentPrefix = getEnvironmentPrefix();
     const crmUrl = `${baseUrl}/admin/crm/${contactId}`;
-    
-    const prefix = environmentPrefix ? `${environmentPrefix}: ` : '';
+
+    const prefix = environmentPrefix ? `${environmentPrefix}: ` : "";
     const message = `${prefix}🎉 New customer signed up!\n\nContact: ${customerEmail}\nView details: ${crmUrl}`;
-    
+
     await postSlackMessage({
       channel: "#sales-alert",
       message: message,
     });
-    
-    console.log("Successfully posted Slack notification for checkout:", session.id);
-    
+
+    console.log(
+      "Successfully posted Slack notification for checkout:",
+      session.id
+    );
+
     const rate = await getSubscriptionRate(stripe, fullSession);
-    
+
     console.log("Generating contractor agreement PDF...");
     const pdfBuffer = await generateContractorAgreementPDF({
       contractorName: "Vargas JR",
@@ -164,20 +176,19 @@ async function handleVargasJrHired(event: Stripe.Event) {
       rate: rate,
       companyName: fullSession.customer_details?.name || "Client Company",
     });
-    
+
     console.log("Uploading PDF to S3...");
     const contractPdfUuid = await uploadPDFToS3(pdfBuffer);
     console.log("PDF uploaded with UUID:", contractPdfUuid);
-    
+
     console.log("Storing contract UUID in Stripe metadata...");
     await stripe.checkout.sessions.update(fullSession.id, {
       metadata: {
         contract_pdf_uuid: contractPdfUuid,
       },
     });
-    
+
     console.log("Successfully processed hiring event for session:", session.id);
-    
   } catch (error) {
     console.error("Error handling checkout completion:", error);
     throw error;

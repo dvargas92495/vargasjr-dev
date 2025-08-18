@@ -16,8 +16,13 @@ export default async function InboxesPage() {
       .orderBy(desc(InboxesTable.createdAt));
   } catch (err) {
     console.error("Error fetching inboxes:", err);
-    if (err instanceof Error && err.message.includes("relation") && err.message.includes("does not exist")) {
-      error = "Database tables are being initialized. Please try again in a moment.";
+    if (
+      err instanceof Error &&
+      err.message.includes("relation") &&
+      err.message.includes("does not exist")
+    ) {
+      error =
+        "Database tables are being initialized. Please try again in a moment.";
     } else {
       error = "Unable to load inboxes at this time. Please try again later.";
     }

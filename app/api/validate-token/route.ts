@@ -18,9 +18,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request body",
-          validationErrors: error.errors 
+          validationErrors: error.errors,
         },
         { status: 400 }
       );

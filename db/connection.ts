@@ -10,7 +10,7 @@ export function createDatabaseConnection() {
     throw new Error("POSTGRES_URL environment variable is required");
   }
 
-  if (postgresUrl.includes('localhost')) {
+  if (postgresUrl.includes("localhost")) {
     const pool = new Pool({
       connectionString: postgresUrl,
     });

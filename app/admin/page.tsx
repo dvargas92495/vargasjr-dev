@@ -9,138 +9,182 @@ import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 
 async function checkWorkflowStatus() {
   try {
-    const response = await fetch('/api/check-workflow-status');
+    const response = await fetch("/api/check-workflow-status");
     if (response.ok) {
       return await response.json();
     }
   } catch (error) {
-    console.error('Failed to check workflow status:', error);
+    console.error("Failed to check workflow status:", error);
   }
   return { hasRunningWorkflow: false };
 }
 
 async function getCurrentPRNumber(): Promise<string> {
-  if (process.env.VERCEL_GIT_PULL_REQUEST_ID && process.env.VERCEL_GIT_PULL_REQUEST_ID !== 'null') {
-    console.log(`✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`);
+  if (
+    process.env.VERCEL_GIT_PULL_REQUEST_ID &&
+    process.env.VERCEL_GIT_PULL_REQUEST_ID !== "null"
+  ) {
+    console.log(
+      `✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`
+    );
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
-  
+
   const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
-    const branchName = commitRef.replace('refs/heads/', '');
-    
+    const branchName = commitRef.replace("refs/heads/", "");
+
     const githubRepo = "dvargas92495/vargasjr-dev";
     if (!branchName) {
-      console.log('⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback');
-      return 'local-dev';
+      console.log(
+        "⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback"
+      );
+      return "local-dev";
     }
-    
+
     if (githubRepo && branchName) {
       try {
-        const prNumber = await retryWithBackoff(async () => {
-          const [owner] = githubRepo.split('/');
-          const headFilter = `${owner}:${branchName}`;
-          
-          const headers = await getGitHubAuthHeaders();
-          const response = await fetch(`https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`, {
-            headers
-          });
-          
-          if (!response.ok) {
-            throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
-          }
-          
-          const prs = await response.json();
-          if (prs.length === 1) {
-            console.log(`✅ Found PR #${prs[0].number} for branch: ${branchName}`);
-            return prs[0].number.toString();
-          } else if (prs.length === 0) {
-            throw new Error(`No open PRs found for branch: ${branchName}`);
-          } else {
-            throw new Error(`Multiple open PRs found for branch: ${branchName}`);
-          }
-        }, 3, 2000);
-        
+        const prNumber = await retryWithBackoff(
+          async () => {
+            const [owner] = githubRepo.split("/");
+            const headFilter = `${owner}:${branchName}`;
+
+            const headers = await getGitHubAuthHeaders();
+            const response = await fetch(
+              `https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`,
+              {
+                headers,
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(
+                `GitHub API error: ${response.status} ${response.statusText}`
+              );
+            }
+
+            const prs = await response.json();
+            if (prs.length === 1) {
+              console.log(
+                `✅ Found PR #${prs[0].number} for branch: ${branchName}`
+              );
+              return prs[0].number.toString();
+            } else if (prs.length === 0) {
+              throw new Error(`No open PRs found for branch: ${branchName}`);
+            } else {
+              throw new Error(
+                `Multiple open PRs found for branch: ${branchName}`
+              );
+            }
+          },
+          3,
+          2000
+        );
+
         return prNumber;
       } catch (error) {
         console.log(`⚠️ GitHub API lookup failed, using fallback: ${error}`);
-        return 'local-dev';
+        return "local-dev";
       }
     }
   }
-  
-  console.log('⚠️ Running in local development mode - no Vercel environment variables found');
-  return 'local-dev';
+
+  console.log(
+    "⚠️ Running in local development mode - no Vercel environment variables found"
+  );
+  return "local-dev";
 }
 
 export default async function AdminPage() {
   const ec2 = new EC2({
     region: "us-east-1",
   });
-  
+
   const environmentPrefix = getEnvironmentPrefix();
   let currentPRNumber: string | undefined;
   let prNumberError: string | null = null;
-  
-  if (environmentPrefix !== '') {
+
+  if (environmentPrefix !== "") {
     try {
       currentPRNumber = await getCurrentPRNumber();
     } catch (error) {
-      console.error('Failed to get PR number:', error);
-      prNumberError = error instanceof Error ? error.message : 'Unknown error occurred while getting PR number';
+      console.error("Failed to get PR number:", error);
+      prNumberError =
+        error instanceof Error
+          ? error.message
+          : "Unknown error occurred while getting PR number";
     }
   }
-  
+
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
-  
+
   const workflowStatus = await checkWorkflowStatus();
 
-  const scrubPassword = (url: string | undefined) => url 
-    ? url.replace(/:[^:@]*@/, ':***@')
-    : 'Not set';
-    
+  const scrubPassword = (url: string | undefined) =>
+    url ? url.replace(/:[^:@]*@/, ":***@") : "Not set";
+
   const scrubbedPostgresUrl = scrubPassword(postgresUrl);
-  
-  if (environmentPrefix === 'PREVIEW' && !currentPRNumber) {
+
+  if (environmentPrefix === "PREVIEW" && !currentPRNumber) {
     return (
       <div className="flex flex-col gap-4 justify-start items-start">
         <h1 className="text-2xl font-bold">Vargas JR</h1>
         <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
-        
+
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
-          <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
+          <h3 className="font-semibold text-yellow-800 mb-2">
+            Environment Info
+          </h3>
           <div className="text-sm font-mono space-y-1 text-gray-700">
-            <div><strong>Environment:</strong> {environmentPrefix || 'PRODUCTION'}</div>
-            <div><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? `ERROR: ${prNumberError}` : 'undefined')}</div>
-            <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
-            <div><strong>Total Instances Found:</strong> 0</div>
+            <div>
+              <strong>Environment:</strong> {environmentPrefix || "PRODUCTION"}
+            </div>
+            <div>
+              <strong>Current PR Number:</strong>{" "}
+              {currentPRNumber ||
+                (prNumberError ? `ERROR: ${prNumberError}` : "undefined")}
+            </div>
+            <div>
+              <strong>Postgres URL:</strong> {scrubbedPostgresUrl}
+            </div>
+            <div>
+              <strong>Total Instances Found:</strong> 0
+            </div>
           </div>
         </div>
-        
+
         <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-2xl">
-          <h3 className="font-semibold text-gray-800 mb-2">No Instances Available</h3>
+          <h3 className="font-semibold text-gray-800 mb-2">
+            No Instances Available
+          </h3>
           <p className="text-sm text-gray-600 mb-3">
             Preview environments require a valid PR number to show instances.
           </p>
           <div className="text-sm text-gray-500">
-            <p>Current environment is in preview mode but no PR number was detected.</p>
+            <p>
+              Current environment is in preview mode but no PR number was
+              detected.
+            </p>
           </div>
         </div>
       </div>
     );
   }
-  
+
   const filters = [
     { Name: "tag:Project", Values: ["VargasJR"] },
-    { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
+    {
+      Name: "instance-state-name",
+      Values: ["running", "stopped", "pending", "stopping", "shutting-down"],
+    },
   ];
-  
-  if (environmentPrefix === '') {
+
+  if (environmentPrefix === "") {
     filters.push({ Name: "tag:Type", Values: ["main"] });
-  } else if (environmentPrefix === 'PREVIEW' && currentPRNumber) {
+  } else if (environmentPrefix === "PREVIEW" && currentPRNumber) {
     filters.push({ Name: "tag:PRNumber", Values: [currentPRNumber] });
   }
-  
+
   let instances: Array<{
     InstanceId?: string;
     State?: { Name?: string };
@@ -151,85 +195,121 @@ export default async function AdminPage() {
     Tags?: Array<{ Key?: string; Value?: string }>;
   }> = [];
   let errorMessage: string | null = null;
-  
+
   try {
     instances = await ec2
       .describeInstances({ Filters: filters })
-      .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
-    
-    if (instances.length === 0 && environmentPrefix === '') {
+      .then(
+        (data) => data.Reservations?.flatMap((r) => r.Instances || []) || []
+      );
+
+    if (instances.length === 0 && environmentPrefix === "") {
       const legacyFilters = [
         { Name: "tag:Name", Values: ["vargas-jr"] },
         { Name: "tag:Type", Values: ["main"] },
-        { Name: "instance-state-name", Values: ["running", "stopped", "pending", "stopping", "shutting-down"] }
+        {
+          Name: "instance-state-name",
+          Values: [
+            "running",
+            "stopped",
+            "pending",
+            "stopping",
+            "shutting-down",
+          ],
+        },
       ];
       instances = await ec2
         .describeInstances({ Filters: legacyFilters })
-        .then((data) => data.Reservations?.flatMap(r => r.Instances || []) || []);
+        .then(
+          (data) => data.Reservations?.flatMap((r) => r.Instances || []) || []
+        );
     }
   } catch (error) {
-    console.error('Failed to query EC2 instances:', error);
-    errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error("Failed to query EC2 instances:", error);
+    errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
   }
 
   return (
     <div className="flex flex-col gap-4 justify-start items-start">
       <h1 className="text-2xl font-bold">Vargas JR</h1>
       <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
-      
+
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
         <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
         <div className="text-sm font-mono space-y-1 text-gray-700">
-          <div><strong>Environment:</strong> {environmentPrefix || 'PRODUCTION'}</div>
-          {environmentPrefix !== '' && (
+          <div>
+            <strong>Environment:</strong> {environmentPrefix || "PRODUCTION"}
+          </div>
+          {environmentPrefix !== "" && (
             <div className="flex items-center gap-2">
-              <span><strong>Current PR Number:</strong> {currentPRNumber || (prNumberError ? `ERROR: ${prNumberError}` : 'undefined')}</span>
-              {environmentPrefix === 'PREVIEW' && currentPRNumber && (
+              <span>
+                <strong>Current PR Number:</strong>{" "}
+                {currentPRNumber ||
+                  (prNumberError ? `ERROR: ${prNumberError}` : "undefined")}
+              </span>
+              {environmentPrefix === "PREVIEW" && currentPRNumber && (
                 <ApprovePRButton prNumber={currentPRNumber} />
               )}
             </div>
           )}
-          <div><strong>Postgres URL:</strong> {scrubbedPostgresUrl}</div>
-          <div><strong>Total Instances Found:</strong> {instances.length}</div>
+          <div>
+            <strong>Postgres URL:</strong> {scrubbedPostgresUrl}
+          </div>
+          <div>
+            <strong>Total Instances Found:</strong> {instances.length}
+          </div>
         </div>
       </div>
-      
+
       {prNumberError && (
         <div className="bg-red-50 border border-red-200 p-6 rounded-lg w-full max-w-2xl">
-          <h3 className="font-semibold text-red-800 mb-2">Environment Configuration Error</h3>
+          <h3 className="font-semibold text-red-800 mb-2">
+            Environment Configuration Error
+          </h3>
           <p className="text-sm text-red-600 mb-3">
-            Failed to determine PR number due to missing or invalid environment variables.
+            Failed to determine PR number due to missing or invalid environment
+            variables.
           </p>
           <div className="text-sm text-red-500 font-mono bg-red-100 p-2 rounded">
             {prNumberError}
           </div>
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm text-yellow-800">
-              <strong>Required for PR environments:</strong> GitHub App authentication (GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_INSTALLATION_ID) and VERCEL_GIT_COMMIT_REF must be properly configured.
+              <strong>Required for PR environments:</strong> GitHub App
+              authentication (GITHUB_APP_ID, GITHUB_PRIVATE_KEY,
+              GITHUB_INSTALLATION_ID) and VERCEL_GIT_COMMIT_REF must be properly
+              configured.
             </p>
           </div>
         </div>
       )}
-      
+
       {errorMessage ? (
         <div className="bg-red-50 border border-red-200 p-6 rounded-lg w-full max-w-2xl">
-          <h3 className="font-semibold text-red-800 mb-2">Unable to Query Instances</h3>
+          <h3 className="font-semibold text-red-800 mb-2">
+            Unable to Query Instances
+          </h3>
           <p className="text-sm text-red-600 mb-3">
-            Failed to connect to AWS EC2 service. This is likely due to missing or invalid AWS credentials.
+            Failed to connect to AWS EC2 service. This is likely due to missing
+            or invalid AWS credentials.
           </p>
           <div className="text-sm text-red-500 font-mono bg-red-100 p-2 rounded">
             {errorMessage}
           </div>
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> In production, this page should have proper AWS credentials configured 
-              to query EC2 instances. This error is expected in local development without AWS setup.
+              <strong>Note:</strong> In production, this page should have proper
+              AWS credentials configured to query EC2 instances. This error is
+              expected in local development without AWS setup.
             </p>
           </div>
-          {environmentPrefix === '' && (
+          {environmentPrefix === "" && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-800 mb-3">
-                <strong>Production Environment:</strong> You can still create a production agent even without AWS credentials configured locally.
+                <strong>Production Environment:</strong> You can still create a
+                production agent even without AWS credentials configured
+                locally.
               </p>
               <CreateAgentButton initialWorkflowState={workflowStatus} />
             </div>
@@ -237,23 +317,43 @@ export default async function AdminPage() {
         </div>
       ) : instances.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg w-full max-w-2xl">
-          <h3 className="font-semibold text-gray-800 mb-2">No Instances Found</h3>
+          <h3 className="font-semibold text-gray-800 mb-2">
+            No Instances Found
+          </h3>
           <p className="text-sm text-gray-600 mb-3">
-            No EC2 instances were found matching the current environment filters.
+            No EC2 instances were found matching the current environment
+            filters.
           </p>
           <div className="text-sm text-gray-500">
-            <p><strong>Expected tags:</strong></p>
+            <p>
+              <strong>Expected tags:</strong>
+            </p>
             <ul className="list-disc list-inside ml-2 space-y-1">
-              <li>Project: VargasJR (or Name: vargas-jr for legacy instances)</li>
-              {environmentPrefix === '' && <li>Type: main</li>}
-              {environmentPrefix === 'PREVIEW' && currentPRNumber && <li>PRNumber: {currentPRNumber}</li>}
-              <li>State: running, stopped, pending, stopping, or shutting-down</li>
+              <li>
+                Project: VargasJR (or Name: vargas-jr for legacy instances)
+              </li>
+              {environmentPrefix === "" && <li>Type: main</li>}
+              {environmentPrefix === "PREVIEW" && currentPRNumber && (
+                <li>PRNumber: {currentPRNumber}</li>
+              )}
+              <li>
+                State: running, stopped, pending, stopping, or shutting-down
+              </li>
             </ul>
           </div>
-          {(environmentPrefix === '' || (environmentPrefix === 'PREVIEW' && currentPRNumber)) && (
+          {(environmentPrefix === "" ||
+            (environmentPrefix === "PREVIEW" && currentPRNumber)) && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-800 mb-3">
-                <strong>{environmentPrefix === 'PREVIEW' ? `Preview Environment (PR #${currentPRNumber})` : 'Production Environment'}:</strong> {environmentPrefix === 'PREVIEW' ? `No preview instances are currently running for this PR. You can create a preview agent using the button below.` : `No production instances are currently running. You can create a production agent using the button below.`}
+                <strong>
+                  {environmentPrefix === "PREVIEW"
+                    ? `Preview Environment (PR #${currentPRNumber})`
+                    : "Production Environment"}
+                  :
+                </strong>{" "}
+                {environmentPrefix === "PREVIEW"
+                  ? `No preview instances are currently running for this PR. You can create a preview agent using the button below.`
+                  : `No production instances are currently running. You can create a production agent using the button below.`}
               </p>
               <CreateAgentButton initialWorkflowState={workflowStatus} />
             </div>
@@ -264,8 +364,10 @@ export default async function AdminPage() {
           <InstanceCard key={instance.InstanceId} instance={instance} />
         ))
       )}
-      {instances.some(instance => 
-        ["pending", "stopping", "shutting-down"].includes(instance.State?.Name || "")
+      {instances.some((instance) =>
+        ["pending", "stopping", "shutting-down"].includes(
+          instance.State?.Name || ""
+        )
       ) && <TransitionalStateRefresh />}
     </div>
   );

@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { HeartIcon, ArrowPathRoundedSquareIcon, ChatBubbleLeftIcon, ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
+import {
+  HeartIcon,
+  ArrowPathRoundedSquareIcon,
+  ChatBubbleLeftIcon,
+  ArrowsRightLeftIcon,
+} from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 
 interface Tweet {
@@ -26,11 +31,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "2h",
-    content: "Just shipped a major update to our AI agent deployment system! 🚀 40% faster provisioning and much better error handling. The future of automated development is here.",
+    content:
+      "Just shipped a major update to our AI agent deployment system! 🚀 40% faster provisioning and much better error handling. The future of automated development is here.",
     hashtags: ["AI", "DevOps", "Automation"],
     likes: 127,
     retweets: 34,
-    replies: 18
+    replies: 18,
   },
   {
     id: "2",
@@ -38,11 +44,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "4h",
-    content: "Hot take: The best debugging tool is still console.log() and a good understanding of your code flow. Don't overcomplicate it.",
+    content:
+      "Hot take: The best debugging tool is still console.log() and a good understanding of your code flow. Don't overcomplicate it.",
     hashtags: ["JavaScript", "Debugging", "WebDev"],
     likes: 89,
     retweets: 23,
-    replies: 12
+    replies: 12,
   },
   {
     id: "3",
@@ -50,11 +57,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "6h",
-    content: "Working on a Twitter simulator for our admin dashboard. Meta moment: tweeting about building a Twitter simulator while building a Twitter simulator 🤯",
+    content:
+      "Working on a Twitter simulator for our admin dashboard. Meta moment: tweeting about building a Twitter simulator while building a Twitter simulator 🤯",
     hashtags: ["Meta", "Development", "React"],
     likes: 156,
     retweets: 41,
-    replies: 27
+    replies: 27,
   },
   {
     id: "4",
@@ -62,11 +70,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "8h",
-    content: "TypeScript tip: Use strict mode and embrace the red squiggles. Your future self will thank you when refactoring complex codebases.",
+    content:
+      "TypeScript tip: Use strict mode and embrace the red squiggles. Your future self will thank you when refactoring complex codebases.",
     hashtags: ["TypeScript", "Tips", "CodeQuality"],
     likes: 203,
     retweets: 67,
-    replies: 31
+    replies: 31,
   },
   {
     id: "5",
@@ -74,11 +83,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "12h",
-    content: "The best part about building developer tools? When you solve a problem that you yourself face daily. Nothing beats that satisfaction.",
+    content:
+      "The best part about building developer tools? When you solve a problem that you yourself face daily. Nothing beats that satisfaction.",
     hashtags: ["DeveloperTools", "ProductDevelopment"],
     likes: 94,
     retweets: 28,
-    replies: 15
+    replies: 15,
   },
   {
     id: "6",
@@ -86,11 +96,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "1d",
-    content: "Reminder: Your code is read more often than it's written. Write for the human who comes after you (including future you).",
+    content:
+      "Reminder: Your code is read more often than it's written. Write for the human who comes after you (including future you).",
     hashtags: ["CleanCode", "BestPractices"],
     likes: 312,
     retweets: 89,
-    replies: 43
+    replies: 43,
   },
   {
     id: "7",
@@ -98,11 +109,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "1d",
-    content: "Just discovered a new React pattern that's been hiding in plain sight. Sometimes the simplest solutions are the most elegant ones.",
+    content:
+      "Just discovered a new React pattern that's been hiding in plain sight. Sometimes the simplest solutions are the most elegant ones.",
     hashtags: ["React", "Patterns", "WebDev"],
     likes: 178,
     retweets: 52,
-    replies: 29
+    replies: 29,
   },
   {
     id: "8",
@@ -110,11 +122,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "2d",
-    content: "Infrastructure as Code isn't just about automation - it's about making your deployments reproducible, testable, and fearless.",
+    content:
+      "Infrastructure as Code isn't just about automation - it's about making your deployments reproducible, testable, and fearless.",
     hashtags: ["IaC", "DevOps", "Terraform"],
     likes: 145,
     retweets: 38,
-    replies: 22
+    replies: 22,
   },
   {
     id: "9",
@@ -122,11 +135,12 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "2d",
-    content: "Building AI agents that can actually ship production code feels like science fiction, but here we are. The future arrived faster than expected.",
+    content:
+      "Building AI agents that can actually ship production code feels like science fiction, but here we are. The future arrived faster than expected.",
     hashtags: ["AI", "Agents", "FutureTech"],
     likes: 267,
     retweets: 73,
-    replies: 51
+    replies: 51,
   },
   {
     id: "10",
@@ -134,12 +148,13 @@ const mockTweets: Tweet[] = [
     username: "@VargasJRDev",
     avatar: "DV",
     timestamp: "3d",
-    content: "Pro tip: Always test your error handling paths. The happy path is easy - it's the edge cases that will bite you in production.",
+    content:
+      "Pro tip: Always test your error handling paths. The happy path is easy - it's the edge cases that will bite you in production.",
     hashtags: ["Testing", "ErrorHandling", "Production"],
     likes: 198,
     retweets: 56,
-    replies: 34
-  }
+    replies: 34,
+  },
 ];
 
 export default function TwitterSimulatorClient() {
@@ -148,7 +163,7 @@ export default function TwitterSimulatorClient() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    
+
     setTimeout(() => {
       setTweets([...mockTweets]);
       setIsRefreshing(false);
@@ -156,27 +171,33 @@ export default function TwitterSimulatorClient() {
   }, []);
 
   const handleLike = useCallback((tweetId: string) => {
-    setTweets(prev => prev.map(tweet => 
-      tweet.id === tweetId 
-        ? { 
-            ...tweet, 
-            isLiked: !tweet.isLiked,
-            likes: tweet.isLiked ? tweet.likes - 1 : tweet.likes + 1
-          }
-        : tweet
-    ));
+    setTweets((prev) =>
+      prev.map((tweet) =>
+        tweet.id === tweetId
+          ? {
+              ...tweet,
+              isLiked: !tweet.isLiked,
+              likes: tweet.isLiked ? tweet.likes - 1 : tweet.likes + 1,
+            }
+          : tweet
+      )
+    );
   }, []);
 
   const handleRetweet = useCallback((tweetId: string) => {
-    setTweets(prev => prev.map(tweet => 
-      tweet.id === tweetId 
-        ? { 
-            ...tweet, 
-            isRetweeted: !tweet.isRetweeted,
-            retweets: tweet.isRetweeted ? tweet.retweets - 1 : tweet.retweets + 1
-          }
-        : tweet
-    ));
+    setTweets((prev) =>
+      prev.map((tweet) =>
+        tweet.id === tweetId
+          ? {
+              ...tweet,
+              isRetweeted: !tweet.isRetweeted,
+              retweets: tweet.isRetweeted
+                ? tweet.retweets - 1
+                : tweet.retweets + 1,
+            }
+          : tweet
+      )
+    );
   }, []);
 
   return (
@@ -192,15 +213,20 @@ export default function TwitterSimulatorClient() {
           disabled={isRefreshing}
           className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <ArrowPathRoundedSquareIcon className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          <ArrowPathRoundedSquareIcon
+            className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          {isRefreshing ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
       {/* Tweet Feed */}
       <div className="divide-y divide-gray-100">
         {tweets.map((tweet) => (
-          <div key={tweet.id} className="p-4 hover:bg-gray-50 transition-colors">
+          <div
+            key={tweet.id}
+            className="p-4 hover:bg-gray-50 transition-colors"
+          >
             <div className="flex gap-3">
               {/* Avatar */}
               <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
@@ -214,7 +240,9 @@ export default function TwitterSimulatorClient() {
                   <span className="font-bold text-gray-900">{tweet.user}</span>
                   <span className="text-gray-500">{tweet.username}</span>
                   <span className="text-gray-500">·</span>
-                  <span className="text-gray-500 text-sm">{tweet.timestamp}</span>
+                  <span className="text-gray-500 text-sm">
+                    {tweet.timestamp}
+                  </span>
                 </div>
 
                 {/* Tweet Text */}
@@ -240,10 +268,10 @@ export default function TwitterSimulatorClient() {
                     <span className="text-sm">{tweet.replies}</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => handleRetweet(tweet.id)}
                     className={`flex items-center gap-2 hover:text-green-500 transition-colors group ${
-                      tweet.isRetweeted ? 'text-green-500' : ''
+                      tweet.isRetweeted ? "text-green-500" : ""
                     }`}
                   >
                     <div className="p-2 rounded-full group-hover:bg-green-50 transition-colors">
@@ -252,10 +280,10 @@ export default function TwitterSimulatorClient() {
                     <span className="text-sm">{tweet.retweets}</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => handleLike(tweet.id)}
                     className={`flex items-center gap-2 hover:text-red-500 transition-colors group ${
-                      tweet.isLiked ? 'text-red-500' : ''
+                      tweet.isLiked ? "text-red-500" : ""
                     }`}
                   >
                     <div className="p-2 rounded-full group-hover:bg-red-50 transition-colors">

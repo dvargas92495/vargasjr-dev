@@ -44,15 +44,24 @@ export default function GmailSimulatorClient() {
   return (
     <div className="space-y-6">
       <div className="text-sm text-gray-600 space-y-1">
-        <div><strong>Status:</strong> <span className="text-green-600">Connected</span></div>
-        <div><strong>Account:</strong> vargas.jr.dev@gmail.com</div>
-        <div><strong>API Quota:</strong> 1,000,000 requests/day</div>
-        <div><strong>Last Sync:</strong> 5 minutes ago</div>
+        <div>
+          <strong>Status:</strong>{" "}
+          <span className="text-green-600">Connected</span>
+        </div>
+        <div>
+          <strong>Account:</strong> vargas.jr.dev@gmail.com
+        </div>
+        <div>
+          <strong>API Quota:</strong> 1,000,000 requests/day
+        </div>
+        <div>
+          <strong>Last Sync:</strong> 5 minutes ago
+        </div>
       </div>
 
       <div className="border-t pt-6">
         <h3 className="text-lg font-semibold mb-4">Test Email Processing</h3>
-        
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label htmlFor="testSubject" className="block mb-1">
@@ -67,7 +76,7 @@ export default function GmailSimulatorClient() {
               className="w-full p-2 border rounded text-black"
             />
           </div>
-          
+
           <div>
             <label htmlFor="testSender" className="block mb-1">
               Test Sender Email *
@@ -81,7 +90,7 @@ export default function GmailSimulatorClient() {
               className="w-full p-2 border rounded text-black"
             />
           </div>
-          
+
           <div>
             <label htmlFor="testBody" className="block mb-1">
               Test Email Body *
@@ -95,7 +104,7 @@ export default function GmailSimulatorClient() {
               rows={5}
             />
           </div>
-          
+
           <button
             type="submit"
             disabled={isLoading}

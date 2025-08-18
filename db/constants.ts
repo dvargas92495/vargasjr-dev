@@ -1,9 +1,16 @@
-export const InboxTypes = ["FORM", "EMAIL", "SMS", "SLACK", "CHAT_SESSION", "NONE"] as const;
+export const InboxTypes = [
+  "FORM",
+  "EMAIL",
+  "SMS",
+  "SLACK",
+  "CHAT_SESSION",
+  "NONE",
+] as const;
 export const InboxMessageOperationTypes = ["READ", "ARCHIVED"] as const;
 
 export const AppTypes = [
   "TWITTER",
-  "NOTION", 
+  "NOTION",
   "DEVIN",
   "CAPITAL_ONE",
   "MERCURY",
@@ -12,4 +19,4 @@ export const AppTypes = [
   "GOOGLE",
 ] as const;
 
-export type AppType = typeof AppTypes[number];
+export type AppType = (typeof AppTypes)[number];

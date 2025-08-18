@@ -99,7 +99,8 @@ export const ApplicationWorkspacesTable = pgTable("application_workspaces", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export type ApplicationWorkspace = typeof ApplicationWorkspacesTable.$inferSelect;
+export type ApplicationWorkspace =
+  typeof ApplicationWorkspacesTable.$inferSelect;
 
 export const ChatSessionsTable = pgTable("chat_sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -123,7 +124,6 @@ export const RoutineJobsTable = pgTable("routine_jobs", {
 });
 
 export type RoutineJob = typeof RoutineJobsTable.$inferSelect;
-
 
 export const JobsTable = pgTable("jobs", {
   id: uuid("id").primaryKey().defaultRandom(),

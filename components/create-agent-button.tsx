@@ -19,12 +19,18 @@ interface CreateAgentButtonProps {
 
 const AGENT_CREATION_STORAGE_KEY = "agent-creation-state";
 
-const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}) => {
+const CreateAgentButton = ({
+  initialWorkflowState,
+}: CreateAgentButtonProps = {}) => {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [message, setMessage] = useState("");
-  const [creationStartTime, setCreationStartTime] = useState<number | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [creationStartTime, setCreationStartTime] = useState<number | null>(
+    null
+  );
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   const checkAgentStatus = useCallback(async () => {
     if (!creationStartTime) return;
@@ -63,7 +69,9 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
           }
         }
       } else {
-        console.error(`Agent status check failed with status: ${response.status}`);
+        console.error(
+          `Agent status check failed with status: ${response.status}`
+        );
         setMessage("Failed to check agent status. Please try again.");
         setIsCreating(false);
         setCreationStartTime(null);
@@ -82,10 +90,10 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
     if (pollingInterval) {
       clearInterval(pollingInterval);
     }
-    
+
     const interval = setInterval(checkAgentStatus, 30000);
     setPollingInterval(interval);
-    
+
     checkAgentStatus();
   }, [checkAgentStatus, pollingInterval]);
 
@@ -94,13 +102,16 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
     setMessage("");
     const startTime = Date.now();
     setCreationStartTime(startTime);
-    
-    localStorage.setItem(AGENT_CREATION_STORAGE_KEY, JSON.stringify({
-      isCreating: true,
-      creationStartTime: startTime,
-      message: ""
-    }));
-    
+
+    localStorage.setItem(
+      AGENT_CREATION_STORAGE_KEY,
+      JSON.stringify({
+        isCreating: true,
+        creationStartTime: startTime,
+        message: "",
+      })
+    );
+
     try {
       const response = await fetch("/api/create-agent", {
         method: "POST",
@@ -109,9 +120,9 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
         },
         body: JSON.stringify({}),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok) {
         setMessage(result.message);
         startPolling();
@@ -139,7 +150,11 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
     const storedState = localStorage.getItem(AGENT_CREATION_STORAGE_KEY);
     if (storedState) {
       try {
-        const { isCreating: storedIsCreating, creationStartTime: storedStartTime, message: storedMessage } = JSON.parse(storedState);
+        const {
+          isCreating: storedIsCreating,
+          creationStartTime: storedStartTime,
+          message: storedMessage,
+        } = JSON.parse(storedState);
         if (storedIsCreating && storedStartTime) {
           setIsCreating(true);
           setCreationStartTime(storedStartTime);
@@ -155,19 +170,23 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
 
   useEffect(() => {
     if (initialWorkflowState?.hasRunningWorkflow && !isCreating) {
-      const workflowStartTime = initialWorkflowState.createdAt ? 
-        new Date(initialWorkflowState.createdAt).getTime() : Date.now();
-      
+      const workflowStartTime = initialWorkflowState.createdAt
+        ? new Date(initialWorkflowState.createdAt).getTime()
+        : Date.now();
+
       setIsCreating(true);
       setCreationStartTime(workflowStartTime);
       setMessage("Agent creation workflow is running...");
-      
-      localStorage.setItem(AGENT_CREATION_STORAGE_KEY, JSON.stringify({
-        isCreating: true,
-        creationStartTime: workflowStartTime,
-        message: "Agent creation workflow is running..."
-      }));
-      
+
+      localStorage.setItem(
+        AGENT_CREATION_STORAGE_KEY,
+        JSON.stringify({
+          isCreating: true,
+          creationStartTime: workflowStartTime,
+          message: "Agent creation workflow is running...",
+        })
+      );
+
       startPolling();
     }
   }, [initialWorkflowState, isCreating, startPolling]);
@@ -201,8 +220,15 @@ const CreateAgentButton = ({ initialWorkflowState }: CreateAgentButtonProps = {}
         {getButtonText()}
       </button>
       {message && (
-        <p className={`mt-2 text-sm ${message.includes("Error") || message.includes("error") ? "text-red-600" : 
-          message.includes("ready") ? "text-green-600" : "text-blue-600"}`}>
+        <p
+          className={`mt-2 text-sm ${
+            message.includes("Error") || message.includes("error")
+              ? "text-red-600"
+              : message.includes("ready")
+              ? "text-green-600"
+              : "text-blue-600"
+          }`}
+        >
           {message}
         </p>
       )}

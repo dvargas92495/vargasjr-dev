@@ -7,7 +7,13 @@ import ConfirmationModal, {
 import { useRef, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const DeleteInstanceButton = ({ id, instanceName }: { id: string; instanceName: string }) => {
+const DeleteInstanceButton = ({
+  id,
+  instanceName,
+}: {
+  id: string;
+  instanceName: string;
+}) => {
   const deleteModalRef = useRef<ConfirmationModalHandle>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
@@ -35,7 +41,9 @@ const DeleteInstanceButton = ({ id, instanceName }: { id: string; instanceName: 
       router.refresh();
     } catch (error) {
       console.error("Error deleting instance:", error);
-      alert(error instanceof Error ? error.message : "Failed to delete instance");
+      alert(
+        error instanceof Error ? error.message : "Failed to delete instance"
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -56,8 +64,9 @@ const DeleteInstanceButton = ({ id, instanceName }: { id: string; instanceName: 
         header="Delete Instance"
         body={
           <p className="text-sm text-gray-300">
-            Are you sure you want to delete the instance &ldquo;{instanceName}&rdquo; ({id})? This action
-            cannot be undone and will permanently terminate the instance and delete its associated key pair.
+            Are you sure you want to delete the instance &ldquo;{instanceName}
+            &rdquo; ({id})? This action cannot be undone and will permanently
+            terminate the instance and delete its associated key pair.
           </p>
         }
         onConfirm={onConfirm}

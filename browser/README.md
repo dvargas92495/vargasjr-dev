@@ -51,26 +51,29 @@ npm run browser:start
 
 ```javascript
 // Create a session
-const sessionResponse = await fetch('/api/browser/sessions', {
-  method: 'POST'
+const sessionResponse = await fetch("/api/browser/sessions", {
+  method: "POST",
 });
 const { sessionId } = await sessionResponse.json();
 
 // Create a page
 const pageResponse = await fetch(`/api/browser/sessions/${sessionId}/pages`, {
-  method: 'POST'
+  method: "POST",
 });
 const { pageId } = await pageResponse.json();
 
 // Navigate to a website
 await fetch(`/api/browser/sessions/${sessionId}/pages/${pageId}/navigate`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ url: 'https://example.com' })
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url: "https://example.com" }),
 });
 
 // Take a screenshot
-const screenshot = await fetch(`/api/browser/sessions/${sessionId}/pages/${pageId}/screenshot`, {
-  method: 'POST'
-});
+const screenshot = await fetch(
+  `/api/browser/sessions/${sessionId}/pages/${pageId}/screenshot`,
+  {
+    method: "POST",
+  }
+);
 ```

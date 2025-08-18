@@ -1,4 +1,9 @@
-import { ChatSessionsTable, InboxesTable, ContactsTable, InboxMessagesTable } from "@/db/schema";
+import {
+  ChatSessionsTable,
+  InboxesTable,
+  ContactsTable,
+  InboxMessagesTable,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
@@ -10,7 +15,7 @@ export default async function ChatSessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  
+
   const db = getDb();
   const chatSession = await db
     .select({
@@ -42,7 +47,10 @@ export default async function ChatSessionPage({
       createdAt: InboxMessagesTable.createdAt,
     })
     .from(InboxMessagesTable)
-    .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
+    .leftJoin(
+      ContactsTable,
+      eq(InboxMessagesTable.source, ContactsTable.slackId)
+    )
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
     .orderBy(InboxMessagesTable.createdAt);
 
@@ -54,25 +62,27 @@ export default async function ChatSessionPage({
           {messages.map((message) => (
             <div key={message.id} className="bg-gray-700 rounded-lg p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="font-semibold text-blue-300">{message.displayName || message.source}</span>
+                <span className="font-semibold text-blue-300">
+                  {message.displayName || message.source}
+                </span>
                 <span className="text-xs text-gray-400">
                   {message.createdAt.toLocaleString()}
                 </span>
               </div>
-              <div className="text-gray-100 whitespace-pre-wrap">{message.body}</div>
+              <div className="text-gray-100 whitespace-pre-wrap">
+                {message.body}
+              </div>
             </div>
           ))}
         </div>
-        
+
         <ChatInput sessionId={session.id} />
-        
+
         <div className="mt-6 pt-4 border-t border-gray-600 flex justify-between items-center text-sm">
           <div className="text-gray-300">
             {session.contactName || session.contactEmail}
           </div>
-          <div className="text-xs text-gray-500">
-            Session: {session.id}
-          </div>
+          <div className="text-xs text-gray-500">Session: {session.id}</div>
         </div>
       </div>
     </div>

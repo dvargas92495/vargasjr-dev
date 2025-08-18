@@ -15,12 +15,12 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
-      
+          node-version-file: ".nvmrc"
+
       - name: Install dependencies
         run: npm install
 
@@ -28,7 +28,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.4.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          running-workflow-name: 'auto-merge'
+          running-workflow-name: "auto-merge"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
 

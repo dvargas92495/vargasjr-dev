@@ -12,31 +12,31 @@ export async function GET() {
     }
 
     const headers = await getGitHubAuthHeaders();
-    
+
     const response = await fetch(
       `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/runs?branch=main&event=workflow_dispatch&status=in_progress`,
       {
-        headers
+        headers,
       }
     );
 
     if (!response.ok) {
-      console.error('GitHub API error:', response.status, response.statusText);
+      console.error("GitHub API error:", response.status, response.statusText);
       return NextResponse.json({ hasRunningWorkflow: false });
     }
 
     const data = await response.json();
     const runningWorkflows = data.workflow_runs || [];
-    
-    const agentCreationWorkflows = runningWorkflows.filter((run: {
-      path: string;
-      status: string;
-      id: number;
-      created_at: string;
-      html_url: string;
-    }) => 
-      run.path === '.github/workflows/ci.yaml' && 
-      run.status === 'in_progress'
+
+    const agentCreationWorkflows = runningWorkflows.filter(
+      (run: {
+        path: string;
+        status: string;
+        id: number;
+        created_at: string;
+        html_url: string;
+      }) =>
+        run.path === ".github/workflows/ci.yaml" && run.status === "in_progress"
     );
 
     if (agentCreationWorkflows.length > 0) {
@@ -45,14 +45,13 @@ export async function GET() {
         hasRunningWorkflow: true,
         workflowRunId: latestWorkflow.id,
         createdAt: latestWorkflow.created_at,
-        htmlUrl: latestWorkflow.html_url
+        htmlUrl: latestWorkflow.html_url,
       });
     }
 
     return NextResponse.json({ hasRunningWorkflow: false });
-
   } catch (error) {
-    console.error('Workflow status check error:', error);
+    console.error("Workflow status check error:", error);
     return NextResponse.json({ hasRunningWorkflow: false });
   }
 }

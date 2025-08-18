@@ -18,10 +18,7 @@ export async function GET(
       .then((results) => results[0]);
 
     if (!job) {
-      return NextResponse.json(
-        { error: "Job not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     const jobWithLabel = {
@@ -32,7 +29,10 @@ export async function GET(
     return NextResponse.json(jobWithLabel);
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch job", details: error instanceof Error ? error.message : String(error) },
+      {
+        error: "Failed to fetch job",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

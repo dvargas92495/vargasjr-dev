@@ -18,7 +18,9 @@ interface ApiErrorResponse {
 
 export default function NewRoutineJobPage() {
   const router = useRouter();
-  const [workflowDeployments, setWorkflowDeployments] = useState<WorkflowDeployment[]>([]);
+  const [workflowDeployments, setWorkflowDeployments] = useState<
+    WorkflowDeployment[]
+  >([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
@@ -27,19 +29,21 @@ export default function NewRoutineJobPage() {
   useEffect(() => {
     const fetchWorkflowDeployments = async () => {
       try {
-        const response = await fetch('/api/vellum/workflow-deployments');
+        const response = await fetch("/api/vellum/workflow-deployments");
         if (!response.ok) {
-          throw new Error('Failed to fetch workflow deployments');
+          throw new Error("Failed to fetch workflow deployments");
         }
         const data = await response.json();
-        const sortedData = data.sort((a: WorkflowDeployment, b: WorkflowDeployment) => {
-          const aLabel = a.label || a.name;
-          const bLabel = b.label || b.name;
-          return aLabel.localeCompare(bLabel);
-        });
+        const sortedData = data.sort(
+          (a: WorkflowDeployment, b: WorkflowDeployment) => {
+            const aLabel = a.label || a.name;
+            const bLabel = b.label || b.name;
+            return aLabel.localeCompare(bLabel);
+          }
+        );
         setWorkflowDeployments(sortedData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -53,7 +57,7 @@ export default function NewRoutineJobPage() {
       e.preventDefault();
       setPending(true);
       setError(null);
-      
+
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name");
       const scheduleDescription = formData.get("scheduleDescription");
@@ -61,23 +65,28 @@ export default function NewRoutineJobPage() {
       const workflowName = name || "test-workflow";
       if (scheduleDescription) {
         try {
-          const response = await fetch('/api/jobs/routine', {
-            method: 'POST',
+          const response = await fetch("/api/jobs/routine", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({ name: workflowName, scheduleDescription }),
           });
 
           if (!response.ok) {
             const errorData: ApiErrorResponse = await response.json();
-            const errorMessage = errorData.details || errorData.error || 'Failed to create routine job';
+            const errorMessage =
+              errorData.details ||
+              errorData.error ||
+              "Failed to create routine job";
             throw new Error(errorMessage);
           }
 
           router.push("/admin/jobs");
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to create routine job');
+          setError(
+            err instanceof Error ? err.message : "Failed to create routine job"
+          );
         } finally {
           setPending(false);
         }
@@ -89,7 +98,9 @@ export default function NewRoutineJobPage() {
   );
 
   if (loading) {
-    return <div className="max-w-md w-full">Loading workflow deployments...</div>;
+    return (
+      <div className="max-w-md w-full">Loading workflow deployments...</div>
+    );
   }
 
   return (
@@ -122,8 +133,8 @@ export default function NewRoutineJobPage() {
         </div>
         {selectedWorkflow && (
           <div>
-            <TestButton 
-              workflowDeploymentName={selectedWorkflow} 
+            <TestButton
+              workflowDeploymentName={selectedWorkflow}
               disabled={!selectedWorkflow}
             />
           </div>

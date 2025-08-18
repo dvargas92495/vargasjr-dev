@@ -372,108 +372,107 @@ export interface HealthCheckOptions {
   prNumber?: string;
 }
 
-
-
 export async function checkInstanceHealth(
   instanceId: string,
   region: string = "us-east-1"
 ): Promise<HealthCheckResult> {
   const ec2 = new EC2({ region });
-  
+
   try {
     const instanceResult = await ec2.describeInstances({
       InstanceIds: [instanceId],
     });
-    
+
     const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
     if (!instance) {
       return {
         instanceId,
         status: "offline",
-        error: "Instance not found"
+        error: "Instance not found",
       };
     }
-    
+
     if (instance.State?.Name !== "running") {
       return {
         instanceId,
         status: "offline",
-        error: `Instance is ${instance.State?.Name}`
+        error: `Instance is ${instance.State?.Name}`,
       };
     }
-    
+
     const publicIp = instance.PublicIpAddress;
     if (!publicIp) {
       return {
         instanceId,
         status: "offline",
-        error: "Instance has no public IP address"
+        error: "Instance has no public IP address",
       };
     }
-    
+
     const healthUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/health`;
     console.log(`[Health Check] Making HTTP request to: ${healthUrl}`);
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
-    
+
     try {
       const response = await fetch(healthUrl, {
-        method: 'GET',
+        method: "GET",
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json',
+          Accept: "application/json",
         },
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         return {
           instanceId,
           status: "offline",
-          error: `HTTP ${response.status}: ${response.statusText}`
+          error: `HTTP ${response.status}: ${response.statusText}`,
         };
       }
-      
+
       const healthData = await response.json();
-      
+
       return {
         instanceId,
         status: healthData.status === "healthy" ? "healthy" : "unhealthy",
         error: healthData.status !== "healthy" ? healthData.error : undefined,
         diagnostics: {
-          healthcheck: healthData
-        }
+          healthcheck: healthData,
+        },
       };
-      
     } catch (fetchError) {
       clearTimeout(timeoutId);
-      
-      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
         return {
           instanceId,
           status: "offline",
-          error: "Health check request timed out after 10 seconds"
+          error: "Health check request timed out after 10 seconds",
         };
       }
-      
+
       return {
         instanceId,
         status: "offline",
-        error: `HTTP request failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`
+        error: `HTTP request failed: ${
+          fetchError instanceof Error ? fetchError.message : String(fetchError)
+        }`,
       };
     }
-    
   } catch (error) {
     return {
       instanceId,
       status: "offline",
-      error: `Failed to get instance details: ${error instanceof Error ? error.message : String(error)}`
+      error: `Failed to get instance details: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     };
   }
 }
-
 
 export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   const iam = new IAMClient({ region: "us-east-1" });
@@ -502,39 +501,39 @@ export async function retryWithBackoff<T>(
   maxRetries: number = 3,
   baseDelayMs: number = 1000
 ): Promise<T> {
-  let lastError: Error = new Error('Unknown error');
-  
+  let lastError: Error = new Error("Unknown error");
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === maxRetries) {
         break;
       }
-      
+
       const isRetryable = isRetryableError(error);
       if (!isRetryable) {
         break;
       }
-      
+
       const delay = baseDelayMs * Math.pow(2, attempt);
       console.log(`Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
-      
-      await new Promise(resolve => setTimeout(resolve, delay));
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError;
 }
 
 export function isRetryableError(error: any): boolean {
-  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+  if (error.name === "TypeError" && error.message.includes("fetch")) {
     return true;
   }
-  
-  if (error.message && error.message.includes('GitHub API error')) {
+
+  if (error.message && error.message.includes("GitHub API error")) {
     const statusMatch = error.message.match(/GitHub API error: (\d+)/);
     if (statusMatch) {
       const status = parseInt(statusMatch[1]);
@@ -542,8 +541,7 @@ export function isRetryableError(error: any): boolean {
     }
     return true;
   }
-  
-  
+
   return false;
 }
 
@@ -556,11 +554,7 @@ export async function postGitHubComment(
   const eventName = process.env.GITHUB_EVENT_NAME;
   const eventPath = process.env.GITHUB_EVENT_PATH;
 
-  if (
-    !githubRepo ||
-    eventName !== "pull_request" ||
-    !eventPath
-  ) {
+  if (!githubRepo || eventName !== "pull_request" || !eventPath) {
     console.log(
       "Not in PR context or missing GitHub environment variables, skipping comment"
     );
@@ -578,7 +572,7 @@ export async function postGitHubComment(
 
     await retryWithBackoff(async () => {
       const headers = await getGitHubAuthHeaders();
-      
+
       const response = await fetch(
         `https://api.github.com/repos/${githubRepo}/issues/${prNumber}/comments`,
         {
@@ -596,9 +590,13 @@ export async function postGitHubComment(
 
       if (!response.ok) {
         if (response.status >= 500 || response.status === 429) {
-          throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `GitHub API error: ${response.status} ${response.statusText}`
+          );
         } else {
-          throw new Error(`GitHub API client error: ${response.status} ${response.statusText}`);
+          throw new Error(
+            `GitHub API client error: ${response.status} ${response.statusText}`
+          );
         }
       }
 

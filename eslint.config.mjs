@@ -16,7 +16,7 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     plugins: {
-      "custom": {
+      custom: {
         rules: {
           "no-mock-internal-modules": noMockInternalModules,
           "imports-at-top": importsAtTop,

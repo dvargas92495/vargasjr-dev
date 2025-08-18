@@ -38,7 +38,10 @@ export default async function InboxPage({
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
-    .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
+    .leftJoin(
+      ContactsTable,
+      eq(InboxMessagesTable.source, ContactsTable.slackId)
+    )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(25);
@@ -68,7 +71,9 @@ export default async function InboxPage({
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
         </Link>
-        <h1 className="text-2xl font-bold">{inbox[0].displayLabel || inbox[0].name}</h1>
+        <h1 className="text-2xl font-bold">
+          {inbox[0].displayLabel || inbox[0].name}
+        </h1>
       </div>
       <div className="space-y-3">
         {messages.map((message) => (

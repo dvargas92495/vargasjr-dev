@@ -82,7 +82,7 @@ export default function NewApplicationPage() {
             <option value="">Select an application type...</option>
             {AppTypes.map((type) => (
               <option key={type} value={type} className="capitalize">
-                {type.toLowerCase().replace(/_/g, ' ')}
+                {type.toLowerCase().replace(/_/g, " ")}
               </option>
             ))}
           </select>

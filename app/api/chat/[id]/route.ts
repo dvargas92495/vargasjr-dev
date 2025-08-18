@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { ChatSessionsTable, InboxesTable, ContactsTable, InboxMessagesTable } from "@/db/schema";
+import {
+  ChatSessionsTable,
+  InboxesTable,
+  ContactsTable,
+  InboxMessagesTable,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
@@ -9,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
     const db = getDb();
     const chatSession = await db
       .select({
@@ -22,12 +27,18 @@ export async function GET(
       })
       .from(ChatSessionsTable)
       .innerJoin(InboxesTable, eq(ChatSessionsTable.inboxId, InboxesTable.id))
-      .innerJoin(ContactsTable, eq(ChatSessionsTable.contactId, ContactsTable.id))
+      .innerJoin(
+        ContactsTable,
+        eq(ChatSessionsTable.contactId, ContactsTable.id)
+      )
       .where(eq(ChatSessionsTable.id, id))
       .limit(1);
 
     if (!chatSession.length) {
-      return NextResponse.json({ error: "Chat session not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Chat session not found" },
+        { status: 404 }
+      );
     }
 
     const session = chatSession[0];
@@ -41,7 +52,10 @@ export async function GET(
         createdAt: InboxMessagesTable.createdAt,
       })
       .from(InboxMessagesTable)
-      .leftJoin(ContactsTable, eq(InboxMessagesTable.source, ContactsTable.slackId))
+      .leftJoin(
+        ContactsTable,
+        eq(InboxMessagesTable.source, ContactsTable.slackId)
+      )
       .where(eq(InboxMessagesTable.inboxId, session.inboxId))
       .orderBy(InboxMessagesTable.createdAt);
 
@@ -54,12 +68,12 @@ export async function GET(
         contactName: session.contactName,
         inboxId: session.inboxId,
       },
-      messages: messages.map(msg => ({
+      messages: messages.map((msg) => ({
         id: msg.id,
         body: msg.body,
         source: msg.displayName || msg.source,
         createdAt: msg.createdAt.toISOString(),
-      }))
+      })),
     });
   } catch (error) {
     console.error("Failed to fetch chat session", error);

@@ -2,14 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { addInboxMessage } from "@/server";
-import { ChatSessionsTable, ContactsTable, RoutineJobsTable, JobsTable } from "@/db/schema";
+import {
+  ChatSessionsTable,
+  ContactsTable,
+  RoutineJobsTable,
+  JobsTable,
+} from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
-  
+
   if (!message || message.trim().length === 0) {
     throw new Error("Message cannot be empty");
   }
@@ -55,10 +60,9 @@ export async function getRoutineJob(id: string) {
 
   return {
     ...routineJob,
-    createdAt: routineJob.createdAt.toISOString()
+    createdAt: routineJob.createdAt.toISOString(),
   };
 }
-
 
 export async function getJobs() {
   const db = getDb();
@@ -73,7 +77,7 @@ export async function getJobs() {
     .from(JobsTable)
     .orderBy(desc(JobsTable.priority));
 
-  const jobsWithLabels = jobs.map(job => ({
+  const jobsWithLabels = jobs.map((job) => ({
     ...job,
     priority: convertPriorityToLabel(job.priority),
   }));
@@ -170,6 +174,6 @@ export async function getJob(id: string) {
     ...job,
     priority: convertPriorityToLabel(job.priority),
     createdAt: job.createdAt.toISOString(),
-    dueDate: job.dueDate.toISOString()
+    dueDate: job.dueDate.toISOString(),
   };
 }

@@ -1,4 +1,4 @@
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, Browser, BrowserContext, Page } from "playwright";
 
 export interface BrowserSession {
   id: string;
@@ -16,35 +16,35 @@ export class BrowserManager {
   async initialize(): Promise<void> {
     this.browser = await chromium.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredSessions();
     }, 5 * 60 * 1000); // Cleanup every 5 minutes
 
-    console.log('Browser manager initialized');
+    console.log("Browser manager initialized");
   }
 
   async createSession(sessionId?: string): Promise<string> {
     if (!this.browser) {
-      throw new Error('Browser not initialized');
+      throw new Error("Browser not initialized");
     }
 
     const id = sessionId || this.generateSessionId();
     const context = await this.browser.newContext();
-    
+
     const session: BrowserSession = {
       id,
       context,
       pages: new Map(),
       createdAt: new Date(),
-      lastUsed: new Date()
+      lastUsed: new Date(),
     };
 
     this.sessions.set(id, session);
     console.log(`Created browser session: ${id}`);
-    
+
     return id;
   }
 
@@ -65,7 +65,7 @@ export class BrowserManager {
     const id = pageId || this.generatePageId();
     const page = await session.context.newPage();
     session.pages.set(id, page);
-    
+
     console.log(`Created page ${id} in session ${sessionId}`);
     return id;
   }
@@ -75,7 +75,7 @@ export class BrowserManager {
     if (!session) {
       return null;
     }
-    
+
     return session.pages.get(pageId) || null;
   }
 
@@ -114,7 +114,7 @@ export class BrowserManager {
       this.browser = null;
     }
 
-    console.log('Browser manager cleaned up');
+    console.log("Browser manager cleaned up");
   }
 
   private cleanupExpiredSessions(): void {

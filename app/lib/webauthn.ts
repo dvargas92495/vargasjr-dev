@@ -39,7 +39,9 @@ export function generateChallenge(): string {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-export function generateRegistrationOptions(userId: string): PublicKeyCredentialCreationOptionsJSON {
+export function generateRegistrationOptions(
+  userId: string
+): PublicKeyCredentialCreationOptionsJSON {
   return {
     rp: {
       name: "VargasJR Admin",
@@ -52,7 +54,7 @@ export function generateRegistrationOptions(userId: string): PublicKeyCredential
     },
     challenge: generateChallenge(),
     pubKeyCredParams: [
-      { type: "public-key", alg: -7 },  // ES256
+      { type: "public-key", alg: -7 }, // ES256
       { type: "public-key", alg: -257 }, // RS256
     ],
     timeout: 60000,
@@ -65,12 +67,14 @@ export function generateRegistrationOptions(userId: string): PublicKeyCredential
   };
 }
 
-export function generateAuthenticationOptions(credentialIds: string[]): PublicKeyCredentialRequestOptionsJSON {
+export function generateAuthenticationOptions(
+  credentialIds: string[]
+): PublicKeyCredentialRequestOptionsJSON {
   return {
     challenge: generateChallenge(),
     timeout: 60000,
     rpId: "localhost",
-    allowCredentials: credentialIds.map(id => ({
+    allowCredentials: credentialIds.map((id) => ({
       type: "public-key",
       id,
     })),

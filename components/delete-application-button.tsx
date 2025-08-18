@@ -7,7 +7,13 @@ import ConfirmationModal, {
 import { useRef, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const DeleteApplicationButton = ({ applicationId, applicationName }: { applicationId: string; applicationName: string }) => {
+const DeleteApplicationButton = ({
+  applicationId,
+  applicationName,
+}: {
+  applicationId: string;
+  applicationName: string;
+}) => {
   const deleteModalRef = useRef<ConfirmationModalHandle>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
@@ -20,18 +26,20 @@ const DeleteApplicationButton = ({ applicationId, applicationName }: { applicati
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/applications/${applicationId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete application');
+        throw new Error(error.error || "Failed to delete application");
       }
 
-      router.push('/admin/applications');
+      router.push("/admin/applications");
     } catch (error) {
-      console.error('Error deleting application:', error);
-      alert(error instanceof Error ? error.message : 'Failed to delete application');
+      console.error("Error deleting application:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to delete application"
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -46,15 +54,16 @@ const DeleteApplicationButton = ({ applicationId, applicationName }: { applicati
         title="Delete application"
       >
         <TrashIcon className="w-4 h-4 mr-2" />
-        {isDeleting ? 'Deleting...' : 'Delete Application'}
+        {isDeleting ? "Deleting..." : "Delete Application"}
       </button>
       <ConfirmationModal
         ref={deleteModalRef}
         header="Delete Application"
         body={
           <p className="text-sm text-gray-300">
-            Are you sure you want to delete the application &ldquo;{applicationName}&rdquo;? This action
-            cannot be undone and will also delete all associated workspaces.
+            Are you sure you want to delete the application &ldquo;
+            {applicationName}&rdquo;? This action cannot be undone and will also
+            delete all associated workspaces.
           </p>
         }
         onConfirm={onConfirm}

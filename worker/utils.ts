@@ -1,15 +1,15 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { createWriteStream } from 'fs';
+import * as fs from "fs";
+import * as path from "path";
+import { createWriteStream } from "fs";
 
 export function getVersion(): string {
   try {
-    const packageJsonPath = path.join(__dirname, '../package.json');
-    const content = fs.readFileSync(packageJsonPath, 'utf-8');
+    const packageJsonPath = path.join(__dirname, "../package.json");
+    const content = fs.readFileSync(packageJsonPath, "utf-8");
     const packageJson = JSON.parse(content);
-    return packageJson.version || 'unknown';
+    return packageJson.version || "unknown";
   } catch (error) {
-    return 'unknown';
+    return "unknown";
   }
 }
 
@@ -24,14 +24,21 @@ export interface Logger {
 class FileLogger implements Logger {
   private logDir: string;
   private logFile: string;
-  private level: string = 'INFO';
+  private level: string = "INFO";
 
   constructor(name: string, logFilename: string, version?: string) {
     const resolvedVersion = version || getVersion();
     const homeDir = process.env.HOME || process.cwd();
-    this.logDir = path.join(homeDir, '.local', 'var', 'log', 'vargas-jr', `v${resolvedVersion}`);
+    this.logDir = path.join(
+      homeDir,
+      ".local",
+      "var",
+      "log",
+      "vargas-jr",
+      `v${resolvedVersion}`
+    );
     this.logFile = path.join(this.logDir, logFilename);
-    
+
     fs.mkdirSync(this.logDir, { recursive: true });
   }
 
@@ -47,20 +54,20 @@ class FileLogger implements Logger {
   }
 
   info(message: string): void {
-    this.writeLog('INFO', message);
+    this.writeLog("INFO", message);
   }
 
   error(message: string): void {
-    this.writeLog('ERROR', message);
+    this.writeLog("ERROR", message);
   }
 
   warn(message: string): void {
-    this.writeLog('WARN', message);
+    this.writeLog("WARN", message);
   }
 
   debug(message: string): void {
-    if (this.level === 'DEBUG') {
-      this.writeLog('DEBUG', message);
+    if (this.level === "DEBUG") {
+      this.writeLog("DEBUG", message);
     }
   }
 
@@ -69,6 +76,10 @@ class FileLogger implements Logger {
   }
 }
 
-export function createFileLogger(name: string, logFilename: string, version?: string): Logger {
+export function createFileLogger(
+  name: string,
+  logFilename: string,
+  version?: string
+): Logger {
   return new FileLogger(name, logFilename, version);
 }

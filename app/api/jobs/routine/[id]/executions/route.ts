@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
     const db = getDb();
     const routineJob = await db
       .select({ name: RoutineJobsTable.name })
@@ -49,18 +49,20 @@ export async function GET(
       );
     }
 
-    const executions = await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
-      deployment.id,
-      { limit: 10 }
-    );
+    const executions =
+      await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
+        deployment.id,
+        { limit: 10 }
+      );
 
-    const transformedExecutions = executions.results?.map((execution) => ({
-      id: execution.spanId,
-      executionId: execution.spanId,
-      createdAt: execution.start,
-      outputs: execution.outputs,
-      error: execution.error,
-    })) || [];
+    const transformedExecutions =
+      executions.results?.map((execution) => ({
+        id: execution.spanId,
+        executionId: execution.spanId,
+        createdAt: execution.start,
+        outputs: execution.outputs,
+        error: execution.error,
+      })) || [];
 
     return NextResponse.json(transformedExecutions);
   } catch (error) {

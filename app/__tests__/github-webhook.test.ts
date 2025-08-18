@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import { POST } from "../api/github/webhook/route";
 
 const mockEnv = vi.hoisted(() => ({
-  GITHUB_WEBHOOK_SECRET: "test_webhook_secret"
+  GITHUB_WEBHOOK_SECRET: "test_webhook_secret",
 }));
 
 describe("GitHub Webhook", () => {
@@ -14,11 +14,11 @@ describe("GitHub Webhook", () => {
 
   it("should return 500 when GITHUB_WEBHOOK_SECRET is missing", async () => {
     delete process.env.GITHUB_WEBHOOK_SECRET;
-    
+
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "x-hub-signature-256": "sha256=test_signature" }
+      headers: { "x-hub-signature-256": "sha256=test_signature" },
     });
 
     const response = await POST(request);
@@ -31,7 +31,7 @@ describe("GitHub Webhook", () => {
   it("should return 400 when x-hub-signature-256 header is missing", async () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
-      body: JSON.stringify({ test: "data" })
+      body: JSON.stringify({ test: "data" }),
     });
 
     const response = await POST(request);
@@ -45,7 +45,7 @@ describe("GitHub Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "x-hub-signature-256": "sha256=invalid_signature" }
+      headers: { "x-hub-signature-256": "sha256=invalid_signature" },
     });
 
     const response = await POST(request);
@@ -61,12 +61,12 @@ describe("GitHub Webhook", () => {
       issue: {
         number: 123,
         title: "Test Issue",
-        user: { login: "testuser" }
+        user: { login: "testuser" },
       },
       repository: {
-        full_name: "testowner/testrepo"
+        full_name: "testowner/testrepo",
       },
-      sender: { login: "testuser" }
+      sender: { login: "testuser" },
     };
 
     const body = JSON.stringify(mockPayload);
@@ -77,10 +77,10 @@ describe("GitHub Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { 
+      headers: {
         "x-hub-signature-256": signature,
-        "x-github-event": "issues"
-      }
+        "x-github-event": "issues",
+      },
     });
 
     const response = await POST(request);
@@ -96,12 +96,12 @@ describe("GitHub Webhook", () => {
       issue: {
         number: 456,
         title: "Another Test Issue",
-        user: { login: "testuser" }
+        user: { login: "testuser" },
       },
       repository: {
-        full_name: "testowner/testrepo"
+        full_name: "testowner/testrepo",
       },
-      sender: { login: "closer" }
+      sender: { login: "closer" },
     };
 
     const body = JSON.stringify(mockPayload);
@@ -112,10 +112,10 @@ describe("GitHub Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { 
+      headers: {
         "x-hub-signature-256": signature,
-        "x-github-event": "issues"
-      }
+        "x-github-event": "issues",
+      },
     });
 
     const response = await POST(request);
@@ -131,12 +131,12 @@ describe("GitHub Webhook", () => {
       issue: {
         number: 789,
         title: "Edited Issue",
-        user: { login: "testuser" }
+        user: { login: "testuser" },
       },
       repository: {
-        full_name: "testowner/testrepo"
+        full_name: "testowner/testrepo",
       },
-      sender: { login: "editor" }
+      sender: { login: "editor" },
     };
 
     const body = JSON.stringify(mockPayload);
@@ -147,10 +147,10 @@ describe("GitHub Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { 
+      headers: {
         "x-hub-signature-256": signature,
-        "x-github-event": "issues"
-      }
+        "x-github-event": "issues",
+      },
     });
 
     const response = await POST(request);
@@ -164,8 +164,8 @@ describe("GitHub Webhook", () => {
     const mockPayload = {
       action: "created",
       comment: {
-        body: "Test comment"
-      }
+        body: "Test comment",
+      },
     };
 
     const body = JSON.stringify(mockPayload);
@@ -176,10 +176,10 @@ describe("GitHub Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: body,
-      headers: { 
+      headers: {
         "x-hub-signature-256": signature,
-        "x-github-event": "issue_comment"
-      }
+        "x-github-event": "issue_comment",
+      },
     });
 
     const response = await POST(request);

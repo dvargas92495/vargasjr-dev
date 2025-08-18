@@ -14,7 +14,7 @@ export default function ChatInput({ sessionId }: ChatInputProps) {
   const handleSubmit = async (formData: FormData) => {
     setPending(true);
     setError(null);
-    
+
     try {
       await sendChatMessage(sessionId, formData);
     } catch (err) {

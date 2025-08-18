@@ -28,17 +28,15 @@ export async function DELETE(
       .delete(ApplicationWorkspacesTable)
       .where(eq(ApplicationWorkspacesTable.applicationId, id));
 
-    await db
-      .delete(ApplicationsTable)
-      .where(eq(ApplicationsTable.id, id));
+    await db.delete(ApplicationsTable).where(eq(ApplicationsTable.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting application:", error);
     return NextResponse.json(
-      { 
-        error: "Failed to delete application", 
-        details: error instanceof Error ? error.message : String(error) 
+      {
+        error: "Failed to delete application",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );

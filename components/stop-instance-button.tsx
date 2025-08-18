@@ -11,18 +11,18 @@ const StopInstanceButton = ({ id }: { id: string }) => {
   const stopInstance = async () => {
     setPending(true);
     setError(null);
-    
+
     try {
       const response = await fetch("/api/instances", {
         method: "POST",
         body: JSON.stringify({ id, operation: "STOP" }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to stop instance");
       }
-      
+
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to stop instance");

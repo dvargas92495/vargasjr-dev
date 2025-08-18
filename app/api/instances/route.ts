@@ -12,7 +12,7 @@ const instanceSchema = z.object({
 export async function POST(request: Request) {
   try {
     console.log(`[/api/instances] POST request received`);
-    
+
     const cookieStore = await cookies();
     const token = cookieStore.get("admin-token");
     console.log(`[/api/instances] Admin token present: ${!!token?.value}`);
@@ -25,46 +25,64 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log(`[/api/instances] Request body:`, body);
     const { id, operation } = instanceSchema.parse(body);
-    console.log(`[/api/instances] Parsed - Instance ID: ${id}, Operation: ${operation}`);
-    
-    console.log(`[/api/instances] Initializing EC2 client for region us-east-1`);
+    console.log(
+      `[/api/instances] Parsed - Instance ID: ${id}, Operation: ${operation}`
+    );
+
+    console.log(
+      `[/api/instances] Initializing EC2 client for region us-east-1`
+    );
     const ec2 = new EC2({ region: "us-east-1" });
-    
+
     if (operation === "STOP") {
       console.log(`[/api/instances] Stopping instance ${id}`);
       const result = await ec2.stopInstances({ InstanceIds: [id] });
       console.log(`[/api/instances] Stop command result:`, result);
-      return NextResponse.json({ success: true, message: "Instance stop initiated", result });
+      return NextResponse.json({
+        success: true,
+        message: "Instance stop initiated",
+        result,
+      });
     } else if (operation === "START") {
       console.log(`[/api/instances] Starting instance ${id}`);
       const result = await ec2.startInstances({ InstanceIds: [id] });
       console.log(`[/api/instances] Start command result:`, result);
-      return NextResponse.json({ success: true, message: "Instance start initiated", result });
+      return NextResponse.json({
+        success: true,
+        message: "Instance start initiated",
+        result,
+      });
     } else if (operation === "DELETE") {
       console.log(`[/api/instances] Deleting instance ${id}`);
-      
+
       const instanceResult = await ec2.describeInstances({ InstanceIds: [id] });
       const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
-      const instanceName = instance?.Tags?.find(tag => tag.Key === "Name")?.Value;
-      
+      const instanceName = instance?.Tags?.find(
+        (tag) => tag.Key === "Name"
+      )?.Value;
+
       await terminateInstances(ec2, [id]);
       console.log(`[/api/instances] Instance ${id} termination initiated`);
-      
+
       if (instanceName) {
         const keyPairName = `${instanceName}-key`;
         await deleteKeyPair(ec2, keyPairName);
-        console.log(`[/api/instances] Key pair ${keyPairName} deletion attempted`);
+        console.log(
+          `[/api/instances] Key pair ${keyPairName} deletion attempted`
+        );
       }
-      
-      return NextResponse.json({ success: true, message: "Instance deletion initiated" });
+
+      return NextResponse.json({
+        success: true,
+        message: "Instance deletion initiated",
+      });
     }
 
     console.log(`[/api/instances] Invalid operation: ${operation}`);
     return NextResponse.json({ error: "Invalid operation" }, { status: 400 });
-
   } catch (error) {
     console.error(`[/api/instances] Operation failed:`, error);
-    
+
     if (error instanceof ZodError) {
       console.error(`[/api/instances] Validation error:`, error.message);
       return NextResponse.json(
@@ -73,13 +91,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    const errorName = error instanceof Error ? error.name : "UnknownError";
+
     console.error(`[/api/instances] Error details:`, {
       name: errorName,
       message: errorMessage,
-      stack: error instanceof Error ? error.stack : 'No stack trace'
+      stack: error instanceof Error ? error.stack : "No stack trace",
     });
 
     return NextResponse.json(

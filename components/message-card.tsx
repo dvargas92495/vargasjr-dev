@@ -16,17 +16,24 @@ interface MessageCardProps {
 
 const MessageCard = ({ message, status, inboxId }: MessageCardProps) => {
   const router = useRouter();
-  
+
   const handleClick = useCallback(() => {
     router.push(`/admin/inboxes/${inboxId}/messages/${message.id}`);
   }, [router, inboxId, message.id]);
 
   const getInitials = (source: string) => {
-    return source.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+    return source
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const getStatusColor = (status: string) => {
-    return status === "Unread" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800";
+    return status === "Unread"
+      ? "bg-blue-100 text-blue-800"
+      : "bg-green-100 text-green-800";
   };
 
   return (
@@ -46,16 +53,26 @@ const MessageCard = ({ message, status, inboxId }: MessageCardProps) => {
               {message.source}
             </p>
             <div className="flex items-center space-x-2">
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}>
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                  status
+                )}`}
+              >
                 {status}
               </span>
               <p className="text-xs text-gray-500">
-                {message.createdAt.toLocaleDateString()} {message.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {message.createdAt.toLocaleDateString()}{" "}
+                {message.createdAt.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </p>
             </div>
           </div>
           <p className="text-sm text-gray-600 line-clamp-2">
-            {message.body.length > 120 ? `${message.body.slice(0, 120)}...` : message.body}
+            {message.body.length > 120
+              ? `${message.body.slice(0, 120)}...`
+              : message.body}
           </p>
         </div>
       </div>

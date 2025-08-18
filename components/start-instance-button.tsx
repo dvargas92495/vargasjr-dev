@@ -18,21 +18,25 @@ const StartInstanceButton = ({ id }: { id: string }) => {
         },
         body: JSON.stringify({ id, operation: "START" }),
       });
-      
+
       console.log(`[StartInstanceButton] Response status: ${response.status}`);
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log(`[StartInstanceButton] Success response:`, result);
         router.refresh();
       } else {
         const errorText = await response.text();
-        console.error(`[StartInstanceButton] Error response (${response.status}):`, errorText);
+        console.error(
+          `[StartInstanceButton] Error response (${response.status}):`,
+          errorText
+        );
         alert(`Failed to start instance: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error(`[StartInstanceButton] Network/fetch error:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       alert(`Network error starting instance: ${errorMessage}`);
     } finally {
       setPending(false);

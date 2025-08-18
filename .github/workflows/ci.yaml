@@ -3,29 +3,29 @@ name: ci
 on:
   push:
     paths:
-      - 'vellum/pyproject.toml'
-      - 'package.json'
-      - 'browser/**'
-      - 'worker/**'
-      - 'run_agent.sh'
+      - "vellum/pyproject.toml"
+      - "package.json"
+      - "browser/**"
+      - "worker/**"
+      - "run_agent.sh"
   pull_request:
     paths:
-      - 'vellum/pyproject.toml'
-      - 'browser/**'
-      - 'worker/**'
-      - 'scripts/**'
-      - 'app/**'
-      - 'components/**'
-      - 'db/**'
-      - 'tests/**'
-      - 'eslint.config.mjs'
-      - 'package.json'
-      - '.github/workflows/ci.yaml'
-      - 'run_agent.sh'
+      - "vellum/pyproject.toml"
+      - "browser/**"
+      - "worker/**"
+      - "scripts/**"
+      - "app/**"
+      - "components/**"
+      - "db/**"
+      - "tests/**"
+      - "eslint.config.mjs"
+      - "package.json"
+      - ".github/workflows/ci.yaml"
+      - "run_agent.sh"
   workflow_dispatch:
     inputs:
       agent_name:
-        description: 'Agent name to create (e.g., vargas-jr for production)'
+        description: "Agent name to create (e.g., vargas-jr for production)"
         required: false
         type: string
 
@@ -38,11 +38,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
       - name: Run ESLint
         run: npm run lint
+      - name: Run Prettier check
+        run: npm run format:check
   test:
     runs-on: ubuntu-latest
     steps:
@@ -51,7 +53,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
       - name: Run tests
@@ -68,7 +70,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
       - name: Get version from package.json
@@ -108,7 +110,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm install
       - name: Create preview agent
@@ -133,7 +135,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm install
       - name: Create production agent

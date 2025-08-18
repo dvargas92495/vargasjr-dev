@@ -43,7 +43,7 @@ export const postSlackMessage = async ({
   const response = await fetch("https://slack.com/api/chat.postMessage", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+      Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -51,17 +51,17 @@ export const postSlackMessage = async ({
       text: message,
     }),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Slack API error: ${response.statusText}`);
   }
-  
+
   return response.json();
 };
 
 export const upsertSlackContact = async (userId: string): Promise<string> => {
   const db = getDb();
-  
+
   let contact = await db
     .select({ id: ContactsTable.id })
     .from(ContactsTable)
@@ -75,17 +75,20 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
 
   let displayName = userId; // fallback
   try {
-    const response = await fetch(`https://slack.com/api/users.info?user=${userId}`, {
-      headers: {
-        "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
-      },
-    });
-    const data = await response.json() as any;
+    const response = await fetch(
+      `https://slack.com/api/users.info?user=${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+        },
+      }
+    );
+    const data = (await response.json()) as any;
     if (data?.ok && data?.user) {
       displayName = data.user.display_name || data.user.real_name || userId;
     }
   } catch (error) {
-    console.error('Failed to resolve Slack user:', error);
+    console.error("Failed to resolve Slack user:", error);
   }
 
   const newContact = await db
@@ -96,29 +99,36 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
       fullName: displayName,
     })
     .returning({ id: ContactsTable.id });
-  
+
   return newContact[0].id;
 };
 
-export const resolveSlackChannel = async (channelId: string): Promise<string> => {
+export const resolveSlackChannel = async (
+  channelId: string
+): Promise<string> => {
   try {
-    const response = await fetch(`https://slack.com/api/conversations.info?channel=${channelId}`, {
-      headers: {
-        "Authorization": `Bearer ${process.env.SLACK_BOT_TOKEN}`,
-      },
-    });
-    const data = await response.json() as any;
+    const response = await fetch(
+      `https://slack.com/api/conversations.info?channel=${channelId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+        },
+      }
+    );
+    const data = (await response.json()) as any;
     if (data?.ok && data?.channel) {
       return `Slack (#${data.channel.name})`;
     }
   } catch (error) {
-    console.error('Failed to resolve Slack channel:', error);
+    console.error("Failed to resolve Slack channel:", error);
   }
   return `slack-${channelId}`;
 };
 
-export const convertPriorityToLabel = (priority: number): 'High' | 'Medium' | 'Low' => {
-  if (priority >= 0.75) return 'High';
-  if (priority >= 0.40) return 'Medium';
-  return 'Low';
+export const convertPriorityToLabel = (
+  priority: number
+): "High" | "Medium" | "Low" => {
+  if (priority >= 0.75) return "High";
+  if (priority >= 0.4) return "Medium";
+  return "Low";
 };

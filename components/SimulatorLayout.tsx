@@ -8,7 +8,11 @@ interface SimulatorLayoutProps {
   children: React.ReactNode;
 }
 
-export default function SimulatorLayout({ title, description, children }: SimulatorLayoutProps) {
+export default function SimulatorLayout({
+  title,
+  description,
+  children,
+}: SimulatorLayoutProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-4">
@@ -23,9 +27,7 @@ export default function SimulatorLayout({ title, description, children }: Simula
         </div>
       </div>
 
-      <div>
-        {children}
-      </div>
+      <div>{children}</div>
     </div>
   );
 }

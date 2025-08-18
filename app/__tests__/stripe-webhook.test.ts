@@ -12,7 +12,7 @@ const {
   mockExecute,
   mockInsert,
   mockValues,
-  mockReturning
+  mockReturning,
 } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockFrom: vi.fn(),
@@ -21,53 +21,53 @@ const {
   mockExecute: vi.fn(),
   mockInsert: vi.fn(),
   mockValues: vi.fn(),
-  mockReturning: vi.fn()
+  mockReturning: vi.fn(),
 }));
 
 vi.mock("stripe", () => {
   return {
     default: vi.fn().mockImplementation(() => ({
       webhooks: {
-        constructEvent: mockConstructEvent
+        constructEvent: mockConstructEvent,
       },
       subscriptions: {
-        retrieve: mockRetrieve
+        retrieve: mockRetrieve,
       },
       checkout: {
         sessions: {
           retrieve: mockRetrieve,
-          update: mockUpdate
-        }
-      }
-    }))
+          update: mockUpdate,
+        },
+      },
+    })),
   };
 });
 
 vi.mock("@aws-sdk/client-s3", () => ({
   S3Client: vi.fn().mockImplementation(() => ({
-    send: vi.fn()
+    send: vi.fn(),
   })),
-  PutObjectCommand: vi.fn()
+  PutObjectCommand: vi.fn(),
 }));
 
 vi.mock("drizzle-orm/vercel-postgres", () => ({
   drizzle: vi.fn(() => ({
     select: mockSelect,
-    insert: mockInsert
-  }))
+    insert: mockInsert,
+  })),
 }));
 
 vi.mock("@vercel/postgres", () => ({
-  sql: vi.fn()
+  sql: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
-  eq: vi.fn()
+  eq: vi.fn(),
 }));
 
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
-  STRIPE_SECRET_KEY: "sk_test_key"
+  STRIPE_SECRET_KEY: "sk_test_key",
 }));
 
 describe("Stripe Webhook", () => {
@@ -87,22 +87,22 @@ describe("Stripe Webhook", () => {
     process.env.STRIPE_WEBHOOK_SECRET = mockEnv.STRIPE_WEBHOOK_SECRET;
     process.env.STRIPE_SECRET_KEY = mockEnv.STRIPE_SECRET_KEY;
     process.env.POSTGRES_URL = "postgresql://test:test@localhost:5432/test";
-    
+
     mockUpdate.mockResolvedValue({});
     mockRetrieve.mockResolvedValue({
       items: {
-        data: [{ price: { unit_amount: 15000000 } }]
-      }
+        data: [{ price: { unit_amount: 15000000 } }],
+      },
     });
   });
 
   it("should return 500 when STRIPE_WEBHOOK_SECRET is missing", async () => {
     delete process.env.STRIPE_WEBHOOK_SECRET;
-    
+
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "stripe-signature": "test_signature" }
+      headers: { "stripe-signature": "test_signature" },
     });
 
     const response = await POST(request);
@@ -114,11 +114,11 @@ describe("Stripe Webhook", () => {
 
   it("should return 500 when STRIPE_SECRET_KEY is missing", async () => {
     delete process.env.STRIPE_SECRET_KEY;
-    
+
     const request = new Request("http://localhost/webhook", {
-      method: "POST", 
+      method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "stripe-signature": "test_signature" }
+      headers: { "stripe-signature": "test_signature" },
     });
 
     const response = await POST(request);
@@ -131,7 +131,7 @@ describe("Stripe Webhook", () => {
   it("should return 400 when stripe-signature header is missing", async () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
-      body: JSON.stringify({ test: "data" })
+      body: JSON.stringify({ test: "data" }),
     });
 
     const response = await POST(request);
@@ -149,7 +149,7 @@ describe("Stripe Webhook", () => {
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify({ test: "data" }),
-      headers: { "stripe-signature": "invalid_signature" }
+      headers: { "stripe-signature": "invalid_signature" },
     });
 
     const response = await POST(request);
@@ -163,21 +163,23 @@ describe("Stripe Webhook", () => {
     const mockEvent = {
       type: "checkout.session.completed",
       id: "evt_test_123",
-      data: { 
-        object: { 
+      data: {
+        object: {
           id: "cs_test_123",
           customer_details: { name: "John Doe" },
-          subscription: "sub_test_123"
-        } 
-      }
+          subscription: "sub_test_123",
+        },
+      },
     };
 
-    mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
+    mockConstructEvent.mockReturnValue(
+      mockEvent as unknown as import("stripe").Stripe.Event
+    );
 
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify(mockEvent),
-      headers: { "stripe-signature": "valid_signature" }
+      headers: { "stripe-signature": "valid_signature" },
     });
 
     const response = await POST(request);
@@ -187,7 +189,7 @@ describe("Stripe Webhook", () => {
     expect(data.received).toBe(true);
     expect(mockConstructEvent).toHaveBeenCalledWith(
       JSON.stringify(mockEvent),
-      "valid_signature", 
+      "valid_signature",
       "whsec_test_secret"
     );
   });
@@ -195,16 +197,18 @@ describe("Stripe Webhook", () => {
   it("should successfully process checkout.session.expired event", async () => {
     const mockEvent = {
       type: "checkout.session.expired",
-      id: "evt_test_456", 
-      data: { object: { id: "cs_test_456" } }
+      id: "evt_test_456",
+      data: { object: { id: "cs_test_456" } },
     };
 
-    mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
+    mockConstructEvent.mockReturnValue(
+      mockEvent as unknown as import("stripe").Stripe.Event
+    );
 
     const request = new Request("http://localhost/webhook", {
       method: "POST",
       body: JSON.stringify(mockEvent),
-      headers: { "stripe-signature": "valid_signature" }
+      headers: { "stripe-signature": "valid_signature" },
     });
 
     const response = await POST(request);
@@ -218,15 +222,17 @@ describe("Stripe Webhook", () => {
     const mockEvent = {
       type: "payment_intent.created",
       id: "evt_test_789",
-      data: { object: { id: "pi_test_789" } }
+      data: { object: { id: "pi_test_789" } },
     };
 
-    mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
+    mockConstructEvent.mockReturnValue(
+      mockEvent as unknown as import("stripe").Stripe.Event
+    );
 
     const request = new Request("http://localhost/webhook", {
-      method: "POST", 
+      method: "POST",
       body: JSON.stringify(mockEvent),
-      headers: { "stripe-signature": "valid_signature" }
+      headers: { "stripe-signature": "valid_signature" },
     });
 
     const response = await POST(request);
@@ -241,23 +247,27 @@ describe("Stripe Webhook", () => {
       const mockEvent = {
         type: "checkout.session.completed",
         id: "evt_test_123",
-        data: { object: { id: "cs_test_123" } }
+        data: { object: { id: "cs_test_123" } },
       };
 
       const mockSession = {
         id: "cs_test_123",
         customer_email: "test@example.com",
-        subscription: "sub_test_123"
+        subscription: "sub_test_123",
       };
 
       const mockSubscription = {
         items: {
-          data: [{ price: { unit_amount: 15000000 } }]
-        }
+          data: [{ price: { unit_amount: 15000000 } }],
+        },
       };
 
-      mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
-      mockRetrieve.mockResolvedValueOnce(mockSession).mockResolvedValueOnce(mockSubscription);
+      mockConstructEvent.mockReturnValue(
+        mockEvent as unknown as import("stripe").Stripe.Event
+      );
+      mockRetrieve
+        .mockResolvedValueOnce(mockSession)
+        .mockResolvedValueOnce(mockSubscription);
       mockSelect.mockReturnValue({ from: mockFrom });
       mockFrom.mockReturnValue({ where: mockWhere });
       mockWhere.mockReturnValue({ limit: mockLimit });
@@ -271,7 +281,7 @@ describe("Stripe Webhook", () => {
       const request = new Request("http://localhost/webhook", {
         method: "POST",
         body: JSON.stringify(mockEvent),
-        headers: { "stripe-signature": "valid_signature" }
+        headers: { "stripe-signature": "valid_signature" },
       });
 
       const response = await POST(request);
@@ -279,28 +289,32 @@ describe("Stripe Webhook", () => {
 
       expect(response.status).toBe(200);
       expect(data.received).toBe(true);
-      expect(mockRetrieve).toHaveBeenCalledWith("cs_test_123", { expand: ['customer'] });
+      expect(mockRetrieve).toHaveBeenCalledWith("cs_test_123", {
+        expand: ["customer"],
+      });
     });
 
     it("should handle missing customer email gracefully", async () => {
       const mockEvent = {
         type: "checkout.session.completed",
         id: "evt_test_789",
-        data: { object: { id: "cs_test_789" } }
+        data: { object: { id: "cs_test_789" } },
       };
 
       const mockSession = {
         id: "cs_test_789",
-        customer_email: null
+        customer_email: null,
       };
 
-      mockConstructEvent.mockReturnValue(mockEvent as unknown as import("stripe").Stripe.Event);
+      mockConstructEvent.mockReturnValue(
+        mockEvent as unknown as import("stripe").Stripe.Event
+      );
       mockRetrieve.mockResolvedValue(mockSession);
 
       const request = new Request("http://localhost/webhook", {
         method: "POST",
         body: JSON.stringify(mockEvent),
-        headers: { "stripe-signature": "valid_signature" }
+        headers: { "stripe-signature": "valid_signature" },
       });
 
       const response = await POST(request);

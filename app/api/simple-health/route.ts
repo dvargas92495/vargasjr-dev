@@ -5,9 +5,6 @@ export async function GET() {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Simple health check failed:", error);
-    return NextResponse.json(
-      { error: "Health check failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Health check failed" }, { status: 500 });
   }
 }

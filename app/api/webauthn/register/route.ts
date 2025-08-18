@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     const options = generateRegistrationOptions("admin");
-    
+
     return NextResponse.json({
       publicKey: {
         ...options,
@@ -45,9 +45,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request body",
-          validationErrors: error.errors 
+          validationErrors: error.errors,
         },
         { status: 400 }
       );
@@ -86,9 +86,9 @@ export async function PUT(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: "Invalid request body",
-          validationErrors: error.errors 
+          validationErrors: error.errors,
         },
         { status: 400 }
       );

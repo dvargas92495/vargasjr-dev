@@ -20,12 +20,14 @@ export default async function ThankYou({
       const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
       if (stripeSecretKey) {
         const stripe = new Stripe(stripeSecretKey);
-        const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+        const session = await stripe.checkout.sessions.retrieve(
+          checkoutSessionId
+        );
         const customerEmail = session.customer_email;
-        
+
         if (customerEmail) {
           const db = getDb();
-          
+
           let inbox = await db
             .select({ id: InboxesTable.id })
             .from(InboxesTable)
@@ -62,9 +64,9 @@ export default async function ThankYou({
 
           const chatSession = await db
             .insert(ChatSessionsTable)
-            .values({ 
+            .values({
               inboxId: inbox[0].id,
-              contactId: contact[0].id
+              contactId: contact[0].id,
             })
             .returning({ id: ChatSessionsTable.id });
 
@@ -104,8 +106,8 @@ What would you like me to work on first?`;
         </div>
         <h1 className="text-4xl font-bold mb-4">Thank You!</h1>
         <p>I&apos;ll be in touch with you soon.</p>
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="text-primary hover:underline hover:underline-offset-4"
         >
           ← Back to Home
@@ -113,4 +115,4 @@ What would you like me to work on first?`;
       </div>
     </div>
   );
-}    
+}

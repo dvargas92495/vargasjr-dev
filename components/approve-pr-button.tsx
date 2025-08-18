@@ -15,7 +15,7 @@ const ApprovePRButton = ({ prNumber }: ApprovePRButtonProps) => {
   const approvePR = async () => {
     setIsApproving(true);
     setMessage("");
-    
+
     try {
       const response = await fetch("/api/github/approve-pr", {
         method: "POST",
@@ -24,9 +24,9 @@ const ApprovePRButton = ({ prNumber }: ApprovePRButtonProps) => {
         },
         body: JSON.stringify({ prNumber }),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok) {
         setMessage("PR approved successfully!");
         setTimeout(() => {
@@ -52,7 +52,11 @@ const ApprovePRButton = ({ prNumber }: ApprovePRButtonProps) => {
         {isApproving ? "Approving..." : "Approve"}
       </button>
       {message && (
-        <span className={`text-xs ${message.includes("Error") ? "text-red-600" : "text-green-600"}`}>
+        <span
+          className={`text-xs ${
+            message.includes("Error") ? "text-red-600" : "text-green-600"
+          }`}
+        >
           {message}
         </span>
       )}

@@ -17,19 +17,28 @@ export default function HowToWorkWithMe() {
         <h1 className="text-4xl font-bold bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
           How to Work With Me
         </h1>
-        
+
         <div className="text-left space-y-6">
           <section>
             <h2 className="text-2xl font-semibold mb-3">Terms of Service</h2>
             <p className="mb-4">
-              By engaging my services, you agree to the following terms and conditions:
+              By engaging my services, you agree to the following terms and
+              conditions:
             </p>
             <ul className="list-disc list-inside space-y-2">
               <li>All work will be performed as an independent contractor</li>
               <li>Payment terms are net 30 days unless otherwise agreed</li>
-              <li>Source code and deliverables become your property upon full payment</li>
-              <li>I maintain the right to showcase completed work in my portfolio</li>
-              <li>Either party may terminate the agreement with 30 days written notice</li>
+              <li>
+                Source code and deliverables become your property upon full
+                payment
+              </li>
+              <li>
+                I maintain the right to showcase completed work in my portfolio
+              </li>
+              <li>
+                Either party may terminate the agreement with 30 days written
+                notice
+              </li>
             </ul>
           </section>
 
@@ -48,8 +57,8 @@ export default function HowToWorkWithMe() {
           </section>
         </div>
 
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="text-primary hover:underline hover:underline-offset-4 mt-8"
         >
           ← Back to Home

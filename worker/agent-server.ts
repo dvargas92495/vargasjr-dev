@@ -1,6 +1,6 @@
-import express from 'express';
-import { Logger } from './utils';
-import { getHealthCheckData } from '../server/health-check';
+import express from "express";
+import { Logger } from "./utils";
+import { getHealthCheckData } from "../server/health-check";
 
 export interface AgentServerConfig {
   port: number;
@@ -21,24 +21,24 @@ export class AgentServer {
   }
 
   private setupRoutes(): void {
-    this.app.get('/health', async (req, res) => {
+    this.app.get("/health", async (req, res) => {
       try {
-        this.logger.info('Health check endpoint called');
+        this.logger.info("Health check endpoint called");
         const healthResult = await getHealthCheckData();
         res.json(healthResult);
       } catch (error) {
         this.logger.error(`Health check failed: ${error}`);
-        res.status(500).json({ 
-          status: 'error', 
-          message: 'Health check failed',
+        res.status(500).json({
+          status: "error",
+          message: "Health check failed",
           error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     });
 
-    this.app.get('/ping', (req, res) => {
-      res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    this.app.get("/ping", (req, res) => {
+      res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
   }
 
@@ -49,8 +49,8 @@ export class AgentServer {
           this.logger.info(`Health server started on port ${this.port}`);
           resolve();
         });
-        
-        this.server.on('error', (error: any) => {
+
+        this.server.on("error", (error: any) => {
           this.logger.error(`Health server error: ${error}`);
           reject(error);
         });
@@ -64,7 +64,7 @@ export class AgentServer {
     return new Promise((resolve) => {
       if (this.server) {
         this.server.close(() => {
-          this.logger.info('Health server stopped');
+          this.logger.info("Health server stopped");
           resolve();
         });
       } else {

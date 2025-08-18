@@ -13,23 +13,26 @@ export default function LoginPage() {
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState("");
 
-  const validateToken = useCallback(async (tokenValue: string): Promise<boolean> => {
-    try {
-      const response = await fetch("/api/validate-token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token: tokenValue }),
-      });
+  const validateToken = useCallback(
+    async (tokenValue: string): Promise<boolean> => {
+      try {
+        const response = await fetch("/api/validate-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token: tokenValue }),
+        });
 
-      const result = await response.json();
-      return result.valid === true;
-    } catch (error) {
-      console.error("Token validation failed:", error);
-      return false;
-    }
-  }, []);
+        const result = await response.json();
+        return result.valid === true;
+      } catch (error) {
+        console.error("Token validation failed:", error);
+        return false;
+      }
+    },
+    []
+  );
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,7 +45,7 @@ export default function LoginPage() {
         setValidationError("");
 
         const isValid = await validateToken(tokenValue);
-        
+
         if (isValid) {
           localStorage.setItem("admin-token", tokenValue);
           setCookie("admin-token", tokenValue);
@@ -50,7 +53,7 @@ export default function LoginPage() {
         } else {
           setValidationError("Invalid token. Please try again.");
         }
-        
+
         setIsValidating(false);
       }
     },
@@ -64,16 +67,19 @@ export default function LoginPage() {
     setValidationError("");
   }, []);
 
-
   const handleSetupFaceId = useCallback(async () => {
     if (!token) {
-      setValidationError("Please enter your admin token first to set up Face ID");
+      setValidationError(
+        "Please enter your admin token first to set up Face ID"
+      );
       return;
     }
 
     const isValid = await validateToken(token);
     if (!isValid) {
-      setValidationError("Invalid token. Please enter a valid admin token to set up Face ID");
+      setValidationError(
+        "Invalid token. Please enter a valid admin token to set up Face ID"
+      );
       return;
     }
 
@@ -93,7 +99,9 @@ export default function LoginPage() {
 
       if (!optionsResponse.ok) {
         const errorData = await optionsResponse.json();
-        throw new Error(errorData.error || "Failed to get registration options");
+        throw new Error(
+          errorData.error || "Failed to get registration options"
+        );
       }
 
       const options = await optionsResponse.json();
@@ -107,9 +115,9 @@ export default function LoginPage() {
         },
       };
 
-      const credential = await navigator.credentials.create({
+      const credential = (await navigator.credentials.create({
         publicKey: publicKeyOptions,
-      }) as PublicKeyCredential;
+      })) as PublicKeyCredential;
 
       if (!credential) {
         throw new Error("Failed to create credential");
@@ -124,8 +132,16 @@ export default function LoginPage() {
             id: credential.id,
             rawId: Array.from(new Uint8Array(credential.rawId)),
             response: {
-              attestationObject: Array.from(new Uint8Array((credential.response as AuthenticatorAttestationResponse).attestationObject)),
-              clientDataJSON: Array.from(new Uint8Array(credential.response.clientDataJSON)),
+              attestationObject: Array.from(
+                new Uint8Array(
+                  (
+                    credential.response as AuthenticatorAttestationResponse
+                  ).attestationObject
+                )
+              ),
+              clientDataJSON: Array.from(
+                new Uint8Array(credential.response.clientDataJSON)
+              ),
             },
             type: credential.type,
           },
@@ -138,7 +154,9 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("webauthn-credential-id", credential.id);
-      setValidationError("Face ID setup successful! You can now use biometric authentication.");
+      setValidationError(
+        "Face ID setup successful! You can now use biometric authentication."
+      );
     } catch (error: unknown) {
       console.error("Face ID setup failed:", error);
       if (error instanceof Error) {
@@ -161,7 +179,7 @@ export default function LoginPage() {
       setIsAutoLogging(true);
       setToken(storedToken);
       setHasStoredToken(true);
-      
+
       validateToken(storedToken).then((isValid) => {
         if (isValid) {
           setCookie("admin-token", storedToken);
@@ -186,10 +204,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center p-8">
       <div className="flex flex-col gap-4 w-full max-w-md">
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4"
-        >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="password"
             name="token"
@@ -200,16 +215,20 @@ export default function LoginPage() {
             required
             disabled={isAutoLogging || isValidating}
           />
-          
+
           <div className="flex gap-2">
             <button
               type="submit"
               className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
               disabled={isAutoLogging || isValidating}
             >
-              {isAutoLogging ? "Auto-logging in..." : isValidating ? "Validating..." : "Login"}
+              {isAutoLogging
+                ? "Auto-logging in..."
+                : isValidating
+                ? "Validating..."
+                : "Login"}
             </button>
-            
+
             <button
               type="button"
               onClick={handleSetupFaceId}
@@ -220,11 +239,11 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-        
+
         {validationError && (
           <p className="text-red-500 text-sm">{validationError}</p>
         )}
-        
+
         {hasStoredToken && (
           <button
             type="button"
@@ -234,7 +253,7 @@ export default function LoginPage() {
             Clear stored token
           </button>
         )}
-        
+
         <Suspense>
           <SearchParamError />
         </Suspense>

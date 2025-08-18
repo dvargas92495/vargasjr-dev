@@ -15,23 +15,33 @@ interface RoutineJobDetailClientProps {
   routineJob: RoutineJob;
 }
 
-export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailClientProps) {
+export default function RoutineJobDetailClient({
+  routineJob,
+}: RoutineJobDetailClientProps) {
   return (
     <div className="flex flex-col gap-4 p-6">
       <h2 className="text-xl font-bold">Routine Job Details</h2>
-      
+
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Name
+            </label>
             <p className="mt-1 text-sm text-gray-900">{routineJob.name}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Cron Expression</label>
-            <p className="mt-1 text-sm text-gray-900">{routineJob.cronExpression}</p>
+            <label className="block text-sm font-medium text-gray-700">
+              Cron Expression
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {routineJob.cronExpression}
+            </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Status</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Status
+            </label>
             <p className="mt-1 text-sm text-gray-900">
               {routineJob.enabled ? (
                 <span className="text-green-600 font-semibold">✓ Enabled</span>
@@ -41,7 +51,9 @@ export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailC
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Created At</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Created At
+            </label>
             <p className="mt-1 text-sm text-gray-900">
               {new Date(routineJob.createdAt).toLocaleDateString()}
             </p>
@@ -51,7 +63,7 @@ export default function RoutineJobDetailClient({ routineJob }: RoutineJobDetailC
 
       <div className="flex gap-4">
         <TestButton routineJobId={routineJob.id} />
-        
+
         {routineJob.sandboxUrl && (
           <a
             href={routineJob.sandboxUrl}
