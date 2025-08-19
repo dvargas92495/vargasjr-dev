@@ -13,7 +13,7 @@ interface SSHConnectConfig {
   command?: string;
 }
 
-class VargasJRSSHConnector {
+export class VargasJRSSHConnector {
   private ec2: EC2;
   private config: SSHConnectConfig;
 
