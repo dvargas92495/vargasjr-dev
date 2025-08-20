@@ -52,7 +52,7 @@ class CheckAgentServerStatusMigration extends OneTimeMigrationRunner {
     resultContent += `**Timestamp**: ${new Date().toISOString()}\n`;
     resultContent += `**Agent Server Port**: ${AGENT_SERVER_PORT}\n\n`;
 
-    await this.runTroubleshootingCommands(resultContent);
+    resultContent = await this.runTroubleshootingCommands(resultContent);
 
     const commands = this.getStatusCheckCommands();
     resultContent += "## SSH Status Check Commands\n\n";
@@ -88,7 +88,7 @@ class CheckAgentServerStatusMigration extends OneTimeMigrationRunner {
 
   private async runTroubleshootingCommands(
     resultContent: string
-  ): Promise<void> {
+  ): Promise<string> {
     resultContent += "## 🔍 Network Connectivity Troubleshooting\n\n";
 
     const troubleshootingCommands = this.getTroubleshootingCommands();
@@ -139,6 +139,7 @@ class CheckAgentServerStatusMigration extends OneTimeMigrationRunner {
         resultContent += `**Error**: ${error}\n\n`;
       }
     }
+    return resultContent;
   }
 
   private getTroubleshootingCommands() {
