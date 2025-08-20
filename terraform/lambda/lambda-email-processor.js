@@ -28,20 +28,28 @@ exports.handler = async (event) => {
         const branchName = previewMatch[1].trim();
         console.log("Detected preview branch:", branchName);
         const sanitizedBranch = branchName.replace(/[^a-zA-Z0-9-]/g, "-");
-        
+
         try {
           const previewUrl = `https://vargasjr-git-${sanitizedBranch}-team-36izpjku2llmshzqjzxmzppe.vercel.app`;
           const response = await fetch(`${previewUrl}/api/webhook-url`);
-          
+
           if (response.ok) {
             const data = await response.json();
-            console.log("Got webhook URL from preview deployment:", data.webhookUrl);
+            console.log(
+              "Got webhook URL from preview deployment:",
+              data.webhookUrl
+            );
             return data.webhookUrl;
           } else {
-            console.log("Preview deployment not available, falling back to production");
+            console.log(
+              "Preview deployment not available, falling back to production"
+            );
           }
         } catch (error) {
-          console.log("Error fetching from preview deployment, falling back to production:", error.message);
+          console.log(
+            "Error fetching from preview deployment, falling back to production:",
+            error.message
+          );
         }
       }
 
