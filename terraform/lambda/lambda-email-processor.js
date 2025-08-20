@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     hmac.update(body);
     const signature = hmac.digest("base64");
 
-    const getWebhookUrl = (sesData) => {
+    const getWebhookUrl = async (sesData) => {
       const subject = sesData.mail.commonHeaders.subject || "";
       const previewMatch = subject.match(/\[PREVIEW:\s*([^\]]+)\]/i);
 
@@ -28,13 +28,27 @@ exports.handler = async (event) => {
         const branchName = previewMatch[1].trim();
         console.log("Detected preview branch:", branchName);
         const sanitizedBranch = branchName.replace(/[^a-zA-Z0-9-]/g, "-");
-        return `https://vargasjr-git-${sanitizedBranch}.vercel.app/api/ses/webhook`;
+        
+        try {
+          const previewUrl = `https://vargasjr-git-${sanitizedBranch}-team-36izpjku2llmshzqjzxmzppe.vercel.app`;
+          const response = await fetch(`${previewUrl}/api/webhook-url`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Got webhook URL from preview deployment:", data.webhookUrl);
+            return data.webhookUrl;
+          } else {
+            console.log("Preview deployment not available, falling back to production");
+          }
+        } catch (error) {
+          console.log("Error fetching from preview deployment, falling back to production:", error.message);
+        }
       }
 
       return process.env.WEBHOOK_URL;
     };
 
-    const webhookUrl = new URL(getWebhookUrl(event.Records[0].ses));
+    const webhookUrl = new URL(await getWebhookUrl(event.Records[0].ses));
     const options = {
       hostname: webhookUrl.hostname,
       port: 443,
