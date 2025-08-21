@@ -188,8 +188,13 @@ async function checkInstanceHealthHTTP(
             memoryDiagnostics = parseMemoryDiagnostics(decodedOutput);
           }
         } catch (consoleError) {
-          consoleOutputError = consoleError instanceof Error ? consoleError.message : String(consoleError);
-          console.log(`[Health Check] Failed to get console output: ${consoleOutputError}`);
+          consoleOutputError =
+            consoleError instanceof Error
+              ? consoleError.message
+              : String(consoleError);
+          console.log(
+            `[Health Check] Failed to get console output: ${consoleOutputError}`
+          );
         }
 
         return {
