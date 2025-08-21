@@ -78,13 +78,13 @@ export function getRpId(clientOrigin?: string): { rpId: string; debugInfo: strin
     const hostname = url.hostname;
     return { 
       rpId: hostname, 
-      debugInfo: `Base URL: ${baseUrl}, Extracted hostname: ${hostname}` 
+      debugInfo: `Server Base URL: ${baseUrl}, Extracted hostname: ${hostname}` 
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     return { 
       rpId: "localhost", 
-      debugInfo: `Failed to parse base URL: ${baseUrl}, Error: ${errorMsg}` 
+      debugInfo: `Failed to parse server base URL: ${baseUrl}, Error: ${errorMsg}` 
     };
   }
 }
