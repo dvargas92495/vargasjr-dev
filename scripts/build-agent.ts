@@ -15,7 +15,7 @@ execSync(
 
 console.log("📦 Building worker service...");
 execSync(
-  "esbuild worker/index.ts --bundle --platform=node --target=node18 --outfile=dist/worker.js --external:playwright --external:vellum-ai",
+  "esbuild worker/index.ts --bundle --platform=node --target=node18 --outfile=dist/worker.js --external:playwright",
   { stdio: "inherit" }
 );
 
