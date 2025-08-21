@@ -410,7 +410,11 @@ const HealthStatusIndicator = ({
               {healthStatus.diagnostics?.memoryDiagnostics && (
                 <div className="mb-2 border-t pt-2">
                   <div className="font-medium mb-1">Memory Diagnostics:</div>
-                  {healthStatus.diagnostics.memoryDiagnostics
+                  {healthStatus.diagnostics.memoryDiagnostics.consoleOutputError ? (
+                    <div className="text-yellow-600 font-medium mb-1">
+                      ⚠️ Failed to retrieve console output: {healthStatus.diagnostics.memoryDiagnostics.consoleOutputError}
+                    </div>
+                  ) : healthStatus.diagnostics.memoryDiagnostics
                     .hasMemoryIssues ? (
                     <div>
                       <div className="text-red-600 font-medium mb-1">
