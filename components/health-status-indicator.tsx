@@ -40,6 +40,10 @@ interface HealthStatus {
       errorCode?: string | number;
       timedOut?: boolean;
     };
+    memoryDiagnostics?: {
+      hasMemoryIssues: boolean;
+      memoryErrors: string[];
+    };
   };
 }
 
@@ -238,6 +242,7 @@ const HealthStatusIndicator = ({
 
       {(healthStatus.diagnostics?.ssm ||
         healthStatus.diagnostics?.networkError ||
+        healthStatus.diagnostics?.memoryDiagnostics ||
         (healthStatus.status === "offline" && healthStatus.diagnostics)) && (
         <div className="ml-5 mt-2 text-xs">
           <details className="cursor-pointer">
@@ -398,6 +403,28 @@ const HealthStatusIndicator = ({
                       </span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {healthStatus.diagnostics?.memoryDiagnostics && (
+                <div className="mb-2 border-t pt-2">
+                  <div className="font-medium mb-1">Memory Diagnostics:</div>
+                  {healthStatus.diagnostics.memoryDiagnostics.hasMemoryIssues ? (
+                    <div>
+                      <div className="text-red-600 font-medium mb-1">
+                        ⚠️ Out of Memory Issues Detected
+                      </div>
+                      {healthStatus.diagnostics.memoryDiagnostics.memoryErrors.map((error, index) => (
+                        <div key={index} className="font-mono text-xs bg-red-50 p-1 mb-1 rounded">
+                          {error}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-green-600">
+                      ✓ No memory issues detected in console output
+                    </div>
+                  )}
                 </div>
               )}
             </div>
