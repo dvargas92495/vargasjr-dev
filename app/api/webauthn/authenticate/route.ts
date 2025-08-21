@@ -7,6 +7,7 @@ import { generateAuthenticationOptions } from "@/app/lib/webauthn";
 
 const authOptionsSchema = z.object({
   token: z.string().min(1),
+  origin: z.string().url().optional(),
 });
 
 const authCredentialSchema = z.object({
@@ -26,7 +27,7 @@ const authCredentialSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { token } = authOptionsSchema.parse(body);
+    const { token, origin } = authOptionsSchema.parse(body);
 
     if (token !== process.env.ADMIN_TOKEN) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,11 +39,8 @@ export async function POST(request: Request) {
       .from(WebAuthnCredentialsTable)
       .where(eq(WebAuthnCredentialsTable.userId, "admin"));
 
-    const credentialIds = credentials.map(
-      (c: { credentialId: string }) => c.credentialId
-    );
-    const options = generateAuthenticationOptions(credentialIds);
-
+    const credentialIds = credentials.map((c: { credentialId: string }) => c.credentialId);
+    const options = generateAuthenticationOptions(credentialIds, origin);
     return NextResponse.json({
       publicKey: {
         ...options,
