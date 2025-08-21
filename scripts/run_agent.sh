@@ -69,14 +69,10 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         cp ../.env .
         
         echo "Cleaning up existing services..."
-        screen -X -S browser-service quit 2>/dev/null || true
         screen -X -S agent-preview quit 2>/dev/null || true
         
-        echo "Starting browser service..."
-        screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
-        
-        echo "Starting worker service..."
-        screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
+        echo "Starting agent service..."
+        screen -dmS agent-preview bash -c 'node dist/worker.js > out.log 2> error.log'
         
 else
     echo "Detected production environment"
@@ -87,14 +83,10 @@ else
     cp ../.env .
     
     echo "Cleaning up existing services..."
-    screen -X -S browser-service quit 2>/dev/null || true
     screen -X -S agent-${VERSION//./-} quit 2>/dev/null || true
     
-    echo "Starting browser service..."
-    screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
-    
-    echo "Starting worker service..."
-    screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start > out.log 2> error.log'
+    echo "Starting agent service..."
+    screen -dmS agent-${VERSION//./-} bash -c 'node dist/worker.js > out.log 2> error.log'
 fi
 
 echo "Running health check..."

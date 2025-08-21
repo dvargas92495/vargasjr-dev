@@ -33,19 +33,14 @@ class AgentPublisher {
         stdio: "inherit",
       });
 
-      execSync(`mkdir -p ${packageName}/browser/dist`, { stdio: "inherit" });
-      execSync(
-        `cp browser/dist/index.js ${packageName}/browser/dist/index.js`,
-        { stdio: "inherit" }
-      );
-      execSync(`cp -r scripts ${packageName}/scripts`, { stdio: "inherit" });
-      execSync(`mkdir -p ${packageName}/worker/dist/worker`, {
+      execSync(`mkdir -p ${packageName}/dist`, { stdio: "inherit" });
+      execSync(`cp dist/browser.js ${packageName}/dist/browser.js`, {
         stdio: "inherit",
       });
-      execSync(
-        `cp worker/dist/worker/index.js ${packageName}/worker/dist/worker/index.js`,
-        { stdio: "inherit" }
-      );
+      execSync(`cp dist/worker.js ${packageName}/dist/worker.js`, {
+        stdio: "inherit",
+      });
+      execSync(`cp -r scripts ${packageName}/scripts`, { stdio: "inherit" });
       execSync(`cp -r db ${packageName}/db`, { stdio: "inherit" });
       execSync(`cp -r server ${packageName}/server`, { stdio: "inherit" });
       execSync(`cp package.json ${packageName}/package.json`, {

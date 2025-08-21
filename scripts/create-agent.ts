@@ -577,19 +577,6 @@ AGENT_ENVIRONMENT=production`;
           tag: "PROFILE",
           command: "[ -f ~/.profile ] && . ~/.profile || true",
         },
-        {
-          tag: "NODE_MODULES",
-          command: "cd /home/ubuntu && npm install playwright",
-        },
-        {
-          tag: "PLAYWRIGHT_BROWSERS",
-          command:
-            "cd /home/ubuntu && npx playwright install chromium --with-deps",
-        },
-        {
-          tag: "VELLUM_AI",
-          command: "cd /home/ubuntu && npm install vellum-ai",
-        },
       ];
 
       console.log(

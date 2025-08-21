@@ -121,12 +121,10 @@ export async function rebootAgent(
       return false;
     }
 
-    rebootLogger.info("Using bundled dependencies");
-
     const screenName = `agent-${targetVersion.replace(/\./g, "-")}`;
     spawn(
       "screen",
-      ["-dmS", screenName, "bash", "-c", "npm run agent:start 2> error.log"],
+      ["-dmS", screenName, "bash", "-c", "node dist/worker.js 2> error.log"],
       {
         detached: true,
         stdio: "ignore",
