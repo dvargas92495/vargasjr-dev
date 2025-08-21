@@ -67,7 +67,6 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         
         cd "$AGENT_DIR"
         cp ../.env .
-        npm install
         
         echo "Starting browser service..."
         screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
@@ -87,7 +86,6 @@ else
     tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
-    npm install
     
     echo "Starting browser service..."
     screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
