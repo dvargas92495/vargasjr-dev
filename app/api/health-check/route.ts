@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import {
   EC2,
+  GetConsoleOutputCommand,
   type DescribeInstancesCommandOutput,
   type Instance as EC2Instance,
 } from "@aws-sdk/client-ec2";
@@ -20,6 +21,31 @@ interface HealthCheckResult {
   error?: string;
   timestamp?: string;
   diagnostics?: Record<string, unknown>;
+}
+
+function parseMemoryDiagnostics(
+  consoleOutput: string,
+  consoleOutputError?: string
+): {
+  hasMemoryIssues: boolean;
+  memoryErrors: string[];
+  consoleOutputError?: string;
+} {
+  const memoryPatterns = /out of memory|oom-killer|Killed process/gi;
+  const lines = consoleOutput.split("\n");
+  const memoryErrors: string[] = [];
+
+  lines.forEach((line) => {
+    if (memoryPatterns.test(line)) {
+      memoryErrors.push(line.trim());
+    }
+  });
+
+  return {
+    hasMemoryIssues: memoryErrors.length > 0,
+    memoryErrors,
+    ...(consoleOutputError && { consoleOutputError }),
+  };
 }
 
 async function checkInstanceHealthHTTP(
@@ -150,6 +176,29 @@ async function checkInstanceHealthHTTP(
       clearTimeout(timeoutId);
       const durationMs = Date.now() - startedAt;
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        let memoryDiagnostics = undefined;
+        try {
+          const consoleCommand = new GetConsoleOutputCommand({
+            InstanceId: instanceId,
+            Latest: true,
+          });
+          const consoleResult = await ec2.send(consoleCommand);
+
+          if (consoleResult.Output) {
+            const decodedOutput = Buffer.from(
+              consoleResult.Output,
+              "base64"
+            ).toString("utf-8");
+            memoryDiagnostics = parseMemoryDiagnostics(decodedOutput);
+          }
+        } catch (consoleError) {
+          const consoleOutputError =
+            consoleError instanceof Error
+              ? consoleError.message
+              : String(consoleError);
+          memoryDiagnostics = parseMemoryDiagnostics("", consoleOutputError);
+        }
+
         return {
           instanceId,
           status: "offline",
@@ -168,6 +217,7 @@ async function checkInstanceHealthHTTP(
               errorName: fetchError.name,
               timedOut: true,
             },
+            ...(memoryDiagnostics && { memoryDiagnostics }),
           },
         };
       }
