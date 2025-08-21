@@ -43,6 +43,7 @@ interface HealthStatus {
     memoryDiagnostics?: {
       hasMemoryIssues: boolean;
       memoryErrors: string[];
+      consoleOutputError?: string;
     };
   };
 }

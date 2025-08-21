@@ -23,9 +23,13 @@ interface HealthCheckResult {
   diagnostics?: Record<string, unknown>;
 }
 
-function parseMemoryDiagnostics(consoleOutput: string): {
+function parseMemoryDiagnostics(
+  consoleOutput: string,
+  consoleOutputError?: string
+): {
   hasMemoryIssues: boolean;
   memoryErrors: string[];
+  consoleOutputError?: string;
 } {
   const memoryPatterns = /out of memory|oom-killer|Killed process/gi;
   const lines = consoleOutput.split("\n");
@@ -40,6 +44,7 @@ function parseMemoryDiagnostics(consoleOutput: string): {
   return {
     hasMemoryIssues: memoryErrors.length > 0,
     memoryErrors,
+    ...(consoleOutputError && { consoleOutputError }),
   };
 }
 
@@ -172,7 +177,6 @@ async function checkInstanceHealthHTTP(
       const durationMs = Date.now() - startedAt;
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
         let memoryDiagnostics = undefined;
-        let consoleOutputError = undefined;
         try {
           const consoleCommand = new GetConsoleOutputCommand({
             InstanceId: instanceId,
@@ -188,13 +192,11 @@ async function checkInstanceHealthHTTP(
             memoryDiagnostics = parseMemoryDiagnostics(decodedOutput);
           }
         } catch (consoleError) {
-          consoleOutputError =
+          const consoleOutputError =
             consoleError instanceof Error
               ? consoleError.message
               : String(consoleError);
-          console.log(
-            `[Health Check] Failed to get console output: ${consoleOutputError}`
-          );
+          memoryDiagnostics = parseMemoryDiagnostics("", consoleOutputError);
         }
 
         return {
@@ -216,7 +218,6 @@ async function checkInstanceHealthHTTP(
               timedOut: true,
             },
             ...(memoryDiagnostics && { memoryDiagnostics }),
-            ...(consoleOutputError && { consoleOutputError }),
           },
         };
       }
