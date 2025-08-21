@@ -71,12 +71,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         echo "Starting browser service..."
         screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
         
-        echo "Building and starting worker service..."
-        if ! npm run agent:build; then
-            echo "ERROR: Failed to build worker service"
-            echo "Build command failed: npm run agent:build"
-            exit 1
-        fi
+        echo "Starting worker service..."
         screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
         
 else
@@ -90,12 +85,7 @@ else
     echo "Starting browser service..."
     screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
     
-    echo "Building and starting worker service..."
-    if ! npm run agent:build; then
-        echo "ERROR: Failed to build worker service"
-        echo "Build command failed: npm run agent:build"
-        exit 1
-    fi
+    echo "Starting worker service..."
     screen -dmS agent-${VERSION//./-} bash -c 'npm run agent:start > out.log 2> error.log'
 fi
 
