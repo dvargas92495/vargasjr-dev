@@ -97,7 +97,10 @@ export default function LoginPage() {
       const optionsResponse = await fetch("/api/webauthn/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ 
+          token: token,
+          origin: window.location.origin 
+        }),
       });
 
       if (!optionsResponse.ok) {

@@ -6,6 +6,7 @@ import { generateRegistrationOptions } from "@/app/lib/webauthn";
 
 const registerOptionsSchema = z.object({
   token: z.string().min(1),
+  origin: z.string().url().optional(),
 });
 
 const registerCredentialSchema = z.object({
@@ -24,14 +25,13 @@ const registerCredentialSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { token } = registerOptionsSchema.parse(body);
+    const { token, origin } = registerOptionsSchema.parse(body);
 
     if (token !== process.env.ADMIN_TOKEN) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const options = generateRegistrationOptions("admin");
-
+    const options = generateRegistrationOptions("admin", origin);
     return NextResponse.json({
       publicKey: {
         ...options,
