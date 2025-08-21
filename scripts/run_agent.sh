@@ -68,6 +68,10 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         cd "$AGENT_DIR"
         cp ../.env .
         
+        echo "Cleaning up existing services..."
+        screen -X -S browser-service quit 2>/dev/null || true
+        screen -X -S agent-preview quit 2>/dev/null || true
+        
         echo "Starting browser service..."
         screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
         
@@ -81,6 +85,10 @@ else
     tar -xzf vargasjr_dev_agent-$VERSION.tar.gz
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
+    
+    echo "Cleaning up existing services..."
+    screen -X -S browser-service quit 2>/dev/null || true
+    screen -X -S agent-${VERSION//./-} quit 2>/dev/null || true
     
     echo "Starting browser service..."
     screen -dmS browser-service bash -c 'npm run browser:start 2> browser-error.log'
