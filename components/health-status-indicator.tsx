@@ -409,16 +409,22 @@ const HealthStatusIndicator = ({
               {healthStatus.diagnostics?.memoryDiagnostics && (
                 <div className="mb-2 border-t pt-2">
                   <div className="font-medium mb-1">Memory Diagnostics:</div>
-                  {healthStatus.diagnostics.memoryDiagnostics.hasMemoryIssues ? (
+                  {healthStatus.diagnostics.memoryDiagnostics
+                    .hasMemoryIssues ? (
                     <div>
                       <div className="text-red-600 font-medium mb-1">
                         ⚠️ Out of Memory Issues Detected
                       </div>
-                      {healthStatus.diagnostics.memoryDiagnostics.memoryErrors.map((error, index) => (
-                        <div key={index} className="font-mono text-xs bg-red-50 p-1 mb-1 rounded">
-                          {error}
-                        </div>
-                      ))}
+                      {healthStatus.diagnostics.memoryDiagnostics.memoryErrors.map(
+                        (error, index) => (
+                          <div
+                            key={index}
+                            className="font-mono text-xs bg-red-50 p-1 mb-1 rounded"
+                          >
+                            {error}
+                          </div>
+                        )
+                      )}
                     </div>
                   ) : (
                     <div className="text-green-600">

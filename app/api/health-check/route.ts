@@ -28,18 +28,18 @@ function parseMemoryDiagnostics(consoleOutput: string): {
   memoryErrors: string[];
 } {
   const memoryPatterns = /out of memory|oom-killer|Killed process/gi;
-  const lines = consoleOutput.split('\n');
+  const lines = consoleOutput.split("\n");
   const memoryErrors: string[] = [];
-  
-  lines.forEach(line => {
+
+  lines.forEach((line) => {
     if (memoryPatterns.test(line)) {
       memoryErrors.push(line.trim());
     }
   });
-  
+
   return {
     hasMemoryIssues: memoryErrors.length > 0,
-    memoryErrors
+    memoryErrors,
   };
 }
 
@@ -172,19 +172,24 @@ async function checkInstanceHealthHTTP(
       const durationMs = Date.now() - startedAt;
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
         let memoryDiagnostics = undefined;
+        let consoleOutputError = undefined;
         try {
           const consoleCommand = new GetConsoleOutputCommand({
             InstanceId: instanceId,
-            Latest: true
+            Latest: true,
           });
           const consoleResult = await ec2.send(consoleCommand);
-          
+
           if (consoleResult.Output) {
-            const decodedOutput = Buffer.from(consoleResult.Output, 'base64').toString('utf-8');
+            const decodedOutput = Buffer.from(
+              consoleResult.Output,
+              "base64"
+            ).toString("utf-8");
             memoryDiagnostics = parseMemoryDiagnostics(decodedOutput);
           }
         } catch (consoleError) {
-          console.log(`[Health Check] Failed to get console output: ${consoleError instanceof Error ? consoleError.message : String(consoleError)}`);
+          consoleOutputError = consoleError instanceof Error ? consoleError.message : String(consoleError);
+          console.log(`[Health Check] Failed to get console output: ${consoleOutputError}`);
         }
 
         return {
@@ -205,7 +210,8 @@ async function checkInstanceHealthHTTP(
               errorName: fetchError.name,
               timedOut: true,
             },
-            ...(memoryDiagnostics && { memoryDiagnostics })
+            ...(memoryDiagnostics && { memoryDiagnostics }),
+            ...(consoleOutputError && { consoleOutputError }),
           },
         };
       }
