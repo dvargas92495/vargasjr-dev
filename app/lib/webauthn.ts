@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getBaseUrl } from "@/app/api/constants";
 
 export interface PublicKeyCredentialCreationOptionsJSON {
   rp: {
@@ -35,17 +36,75 @@ export interface PublicKeyCredentialRequestOptionsJSON {
   userVerification: "required" | "preferred" | "discouraged";
 }
 
+export function getRpId(clientOrigin?: string): {
+  rpId: string;
+  debugInfo: string;
+} {
+  if (clientOrigin) {
+    try {
+      const url = new URL(clientOrigin);
+      const hostname = url.hostname;
+      return {
+        rpId: hostname,
+        debugInfo: `Provided client origin: ${clientOrigin}, Extracted hostname: ${hostname}`,
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      return {
+        rpId: "localhost",
+        debugInfo: `Failed to parse provided client origin: ${clientOrigin}, Error: ${errorMsg}`,
+      };
+    }
+  }
+
+  if (typeof window !== "undefined" && window.location) {
+    try {
+      const origin = window.location.origin;
+      const url = new URL(origin);
+      const hostname = url.hostname;
+      return {
+        rpId: hostname,
+        debugInfo: `Client origin: ${origin}, Extracted hostname: ${hostname}`,
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      return {
+        rpId: "localhost",
+        debugInfo: `Failed to parse client origin: ${window.location.origin}, Error: ${errorMsg}`,
+      };
+    }
+  }
+
+  const baseUrl = getBaseUrl();
+  try {
+    const url = new URL(baseUrl);
+    const hostname = url.hostname;
+    return {
+      rpId: hostname,
+      debugInfo: `Server Base URL: ${baseUrl}, Extracted hostname: ${hostname}`,
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return {
+      rpId: "localhost",
+      debugInfo: `Failed to parse server base URL: ${baseUrl}, Error: ${errorMsg}`,
+    };
+  }
+}
+
 export function generateChallenge(): string {
   return crypto.randomBytes(32).toString("base64url");
 }
 
 export function generateRegistrationOptions(
-  userId: string
+  userId: string,
+  clientOrigin?: string
 ): PublicKeyCredentialCreationOptionsJSON {
+  const { rpId } = getRpId(clientOrigin);
   return {
     rp: {
       name: "VargasJR Admin",
-      id: "localhost",
+      id: rpId,
     },
     user: {
       id: userId,
@@ -68,12 +127,14 @@ export function generateRegistrationOptions(
 }
 
 export function generateAuthenticationOptions(
-  credentialIds: string[]
+  credentialIds: string[],
+  clientOrigin?: string
 ): PublicKeyCredentialRequestOptionsJSON {
+  const { rpId } = getRpId(clientOrigin);
   return {
     challenge: generateChallenge(),
     timeout: 60000,
-    rpId: "localhost",
+    rpId: rpId,
     allowCredentials: credentialIds.map((id) => ({
       type: "public-key",
       id,

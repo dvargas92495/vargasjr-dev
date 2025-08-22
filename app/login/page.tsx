@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { setCookie } from "cookies-next";
 import SearchParamError from "@/components/search-param-error";
+import { getRpId } from "@/app/lib/webauthn";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [isAutoLogging, setIsAutoLogging] = useState(false);
   const [hasStoredToken, setHasStoredToken] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [isFaceIdLoading, setIsFaceIdLoading] = useState(false);
   const [validationError, setValidationError] = useState("");
 
   const validateToken = useCallback(
@@ -89,12 +91,16 @@ export default function LoginPage() {
         return;
       }
 
+      setIsFaceIdLoading(true);
       setValidationError("Setting up Face ID...");
 
       const optionsResponse = await fetch("/api/webauthn/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({
+          token: token,
+          origin: window.location.origin,
+        }),
       });
 
       if (!optionsResponse.ok) {
@@ -158,18 +164,23 @@ export default function LoginPage() {
         "Face ID setup successful! You can now use biometric authentication."
       );
     } catch (error: unknown) {
-      console.error("Face ID setup failed:", error);
       if (error instanceof Error) {
-        if (error.name === "NotAllowedError") {
-          setValidationError("Face ID setup was cancelled or not allowed");
-        } else if (error.name === "NotSupportedError") {
-          setValidationError("Face ID is not supported on this device");
-        } else {
-          setValidationError(`Face ID setup failed: ${error.message}`);
+        let errorMessage = `Face ID setup failed: ${error.name} - ${error.message}`;
+
+        if (
+          error.message.includes("RPID") ||
+          error.message.includes("origin")
+        ) {
+          const { rpId, debugInfo } = getRpId();
+          errorMessage += `. RPID Debug: Current RPID="${rpId}". ${debugInfo}`;
         }
+
+        setValidationError(errorMessage);
       } else {
         setValidationError("Face ID setup failed with an unknown error");
       }
+    } finally {
+      setIsFaceIdLoading(false);
     }
   }, [token, validateToken]);
 
@@ -233,9 +244,9 @@ export default function LoginPage() {
               type="button"
               onClick={handleSetupFaceId}
               className="bg-green-500 text-white p-2 rounded hover:bg-green-600 disabled:opacity-50 flex items-center gap-1"
-              disabled={isAutoLogging || isValidating}
+              disabled={isAutoLogging || isValidating || isFaceIdLoading}
             >
-              🔐 Face ID
+              {isFaceIdLoading ? "⏳ Setting up..." : "🔐 Face ID"}
             </button>
           </div>
         </form>
