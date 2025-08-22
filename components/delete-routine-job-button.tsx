@@ -54,8 +54,10 @@ const DeleteRoutineJobButton = ({
         header="Delete Routine Job"
         body={
           <p className="text-sm text-gray-300">
-            Are you sure you want to delete the routine job &ldquo;{routineJobName}
-            &rdquo;? This action cannot be undone and will permanently remove the job and stop its scheduled execution.
+            Are you sure you want to delete the routine job &ldquo;
+            {routineJobName}
+            &rdquo;? This action cannot be undone and will permanently remove
+            the job and stop its scheduled execution.
           </p>
         }
         onConfirm={onConfirm}

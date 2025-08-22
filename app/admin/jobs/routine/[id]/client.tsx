@@ -76,7 +76,10 @@ export default function RoutineJobDetailClient({
           </a>
         )}
 
-        <DeleteRoutineJobButton id={routineJob.id} routineJobName={routineJob.name} />
+        <DeleteRoutineJobButton
+          id={routineJob.id}
+          routineJobName={routineJob.name}
+        />
       </div>
 
       <ExecutionHistory routineJobId={routineJob.id} />
