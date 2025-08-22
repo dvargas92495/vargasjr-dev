@@ -8,11 +8,7 @@ import { RoutineJobsTable } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
 import { AGENT_SERVER_PORT } from "../server/constants";
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
 import { BrowserManager } from "../browser/src/services/BrowserManager";
-import { browserRoutes } from "../browser/src/routes/browser";
 
 dotenv.config();
 
@@ -34,7 +30,6 @@ export class AgentRunner {
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
   private agentServer?: AgentServer;
-  private browserApp?: express.Application;
   private browserManager?: BrowserManager;
 
   constructor(config: AgentRunnerConfig = {}) {
@@ -77,16 +72,7 @@ export class AgentRunner {
       logger: this.logger,
     });
 
-    this.browserApp = express();
-    this.browserApp.use(helmet());
-    this.browserApp.use(cors());
-    this.browserApp.use(express.json());
-
     this.browserManager = new BrowserManager();
-    this.browserApp.use("/api/browser", browserRoutes(this.browserManager));
-    this.browserApp.get("/health", (req, res) => {
-      res.json({ status: "ok", timestamp: new Date().toISOString() });
-    });
   }
 
   public async run(): Promise<void> {
@@ -99,10 +85,6 @@ export class AgentRunner {
 
     try {
       await this.browserManager?.initialize();
-      const browserPort = process.env.BROWSER_PORT || 3001;
-      this.browserApp?.listen(browserPort, () => {
-        this.logger.info(`Browser service running on port ${browserPort}`);
-      });
     } catch (error) {
       this.logger.error(`Failed to start browser service: ${error}`);
     }

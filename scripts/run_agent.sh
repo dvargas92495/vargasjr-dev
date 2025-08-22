@@ -72,7 +72,7 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
         screen -X -S agent-preview quit 2>/dev/null || true
         
         echo "Starting agent service..."
-        screen -dmS agent-preview bash -c 'node dist/worker.js > out.log 2> error.log'
+        screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
         
 else
     echo "Detected production environment"
