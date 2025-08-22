@@ -28,13 +28,19 @@ exports.handler = async (event) => {
         const branchName = previewMatch[1].trim();
         console.log("Detected preview branch:", branchName);
         const sanitizedBranch = branchName.replace(/[^a-zA-Z0-9-]/g, "-");
-        return `https://vargasjr-git-${sanitizedBranch}.vercel.app/api/ses/webhook`;
+
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : `https://vargasjr-git-${sanitizedBranch}-team-36izpjku2llmshzqjzxmzppe.vercel.app`;
+
+        return `${baseUrl}/api/ses/webhook`;
       }
 
       return process.env.WEBHOOK_URL;
     };
 
     const webhookUrl = new URL(getWebhookUrl(event.Records[0].ses));
+    console.log("Final webhook URL:", webhookUrl.toString());
     const options = {
       hostname: webhookUrl.hostname,
       port: 443,
