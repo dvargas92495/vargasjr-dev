@@ -39,7 +39,9 @@ export async function POST(request: Request) {
       .from(WebAuthnCredentialsTable)
       .where(eq(WebAuthnCredentialsTable.userId, "admin"));
 
-    const credentialIds = credentials.map((c: { credentialId: string }) => c.credentialId);
+    const credentialIds = credentials.map(
+      (c: { credentialId: string }) => c.credentialId
+    );
     const options = generateAuthenticationOptions(credentialIds, origin);
     return NextResponse.json({
       publicKey: {

@@ -97,9 +97,9 @@ export default function LoginPage() {
       const optionsResponse = await fetch("/api/webauthn/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           token: token,
-          origin: window.location.origin 
+          origin: window.location.origin,
         }),
       });
 
@@ -166,12 +166,15 @@ export default function LoginPage() {
     } catch (error: unknown) {
       if (error instanceof Error) {
         let errorMessage = `Face ID setup failed: ${error.name} - ${error.message}`;
-        
-        if (error.message.includes("RPID") || error.message.includes("origin")) {
+
+        if (
+          error.message.includes("RPID") ||
+          error.message.includes("origin")
+        ) {
           const { rpId, debugInfo } = getRpId();
           errorMessage += `. RPID Debug: Current RPID="${rpId}". ${debugInfo}`;
         }
-        
+
         setValidationError(errorMessage);
       } else {
         setValidationError("Face ID setup failed with an unknown error");
