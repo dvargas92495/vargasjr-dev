@@ -8,16 +8,6 @@ async function buildAgent() {
     mkdirSync("dist", { recursive: true });
   }
 
-  console.log("📦 Building browser service...");
-  await esbuild.build({
-    entryPoints: ["browser/src/index.ts"],
-    bundle: true,
-    platform: "node",
-    target: "node18",
-    outfile: "dist/browser.js",
-    external: ["playwright"],
-  });
-
   console.log("📦 Building worker service...");
   await esbuild.build({
     entryPoints: ["worker/index.ts"],
