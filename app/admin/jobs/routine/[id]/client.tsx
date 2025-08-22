@@ -1,6 +1,7 @@
 import React from "react";
 import TestButton from "./test-button";
 import ExecutionHistory from "./execution-history";
+import DeleteRoutineJobButton from "@/components/delete-routine-job-button";
 
 interface RoutineJob {
   id: string;
@@ -74,6 +75,8 @@ export default function RoutineJobDetailClient({
             Open in Vellum Sandbox
           </a>
         )}
+
+        <DeleteRoutineJobButton id={routineJob.id} routineJobName={routineJob.name} />
       </div>
 
       <ExecutionHistory routineJobId={routineJob.id} />
