@@ -139,7 +139,8 @@ class VellumWorkflowPusher {
 
     try {
       const deployFlag = this.isPreviewMode ? " --dry-run" : " --deploy";
-      const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
+      const deploymentNameFlag = this.isPreviewMode ? "" : ` --deployment-name "${workflowName}"`;
+      const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}${deploymentNameFlag}`;
 
       const result = execSync(command, {
         cwd: this.agentDir,
