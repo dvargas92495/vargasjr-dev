@@ -8,7 +8,14 @@ import { RoutineJobsTable } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
 import { AGENT_SERVER_PORT } from "../server/constants";
-import { BrowserManager } from "../browser/src/services/BrowserManager";
+let BrowserManager: any = null;
+if (process.env.VERCEL_ENV !== "production" && process.env.VERCEL_ENV !== "preview") {
+  try {
+    BrowserManager = require("../browser/src/services/BrowserManager").BrowserManager;
+  } catch (error) {
+    console.warn("BrowserManager not available in this environment");
+  }
+}
 
 dotenv.config();
 
@@ -30,7 +37,7 @@ export class AgentRunner {
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
   private agentServer?: AgentServer;
-  private browserManager?: BrowserManager;
+  private browserManager?: any;
 
   constructor(config: AgentRunnerConfig = {}) {
     dotenv.config();
@@ -72,7 +79,7 @@ export class AgentRunner {
       logger: this.logger,
     });
 
-    this.browserManager = new BrowserManager();
+    this.browserManager = BrowserManager ? new BrowserManager() : null;
   }
 
   public async run(): Promise<void> {
