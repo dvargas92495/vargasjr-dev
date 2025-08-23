@@ -177,3 +177,19 @@ export async function getJob(id: string) {
     dueDate: job.dueDate.toISOString(),
   };
 }
+
+export async function deleteRoutineJob(id: string) {
+  const db = getDb();
+  const deletedRoutineJob = await db
+    .delete(RoutineJobsTable)
+    .where(eq(RoutineJobsTable.id, id))
+    .returning()
+    .execute();
+
+  if (!deletedRoutineJob.length) {
+    throw new Error("Routine job not found");
+  }
+
+  revalidatePath("/admin/jobs");
+  return deletedRoutineJob[0];
+}
