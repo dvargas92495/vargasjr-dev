@@ -9,9 +9,13 @@ import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
 import { AGENT_SERVER_PORT } from "../server/constants";
 let BrowserManager: any = null;
-if (process.env.VERCEL_ENV !== "production" && process.env.VERCEL_ENV !== "preview") {
+if (
+  process.env.VERCEL_ENV !== "production" &&
+  process.env.VERCEL_ENV !== "preview"
+) {
   try {
-    BrowserManager = require("../browser/src/services/BrowserManager").BrowserManager;
+    BrowserManager =
+      require("../browser/src/services/BrowserManager").BrowserManager;
   } catch (error) {
     console.warn("BrowserManager not available in this environment");
   }
