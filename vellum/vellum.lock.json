@@ -7,7 +7,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -17,7 +17,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -27,7 +27,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -37,7 +37,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -47,7 +47,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -57,7 +57,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -67,7 +67,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -77,7 +77,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     },
@@ -87,7 +87,7 @@
       "ignore": null,
       "deployments": [],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.1.4",
+      "container_image_tag": "1.2.5",
       "workspace": "default",
       "target_directory": null
     }
