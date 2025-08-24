@@ -5,7 +5,16 @@
       "module": "workflows.brainrot",
       "workflow_sandbox_id": "87d1d6f0-5bf1-4f64-b5ed-9a5a969cde33",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "e7388544-56a3-420c-abe9-446cdb527b2f",
+          "label": "Brainrot",
+          "name": "brainrot",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",

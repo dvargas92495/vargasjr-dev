@@ -12,6 +12,13 @@ import { join } from "path";
 import { postGitHubComment } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
+const toTitleCase = (str: string) => {
+  return str
+    .split("_")
+    .map((txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase())
+    .join(" ");
+};
+
 class VellumWorkflowPusher {
   private agentDir: string;
   private isPreviewMode: boolean;
@@ -138,11 +145,14 @@ class VellumWorkflowPusher {
     console.log(`📤 ${action} workflow: ${workflowName}`);
 
     try {
-      const deployFlag = this.isPreviewMode ? " --dry-run" : " --deploy";
-      const deploymentNameFlag = this.isPreviewMode
-        ? ""
-        : ` --deployment-name "${workflowName}"`;
-      const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}${deploymentNameFlag}`;
+      const deployFlag = this.isPreviewMode
+        ? " --dry-run"
+        : ` --deploy --deployment-name ${workflowName.replaceAll(
+            "_",
+            "-"
+          )} --deployment-label ${toTitleCase(workflowName)}`;
+
+      const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
 
       const result = execSync(command, {
         cwd: this.agentDir,
