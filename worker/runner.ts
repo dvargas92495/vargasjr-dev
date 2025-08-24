@@ -4,22 +4,11 @@ import { createFileLogger, getVersion, Logger } from "./utils";
 import { postgresSession } from "./database";
 import { RoutineJob } from "./routine-job";
 import { checkAndRebootIfNeeded } from "./reboot-manager";
-import { RoutineJobsTable } from "../db/schema";
+import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
-import { AGENT_SERVER_PORT } from "../server/constants";
-let BrowserManager: any = null;
-if (
-  process.env.VERCEL_ENV !== "production" &&
-  process.env.VERCEL_ENV !== "preview"
-) {
-  try {
-    BrowserManager =
-      require("../browser/src/services/BrowserManager").BrowserManager;
-  } catch (error) {
-    console.warn("BrowserManager not available in this environment");
-  }
-}
+import { AGENT_SERVER_PORT } from "@/server/constants";
+import { BrowserManager } from "@/browser/src/services/BrowserManager";
 
 dotenv.config();
 
@@ -41,7 +30,7 @@ export class AgentRunner {
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
   private agentServer?: AgentServer;
-  private browserManager?: any;
+  private browserManager?: BrowserManager;
 
   constructor(config: AgentRunnerConfig = {}) {
     dotenv.config();
@@ -75,7 +64,7 @@ export class AgentRunner {
     this.logger.info(`Initialized agent v${this.currentVersion}`);
 
     const healthPort = parseInt(
-      process.env.HEALTH_PORT || AGENT_SERVER_PORT.toString(),
+      process.env.AGENT_SERVER_PORT || AGENT_SERVER_PORT.toString(),
       10
     );
     this.agentServer = new AgentServer({
@@ -83,7 +72,7 @@ export class AgentRunner {
       logger: this.logger,
     });
 
-    this.browserManager = BrowserManager ? new BrowserManager() : null;
+    this.browserManager = new BrowserManager();
   }
 
   public async run(): Promise<void> {

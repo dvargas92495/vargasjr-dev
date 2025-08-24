@@ -3,8 +3,7 @@ import { IAMClient, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
-import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
-import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
+import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION, DEFAULT_PRODUCTION_AGENT_NAME } from "@/server/constants";
 
 export interface EC2Instance {
   InstanceId?: string;

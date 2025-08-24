@@ -2,6 +2,7 @@ import { chromium, Browser, BrowserContext, Page } from "playwright";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { BROWSER_PORT } from "@/server/constants";
 import { browserRoutes } from "../routes/browser";
 
 export interface BrowserSession {
@@ -41,7 +42,7 @@ export class BrowserManager {
       this.cleanupExpiredSessions();
     }, 5 * 60 * 1000); // Cleanup every 5 minutes
 
-    const browserPort = process.env.BROWSER_PORT || 3002;
+    const browserPort = process.env.BROWSER_PORT || BROWSER_PORT;
     this.server = this.app.listen(browserPort, () => {
       console.log(`Browser service running on port ${browserPort}`);
     });
