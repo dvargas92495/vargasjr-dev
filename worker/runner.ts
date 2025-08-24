@@ -102,7 +102,7 @@ export class AgentRunner {
         return;
       }
 
-      this.logger.info("Running...");
+      this.logger.info("Running main Agent Loop...");
 
       setTimeout(() => {
         loops++;

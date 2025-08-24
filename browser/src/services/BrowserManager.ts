@@ -33,14 +33,16 @@ export class BrowserManager {
   }
 
   async initialize(): Promise<void> {
-    this.browser = await chromium.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    if (process.env.ENABLE_BROWSER) {
+      this.browser = await chromium.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
 
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredSessions();
-    }, 5 * 60 * 1000); // Cleanup every 5 minutes
+      this.cleanupInterval = setInterval(() => {
+        this.cleanupExpiredSessions();
+      }, 5 * 60 * 1000); // Cleanup every 5 minutes
+    }
 
     const browserPort = process.env.BROWSER_PORT || BROWSER_PORT;
     this.server = this.app.listen(browserPort, () => {

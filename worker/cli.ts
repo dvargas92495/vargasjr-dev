@@ -83,8 +83,4 @@ function reboot(): void {
   });
 }
 
-if (require.main === module) {
-  main();
-}
-
 export { agent, main, reboot };
