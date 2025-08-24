@@ -1,4 +1,8 @@
 import { chromium, Browser, BrowserContext, Page } from "playwright";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import { browserRoutes } from "../routes/browser";
 
 export interface BrowserSession {
   id: string;
@@ -12,6 +16,20 @@ export class BrowserManager {
   private browser: Browser | null = null;
   private sessions: Map<string, BrowserSession> = new Map();
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private app: express.Application;
+  private server: any = null;
+
+  constructor() {
+    this.app = express();
+    this.app.use(helmet());
+    this.app.use(cors());
+    this.app.use(express.json());
+
+    this.app.use("/api/browser", browserRoutes(this));
+    this.app.get("/health", (req, res) => {
+      res.json({ status: "ok", timestamp: new Date().toISOString() });
+    });
+  }
 
   async initialize(): Promise<void> {
     this.browser = await chromium.launch({
@@ -22,6 +40,11 @@ export class BrowserManager {
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredSessions();
     }, 5 * 60 * 1000); // Cleanup every 5 minutes
+
+    const browserPort = process.env.BROWSER_PORT || 3002;
+    this.server = this.app.listen(browserPort, () => {
+      console.log(`Browser service running on port ${browserPort}`);
+    });
 
     console.log("Browser manager initialized");
   }
@@ -107,6 +130,11 @@ export class BrowserManager {
 
     for (const [sessionId] of this.sessions) {
       await this.closeSession(sessionId);
+    }
+
+    if (this.server) {
+      this.server.close();
+      this.server = null;
     }
 
     if (this.browser) {

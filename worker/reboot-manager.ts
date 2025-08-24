@@ -121,14 +121,6 @@ export async function rebootAgent(
       return false;
     }
 
-    try {
-      execSync("npm install", { stdio: "inherit" });
-      rebootLogger.info("Installed dependencies");
-    } catch (error) {
-      rebootLogger.error("Failed to install dependencies");
-      return false;
-    }
-
     const screenName = `agent-${targetVersion.replace(/\./g, "-")}`;
     spawn(
       "screen",

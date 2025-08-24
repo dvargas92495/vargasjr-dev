@@ -78,9 +78,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      - name: Build browser service
-        run: npm run browser:build
-      - name: Build worker service
+      - name: Build agent services
         run: npm run agent:build
       - name: Create complete agent package
         run: npm run agent:publish

@@ -33,9 +33,8 @@ class AgentPublisher {
         stdio: "inherit",
       });
 
-      execSync(`cp -r browser ${packageName}/browser`, { stdio: "inherit" });
+      execSync(`cp -r dist ${packageName}/dist`, { stdio: "inherit" });
       execSync(`cp -r scripts ${packageName}/scripts`, { stdio: "inherit" });
-      execSync(`cp -r worker ${packageName}/worker`, { stdio: "inherit" });
       execSync(`cp -r db ${packageName}/db`, { stdio: "inherit" });
       execSync(`cp -r server ${packageName}/server`, { stdio: "inherit" });
       execSync(`cp package.json ${packageName}/package.json`, {

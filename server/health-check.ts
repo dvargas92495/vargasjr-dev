@@ -78,8 +78,7 @@ export async function getHealthCheckData(): Promise<HealthCheckData> {
         (line) =>
           line.includes("poetry run agent") ||
           (line.includes("python") && line.includes("agent")) ||
-          line.includes("npm run browser:start") ||
-          (line.includes("node") && line.includes("browser"))
+          (line.includes("node") && line.includes("worker"))
       );
   } catch (error) {
     detailedReport += `Failed to get process information: ${error}\n`;
