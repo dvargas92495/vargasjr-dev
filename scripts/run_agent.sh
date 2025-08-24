@@ -89,9 +89,6 @@ else
     screen -dmS agent-${VERSION//./-} bash -c 'node dist/worker.js > out.log 2> error.log'
 fi
 
-echo "Running health check..."
-npm run healthcheck
-
 # # Useful tools
 # 
 # ## Switch to a screen session

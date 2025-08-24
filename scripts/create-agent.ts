@@ -562,6 +562,14 @@ AGENT_ENVIRONMENT=production`;
           tag: "PROFILE",
           command: "[ -f ~/.profile ] && . ~/.profile || true",
         },
+        {
+          tag: "CHMOD",
+          command: "chmod +x /home/ubuntu/run_agent.sh",
+        },
+        {
+          tag: "AGENT",
+          command: "cd /home/ubuntu && ./run_agent.sh",
+        },
       ];
 
       console.log(
@@ -603,18 +611,6 @@ AGENT_ENVIRONMENT=production`;
 
       startTime = Date.now();
       console.log("Making run_agent.sh executable and running it...");
-      await this.executeSSHCommand(
-        keyPath,
-        instanceDetails.publicDns,
-        "chmod +x /home/ubuntu/run_agent.sh",
-        "CHMOD"
-      );
-      await this.executeSSHCommand(
-        keyPath,
-        instanceDetails.publicDns,
-        "cd /home/ubuntu && ./run_agent.sh",
-        "AGENT"
-      );
 
       setupTimingResults.push({
         method: "setupInstance.agentDeployment",
