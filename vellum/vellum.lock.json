@@ -24,7 +24,16 @@
       "module": "workflows.create_devin_chat",
       "workflow_sandbox_id": "4f48b17a-4512-4506-8251-d15c5c6aea44",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "2adf68a9-d12e-465a-ac72-f3f91a2193da",
+          "label": "Create Devin Chat",
+          "name": "create-devin-chat",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -34,7 +43,16 @@
       "module": "workflows.daily_routine_notion",
       "workflow_sandbox_id": "ee623898-a5ed-4a8d-ac41-a8fb0642be05",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "2f0e9d82-f2f6-4fca-b507-5a116d32d76d",
+          "label": "Daily Routine Notion",
+          "name": "daily-routine-notion",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -44,7 +62,16 @@
       "module": "workflows.make_sports_bets",
       "workflow_sandbox_id": "0e7bf47f-aaf8-45b8-85c6-6547a7bb0684",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "bf737a67-5d43-4dfa-8249-274e063b8f28",
+          "label": "Make Sports Bets",
+          "name": "make-sports-bets",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -54,7 +81,16 @@
       "module": "workflows.post_twitter",
       "workflow_sandbox_id": "c545dc9b-664f-4dc2-859a-2760781cf6b9",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "74ab3146-fb08-4679-9454-2b78d1b36d63",
+          "label": "Post Twitter",
+          "name": "post-twitter",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -64,7 +100,16 @@
       "module": "workflows.process_job",
       "workflow_sandbox_id": "951f14ae-5f10-4954-b524-c05539b6b3f8",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "bd8efb14-59fd-4098-9c26-f8442012c2a0",
+          "label": "Process Job",
+          "name": "process-job",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -74,7 +119,16 @@
       "module": "workflows.schedule_to_cron",
       "workflow_sandbox_id": "e96d1006-a075-46f2-94fd-ee7408989ed2",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "35052582-6dfa-4606-9f51-1489765574c8",
+          "label": "Schedule To Cron",
+          "name": "schedule-to-cron",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -84,7 +138,16 @@
       "module": "workflows.triage_message",
       "workflow_sandbox_id": "7644ddff-c5a8-4d98-b1b1-d965e6b083f4",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "aaafb39c-798e-437b-a99d-76e5961bc056",
+          "label": "Triage Message",
+          "name": "triage-message",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
@@ -94,7 +157,16 @@
       "module": "workflows.weekly_accounting",
       "workflow_sandbox_id": "aae86b5d-15f1-4760-aca1-1a872cd8ba0e",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "8c50d85a-5d6d-4301-a7dc-b1ec1e942014",
+          "label": "Weekly Accounting",
+          "name": "weekly-accounting",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
