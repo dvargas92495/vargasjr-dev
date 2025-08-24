@@ -19,7 +19,10 @@ import {
 } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
-import { AWS_DEFAULT_REGION, DEFAULT_PRODUCTION_AGENT_NAME } from "@/server/constants";
+import {
+  AWS_DEFAULT_REGION,
+  DEFAULT_PRODUCTION_AGENT_NAME,
+} from "@/server/constants";
 
 interface AgentConfig {
   prNumber?: string;
