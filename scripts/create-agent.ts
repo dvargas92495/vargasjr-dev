@@ -569,11 +569,6 @@ AGENT_ENVIRONMENT=production`;
       );
       for (let i = 0; i < setupCommands.length; i++) {
         const commandObj = setupCommands[i];
-        console.log(
-          `🔄 [${i + 1}/${setupCommands.length}] About to execute ${
-            commandObj.tag
-          }`
-        );
 
         try {
           await this.executeSSHCommand(
@@ -746,6 +741,8 @@ AGENT_ENVIRONMENT=production`;
   ): Promise<void> {
     const maxAttempts = 3;
     let attempts = 0;
+
+    console.log(`🔄 About to execute ${tag}`);
 
     while (attempts < maxAttempts) {
       try {
