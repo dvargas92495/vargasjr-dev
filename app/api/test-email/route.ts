@@ -3,6 +3,7 @@ import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { z } from "zod";
 import { LAMBDA_FUNCTION_NAMES } from "../../lib/constants";
 import { getBaseUrl } from "../constants";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 const testRequestSchema = z.object({
   testSubject: z.string().min(1),
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     const { testSubject, testSender, testBody } = testRequestSchema.parse(body);
 
     const currentBranch = getCurrentBranch();
-    const lambdaClient = new LambdaClient({ region: "us-east-1" });
+    const lambdaClient = new LambdaClient({ region: AWS_DEFAULT_REGION });
 
     let finalSubject = testSubject;
     if (process.env.VERCEL_ENV !== "production" && currentBranch !== "main") {

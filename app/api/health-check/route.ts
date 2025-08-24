@@ -7,7 +7,7 @@ import {
   type DescribeInstancesCommandOutput,
   type Instance as EC2Instance,
 } from "@aws-sdk/client-ec2";
-import { AGENT_SERVER_PORT } from "../../../server/constants";
+import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -50,7 +50,7 @@ function parseMemoryDiagnostics(
 
 async function checkInstanceHealthHTTP(
   instanceId: string,
-  region: string = "us-east-1"
+  region: string = AWS_DEFAULT_REGION
 ): Promise<HealthCheckResult> {
   const ec2 = new EC2({ region });
   try {

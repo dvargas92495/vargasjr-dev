@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { cookies } from "next/headers";
 import { SSM } from "@aws-sdk/client-ssm";
 import { checkInstanceHealth } from "@/scripts/utils";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 const rebootSchema = z.object({
   instanceId: z.string(),
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const { instanceId } = rebootSchema.parse(body);
 
     try {
-      const ssm = new SSM({ region: "us-east-1" });
+      const ssm = new SSM({ region: AWS_DEFAULT_REGION });
 
       const healthCheck = await checkInstanceHealth(instanceId);
       if (healthCheck.status !== "healthy") {

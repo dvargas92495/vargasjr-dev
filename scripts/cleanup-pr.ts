@@ -10,6 +10,7 @@ import {
   toSshKeySecretName,
 } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 interface CleanupConfig {
   prNumber: string;
@@ -21,7 +22,7 @@ class VargasJRAgentCleanup {
 
   constructor(config: CleanupConfig) {
     this.config = config;
-    this.ec2 = new EC2({ region: "us-east-1" });
+    this.ec2 = new EC2({ region: AWS_DEFAULT_REGION });
   }
 
   async cleanupAgent(): Promise<void> {

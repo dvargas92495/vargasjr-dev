@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { cookies } from "next/headers";
 import { terminateInstances, deleteKeyPair } from "@/scripts/utils";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 const instanceSchema = z.object({
   id: z.string(),
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     console.log(
       `[/api/instances] Initializing EC2 client for region us-east-1`
     );
-    const ec2 = new EC2({ region: "us-east-1" });
+    const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
 
     if (operation === "STOP") {
       console.log(`[/api/instances] Stopping instance ${id}`);

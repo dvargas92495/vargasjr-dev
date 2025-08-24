@@ -6,6 +6,7 @@ import { getEnvironmentPrefix } from "@/app/api/constants";
 import { retryWithBackoff } from "@/scripts/utils";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 async function checkWorkflowStatus() {
   try {
@@ -97,7 +98,7 @@ async function getCurrentPRNumber(): Promise<string> {
 
 export default async function AdminPage() {
   const ec2 = new EC2({
-    region: "us-east-1",
+    region: AWS_DEFAULT_REGION,
   });
 
   const environmentPrefix = getEnvironmentPrefix();

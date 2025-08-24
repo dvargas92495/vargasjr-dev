@@ -20,10 +20,9 @@ import {
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
 import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 interface AgentConfig {
-  instanceType?: string;
-  region?: string;
   prNumber?: string;
 }
 
@@ -40,12 +39,8 @@ class VargasJRAgentCreator {
   private keyPairName: string;
 
   constructor(config: AgentConfig) {
-    this.config = {
-      instanceType: config.prNumber ? "t3.small" : "t3.micro",
-      region: "us-east-1",
-      ...config,
-    };
-    this.ec2 = new EC2({ region: this.config.region });
+    this.config = config;
+    this.ec2 = new EC2({ region: AWS_DEFAULT_REGION });
     this.instanceName = toAgentName(this.config.prNumber);
     this.keyPairName = toSshKeySecretName(this.instanceName);
   }
@@ -184,11 +179,7 @@ class VargasJRAgentCreator {
         writeFileSync(keyPath, result.KeyMaterial, { mode: 0o600 });
         console.log(`✅ Key pair saved to ${keyPath}`);
 
-        await createSecret(
-          this.keyPairName,
-          result.KeyMaterial,
-          this.config.region
-        );
+        await createSecret(this.keyPairName, result.KeyMaterial);
       }
     } catch (error: any) {
       if (error.name === "InvalidKeyPair.Duplicate") {
@@ -215,11 +206,7 @@ class VargasJRAgentCreator {
             writeFileSync(keyPath, newResult.KeyMaterial, { mode: 0o600 });
             console.log(`✅ Key pair recreated and saved to ${keyPath}`);
 
-            await createSecret(
-              this.keyPairName,
-              newResult.KeyMaterial,
-              this.config.region
-            );
+            await createSecret(this.keyPairName, newResult.KeyMaterial);
           }
         } catch (deleteError) {
           console.error(`Failed to delete/recreate key pair: ${deleteError}`);
@@ -401,7 +388,7 @@ class VargasJRAgentCreator {
   ): Promise<string> {
     const result = await this.ec2.runInstances({
       ImageId: imageId,
-      InstanceType: this.config.instanceType as any,
+      InstanceType: "t3.micro",
       KeyName: this.keyPairName,
       SecurityGroupIds: [securityGroupId],
       ...(iamInstanceProfile && {
@@ -657,10 +644,7 @@ AGENT_ENVIRONMENT=production`;
 
     while (attempts < maxAttempts) {
       try {
-        const healthResult = await checkInstanceHealth(
-          instanceId,
-          this.config.region
-        );
+        const healthResult = await checkInstanceHealth(instanceId);
         if (healthResult.status === "healthy") {
           console.log("✅ Instance health check passed");
           return;
@@ -712,7 +696,7 @@ AGENT_ENVIRONMENT=production`;
 
     const maxAttempts = 3;
     let attempts = 0;
-    const ssm = new SSM({ region: "us-east-1" });
+    const ssm = new SSM({ region: AWS_DEFAULT_REGION });
 
     while (attempts < maxAttempts) {
       try {
@@ -1155,7 +1139,6 @@ AGENT_ENVIRONMENT=production`;
     console.log("=" + "=".repeat(50));
   }
 }
-
 
 async function main() {
   const args = process.argv.slice(2);

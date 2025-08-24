@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { EC2, Instance } from "@aws-sdk/client-ec2";
 import { checkInstanceHealth } from "@/scripts/utils";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { creationStartTime } = body;
 
-    const ec2 = new EC2({ region: "us-east-1" });
+    const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
 
     let result = await ec2.describeInstances({
       Filters: [
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
 
     if (instanceState === "running") {
       try {
-        await checkInstanceHealth(latestInstance.InstanceId!, "us-east-1");
+        await checkInstanceHealth(latestInstance.InstanceId!);
         return NextResponse.json({
           status: "ready",
           message: "Agent is online and ready!",

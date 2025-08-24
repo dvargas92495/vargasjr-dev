@@ -3,6 +3,7 @@
 import { execSync } from "child_process";
 import { join } from "path";
 import { postGitHubComment } from "./utils";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 interface TerraformRunnerOptions {
   isPreviewMode: boolean;
@@ -35,7 +36,7 @@ class TerraformRunner {
             ...process.env,
             AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
             AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-            AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || "us-east-1",
+            AWS_DEFAULT_REGION,
             VERCEL_ENV: "production",
           },
         });
@@ -47,7 +48,7 @@ class TerraformRunner {
             ...process.env,
             AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
             AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-            AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || "us-east-1",
+            AWS_DEFAULT_REGION,
             VERCEL_ENV: "production",
           },
         });
@@ -59,7 +60,7 @@ class TerraformRunner {
             ...process.env,
             AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
             AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-            AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || "us-east-1",
+            AWS_DEFAULT_REGION,
             VERCEL_ENV: "production",
           },
         });
@@ -84,7 +85,7 @@ class TerraformRunner {
           ...process.env,
           AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
           AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-          AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || "us-east-1",
+          AWS_DEFAULT_REGION,
         },
       });
 
@@ -95,7 +96,7 @@ class TerraformRunner {
           ...process.env,
           AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
           AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-          AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || "us-east-1",
+          AWS_DEFAULT_REGION,
         },
       });
 
@@ -106,7 +107,7 @@ class TerraformRunner {
           ...process.env,
           AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
           AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-          AWS_DEFAULT_REGION: process.env.AWS_DEFAULT_REGION || "us-east-1",
+          AWS_DEFAULT_REGION,
         },
       });
 

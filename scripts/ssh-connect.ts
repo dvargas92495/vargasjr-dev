@@ -6,11 +6,10 @@ import { writeFileSync, unlinkSync } from "fs";
 import { tmpdir } from "os";
 import { execSync } from "child_process";
 import * as dotenv from "dotenv";
-import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 interface SSHConnectConfig {
   prNumber?: string;
-  region?: string;
   command?: string;
 }
 
@@ -19,11 +18,8 @@ class VargasJRSSHConnector {
   private config: SSHConnectConfig;
 
   constructor(config: SSHConnectConfig) {
-    this.config = {
-      region: "us-east-1",
-      ...config,
-    };
-    this.ec2 = new EC2({ region: this.config.region });
+    this.config = config;
+    this.ec2 = new EC2({ region: AWS_DEFAULT_REGION });
   }
 
   async connect(): Promise<void> {
@@ -112,7 +108,7 @@ class VargasJRSSHConnector {
     const secretName = toSshKeySecretName(agentName);
 
     console.log(`Retrieving SSH key from secret: ${secretName}`);
-    return await getSecret(secretName, this.config.region);
+    return await getSecret(secretName);
   }
 
   private async writeKeyToTempFile(keyMaterial: string): Promise<string> {

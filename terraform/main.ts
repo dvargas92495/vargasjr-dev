@@ -29,22 +29,19 @@ import { ImagebuilderInfrastructureConfiguration } from "@cdktf/provider-aws/lib
 import { ImagebuilderDistributionConfiguration } from "@cdktf/provider-aws/lib/imagebuilder-distribution-configuration";
 import { ImagebuilderImage } from "@cdktf/provider-aws/lib/imagebuilder-image";
 import { AWS_S3_BUCKETS, VARGASJR_IMAGE_NAME } from "../app/lib/constants";
-import { AGENT_SERVER_PORT } from "../server/constants";
+import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "../server/constants";
 
 interface VargasJRStackConfig {
   environment: "production" | "preview";
   prNumber?: string;
-  region?: string;
 }
 
 class VargasJRInfrastructureStack extends TerraformStack {
   constructor(scope: Construct, id: string, config: VargasJRStackConfig) {
     super(scope, id);
 
-    const region = config.region || "us-east-1";
-
     new AwsProvider(this, "AWS", {
-      region: region,
+      region: AWS_DEFAULT_REGION,
     });
 
     const commonTags = {
@@ -56,7 +53,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     new S3Backend(this, {
       bucket: AWS_S3_BUCKETS.TERRAFORM_STATE,
       key: "terraform/state/terraform.tfstate",
-      region: region,
+      region: AWS_DEFAULT_REGION,
       encrypt: true,
     });
 
@@ -327,7 +324,7 @@ phases:
               name: `${VARGASJR_IMAGE_NAME}-{{ imagebuilder:buildDate }}`,
               description: "VargasJR AMI with Node.js pre-installed",
             },
-            region: "us-east-1",
+            region: AWS_DEFAULT_REGION,
           },
         ],
         tags,

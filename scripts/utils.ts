@@ -2,8 +2,8 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { IAMClient, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
 import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
-import { getGitHubAuthHeaders } from "../app/lib/github-auth";
-import { AGENT_SERVER_PORT } from "../server/constants";
+import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
+import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
 import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
 
 export interface EC2Instance {
@@ -153,7 +153,7 @@ export async function findOrCreateSecurityGroup(
 export async function createSecret(
   secretName: string,
   secretValue: string,
-  region: string = "us-east-1"
+  region: string = AWS_DEFAULT_REGION
 ): Promise<void> {
   const secretsManager = new SecretsManager({ region });
 
@@ -206,7 +206,7 @@ export async function createSecret(
 
 export async function getSecret(
   secretName: string,
-  region: string = "us-east-1"
+  region: string = AWS_DEFAULT_REGION
 ): Promise<string> {
   const secretsManager = new SecretsManager({ region });
 
@@ -238,7 +238,7 @@ export async function getSecret(
 
 export async function deleteSecret(
   secretName: string,
-  region: string = "us-east-1"
+  region: string = AWS_DEFAULT_REGION
 ): Promise<void> {
   const secretsManager = new SecretsManager({ region });
 
@@ -385,7 +385,7 @@ export interface HealthCheckOptions {
 
 export async function checkInstanceHealth(
   instanceId: string,
-  region: string = "us-east-1"
+  region: string = AWS_DEFAULT_REGION
 ): Promise<HealthCheckResult> {
   const ec2 = new EC2({ region });
 
@@ -486,7 +486,7 @@ export async function checkInstanceHealth(
 }
 
 export async function findOrCreateSSMInstanceProfile(): Promise<string> {
-  const iam = new IAMClient({ region: "us-east-1" });
+  const iam = new IAMClient({ region: AWS_DEFAULT_REGION });
   const instanceProfileName = "VargasJR-SSM-InstanceProfile";
 
   try {
