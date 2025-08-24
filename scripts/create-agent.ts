@@ -749,7 +749,7 @@ AGENT_ENVIRONMENT=production`;
     command: string,
     tag: string
   ): Promise<void> {
-    const maxAttempts = 3;
+    const maxAttempts = 10;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
