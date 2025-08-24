@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getGitHubAuthHeaders } from "../../lib/github-auth";
 import { getEnvironmentPrefix } from "../constants";
-import { retryWithBackoff } from "@/scripts/utils";
+import { retryWithBackoff } from "@/server/retry";
 
 const PRODUCTION_AGENT_NAME = "vargas-jr";
 

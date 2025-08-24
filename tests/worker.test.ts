@@ -4,10 +4,10 @@ import { AGENT_SERVER_PORT } from "../server/constants";
 
 describe("Worker Health Check", () => {
   let agentRunner: AgentRunner;
-  const testPort = AGENT_SERVER_PORT + 1000;
+  const testPort = AGENT_SERVER_PORT + 10;
 
   beforeAll(async () => {
-    process.env.HEALTH_PORT = testPort.toString();
+    process.env.AGENT_SERVER_PORT = testPort.toString();
     process.env.LOG_LEVEL = "error";
 
     agentRunner = new AgentRunner({

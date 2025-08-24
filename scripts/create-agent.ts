@@ -19,8 +19,10 @@ import {
 } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
-import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
-import { AWS_DEFAULT_REGION } from "@/server/constants";
+import {
+  AWS_DEFAULT_REGION,
+  DEFAULT_PRODUCTION_AGENT_NAME,
+} from "@/server/constants";
 
 interface AgentConfig {
   prNumber?: string;
@@ -100,9 +102,9 @@ class VargasJRAgentCreator {
       timingResults.push(...setupTimingResults);
 
       startTime = Date.now();
-      await this.waitForSSMReady(instanceId);
+      await this.waitForInstanceReady(instanceId);
       timingResults.push({
-        method: "waitForSSMReady",
+        method: "waitForInstanceReady",
         duration: Date.now() - startTime,
         success: true,
       });
@@ -557,13 +559,16 @@ AGENT_ENVIRONMENT=production`;
         { tag: "APT", command: "sudo apt update" },
         { tag: "UNZIP", command: "sudo apt install -y unzip" },
         {
-          tag: "SSM_STATUS",
-          command:
-            "sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent",
-        },
-        {
           tag: "PROFILE",
           command: "[ -f ~/.profile ] && . ~/.profile || true",
+        },
+        {
+          tag: "CHMOD",
+          command: "chmod +x /home/ubuntu/run_agent.sh",
+        },
+        {
+          tag: "AGENT",
+          command: "cd /home/ubuntu && ./run_agent.sh",
         },
       ];
 
@@ -572,18 +577,13 @@ AGENT_ENVIRONMENT=production`;
       );
       for (let i = 0; i < setupCommands.length; i++) {
         const commandObj = setupCommands[i];
-        console.log(
-          `🔄 [${i + 1}/${setupCommands.length}] About to execute: [${
-            commandObj.tag
-          }] ${commandObj.command}`
-        );
 
         try {
-          await this.executeSSMCommand(
-            instanceDetails.instanceId,
-            commandObj,
-            300,
-            false
+          await this.executeSSHCommand(
+            keyPath,
+            instanceDetails.publicDns,
+            commandObj.command,
+            commandObj.tag
           );
           console.log(
             `✅ [${i + 1}/${setupCommands.length}] Successfully completed: [${
@@ -601,28 +601,8 @@ AGENT_ENVIRONMENT=production`;
           console.error(`Error: ${this.formatError(error)}`);
         }
       }
-      console.log(`📋 Completed setup commands execution`);
-
       setupTimingResults.push({
         method: "setupInstance.dependencyInstallation",
-        duration: Date.now() - startTime,
-        success: true,
-      });
-
-      startTime = Date.now();
-      console.log("Making run_agent.sh executable and running it...");
-      await this.executeSSMCommand(instanceDetails.instanceId, {
-        tag: "CHMOD",
-        command: "chmod +x /home/ubuntu/run_agent.sh",
-      });
-      await this.executeSSMCommand(
-        instanceDetails.instanceId,
-        { tag: "AGENT", command: "cd /home/ubuntu && ./run_agent.sh" },
-        600
-      );
-
-      setupTimingResults.push({
-        method: "setupInstance.agentDeployment",
         duration: Date.now() - startTime,
         success: true,
       });
@@ -636,7 +616,7 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async waitForSSMReady(instanceId: string): Promise<void> {
+  private async waitForInstanceReady(instanceId: string): Promise<void> {
     const maxAttempts = 8;
     let attempts = 0;
 
@@ -668,295 +648,7 @@ AGENT_ENVIRONMENT=production`;
       }
     }
 
-    console.log(
-      "\n🔍 Health check failed after maximum attempts. Running diagnostic commands..."
-    );
-    try {
-      await this.executeDiagnosticCommands(instanceId);
-    } catch (diagnosticError) {
-      console.error(
-        `Failed to run diagnostic commands: ${this.formatError(
-          diagnosticError
-        )}`
-      );
-    }
-
-    throw new Error(
-      "Instance failed to become healthy within timeout. Check agent server startup and network connectivity. See diagnostic information above."
-    );
-  }
-
-  private async executeSSMCommand(
-    instanceId: string,
-    commandObj: { tag: string; command: string },
-    timeoutSeconds: number = 300,
-    enableDiagnostics: boolean = true
-  ): Promise<void> {
-    console.log(`[${commandObj.tag}] Executing: ${commandObj.command}`);
-
-    const maxAttempts = 3;
-    let attempts = 0;
-    const ssm = new SSM({ region: AWS_DEFAULT_REGION });
-
-    while (attempts < maxAttempts) {
-      try {
-        const commandResult = await ssm.sendCommand({
-          InstanceIds: [instanceId],
-          DocumentName: "AWS-RunShellScript",
-          Parameters: {
-            commands: [commandObj.command],
-          },
-          TimeoutSeconds: timeoutSeconds,
-        });
-
-        const commandId = commandResult.Command?.CommandId;
-        if (!commandId) {
-          throw new Error("Failed to get command ID from SSM");
-        }
-
-        let pollAttempts = 0;
-        const maxPollAttempts = 60;
-
-        while (pollAttempts < maxPollAttempts) {
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-
-          const outputResult = await ssm.getCommandInvocation({
-            CommandId: commandId,
-            InstanceId: instanceId,
-          });
-
-          if (outputResult.Status === "Success") {
-            const output = outputResult.StandardOutputContent || "";
-            if (output.trim()) {
-              output.split("\n").forEach((line) => {
-                if (line.trim()) {
-                  console.log(`[${commandObj.tag}] ${line}`);
-                }
-              });
-            }
-            return;
-          } else if (outputResult.Status === "Failed") {
-            const errorDetails =
-              outputResult.StandardErrorContent || "No error details available";
-            const outputDetails =
-              outputResult.StandardOutputContent || "No output";
-            throw new Error(
-              `SSM command failed: ${errorDetails}\nCommand output: ${outputDetails}`
-            );
-          }
-
-          pollAttempts++;
-        }
-
-        throw new Error(
-          `SSM command timed out after ${timeoutSeconds} seconds`
-        );
-      } catch (error: any) {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          console.error(
-            `❌ [${commandObj.tag}] SSM command failed after ${maxAttempts} attempts: ${commandObj.command}`
-          );
-
-          if (enableDiagnostics) {
-            console.error(`Error: ${this.formatError(error)}`);
-            await this.executeDiagnosticCommands(instanceId);
-            console.error(
-              "\n💀 Script terminated due to SSM command failure. See diagnostic information above."
-            );
-            process.exit(1);
-          }
-
-          throw error;
-        }
-        console.log(
-          `[${commandObj.tag}] SSM command failed, retrying... (${attempts}/${maxAttempts})`
-        );
-        console.error(`Error: ${error.message}`);
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-      }
-    }
-  }
-
-  private async executeDiagnosticCommands(
-    instanceId: string,
-    keyPath?: string,
-    publicDns?: string
-  ): Promise<void> {
-    console.log(
-      "\n🔍 Executing diagnostic commands to gather error information..."
-    );
-
-    try {
-      console.log("📄 Checking for error.log...");
-      await this.executeSSMCommand(
-        instanceId,
-        {
-          tag: "ERROR_LOG",
-          command:
-            'if [ -f /home/ubuntu/error.log ]; then echo "=== ERROR.LOG CONTENTS ==="; cat /home/ubuntu/error.log; else echo "No error.log file found"; fi',
-        },
-        60,
-        false
-      );
-    } catch (error) {
-      console.error(`Failed to read error.log: ${this.formatError(error)}`);
-    }
-
-    try {
-      console.log("\n📁 Listing agent directory...");
-      await this.executeSSMCommand(
-        instanceId,
-        {
-          tag: "AGENT_DIR",
-          command:
-            'echo "=== AGENT DIRECTORY LISTING ==="; ls -la /home/ubuntu/agent/ 2>/dev/null || echo "Agent directory not found"',
-        },
-        60,
-        false
-      );
-    } catch (error) {
-      console.error(
-        `Failed to list agent directory: ${this.formatError(error)}`
-      );
-    }
-
-    try {
-      console.log("\n📁 Listing worker directory...");
-      await this.executeSSMCommand(
-        instanceId,
-        {
-          tag: "WORKER_DIR",
-          command:
-            'echo "=== WORKER DIRECTORY LISTING ==="; ls -la /home/ubuntu/worker/ 2>/dev/null || echo "Worker directory not found"',
-        },
-        60,
-        false
-      );
-    } catch (error) {
-      console.error(
-        `Failed to list worker directory: ${this.formatError(error)}`
-      );
-    }
-
-    try {
-      console.log("\n🔧 Checking build artifacts...");
-      await this.executeSSMCommand(
-        instanceId,
-        {
-          tag: "BUILD_CHECK",
-          command:
-            'echo "=== BUILD ARTIFACTS CHECK ==="; if [ -f /home/ubuntu/*/worker/dist/index.js ]; then echo "✅ worker/dist/index.js found"; ls -la /home/ubuntu/*/worker/dist/; else echo "❌ worker/dist/index.js missing"; find /home/ubuntu -name "index.js" -type f 2>/dev/null || echo "No index.js files found"; fi',
-        },
-        60,
-        false
-      );
-    } catch (error) {
-      console.error(
-        `Failed to check build artifacts: ${this.formatError(error)}`
-      );
-    }
-
-    try {
-      console.log("\n🔌 Checking active ports and services...");
-      if (keyPath && publicDns) {
-        await this.executeSSHCommand(
-          keyPath,
-          publicDns,
-          'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"',
-          "PORT_CHECK"
-        );
-      } else {
-        await this.executeSSMCommand(
-          instanceId,
-          {
-            tag: "PORT_CHECK",
-            command:
-              'echo "=== ACTIVE PORTS AND SERVICES ==="; netstat -tulpn 2>/dev/null || ss -tulpn 2>/dev/null || echo "No netstat/ss available"',
-          },
-          60,
-          false
-        );
-      }
-    } catch (error) {
-      console.error(`Failed to check ports: ${this.formatError(error)}`);
-    }
-
-    try {
-      console.log("\n📋 Checking running processes...");
-      if (keyPath && publicDns) {
-        await this.executeSSHCommand(
-          keyPath,
-          publicDns,
-          'echo "=== RUNNING PROCESSES ==="; ps aux | head -20',
-          "PROCESS_CHECK"
-        );
-      } else {
-        await this.executeSSMCommand(
-          instanceId,
-          {
-            tag: "PROCESS_CHECK",
-            command: 'echo "=== RUNNING PROCESSES ==="; ps aux | head -20',
-          },
-          60,
-          false
-        );
-      }
-    } catch (error) {
-      console.error(`Failed to check processes: ${this.formatError(error)}`);
-    }
-
-    try {
-      console.log("\n🔨 Checking TypeScript build capability...");
-      if (keyPath && publicDns) {
-        await this.executeSSHCommand(
-          keyPath,
-          publicDns,
-          'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"',
-          "BUILD_ENV_CHECK"
-        );
-      } else {
-        await this.executeSSMCommand(
-          instanceId,
-          {
-            tag: "BUILD_ENV_CHECK",
-            command:
-              'echo "=== BUILD ENVIRONMENT CHECK ==="; which tsc || echo "TypeScript compiler not found"; npm list typescript || echo "TypeScript not in dependencies"; ls -la worker/ || echo "Worker directory missing"',
-          },
-          60,
-          false
-        );
-      }
-    } catch (error) {
-      console.error(
-        `Failed to check build environment: ${this.formatError(error)}`
-      );
-    }
-
-    try {
-      console.log("\n📝 Checking for build logs and errors...");
-      if (keyPath && publicDns) {
-        await this.executeSSHCommand(
-          keyPath,
-          publicDns,
-          'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"',
-          "BUILD_LOGS"
-        );
-      } else {
-        await this.executeSSMCommand(
-          instanceId,
-          {
-            tag: "BUILD_LOGS",
-            command:
-              'echo "=== BUILD LOGS AND ERRORS ==="; find /home/ubuntu -name "*.log" -type f -exec echo "=== {} ===" \\; -exec cat {} \\; 2>/dev/null || echo "No log files found"',
-          },
-          60,
-          false
-        );
-      }
-    } catch (error) {
-      console.error(`Failed to check build logs: ${this.formatError(error)}`);
-    }
+    throw new Error("Instance failed to become healthy within timeout.");
   }
 
   private async executeSCPCommand(
@@ -1035,6 +727,8 @@ AGENT_ENVIRONMENT=production`;
     const maxAttempts = 3;
     let attempts = 0;
 
+    console.log(`🔄 About to execute ${tag}`);
+
     while (attempts < maxAttempts) {
       try {
         const sshCommand = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ConnectionAttempts=3 ubuntu@${publicDns} "${command}"`;
@@ -1060,7 +754,7 @@ AGENT_ENVIRONMENT=production`;
           );
         }
         console.log(
-          `[${tag}] SSH command failed, retrying... (${attempts}/${maxAttempts})`
+          `[${tag}] SSH command failed ${error.message}. Retrying... (${attempts}/${maxAttempts})`
         );
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }

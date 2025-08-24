@@ -19,6 +19,7 @@
 
 # production
 /build
+/dist
 /vellum/dist
 /browser/dist
 /worker/dist

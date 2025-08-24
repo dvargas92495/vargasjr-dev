@@ -1,11 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
-import { createWriteStream } from "fs";
+import { findPackageJson } from "@/server/versioning";
 
 export function getVersion(): string {
   try {
-    const packageJsonPath = path.join(__dirname, "../package.json");
-    const content = fs.readFileSync(packageJsonPath, "utf-8");
+    const content = findPackageJson();
     const packageJson = JSON.parse(content);
     return packageJson.version || "unknown";
   } catch (error) {

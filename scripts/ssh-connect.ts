@@ -158,7 +158,7 @@ class VargasJRSSHConnector {
       }
     } else {
       try {
-        execSync(sshCommand, { stdio: "inherit", timeout: 60000 });
+        execSync(sshCommand, { stdio: "inherit" });
       } catch (error: any) {
         if (error.status === 130) {
           console.log("\n👋 SSH session ended");

@@ -3,7 +3,7 @@ import CreateAgentButton from "@/components/create-agent-button";
 import ApprovePRButton from "@/components/approve-pr-button";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { getEnvironmentPrefix } from "@/app/api/constants";
-import { retryWithBackoff } from "@/scripts/utils";
+import { retryWithBackoff } from "@/server/retry";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
