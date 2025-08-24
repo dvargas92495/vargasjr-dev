@@ -3,6 +3,40 @@ import { cookies } from "next/headers";
 import { EC2, Instance } from "@aws-sdk/client-ec2";
 import { checkInstanceHealth } from "@/scripts/utils";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
+import { getGitHubAuthHeaders } from "../../lib/github-auth";
+
+async function checkWorkflowFailure(creationStartTime: number) {
+  try {
+    const headers = await getGitHubAuthHeaders();
+
+    const creationDate = new Date(creationStartTime).toISOString();
+    const response = await fetch(
+      `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/runs?branch=main&event=workflow_dispatch&status=failure&created=>=${creationDate}`,
+      { headers }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const failedWorkflows =
+        data.workflow_runs?.filter(
+          (run: { path: string; created_at: string; status: string }) =>
+            run.path === ".github/workflows/ci.yaml" &&
+            new Date(run.created_at).getTime() >= creationStartTime
+        ) || [];
+
+      if (failedWorkflows.length > 0) {
+        return {
+          failed: true,
+          message: "Agent creation workflow failed. Please try again.",
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to check workflow status:", error);
+  }
+
+  return { failed: false };
+}
 
 export async function POST(request: Request) {
   try {
@@ -15,6 +49,23 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { creationStartTime } = body;
+
+    const workflowStatus = await checkWorkflowFailure(creationStartTime);
+    if (workflowStatus.failed) {
+      return NextResponse.json({
+        status: "error",
+        message: workflowStatus.message,
+      });
+    }
+
+    const timeoutMs = 20 * 60 * 1000;
+    if (Date.now() - creationStartTime > timeoutMs) {
+      return NextResponse.json({
+        status: "error",
+        message:
+          "Agent creation timed out. The workflow may have failed or is taking too long.",
+      });
+    }
 
     const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
 

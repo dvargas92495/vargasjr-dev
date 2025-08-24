@@ -25,6 +25,7 @@ const CreateAgentButton = ({
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [message, setMessage] = useState("");
+  const [hasError, setHasError] = useState(false);
   const [creationStartTime, setCreationStartTime] = useState<number | null>(
     null
   );
@@ -59,6 +60,7 @@ const CreateAgentButton = ({
           }, 2000);
         } else if (status.status === "error") {
           setIsCreating(false);
+          setHasError(true);
           setCreationStartTime(null);
           localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
           if (pollingIntervalRef.current) {
@@ -72,6 +74,7 @@ const CreateAgentButton = ({
         );
         setMessage("Failed to check agent status. Please try again.");
         setIsCreating(false);
+        setHasError(true);
         setCreationStartTime(null);
         localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
         if (pollingIntervalRef.current) {
@@ -132,6 +135,7 @@ const CreateAgentButton = ({
     } catch {
       setMessage("Failed to start agent creation");
       setIsCreating(false);
+      setHasError(true);
       setCreationStartTime(null);
     }
   };
@@ -189,6 +193,18 @@ const CreateAgentButton = ({
     }
   }, [initialWorkflowState, isCreating, startPolling]);
 
+  const retryCreation = () => {
+    setHasError(false);
+    setMessage("");
+    setIsCreating(false);
+    setCreationStartTime(null);
+    localStorage.removeItem(AGENT_CREATION_STORAGE_KEY);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
   const getButtonText = () => {
     if (!isCreating) return "Create Agent";
     if (message.includes("dispatched")) return "Creating Agent...";
@@ -209,18 +225,28 @@ const CreateAgentButton = ({
 
   return (
     <div>
-      <button
-        onClick={createAgent}
-        disabled={isCreating}
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
-      >
-        {getStatusIcon()}
-        {getButtonText()}
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={hasError ? retryCreation : createAgent}
+          disabled={isCreating}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+        >
+          {getStatusIcon()}
+          {hasError ? "Try Again" : getButtonText()}
+        </button>
+        {hasError && (
+          <button
+            onClick={retryCreation}
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          >
+            Reset
+          </button>
+        )}
+      </div>
       {message && (
         <p
           className={`mt-2 text-sm ${
-            message.includes("Error") || message.includes("error")
+            message.includes("Error") || message.includes("error") || hasError
               ? "text-red-600"
               : message.includes("ready")
               ? "text-green-600"
