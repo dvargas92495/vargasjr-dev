@@ -4,12 +4,23 @@ import { SecretsManager } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 import { AGENT_SERVER_PORT } from "../server/constants";
+import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
 
 export interface EC2Instance {
   InstanceId?: string;
   State?: { Name?: string };
   Tags?: Array<{ Key?: string; Value?: string }>;
   ImageId?: string;
+}
+
+export function toAgentName(prNumber?: string): string {
+  return prNumber
+    ? `${DEFAULT_PRODUCTION_AGENT_NAME}-pr-${prNumber}`
+    : DEFAULT_PRODUCTION_AGENT_NAME;
+}
+
+export function toSshKeySecretName(agentName: string): string {
+  return `${agentName}-key`;
 }
 
 export async function findInstancesByFilters(

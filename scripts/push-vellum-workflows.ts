@@ -150,7 +150,7 @@ class VellumWorkflowPusher {
         : ` --deploy --deployment-name ${workflowName.replaceAll(
             "_",
             "-"
-          )} --deployment-label ${toTitleCase(workflowName)}`;
+          )} --deployment-label "${toTitleCase(workflowName)}"`;
 
       const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
 

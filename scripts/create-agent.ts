@@ -14,9 +14,12 @@ import {
   getNeonPreviewDatabaseUrl,
   checkInstanceHealth,
   findOrCreateSSMInstanceProfile,
+  toSshKeySecretName,
+  toAgentName,
 } from "./utils";
 import { VARGASJR_IMAGE_NAME } from "../app/lib/constants";
 import { getGitHubAuthHeaders, GitHubAppAuth } from "../app/lib/github-auth";
+import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
 
 interface AgentConfig {
   instanceType?: string;
@@ -43,10 +46,8 @@ class VargasJRAgentCreator {
       ...config,
     };
     this.ec2 = new EC2({ region: this.config.region });
-    this.instanceName = this.config.prNumber
-      ? `${DEFAULT_PRODUCTION_AGENT_NAME}-pr-${this.config.prNumber}`
-      : DEFAULT_PRODUCTION_AGENT_NAME;
-    this.keyPairName = `${this.instanceName}`;
+    this.instanceName = toAgentName(this.config.prNumber);
+    this.keyPairName = toSshKeySecretName(this.instanceName);
   }
 
   async createAgent(): Promise<void> {
@@ -1155,7 +1156,6 @@ AGENT_ENVIRONMENT=production`;
   }
 }
 
-const DEFAULT_PRODUCTION_AGENT_NAME = "vargas-jr";
 
 async function main() {
   const args = process.argv.slice(2);

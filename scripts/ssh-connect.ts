@@ -1,11 +1,12 @@
 #!/usr/bin/env npx tsx
 
 import { EC2, Instance } from "@aws-sdk/client-ec2";
-import { getSecret } from "./utils";
+import { getSecret, toAgentName, toSshKeySecretName } from "./utils";
 import { writeFileSync, unlinkSync } from "fs";
 import { tmpdir } from "os";
 import { execSync } from "child_process";
 import * as dotenv from "dotenv";
+import { DEFAULT_PRODUCTION_AGENT_NAME } from "./constants";
 
 interface SSHConnectConfig {
   prNumber?: string;
@@ -107,16 +108,10 @@ class VargasJRSSHConnector {
   }
 
   private async getSSHKey(): Promise<string> {
-    let secretName;
-
-    if (this.config.prNumber) {
-      secretName = `pr-${this.config.prNumber}-key`;
-    } else {
-      secretName = `vargas-jr-key`;
-    }
+    const agentName = toAgentName(this.config.prNumber);
+    const secretName = toSshKeySecretName(agentName);
 
     console.log(`Retrieving SSH key from secret: ${secretName}`);
-
     return await getSecret(secretName, this.config.region);
   }
 
