@@ -601,19 +601,8 @@ AGENT_ENVIRONMENT=production`;
           console.error(`Error: ${this.formatError(error)}`);
         }
       }
-      console.log(`📋 Completed setup commands execution`);
-
       setupTimingResults.push({
         method: "setupInstance.dependencyInstallation",
-        duration: Date.now() - startTime,
-        success: true,
-      });
-
-      startTime = Date.now();
-      console.log("Making run_agent.sh executable and running it...");
-
-      setupTimingResults.push({
-        method: "setupInstance.agentDeployment",
         duration: Date.now() - startTime,
         success: true,
       });

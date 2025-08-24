@@ -33,12 +33,14 @@ export class AgentRunner {
   private browserManager?: BrowserManager;
 
   constructor(config: AgentRunnerConfig = {}) {
+    console.log("Initializing the agent...");
     dotenv.config();
     this.currentVersion = getVersion();
     this.logger =
       config.logger ||
       createFileLogger("AgentRunner", "agent.log", this.currentVersion);
 
+    console.log("Initialized the logger");
     const logLevel = process.env.LOG_LEVEL;
     if (logLevel) {
       this.logger.setLevel(logLevel);
