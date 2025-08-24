@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as path from "path";
 import { execSync, spawn } from "child_process";
 import { getVersion, createFileLogger, Logger } from "./utils";
 
@@ -8,6 +6,10 @@ interface GitHubRelease {
 }
 
 export async function getLatestVersion(): Promise<string | null> {
+  if (process.env.AGENT_ENVIRONMENT === "preview") {
+    return null;
+  }
+
   const releaseUrl =
     "https://api.github.com/repos/dvargas92495/vargasjr-dev/releases/latest";
 
