@@ -1,15 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-
-function findPackageJson(): string {
-  let packageJsonPath = "package.json";
-
-  while (!fs.existsSync(packageJsonPath)) {
-    packageJsonPath = path.join("..", packageJsonPath);
-  }
-
-  return fs.readFileSync(packageJsonPath, "utf-8");
-}
+import { findPackageJson } from "@/server/versioning";
 
 export function getVersion(): string {
   try {
