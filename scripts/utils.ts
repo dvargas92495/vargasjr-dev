@@ -1,6 +1,6 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { IAMClient, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
-import { SecretsManager } from "@aws-sdk/client-secrets-manager";
+import { SecretsManager, RestoreSecretCommand } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import {
@@ -193,6 +193,37 @@ export async function createSecret(
           return;
         }
         throw updateError;
+      }
+    } else if (
+      error.name === "InvalidRequestException" &&
+      error.message.includes("scheduled for deletion")
+    ) {
+      console.log(`⚠️  Secret ${secretName} is scheduled for deletion, restoring...`);
+      
+      try {
+        await secretsManager.send(new RestoreSecretCommand({
+          SecretId: secretName,
+        }));
+        
+        console.log(`✅ Secret ${secretName} restored from deletion`);
+        
+        await secretsManager.updateSecret({
+          SecretId: secretName,
+          SecretString: secretValue,
+        });
+        
+        console.log(`✅ Secret updated: ${secretName}`);
+      } catch (restoreError: any) {
+        if (
+          restoreError.name === "AccessDeniedException" ||
+          restoreError.name === "UnauthorizedOperation"
+        ) {
+          console.warn(
+            `⚠️  Insufficient permissions to restore secret ${secretName}: ${restoreError.message}`
+          );
+          return;
+        }
+        throw restoreError;
       }
     } else if (
       error.name === "AccessDeniedException" ||
