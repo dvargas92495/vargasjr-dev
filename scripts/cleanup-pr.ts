@@ -6,12 +6,13 @@ import {
   terminateInstances,
   deleteKeyPair,
   deleteSecret,
+  toAgentName,
+  toSshKeySecretName,
 } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface CleanupConfig {
   prNumber: string;
-  region?: string;
 }
 
 class VargasJRAgentCleanup {
@@ -19,17 +20,15 @@ class VargasJRAgentCleanup {
   private config: CleanupConfig;
 
   constructor(config: CleanupConfig) {
-    this.config = {
-      region: "us-east-1",
-      ...config,
-    };
-    this.ec2 = new EC2({ region: this.config.region });
+    this.config = config;
+    this.ec2 = new EC2({ region: "us-east-1" });
   }
 
   async cleanupAgent(): Promise<void> {
     console.log(`Cleaning up Vargas JR agent for PR: ${this.config.prNumber}`);
 
-    const secretName = `pr-${this.config.prNumber}-key`;
+    const instanceName = toAgentName(this.config.prNumber);
+    const secretName = toSshKeySecretName(instanceName);
     try {
       const instances = await findInstancesByFilters(this.ec2, [
         { Name: "tag:Project", Values: ["VargasJR"] },
@@ -61,7 +60,7 @@ class VargasJRAgentCleanup {
         await deleteKeyPair(this.ec2, secretName);
       }
 
-      await deleteSecret(secretName, this.config.region);
+      await deleteSecret(secretName);
 
       await this.deleteNeonBranch();
 
