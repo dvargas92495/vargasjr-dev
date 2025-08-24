@@ -15,7 +15,7 @@ async function buildAgent() {
     platform: "node",
     target: "node18",
     outfile: "dist/worker.js",
-    external: ["playwright", "chromium-bidi"],
+    external: ["chromium-bidi"],
   });
 
   console.log("✅ Build complete! Artifacts in ./dist/");

@@ -806,49 +806,13 @@ AGENT_ENVIRONMENT=production`;
     }
 
     try {
-      console.log("\n📁 Listing agent directory...");
-      await this.executeSSMCommand(
-        instanceId,
-        {
-          tag: "AGENT_DIR",
-          command:
-            'echo "=== AGENT DIRECTORY LISTING ==="; ls -la /home/ubuntu/agent/ 2>/dev/null || echo "Agent directory not found"',
-        },
-        60,
-        false
-      );
-    } catch (error) {
-      console.error(
-        `Failed to list agent directory: ${this.formatError(error)}`
-      );
-    }
-
-    try {
-      console.log("\n📁 Listing worker directory...");
-      await this.executeSSMCommand(
-        instanceId,
-        {
-          tag: "WORKER_DIR",
-          command:
-            'echo "=== WORKER DIRECTORY LISTING ==="; ls -la /home/ubuntu/worker/ 2>/dev/null || echo "Worker directory not found"',
-        },
-        60,
-        false
-      );
-    } catch (error) {
-      console.error(
-        `Failed to list worker directory: ${this.formatError(error)}`
-      );
-    }
-
-    try {
       console.log("\n🔧 Checking build artifacts...");
       await this.executeSSMCommand(
         instanceId,
         {
           tag: "BUILD_CHECK",
           command:
-            'echo "=== BUILD ARTIFACTS CHECK ==="; if [ -f /home/ubuntu/*/worker/dist/index.js ]; then echo "✅ worker/dist/index.js found"; ls -la /home/ubuntu/*/worker/dist/; else echo "❌ worker/dist/index.js missing"; find /home/ubuntu -name "index.js" -type f 2>/dev/null || echo "No index.js files found"; fi',
+            'echo "=== BUILD ARTIFACTS CHECK ==="; if [ -f /home/ubuntu/*/dist/worker.js ]; then echo "✅ dist/worker.js found"; else echo "❌ dist/worker.js missing"; ls -la /home/ubuntu/*/dist/; fi',
         },
         60,
         false
