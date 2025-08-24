@@ -1,6 +1,6 @@
 {
   "name": "vargasjr-dev",
-  "version": "0.0.67",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "npx tsx scripts/dev.ts",

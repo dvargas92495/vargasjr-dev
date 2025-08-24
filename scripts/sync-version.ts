@@ -1,5 +1,6 @@
 #!/usr/bin/env npx tsx
 
+import { execSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
@@ -44,6 +45,9 @@ class VersionSync {
       console.log(
         `✅ Updated pyproject.toml version: ${oldVersion} → ${packageVersion}`
       );
+
+      execSync(`git add ${this.pyprojectTomlPath}`);
+      execSync(`git commit --amend --no-edit`);
       console.log("🎉 Version sync complete!");
     } catch (error) {
       console.error("❌ Failed to sync version:", error);
