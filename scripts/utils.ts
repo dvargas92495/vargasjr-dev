@@ -1,6 +1,9 @@
 import { EC2 } from "@aws-sdk/client-ec2";
 import { IAMClient, GetInstanceProfileCommand } from "@aws-sdk/client-iam";
-import { SecretsManager, RestoreSecretCommand } from "@aws-sdk/client-secrets-manager";
+import {
+  SecretsManager,
+  RestoreSecretCommand,
+} from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import {
@@ -198,20 +201,24 @@ export async function createSecret(
       error.name === "InvalidRequestException" &&
       error.message.includes("scheduled for deletion")
     ) {
-      console.log(`⚠️  Secret ${secretName} is scheduled for deletion, restoring...`);
-      
+      console.log(
+        `⚠️  Secret ${secretName} is scheduled for deletion, restoring...`
+      );
+
       try {
-        await secretsManager.send(new RestoreSecretCommand({
-          SecretId: secretName,
-        }));
-        
+        await secretsManager.send(
+          new RestoreSecretCommand({
+            SecretId: secretName,
+          })
+        );
+
         console.log(`✅ Secret ${secretName} restored from deletion`);
-        
+
         await secretsManager.updateSecret({
           SecretId: secretName,
           SecretString: secretValue,
         });
-        
+
         console.log(`✅ Secret updated: ${secretName}`);
       } catch (restoreError: any) {
         if (
