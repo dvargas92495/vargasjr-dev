@@ -559,11 +559,6 @@ AGENT_ENVIRONMENT=production`;
         { tag: "APT", command: "sudo apt update" },
         { tag: "UNZIP", command: "sudo apt install -y unzip" },
         {
-          tag: "SSM_STATUS",
-          command:
-            "sudo systemctl is-active snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo snap start amazon-ssm-agent",
-        },
-        {
           tag: "PROFILE",
           command: "[ -f ~/.profile ] && . ~/.profile || true",
         },
@@ -575,9 +570,9 @@ AGENT_ENVIRONMENT=production`;
       for (let i = 0; i < setupCommands.length; i++) {
         const commandObj = setupCommands[i];
         console.log(
-          `🔄 [${i + 1}/${setupCommands.length}] About to execute: [${
+          `🔄 [${i + 1}/${setupCommands.length}] About to execute ${
             commandObj.tag
-          }] ${commandObj.command}`
+          }`
         );
 
         try {
@@ -749,7 +744,7 @@ AGENT_ENVIRONMENT=production`;
     command: string,
     tag: string
   ): Promise<void> {
-    const maxAttempts = 10;
+    const maxAttempts = 3;
     let attempts = 0;
 
     while (attempts < maxAttempts) {
@@ -777,7 +772,7 @@ AGENT_ENVIRONMENT=production`;
           );
         }
         console.log(
-          `[${tag}] SSH command failed, retrying... (${attempts}/${maxAttempts})`
+          `[${tag}] SSH command failed ${error.message}. Retrying... (${attempts}/${maxAttempts})`
         );
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
