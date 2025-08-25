@@ -305,16 +305,12 @@ export default async function AdminPage() {
               expected in local development without AWS setup.
             </p>
           </div>
-          {(environmentPrefix === "" || environmentPrefix === "DEV") && (
+          {environmentPrefix === "" && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-800 mb-3">
-                <strong>
-                  {environmentPrefix === "" ? "Production" : "Development"}{" "}
-                  Environment:
-                </strong>{" "}
-                You can still create a
-                {environmentPrefix === "" ? " production" : " development"}{" "}
-                agent even without AWS credentials configured locally.
+                <strong>Production Environment:</strong> You can still create a
+                production agent even without AWS credentials configured
+                locally.
               </p>
               <CreateAgentButton initialWorkflowState={workflowStatus} />
             </div>
@@ -347,22 +343,17 @@ export default async function AdminPage() {
             </ul>
           </div>
           {(environmentPrefix === "" ||
-            environmentPrefix === "DEV" ||
             (environmentPrefix === "PREVIEW" && currentPRNumber)) && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-800 mb-3">
                 <strong>
                   {environmentPrefix === "PREVIEW"
                     ? `Preview Environment (PR #${currentPRNumber})`
-                    : environmentPrefix === "DEV"
-                    ? "Development Environment"
                     : "Production Environment"}
                   :
                 </strong>{" "}
                 {environmentPrefix === "PREVIEW"
                   ? `No preview instances are currently running for this PR. You can create a preview agent using the button below.`
-                  : environmentPrefix === "DEV"
-                  ? `No development instances are currently running. You can create a development agent using the button below.`
                   : `No production instances are currently running. You can create a production agent using the button below.`}
               </p>
               <CreateAgentButton initialWorkflowState={workflowStatus} />
