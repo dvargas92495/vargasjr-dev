@@ -49,15 +49,14 @@ export async function GET(
         body: InboxMessagesTable.body,
         source: InboxMessagesTable.source,
         displayName: ContactsTable.slackDisplayName,
-        createdAt: InboxMessagesTable.createdAt,
+        metadata: InboxMessagesTable.metadata,
       })
       .from(InboxMessagesTable)
       .leftJoin(
         ContactsTable,
         eq(InboxMessagesTable.source, ContactsTable.slackId)
       )
-      .where(eq(InboxMessagesTable.inboxId, session.inboxId))
-      .orderBy(InboxMessagesTable.createdAt);
+      .where(eq(InboxMessagesTable.inboxId, session.inboxId));
 
     return NextResponse.json({
       session: {
@@ -72,7 +71,7 @@ export async function GET(
         id: msg.id,
         body: msg.body,
         source: msg.displayName || msg.source,
-        createdAt: msg.createdAt.toISOString(),
+        createdAt: msg.metadata?.timestamp || new Date().toISOString(),
       })),
     });
   } catch (error) {

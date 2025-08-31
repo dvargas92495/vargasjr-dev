@@ -44,7 +44,7 @@ export default async function ChatSessionPage({
       body: InboxMessagesTable.body,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
-      createdAt: InboxMessagesTable.createdAt,
+      metadata: InboxMessagesTable.metadata,
     })
     .from(InboxMessagesTable)
     .leftJoin(
@@ -52,7 +52,7 @@ export default async function ChatSessionPage({
       eq(InboxMessagesTable.source, ContactsTable.slackId)
     )
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
-    .orderBy(InboxMessagesTable.createdAt);
+    .orderBy(InboxMessagesTable.id);
 
   return (
     <div className="flex flex-col p-4 max-w-4xl mx-auto">
@@ -66,7 +66,7 @@ export default async function ChatSessionPage({
                   {message.displayName || message.source}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {message.createdAt.toLocaleString()}
+                  {message.metadata?.timestamp ? new Date(message.metadata.timestamp).toLocaleString() : 'No timestamp'}
                 </span>
               </div>
               <div className="text-gray-100 whitespace-pre-wrap">
