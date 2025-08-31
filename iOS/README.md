@@ -138,7 +138,7 @@ The app integrates with the existing Vargas JR backend API:
 The base API URL is configured in `ChatService.swift`:
 
 ```swift
-private let baseURL = "https://vargasjr.dev/api"
+private let baseURL = "https://www.vargasjr.dev/api"
 ```
 
 For local development, you can change this to:
