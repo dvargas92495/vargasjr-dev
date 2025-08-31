@@ -24,8 +24,8 @@ export default async function InboxMessage({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
-      createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
+      metadata: InboxMessagesTable.metadata,
     })
     .from(InboxMessagesTable)
     .leftJoin(
@@ -33,7 +33,6 @@ export default async function InboxMessage({
       eq(InboxMessagesTable.source, ContactsTable.slackId)
     )
     .where(eq(InboxMessagesTable.id, messageId))
-    .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(1);
 
   const message = messages[0];
@@ -79,10 +78,19 @@ export default async function InboxMessage({
           <div className="text-lg">{message.displayName || message.source}</div>
         </div>
 
-        <div className="mb-4">
-          <div className="text-sm text-gray-300">Created At</div>
-          <div className="text-lg">{message.createdAt.toLocaleString()}</div>
-        </div>
+        {message.metadata?.subject && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">Subject</div>
+            <div className="text-lg">{message.metadata.subject}</div>
+          </div>
+        )}
+
+        {message.metadata?.timestamp && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">Received At</div>
+            <div className="text-lg">{new Date(message.metadata.timestamp).toLocaleString()}</div>
+          </div>
+        )}
 
         <div className="mb-4">
           <div className="text-sm text-gray-300">Status</div>

@@ -8,13 +8,13 @@ export const addInboxMessage = async ({
   source,
   inboxName,
   threadId,
-  createdAt,
+  metadata,
 }: {
   body: string;
   source: string;
   inboxName: string;
   threadId?: string;
-  createdAt?: Date;
+  metadata?: Record<string, string>;
 }) => {
   const db = getDb();
   const inbox = await db
@@ -30,7 +30,7 @@ export const addInboxMessage = async ({
 
   await db
     .insert(InboxMessagesTable)
-    .values({ source, body: body, inboxId: inbox[0].id, threadId, createdAt });
+    .values({ source, body: body, inboxId: inbox[0].id, threadId, metadata });
 };
 
 export const postSlackMessage = async ({

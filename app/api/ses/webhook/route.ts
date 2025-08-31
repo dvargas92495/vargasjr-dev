@@ -78,8 +78,13 @@ export async function POST(request: Request) {
     const sender = sesNotification.mail.commonHeaders.from[0] || "unknown";
     const subject = sesNotification.mail.commonHeaders.subject || "No Subject";
     const messageId = sesNotification.mail.messageId;
+    const timestamp = sesNotification.receipt.timestamp;
 
-    const emailBody = `Subject: ${subject}\nMessage ID: ${messageId}\nTimestamp: ${sesNotification.receipt.timestamp}`;
+    const metadata = {
+      subject: subject,
+      timestamp: timestamp,
+      messageId: messageId,
+    };
 
     const db = getDb();
     let inbox = await db
@@ -102,9 +107,10 @@ export async function POST(request: Request) {
     }
 
     await addInboxMessage({
-      body: emailBody,
+      body: "Email content not available - only headers provided by SES",
       source: sender,
       inboxName: "email",
+      metadata: metadata,
     });
 
     return NextResponse.json({ received: true });
