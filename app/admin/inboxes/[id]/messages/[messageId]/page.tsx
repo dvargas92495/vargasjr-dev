@@ -88,7 +88,9 @@ export default async function InboxMessage({
         {message.metadata?.timestamp && (
           <div className="mb-4">
             <div className="text-sm text-gray-300">Received At</div>
-            <div className="text-lg">{new Date(message.metadata.timestamp).toLocaleString()}</div>
+            <div className="text-lg">
+              {new Date(message.metadata.timestamp).toLocaleString()}
+            </div>
           </div>
         )}
 
