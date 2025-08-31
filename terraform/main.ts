@@ -225,7 +225,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
   }
 
   private getWebhookUrl(): string {
-    return "https://vargasjr.dev/api/ses/webhook";
+    return "https://www.vargasjr.dev/api/ses/webhook";
   }
 
   private createCustomAMI(tags: Record<string, string>) {

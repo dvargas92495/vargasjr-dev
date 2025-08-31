@@ -1,7 +1,7 @@
 import Foundation
 
 class ChatService {
-    private let baseURL = "https://vargasjr.dev/api"
+    private let baseURL = "https://www.vargasjr.dev/api"
     
     func createChatSession(email: String, message: String) async throws -> String {
         guard let url = URL(string: "\(baseURL)/chat") else {

@@ -98,7 +98,7 @@ The Vision Pro Simulator provides a convenient way to test the app without physi
 - **Message Input**: Type a test message like "Hello, can you help me with sports betting?"
 - **Chat Session**: Tap "Start Chat Session" to create a new session
 - **Navigation**: The app should navigate to the chat interface
-- **API Integration**: Verify the app connects to the production API at `https://vargasjr.dev/api`
+- **API Integration**: Verify the app connects to the production API at `https://www.vargasjr.dev/api`
 
 #### Simulator Controls
 
@@ -192,7 +192,7 @@ The app integrates with the existing Vargas JR backend API:
 The base API URL is configured in `ChatService.swift`:
 
 ```swift
-private let baseURL = "https://vargasjr.dev/api"
+private let baseURL = "https://www.vargasjr.dev/api"
 ```
 
 For local development, you can change this to:
