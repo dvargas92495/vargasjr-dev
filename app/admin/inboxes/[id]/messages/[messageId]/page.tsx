@@ -11,6 +11,11 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
+interface EmailMetadata {
+  subject?: string;
+  messageId?: string;
+}
+
 export default async function InboxMessage({
   params,
 }: {
@@ -36,7 +41,9 @@ export default async function InboxMessage({
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
 
-  const message = messages[0];
+  const message = messages[0] as (typeof messages)[0] & {
+    metadata: EmailMetadata | null;
+  };
 
   if (!message) {
     notFound();
