@@ -34,6 +34,7 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
   body: text("body").notNull(),
   threadId: varchar("thread_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: jsonb("metadata"),
 });
 
 export type InboxMessageOperationType =

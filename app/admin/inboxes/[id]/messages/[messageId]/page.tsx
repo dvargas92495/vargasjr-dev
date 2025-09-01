@@ -4,12 +4,17 @@ import {
   OutboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
+
+interface EmailMetadata {
+  subject?: string;
+  messageId?: string;
+}
 
 export default async function InboxMessage({
   params,
@@ -26,6 +31,7 @@ export default async function InboxMessage({
       displayName: ContactsTable.slackDisplayName,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
+      metadata: InboxMessagesTable.metadata,
     })
     .from(InboxMessagesTable)
     .leftJoin(
@@ -33,10 +39,11 @@ export default async function InboxMessage({
       eq(InboxMessagesTable.source, ContactsTable.slackId)
     )
     .where(eq(InboxMessagesTable.id, messageId))
-    .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(1);
 
-  const message = messages[0];
+  const message = messages[0] as (typeof messages)[0] & {
+    metadata: EmailMetadata | null;
+  };
 
   if (!message) {
     notFound();
@@ -78,6 +85,13 @@ export default async function InboxMessage({
           <div className="text-sm text-gray-300">Source</div>
           <div className="text-lg">{message.displayName || message.source}</div>
         </div>
+
+        {message.metadata?.subject && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">Subject</div>
+            <div className="text-lg">{message.metadata.subject}</div>
+          </div>
+        )}
 
         <div className="mb-4">
           <div className="text-sm text-gray-300">Created At</div>
