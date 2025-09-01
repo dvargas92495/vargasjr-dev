@@ -23,6 +23,7 @@ class SlimMessage(UniversalBaseModel):
     source: str
     channel: InboxType
     inbox_name: str
+    inbox_id: UUID
     thread_id: Optional[str] = None
 
 
@@ -59,6 +60,7 @@ class ReadMessageNode(BaseNode):
                             source="",
                             channel=InboxType.NONE,
                             inbox_name="",
+                            inbox_id=uuid4(),
                             thread_id=None,
                         )
                     )
@@ -77,6 +79,7 @@ class ReadMessageNode(BaseNode):
                     source=inbox_message.source,
                     channel=inbox_type,
                     inbox_name=inbox_name,
+                    inbox_id=inbox_message.inbox_id,
                     thread_id=inbox_message.thread_id,
                 )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
@@ -87,6 +90,7 @@ class ReadMessageNode(BaseNode):
                     source="",
                     channel=InboxType.NONE,
                     inbox_name="",
+                    inbox_id=uuid4(),
                     thread_id=None,
                 )
             )

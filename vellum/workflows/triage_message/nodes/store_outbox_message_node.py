@@ -4,6 +4,7 @@ from .email_reply_node import EmailReplyNode
 from .email_initiate_node import EmailInitiateNode
 from .text_reply_node import TextReplyNode
 from .slack_reply_node import SlackReplyNode
+from .read_message_node import ReadMessageNode
 
 
 class StoreOutboxMessageNode(BaseNode):
@@ -19,11 +20,16 @@ class StoreOutboxMessageNode(BaseNode):
         .coalesce(SlackReplyNode.Outputs.outbox_message)
     )
 
+    message = ReadMessageNode.Outputs.message
+
     class Outputs(BaseNode.Outputs):
         summary: str
+        message_url: str
 
     def run(self) -> BaseNode.Outputs:
         with postgres_session() as session:
             session.add(self.outbox_message)
             session.commit()
-        return self.Outputs(summary=self.summary)
+        
+        message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
+        return self.Outputs(summary=self.summary, message_url=message_url)
