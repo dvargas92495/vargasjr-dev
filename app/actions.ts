@@ -196,12 +196,12 @@ export async function deleteRoutineJob(id: string) {
 
 export async function deleteContact(id: string) {
   const db = getDb();
-  
+
   await db
     .delete(ChatSessionsTable)
     .where(eq(ChatSessionsTable.contactId, id))
     .execute();
-  
+
   const deletedContact = await db
     .delete(ContactsTable)
     .where(eq(ContactsTable.id, id))

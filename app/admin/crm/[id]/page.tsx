@@ -83,7 +83,10 @@ export default async function ContactPage({
         <h1 className="text-2xl font-bold">
           {contactData.fullName || "Contact Details"}
         </h1>
-        <DeleteContactButton id={id} contactName={contactData.fullName || "Contact"} />
+        <DeleteContactButton
+          id={id}
+          contactName={contactData.fullName || "Contact"}
+        />
       </div>
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-2 gap-4">
