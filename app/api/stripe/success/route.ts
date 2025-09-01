@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
-import { addInboxMessage } from "@/server";
+import { addInboxMessage, shouldCreateContact } from "@/server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,9 +61,16 @@ export async function GET(request: NextRequest) {
       .execute();
 
     if (!contact.length) {
+      const contactData = { email: customerEmail };
+      
+      if (!shouldCreateContact(contactData)) {
+        console.error("Cannot create contact: no identifying information provided");
+        return NextResponse.redirect(new URL("/thank-you", request.url));
+      }
+      
       const newContact = await db
         .insert(ContactsTable)
-        .values({ email: customerEmail })
+        .values(contactData)
         .returning({ id: ContactsTable.id });
       contact = newContact;
     }

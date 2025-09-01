@@ -91,13 +91,19 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
     console.error("Failed to resolve Slack user:", error);
   }
 
+  const contactData = {
+    slackId: userId,
+    slackDisplayName: displayName,
+    fullName: displayName,
+  };
+
+  if (!shouldCreateContact(contactData)) {
+    throw new Error('Cannot create contact: no identifying information provided');
+  }
+
   const newContact = await db
     .insert(ContactsTable)
-    .values({
-      slackId: userId,
-      slackDisplayName: displayName,
-      fullName: displayName,
-    })
+    .values(contactData)
     .returning({ id: ContactsTable.id });
 
   return newContact[0].id;
@@ -123,6 +129,20 @@ export const resolveSlackChannel = async (
     console.error("Failed to resolve Slack channel:", error);
   }
   return `slack-${channelId}`;
+};
+
+export const shouldCreateContact = (contactData: {
+  email?: string | null;
+  phoneNumber?: string | null;
+  fullName?: string | null;
+  slackDisplayName?: string | null;
+}): boolean => {
+  const hasEmail = !!(contactData.email && contactData.email.trim() !== '');
+  const hasPhone = !!(contactData.phoneNumber && contactData.phoneNumber.trim() !== '');
+  const hasName = !!(contactData.fullName && contactData.fullName.trim() !== '') || 
+                  !!(contactData.slackDisplayName && contactData.slackDisplayName.trim() !== '');
+  
+  return hasEmail || hasPhone || hasName;
 };
 
 export const convertPriorityToLabel = (
