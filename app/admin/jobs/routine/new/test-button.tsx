@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import WorkflowOutputDisplay, {
-  WorkflowOutput,
-} from "@/components/workflow-output-display";
+import WorkflowOutputDisplay from "@/components/workflow-output-display";
+import { Vellum } from "vellum-ai";
 
 interface TestButtonProps {
   workflowDeploymentName: string;
@@ -152,7 +151,7 @@ export default function TestButton({
 
           {workflowStatus.outputs !== undefined && (
             <WorkflowOutputDisplay
-              outputs={workflowStatus.outputs as WorkflowOutput[]}
+              outputs={workflowStatus.outputs as Vellum.WorkflowOutput[]}
             />
           )}
 

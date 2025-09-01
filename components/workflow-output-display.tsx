@@ -1,51 +1,38 @@
 "use client";
 
 import React from "react";
-
-export interface WorkflowOutput {
-  id: string;
-  name: string;
-  type: string;
-  value: unknown;
-}
+import { Vellum } from "vellum-ai";
 
 interface WorkflowOutputDisplayProps {
-  outputs: WorkflowOutput[];
+  outputs: Vellum.WorkflowOutput[];
 }
 
 const WorkflowOutputDisplay = ({ outputs }: WorkflowOutputDisplayProps) => {
-  const renderOutputValue = (output: WorkflowOutput) => {
+  const renderOutputValue = (output: Vellum.WorkflowOutput) => {
     switch (output.type) {
       case "STRING":
         return (
           <span className="text-gray-900 break-words">
-            {String(output.value)}
+            {JSON.stringify(output.value)}
           </span>
         );
       case "NUMBER":
         return (
           <span className="text-gray-900 font-mono">
-            {typeof output.value === "number"
-              ? output.value.toLocaleString()
-              : String(output.value)}
+            {JSON.stringify(output.value)}
           </span>
         );
-      case "BOOLEAN":
-        return (
-          <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              output.value === true
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {String(output.value)}
-          </span>
-        );
+      case "JSON":
+      case "ARRAY":
+      case "ERROR":
+      case "CHAT_HISTORY":
+      case "SEARCH_RESULTS":
+      case "FUNCTION_CALL":
+      case "IMAGE":
       default:
         return (
-          <span className="text-gray-900 break-words">
-            {String(output.value)}
+          <span className="text-gray-900 break-words font-mono text-sm">
+            {JSON.stringify(output.value, null, 2)}
           </span>
         );
     }
