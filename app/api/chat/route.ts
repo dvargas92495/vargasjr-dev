@@ -4,7 +4,7 @@ import formatZodError from "@/utils/format-zod-error";
 import { ChatSessionsTable, InboxesTable, ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NotFoundError } from "@/server/errors";
-import { shouldCreateContact } from "@/server";
+import { createContactWithValidation, InvalidContactDataError } from "@/server";
 import { getDb } from "@/db/connection";
 
 export async function POST(request: Request) {
@@ -45,23 +45,21 @@ export async function POST(request: Request) {
       .execute();
 
     if (!contact.length) {
-      const contactData = { email };
-
-      if (!shouldCreateContact(contactData)) {
-        return NextResponse.json(
-          {
-            error:
-              "Cannot create chat session: no identifying information provided",
-          },
-          { status: 400 }
-        );
+      try {
+        const newContact = await createContactWithValidation({ email });
+        contact = [newContact];
+      } catch (error) {
+        if (error instanceof InvalidContactDataError) {
+          return NextResponse.json(
+            {
+              error:
+                "Cannot create chat session: no identifying information provided",
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
       }
-
-      const newContact = await db
-        .insert(ContactsTable)
-        .values(contactData)
-        .returning({ id: ContactsTable.id });
-      contact = newContact;
     }
 
     const chatSession = await db

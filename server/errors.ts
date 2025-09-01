@@ -4,3 +4,12 @@ export class NotFoundError extends Error {
     this.name = "NotFoundError";
   }
 }
+
+export class InvalidContactDataError extends Error {
+  constructor(
+    message: string = "Cannot create contact: no identifying information provided"
+  ) {
+    super(message);
+    this.name = "InvalidContactDataError";
+  }
+}

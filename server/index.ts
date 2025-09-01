@@ -1,7 +1,9 @@
 import { InboxesTable, InboxMessagesTable, ContactsTable } from "@/db/schema";
-import { NotFoundError } from "./errors";
+import { NotFoundError, InvalidContactDataError } from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
+
+export { InvalidContactDataError };
 
 export const addInboxMessage = async ({
   body,
@@ -97,18 +99,8 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
     fullName: displayName,
   };
 
-  if (!shouldCreateContact(contactData)) {
-    throw new Error(
-      "Cannot create contact: no identifying information provided"
-    );
-  }
-
-  const newContact = await db
-    .insert(ContactsTable)
-    .values(contactData)
-    .returning({ id: ContactsTable.id });
-
-  return newContact[0].id;
+  const newContact = await createContactWithValidation(contactData);
+  return newContact.id;
 };
 
 export const resolveSlackChannel = async (
@@ -150,6 +142,26 @@ export const shouldCreateContact = (contactData: {
     );
 
   return hasEmail || hasPhone || hasName;
+};
+
+export const createContactWithValidation = async (contactData: {
+  email?: string | null;
+  phoneNumber?: string | null;
+  fullName?: string | null;
+  slackDisplayName?: string | null;
+  slackId?: string | null;
+}) => {
+  if (!shouldCreateContact(contactData)) {
+    throw new InvalidContactDataError();
+  }
+
+  const db = getDb();
+  const newContact = await db
+    .insert(ContactsTable)
+    .values(contactData)
+    .returning();
+
+  return newContact[0];
 };
 
 export const convertPriorityToLabel = (

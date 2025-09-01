@@ -10,6 +10,7 @@ const {
   mockExecute,
   mockInsert,
   mockValues,
+  mockReturning,
 } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockFrom: vi.fn(),
@@ -18,6 +19,7 @@ const {
   mockExecute: vi.fn(),
   mockInsert: vi.fn(),
   mockValues: vi.fn(),
+  mockReturning: vi.fn(),
 }));
 
 const mockEnv = vi.hoisted(() => ({
@@ -31,13 +33,25 @@ vi.mock("drizzle-orm/vercel-postgres", () => ({
   })),
 }));
 
+vi.mock("drizzle-orm/node-postgres", () => ({
+  drizzle: vi.fn(() => ({
+    select: mockSelect,
+    insert: mockInsert,
+  })),
+}));
+
 vi.mock("@vercel/postgres", () => ({
   sql: vi.fn(),
+}));
+
+vi.mock("pg", () => ({
+  Pool: vi.fn().mockImplementation(() => ({})),
 }));
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn(),
 }));
+
 
 describe("SES Webhook", () => {
   beforeEach(() => {
@@ -49,6 +63,7 @@ describe("SES Webhook", () => {
     mockExecute.mockClear();
     mockInsert.mockClear();
     mockValues.mockClear();
+    mockReturning.mockClear();
     process.env.SES_WEBHOOK_SECRET = mockEnv.SES_WEBHOOK_SECRET;
     process.env.POSTGRES_URL = "postgresql://test:test@localhost:5432/test";
   });
@@ -278,6 +293,9 @@ describe("SES Webhook", () => {
     mockWhere.mockReturnValue({ limit: mockLimit });
     mockLimit.mockReturnValue({ execute: mockExecute });
     mockExecute.mockResolvedValue([]);
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockReturnValue({ returning: mockReturning });
+    mockReturning.mockResolvedValue([{ id: "new-inbox-id" }]);
 
     const response = await POST(request);
     const data = await response.json();
