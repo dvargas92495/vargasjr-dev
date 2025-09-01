@@ -34,3 +34,4 @@ class TriageMessageWorkflow(BaseWorkflow):
 
     class Outputs(BaseWorkflow.Outputs):
         summary = NoActionNode.Outputs.summary.coalesce(StoreOutboxMessageNode.Outputs.summary)
+        message_url = NoActionNode.Outputs.message_url.coalesce(StoreOutboxMessageNode.Outputs.message_url)
