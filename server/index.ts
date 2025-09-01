@@ -30,16 +30,14 @@ export const addInboxMessage = async ({
     throw new NotFoundError("Inbox not found");
   }
 
-  await db
-    .insert(InboxMessagesTable)
-    .values({
-      source,
-      body: body,
-      inboxId: inbox[0].id,
-      threadId,
-      createdAt,
-      metadata,
-    });
+  await db.insert(InboxMessagesTable).values({
+    source,
+    body: body,
+    inboxId: inbox[0].id,
+    threadId,
+    createdAt,
+    metadata,
+  });
 };
 
 export const postSlackMessage = async ({
