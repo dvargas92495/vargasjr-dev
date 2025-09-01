@@ -76,7 +76,6 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn(),
 }));
 
-
 const mockEnv = vi.hoisted(() => ({
   STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
   STRIPE_SECRET_KEY: "sk_test_key",

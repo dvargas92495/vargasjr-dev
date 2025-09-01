@@ -52,7 +52,6 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn(),
 }));
 
-
 describe("SES Webhook", () => {
   beforeEach(() => {
     vi.clearAllMocks();
