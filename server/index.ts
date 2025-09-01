@@ -98,7 +98,9 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
   };
 
   if (!shouldCreateContact(contactData)) {
-    throw new Error('Cannot create contact: no identifying information provided');
+    throw new Error(
+      "Cannot create contact: no identifying information provided"
+    );
   }
 
   const newContact = await db
@@ -137,11 +139,16 @@ export const shouldCreateContact = (contactData: {
   fullName?: string | null;
   slackDisplayName?: string | null;
 }): boolean => {
-  const hasEmail = !!(contactData.email && contactData.email.trim() !== '');
-  const hasPhone = !!(contactData.phoneNumber && contactData.phoneNumber.trim() !== '');
-  const hasName = !!(contactData.fullName && contactData.fullName.trim() !== '') || 
-                  !!(contactData.slackDisplayName && contactData.slackDisplayName.trim() !== '');
-  
+  const hasEmail = !!(contactData.email && contactData.email.trim() !== "");
+  const hasPhone = !!(
+    contactData.phoneNumber && contactData.phoneNumber.trim() !== ""
+  );
+  const hasName =
+    !!(contactData.fullName && contactData.fullName.trim() !== "") ||
+    !!(
+      contactData.slackDisplayName && contactData.slackDisplayName.trim() !== ""
+    );
+
   return hasEmail || hasPhone || hasName;
 };
 

@@ -56,12 +56,14 @@ export default async function ThankYou({
 
           if (!contact.length) {
             const contactData = { email: customerEmail };
-            
+
             if (!shouldCreateContact(contactData)) {
-              console.log('Skipping contact creation: no identifying information provided');
+              console.log(
+                "Skipping contact creation: no identifying information provided"
+              );
               return;
             }
-            
+
             const newContact = await db
               .insert(ContactsTable)
               .values(contactData)

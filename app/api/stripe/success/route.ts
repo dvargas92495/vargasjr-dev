@@ -62,12 +62,14 @@ export async function GET(request: NextRequest) {
 
     if (!contact.length) {
       const contactData = { email: customerEmail };
-      
+
       if (!shouldCreateContact(contactData)) {
-        console.error("Cannot create contact: no identifying information provided");
+        console.error(
+          "Cannot create contact: no identifying information provided"
+        );
         return NextResponse.redirect(new URL("/thank-you", request.url));
       }
-      
+
       const newContact = await db
         .insert(ContactsTable)
         .values(contactData)

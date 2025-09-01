@@ -46,14 +46,17 @@ export async function POST(request: Request) {
 
     if (!contact.length) {
       const contactData = { email };
-      
+
       if (!shouldCreateContact(contactData)) {
         return NextResponse.json(
-          { error: "Cannot create chat session: no identifying information provided" },
+          {
+            error:
+              "Cannot create chat session: no identifying information provided",
+          },
           { status: 400 }
         );
       }
-      
+
       const newContact = await db
         .insert(ContactsTable)
         .values(contactData)
