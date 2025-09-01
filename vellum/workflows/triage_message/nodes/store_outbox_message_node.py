@@ -31,5 +31,5 @@ class StoreOutboxMessageNode(BaseNode):
             session.add(self.outbox_message)
             session.commit()
         
-        message_url = f"/admin/inboxes/{self.message['inbox_id']}/messages/{self.message['message_id']}"
+        message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
         return self.Outputs(summary=self.summary, message_url=message_url)
