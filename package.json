@@ -17,6 +17,7 @@
     "push-vellum-workflows": "npx tsx scripts/push-vellum-workflows.ts",
     "merge": "npx tsx scripts/merge-pr.ts",
     "one-time-migration": "npx tsx scripts/run-draft-pr-scripts.ts",
+    "cleanup-crm-na-rows": "npx tsx scripts/cleanup-crm-na-rows.ts",
     "run-migrations": "npx tsx scripts/run-migrations.ts",
     "terraform": "npx tsx scripts/run-terraform.ts",
     "run-knowledge": "npx tsx scripts/run-knowledge.ts",
