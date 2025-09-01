@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     let cronExpression: string;
     try {
       const response = await vellumClient.executeWorkflow({
-        workflowDeploymentName: "workflows-schedule-to-cron-workflow",
+        workflowDeploymentName: "schedule-to-cron",
         inputs: [
           {
             name: "schedule_description",
