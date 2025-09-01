@@ -229,7 +229,7 @@ export async function POST(request: Request) {
             body: event.text,
             source: event.user,
             inboxName: inboxName,
-            threadId: event.thread_ts || event.ts,
+            createdAt: new Date(event.ts * 1000),
           });
         } catch (dbError) {
           console.error(

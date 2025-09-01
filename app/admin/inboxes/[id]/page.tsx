@@ -34,7 +34,7 @@ export default async function InboxPage({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
-      metadata: InboxMessagesTable.metadata,
+      createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
@@ -43,7 +43,7 @@ export default async function InboxPage({
       eq(InboxMessagesTable.source, ContactsTable.slackId)
     )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
-    .orderBy(desc(InboxMessagesTable.id))
+    .orderBy(desc(InboxMessagesTable.createdAt))
     .limit(25);
 
   const messageOperations = await db

@@ -78,11 +78,9 @@ export async function POST(request: Request) {
     const sender = sesNotification.mail.commonHeaders.from[0] || "unknown";
     const subject = sesNotification.mail.commonHeaders.subject || "No Subject";
     const messageId = sesNotification.mail.messageId;
-    const timestamp = sesNotification.receipt.timestamp;
 
     const metadata = {
       subject: subject,
-      timestamp: timestamp,
       messageId: messageId,
     };
 

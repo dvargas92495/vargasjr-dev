@@ -24,6 +24,7 @@ export default async function InboxMessage({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
+      createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
       metadata: InboxMessagesTable.metadata,
     })
@@ -85,14 +86,10 @@ export default async function InboxMessage({
           </div>
         )}
 
-        {message.metadata?.timestamp && (
-          <div className="mb-4">
-            <div className="text-sm text-gray-300">Received At</div>
-            <div className="text-lg">
-              {new Date(message.metadata.timestamp).toLocaleString()}
-            </div>
-          </div>
-        )}
+        <div className="mb-4">
+          <div className="text-sm text-gray-300">Created At</div>
+          <div className="text-lg">{message.createdAt.toLocaleString()}</div>
+        </div>
 
         <div className="mb-4">
           <div className="text-sm text-gray-300">Status</div>
