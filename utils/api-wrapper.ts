@@ -3,11 +3,13 @@ import { ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
 import { NotFoundError } from "@/server/errors";
 
-type ApiHandler<T = unknown> = (body: unknown, request: Request, context?: unknown) => Promise<T>;
+type ApiHandler<T = unknown> = (
+  body: unknown,
+  request: Request,
+  context?: unknown
+) => Promise<T>;
 
-export function withApiWrapper<T = unknown>(
-  handler: ApiHandler<T>
-){
+export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
   return async (request: Request, context?: any) => {
     try {
       let body;
