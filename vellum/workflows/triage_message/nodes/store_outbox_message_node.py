@@ -20,6 +20,8 @@ class StoreOutboxMessageNode(BaseNode):
         .coalesce(SlackReplyNode.Outputs.outbox_message)
     )
 
+    message = ReadMessageNode.Outputs.message
+
     class Outputs(BaseNode.Outputs):
         summary: str
         message_url: str
@@ -29,6 +31,5 @@ class StoreOutboxMessageNode(BaseNode):
             session.add(self.outbox_message)
             session.commit()
         
-        message = ReadMessageNode.Outputs.message
-        message_url = f"/admin/inboxes/{message['inbox_id']}/messages/{message['message_id']}"
+        message_url = f"/admin/inboxes/{self.message['inbox_id']}/messages/{self.message['message_id']}"
         return self.Outputs(summary=self.summary, message_url=message_url)
