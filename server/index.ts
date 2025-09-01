@@ -1,7 +1,9 @@
 import { InboxesTable, InboxMessagesTable, ContactsTable } from "@/db/schema";
-import { NotFoundError } from "./errors";
+import { NotFoundError, InvalidContactDataError } from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
+
+export { InvalidContactDataError };
 
 export const addInboxMessage = async ({
   body,
@@ -98,16 +100,14 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
     console.error("Failed to resolve Slack user:", error);
   }
 
-  const newContact = await db
-    .insert(ContactsTable)
-    .values({
-      slackId: userId,
-      slackDisplayName: displayName,
-      fullName: displayName,
-    })
-    .returning({ id: ContactsTable.id });
+  const contactData = {
+    slackId: userId,
+    slackDisplayName: displayName,
+    fullName: displayName,
+  };
 
-  return newContact[0].id;
+  const newContact = await createContactWithValidation(contactData);
+  return newContact.id;
 };
 
 export const resolveSlackChannel = async (
@@ -130,6 +130,45 @@ export const resolveSlackChannel = async (
     console.error("Failed to resolve Slack channel:", error);
   }
   return `slack-${channelId}`;
+};
+
+export const shouldCreateContact = (contactData: {
+  email?: string | null;
+  phoneNumber?: string | null;
+  fullName?: string | null;
+  slackDisplayName?: string | null;
+}): boolean => {
+  const hasEmail = !!(contactData.email && contactData.email.trim() !== "");
+  const hasPhone = !!(
+    contactData.phoneNumber && contactData.phoneNumber.trim() !== ""
+  );
+  const hasName =
+    !!(contactData.fullName && contactData.fullName.trim() !== "") ||
+    !!(
+      contactData.slackDisplayName && contactData.slackDisplayName.trim() !== ""
+    );
+
+  return hasEmail || hasPhone || hasName;
+};
+
+export const createContactWithValidation = async (contactData: {
+  email?: string | null;
+  phoneNumber?: string | null;
+  fullName?: string | null;
+  slackDisplayName?: string | null;
+  slackId?: string | null;
+}) => {
+  if (!shouldCreateContact(contactData)) {
+    throw new InvalidContactDataError();
+  }
+
+  const db = getDb();
+  const newContact = await db
+    .insert(ContactsTable)
+    .values(contactData)
+    .returning();
+
+  return newContact[0];
 };
 
 export const convertPriorityToLabel = (

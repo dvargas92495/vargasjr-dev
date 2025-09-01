@@ -5,7 +5,11 @@ import { uploadPDFToS3 } from "@/app/lib/s3-client";
 import { ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getEnvironmentPrefix, getBaseUrl } from "@/app/api/constants";
-import { postSlackMessage } from "@/server";
+import {
+  postSlackMessage,
+  createContactWithValidation,
+  InvalidContactDataError,
+} from "@/server";
 import { getDb } from "@/db/connection";
 
 export async function POST(request: Request) {
@@ -140,12 +144,20 @@ async function handleVargasJrHired(event: Stripe.Event) {
       .execute();
 
     if (contact.length === 0) {
-      const newContact = await db
-        .insert(ContactsTable)
-        .values({ email: customerEmail })
-        .returning()
-        .execute();
-      contact = newContact;
+      try {
+        const newContact = await createContactWithValidation({
+          email: customerEmail,
+        });
+        contact = [newContact];
+      } catch (error) {
+        if (error instanceof InvalidContactDataError) {
+          console.log(
+            "Skipping contact creation: no identifying information provided"
+          );
+          return;
+        }
+        throw error;
+      }
     }
 
     const contactId = contact[0].id;

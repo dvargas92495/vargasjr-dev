@@ -57,8 +57,19 @@ vi.mock("drizzle-orm/vercel-postgres", () => ({
   })),
 }));
 
+vi.mock("drizzle-orm/node-postgres", () => ({
+  drizzle: vi.fn(() => ({
+    select: mockSelect,
+    insert: mockInsert,
+  })),
+}));
+
 vi.mock("@vercel/postgres", () => ({
   sql: vi.fn(),
+}));
+
+vi.mock("pg", () => ({
+  Pool: vi.fn().mockImplementation(() => ({})),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -275,8 +286,7 @@ describe("Stripe Webhook", () => {
       mockExecute.mockResolvedValueOnce([]);
       mockInsert.mockReturnValue({ values: mockValues });
       mockValues.mockReturnValue({ returning: mockReturning });
-      mockReturning.mockReturnValue({ execute: mockExecute });
-      mockExecute.mockResolvedValueOnce([{ id: 1, email: "test@example.com" }]);
+      mockReturning.mockResolvedValue([{ id: 1, email: "test@example.com" }]);
 
       const request = new Request("http://localhost/webhook", {
         method: "POST",
