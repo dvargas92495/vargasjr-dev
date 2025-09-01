@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import WorkflowOutputDisplay from "@/components/workflow-output-display";
+import { Vellum } from "vellum-ai";
 
 interface TestButtonProps {
   routineJobId: string;
@@ -144,9 +146,9 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
           <p>{workflowStatus.message}</p>
 
           {workflowStatus.outputs !== undefined && (
-            <pre className="mt-2 text-sm bg-white p-2 rounded overflow-auto">
-              {JSON.stringify(workflowStatus.outputs, null, 2)}
-            </pre>
+            <WorkflowOutputDisplay
+              outputs={workflowStatus.outputs as Vellum.WorkflowOutput[]}
+            />
           )}
 
           {workflowStatus.error && (
