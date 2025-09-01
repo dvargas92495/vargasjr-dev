@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Stripe from "stripe";
 import { getDb } from "@/db/connection";
+import DeleteContactButton from "@/components/delete-contact-button";
 
 dayjs.extend(relativeTime);
 
@@ -78,9 +79,15 @@ export default async function ContactPage({
 
   return (
     <div className="flex flex-col p-4">
-      <h1 className="text-2xl font-bold mb-4">
-        {contactData.fullName || "Contact Details"}
-      </h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">
+          {contactData.fullName || "Contact Details"}
+        </h1>
+        <DeleteContactButton
+          id={id}
+          contactName={contactData.fullName || "Contact"}
+        />
+      </div>
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-2 gap-4">
           <div>
