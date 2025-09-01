@@ -25,7 +25,9 @@ const WorkflowOutputDisplay = ({ outputs }: WorkflowOutputDisplayProps) => {
       case "NUMBER":
         return (
           <span className="text-gray-900 font-mono">
-            {typeof output.value === 'number' ? output.value.toLocaleString() : String(output.value)}
+            {typeof output.value === "number"
+              ? output.value.toLocaleString()
+              : String(output.value)}
           </span>
         );
       case "BOOLEAN":
@@ -50,9 +52,7 @@ const WorkflowOutputDisplay = ({ outputs }: WorkflowOutputDisplayProps) => {
   };
 
   if (!outputs || outputs.length === 0) {
-    return (
-      <p className="text-sm text-gray-500 italic">No outputs generated</p>
-    );
+    return <p className="text-sm text-gray-500 italic">No outputs generated</p>;
   }
 
   return (

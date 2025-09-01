@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import WorkflowOutputDisplay, { WorkflowOutput } from "@/components/workflow-output-display";
+import WorkflowOutputDisplay, {
+  WorkflowOutput,
+} from "@/components/workflow-output-display";
 
 interface TestButtonProps {
   workflowDeploymentName: string;
@@ -149,7 +151,9 @@ export default function TestButton({
           <p>{workflowStatus.message}</p>
 
           {workflowStatus.outputs !== undefined && (
-            <WorkflowOutputDisplay outputs={workflowStatus.outputs as WorkflowOutput[]} />
+            <WorkflowOutputDisplay
+              outputs={workflowStatus.outputs as WorkflowOutput[]}
+            />
           )}
 
           {workflowStatus.error && (
