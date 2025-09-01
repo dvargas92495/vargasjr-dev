@@ -45,6 +45,9 @@ yarn-error.log*
 next-env.d.ts
 /db/*.js
 
+# database migrations (generated dynamically)
+db/migrations/
+
 # poetry
 .venv
 __pycache__

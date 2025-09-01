@@ -5,6 +5,7 @@ import { NotFoundError } from "@/server/errors";
 import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 interface SESMail {
   messageId: string;
@@ -104,8 +105,30 @@ export async function POST(request: Request) {
       inbox = newInbox;
     }
 
+    let emailBody =
+      "Email content not available - only headers provided by SES";
+
+    try {
+      const s3Client = new S3Client({
+        region: process.env.AWS_REGION || "us-east-1",
+      });
+      const s3Key = `emails/${messageId}`;
+
+      const getObjectCommand = new GetObjectCommand({
+        Bucket: process.env.AWS_S3_INBOX_BUCKET || "vargasjr-inbox",
+        Key: s3Key,
+      });
+
+      const s3Response = await s3Client.send(getObjectCommand);
+      if (s3Response.Body) {
+        emailBody = await s3Response.Body.transformToString();
+      }
+    } catch (error) {
+      console.error("Failed to retrieve email body from S3:", error);
+    }
+
     await addInboxMessage({
-      body: "Email content not available - only headers provided by SES",
+      body: emailBody,
       source: sender,
       inboxName: "email",
       metadata: metadata,

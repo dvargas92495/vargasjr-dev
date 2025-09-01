@@ -172,6 +172,11 @@ class VargasJRInfrastructureStack extends TerraformStack {
         "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
     });
 
+    new IamRolePolicyAttachment(this, "EmailLambdaS3ReadAccess", {
+      role: lambdaRole.name,
+      policyArn: "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
+    });
+
     const lambdaAsset = new TerraformAsset(this, "EmailLambdaAsset", {
       path: "lambda",
       type: AssetType.ARCHIVE,
@@ -210,11 +215,18 @@ class VargasJRInfrastructureStack extends TerraformStack {
       ruleSetName: receiptRuleSet.ruleSetName,
       recipients: ["hello@vargasjr.dev"],
       enabled: true,
+      s3Action: [
+        {
+          bucketName: AWS_S3_BUCKETS.INBOX,
+          objectKeyPrefix: "emails/",
+          position: 1,
+        },
+      ],
       lambdaAction: [
         {
           functionArn: emailLambda.arn,
           invocationType: "Event",
-          position: 1,
+          position: 2,
         },
       ],
     });
