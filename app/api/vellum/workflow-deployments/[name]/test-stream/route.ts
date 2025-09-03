@@ -12,11 +12,11 @@ export async function GET(
     if (!apiKey) {
       return new Response(
         JSON.stringify({
-          error: "VELLUM_API_KEY environment variable is required"
+          error: "VELLUM_API_KEY environment variable is required",
         }),
-        { 
+        {
           status: 500,
-          headers: { "Content-Type": "application/json" }
+          headers: { "Content-Type": "application/json" },
         }
       );
     }
