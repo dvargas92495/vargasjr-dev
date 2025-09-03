@@ -19,14 +19,28 @@ export async function GET(
       .then((results) => results[0]);
 
     if (!routineJob) {
-      return new Response("Routine job not found", { status: 404 });
+      return new Response(
+        JSON.stringify({
+          error: "Routine job not found"
+        }),
+        { 
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
     }
 
     const apiKey = process.env.VELLUM_API_KEY;
     if (!apiKey) {
-      return new Response("VELLUM_API_KEY environment variable is required", {
-        status: 500,
-      });
+      return new Response(
+        JSON.stringify({
+          error: "VELLUM_API_KEY environment variable is required"
+        }),
+        { 
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
     }
 
     const vellumClient = new VellumClient({
