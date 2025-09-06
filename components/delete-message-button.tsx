@@ -8,12 +8,12 @@ import { useRef, useCallback } from "react";
 import { deleteMessage } from "@/app/actions";
 import { useRouter } from "next/navigation";
 
-const DeleteMessageButton = ({ 
-  messageId, 
-  inboxId 
-}: { 
-  messageId: string; 
-  inboxId: string; 
+const DeleteMessageButton = ({
+  messageId,
+  inboxId,
+}: {
+  messageId: string;
+  inboxId: string;
 }) => {
   const deleteModalRef = useRef<ConfirmationModalHandle>(null);
   const router = useRouter();
