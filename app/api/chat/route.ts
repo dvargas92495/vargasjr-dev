@@ -46,7 +46,9 @@ async function createChatSessionHandler(body: unknown) {
       contact = [newContact];
     } catch (error) {
       if (error instanceof InvalidContactDataError) {
-        throw new Error("Cannot create chat session: no identifying information provided");
+        throw new Error(
+          "Cannot create chat session: no identifying information provided"
+        );
       }
       throw error;
     }
