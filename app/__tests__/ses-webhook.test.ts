@@ -158,7 +158,7 @@ describe("SES Webhook", () => {
     expect(data.received).toBe(true);
   });
 
-  it("should handle missing sender gracefully", async () => {
+  it("should return 400 when sender is missing", async () => {
     const mockPayload = {
       Records: [
         {
@@ -191,19 +191,11 @@ describe("SES Webhook", () => {
       headers: { "x-amz-sns-message-signature": signature },
     });
 
-    mockSelect.mockReturnValue({ from: mockFrom });
-    mockFrom.mockReturnValue({ where: mockWhere });
-    mockWhere.mockReturnValue({ limit: mockLimit });
-    mockLimit.mockReturnValue({ execute: mockExecute });
-    mockExecute.mockResolvedValue([{ id: "inbox-id-456" }]);
-    mockInsert.mockReturnValue({ values: mockValues });
-    mockValues.mockResolvedValue(undefined);
-
     const response = await POST(request);
     const data = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(data.received).toBe(true);
+    expect(response.status).toBe(400);
+    expect(data.error).toBe("Missing sender information");
   });
 
   it("should handle missing subject gracefully", async () => {
