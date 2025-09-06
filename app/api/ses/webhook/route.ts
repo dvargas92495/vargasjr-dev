@@ -1,11 +1,32 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
-import { addInboxMessage } from "@/server";
+import { addInboxMessage, upsertEmailContact } from "@/server";
 import { NotFoundError } from "@/server/errors";
 import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+
+function parseEmailAddress(emailString: string): { email: string; fullName: string | null } {
+  const trimmed = emailString.trim();
+  
+  const match = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
+  if (match) {
+    const name = match[1].trim().replace(/^["']|["']$/g, '');
+    const email = match[2].trim();
+    return { email, fullName: name || null };
+  }
+  
+  if (trimmed.includes('@') && !trimmed.includes('<')) {
+    return { email: trimmed, fullName: null };
+  }
+  
+  if (trimmed.includes('@')) {
+    return { email: trimmed, fullName: null };
+  }
+  
+  return { email: '', fullName: trimmed || null };
+}
 
 interface SESMail {
   messageId: string;
@@ -127,9 +148,14 @@ export async function POST(request: Request) {
       console.error("Failed to retrieve email body from S3:", error);
     }
 
+    if (sender && sender !== "unknown") {
+      await upsertEmailContact(sender);
+    }
+
+    const { email } = parseEmailAddress(sender && sender !== "unknown" ? sender : "unknown@unknown.com");
     await addInboxMessage({
       body: emailBody,
-      source: sender,
+      source: email,
       inboxName: "email",
       metadata: metadata,
     });

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { addInboxMessage } from "@/server";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { addInboxMessage, upsertEmailContact } from "@/server";
 
 async function contactFormHandler(body: unknown) {
   const { email, message } = z
@@ -9,6 +9,8 @@ async function contactFormHandler(body: unknown) {
       message: z.string(),
     })
     .parse(body);
+
+  await upsertEmailContact(email);
 
   await addInboxMessage({
     body: message,
