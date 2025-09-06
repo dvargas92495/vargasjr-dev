@@ -5,18 +5,31 @@ import ConfirmationModal, {
   ConfirmationModalHandle,
 } from "./confirmation-modal";
 import { useRef, useCallback } from "react";
+import { deleteMessage } from "@/app/actions";
+import { useRouter } from "next/navigation";
 
-const DeleteMessageButton = ({ messageId }: { messageId: string }) => {
+const DeleteMessageButton = ({ 
+  messageId, 
+  inboxId 
+}: { 
+  messageId: string; 
+  inboxId: string; 
+}) => {
   const deleteModalRef = useRef<ConfirmationModalHandle>(null);
+  const router = useRouter();
 
   const onClick = useCallback(() => {
     deleteModalRef.current?.openModal();
   }, [deleteModalRef]);
 
-  const onConfirm = useCallback(() => {
-    // TODO: Implement delete functionality
-    console.log("Delete message:", messageId);
-  }, [messageId]);
+  const onConfirm = useCallback(async () => {
+    try {
+      await deleteMessage(messageId, inboxId);
+      router.push(`/admin/inboxes/${inboxId}`);
+    } catch (error) {
+      console.error("Failed to delete message:", error);
+    }
+  }, [messageId, inboxId, router]);
 
   return (
     <>

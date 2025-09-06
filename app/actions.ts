@@ -7,6 +7,9 @@ import {
   ContactsTable,
   RoutineJobsTable,
   JobsTable,
+  InboxMessagesTable,
+  InboxMessageOperationsTable,
+  OutboxMessagesTable,
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db/connection";
@@ -214,4 +217,31 @@ export async function deleteContact(id: string) {
 
   revalidatePath("/admin/crm");
   return deletedContact[0];
+}
+
+export async function deleteMessage(messageId: string, inboxId: string) {
+  const db = getDb();
+
+  await db
+    .delete(InboxMessageOperationsTable)
+    .where(eq(InboxMessageOperationsTable.inboxMessageId, messageId))
+    .execute();
+
+  await db
+    .delete(OutboxMessagesTable)
+    .where(eq(OutboxMessagesTable.parentInboxMessageId, messageId))
+    .execute();
+
+  const deletedMessage = await db
+    .delete(InboxMessagesTable)
+    .where(eq(InboxMessagesTable.id, messageId))
+    .returning()
+    .execute();
+
+  if (!deletedMessage.length) {
+    throw new Error("Message not found");
+  }
+
+  revalidatePath(`/admin/inboxes/${inboxId}`);
+  return deletedMessage[0];
 }
