@@ -4,7 +4,7 @@ import {
   InboxesTable,
   ContactsTable,
 } from "@/db/schema";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
