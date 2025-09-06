@@ -77,7 +77,7 @@ export default async function InboxMessage({
           </Link>
           <h1 className="text-2xl font-bold">Message</h1>
         </div>
-        <DeleteMessageButton messageId={message.id} />
+        <DeleteMessageButton messageId={message.id} inboxId={inboxId} />
       </div>
 
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
