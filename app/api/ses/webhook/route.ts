@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       `Received SES webhook for message: ${sesNotification.mail.messageId}`
     );
 
-    const sender = sesNotification.mail.commonHeaders.from[0] || "unknown";
+    const sender = sesNotification.mail.commonHeaders.from[0] || null;
     const subject = sesNotification.mail.commonHeaders.subject || "No Subject";
     const messageId = sesNotification.mail.messageId;
 
@@ -148,11 +148,17 @@ export async function POST(request: Request) {
       console.error("Failed to retrieve email body from S3:", error);
     }
 
-    if (sender && sender !== "unknown") {
-      await upsertEmailContact(sender);
+    if (!sender) {
+      console.error("Missing sender in SES notification");
+      return NextResponse.json(
+        { error: "Missing sender information" },
+        { status: 400 }
+      );
     }
 
-    const { email } = parseEmailAddress(sender && sender !== "unknown" ? sender : "unknown@unknown.com");
+    await upsertEmailContact(sender);
+
+    const { email } = parseEmailAddress(sender);
     await addInboxMessage({
       body: emailBody,
       source: email,
