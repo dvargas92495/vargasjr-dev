@@ -40,7 +40,10 @@ export default async function InboxMessage({
       ContactsTable,
       or(
         eq(InboxMessagesTable.source, ContactsTable.slackId),
-        eq(ContactsTable.email, sql`CASE WHEN ${InboxMessagesTable.source} ~ '<[^>]+@[^>]+>' THEN substring(${InboxMessagesTable.source} from '<([^>]+@[^>]+)>') ELSE NULL END`)
+        eq(
+          ContactsTable.email,
+          sql`CASE WHEN ${InboxMessagesTable.source} ~ '<[^>]+@[^>]+>' THEN substring(${InboxMessagesTable.source} from '<([^>]+@[^>]+)>') ELSE NULL END`
+        )
       )
     )
     .where(eq(InboxMessagesTable.id, messageId))
