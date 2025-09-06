@@ -10,9 +10,15 @@ export async function GET(
   try {
     const apiKey = process.env.VELLUM_API_KEY;
     if (!apiKey) {
-      return new Response("VELLUM_API_KEY environment variable is required", {
-        status: 500,
-      });
+      return new Response(
+        JSON.stringify({
+          error: "VELLUM_API_KEY environment variable is required",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const vellumClient = new VellumClient({
