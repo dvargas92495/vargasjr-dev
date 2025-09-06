@@ -3,9 +3,8 @@ from functools import lru_cache
 from logging import Logger
 import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 import requests
-import re
 from models.contact import Contact
 from models.inbox import Inbox
 from models.application import Application
@@ -26,33 +25,6 @@ MEMORY_DIR = Path(__file__).parent.parent.parent.parent / ".memory"
 
 def to_dollar_float(value: str) -> float:
     return float(value.replace("$", "").replace(",", ""))
-
-
-def parse_email_address(email_string: str) -> Tuple[str, Optional[str]]:
-    """
-    Parse email address from various formats.
-    
-    Args:
-        email_string: Email in format "email@domain.com" or "Name <email@domain.com>"
-        
-    Returns:
-        Tuple of (email_address, full_name) where full_name is None if not provided
-    """
-    email_string = email_string.strip()
-    
-    match = re.match(r'^(.+?)\s*<([^>]+)>$', email_string)
-    if match:
-        name = match.group(1).strip().strip('"\'')
-        email = match.group(2).strip()
-        return email, name if name else None
-    
-    if '@' in email_string and '<' not in email_string:
-        return email_string, None
-        
-    if '@' in email_string:
-        return email_string, None
-        
-    return "", email_string if email_string else None
 
 
 def postgres_session(expire_on_commit: bool = True):
@@ -133,8 +105,7 @@ def create_inbox_message(
 def create_contact(channel: InboxType, source: str) -> Contact:
     with postgres_session(expire_on_commit=False) as session:
         if channel == InboxType.EMAIL or channel == InboxType.FORM or channel == InboxType.SLACK:
-            email, full_name = parse_email_address(source)
-            contact = Contact(email=email, full_name=full_name)
+            contact = Contact(email=source)
         elif channel == InboxType.SMS:
             contact = Contact(phone_number=source)
         else:
@@ -142,13 +113,13 @@ def create_contact(channel: InboxType, source: str) -> Contact:
 
         session.add(contact)
         session.commit()
+        session.refresh(contact)
         return contact
 
 
 def get_contact_by_email(email: str) -> Optional[Contact]:
     with postgres_session() as session:
-        parsed_email, _ = parse_email_address(email)
-        statement = select(Contact).where(Contact.email == parsed_email)
+        statement = select(Contact).where(Contact.email == email)
         return session.exec(statement).one_or_none()
 
 

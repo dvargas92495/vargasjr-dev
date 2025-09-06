@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
-import { addInboxMessage } from "@/server";
+import { addInboxMessage, upsertEmailContact } from "@/server";
 import { NotFoundError } from "@/server/errors";
 
 export async function POST(request: Request) {
@@ -13,6 +13,8 @@ export async function POST(request: Request) {
         message: z.string(),
       })
       .parse(body);
+
+    await upsertEmailContact(email);
 
     await addInboxMessage({
       body: message,

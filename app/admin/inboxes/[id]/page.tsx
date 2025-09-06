@@ -34,13 +34,17 @@ export default async function InboxPage({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
+      fullName: ContactsTable.fullName,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      eq(InboxMessagesTable.source, ContactsTable.slackId)
+      or(
+        eq(InboxMessagesTable.source, ContactsTable.slackId),
+        eq(InboxMessagesTable.source, ContactsTable.email)
+      )
     )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(desc(InboxMessagesTable.createdAt))
@@ -81,7 +85,7 @@ export default async function InboxPage({
             key={message.id}
             message={{
               ...message,
-              source: message.displayName || message.source,
+              source: message.displayName || message.fullName || message.source,
             }}
             status={statuses[message.id] || "Unread"}
             inboxId={id}
