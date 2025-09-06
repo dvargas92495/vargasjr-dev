@@ -4,7 +4,7 @@ import {
   OutboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -29,6 +29,8 @@ export default async function InboxMessage({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
+      contactId: ContactsTable.id,
+      contactEmail: ContactsTable.email,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
       metadata: InboxMessagesTable.metadata,
@@ -36,7 +38,10 @@ export default async function InboxMessage({
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      eq(InboxMessagesTable.source, ContactsTable.slackId)
+      or(
+        eq(InboxMessagesTable.source, ContactsTable.slackId),
+        eq(ContactsTable.email, sql`CASE WHEN ${InboxMessagesTable.source} ~ '<[^>]+@[^>]+>' THEN substring(${InboxMessagesTable.source} from '<([^>]+@[^>]+)>') ELSE NULL END`)
+      )
     )
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
@@ -83,7 +88,18 @@ export default async function InboxMessage({
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
         <div className="mb-4">
           <div className="text-sm text-gray-300">Source</div>
-          <div className="text-lg">{message.displayName || message.source}</div>
+          <div className="text-lg">
+            {message.contactId ? (
+              <Link
+                href={`/admin/crm/${message.contactId}`}
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                {message.displayName || message.source}
+              </Link>
+            ) : (
+              message.displayName || message.source
+            )}
+          </div>
         </div>
 
         {message.metadata?.subject && (
