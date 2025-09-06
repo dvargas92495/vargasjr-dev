@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import formatZodError from "@/utils/format-zod-error";
-import { NotFoundError } from "@/server/errors";
+import { NotFoundError, InvalidContactDataError } from "@/server/errors";
 
 type ApiHandler<T = unknown> = (
   body: unknown,
@@ -34,6 +34,10 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
 
       if (error instanceof NotFoundError) {
         return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+
+      if (error instanceof InvalidContactDataError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
 
       console.error("API handler error:", error);
