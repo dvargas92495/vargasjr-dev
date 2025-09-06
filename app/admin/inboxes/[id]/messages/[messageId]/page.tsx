@@ -4,7 +4,7 @@ import {
   OutboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -36,7 +36,10 @@ export default async function InboxMessage({
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      eq(InboxMessagesTable.source, ContactsTable.slackId)
+      or(
+        eq(InboxMessagesTable.source, ContactsTable.slackId),
+        eq(InboxMessagesTable.source, ContactsTable.email)
+      )
     )
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
