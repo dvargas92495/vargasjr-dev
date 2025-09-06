@@ -1,37 +1,24 @@
-import { NextResponse } from "next/server";
 import { InboxesTable } from "@/db/schema";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 import { InboxTypes } from "@/db/constants";
 import { getDb } from "@/db/connection";
+import { withApiWrapper } from "@/utils/api-wrapper";
 
 const inboxSchema = z.object({
   name: z.string(),
   type: z.enum(InboxTypes),
 });
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { name, type } = inboxSchema.parse(body);
+async function createInboxHandler(body: unknown) {
+  const { name, type } = inboxSchema.parse(body);
 
-    const db = getDb();
-    const [inbox] = await db
-      .insert(InboxesTable)
-      .values({ name, type, config: {} })
-      .returning({ id: InboxesTable.id });
+  const db = getDb();
+  const [inbox] = await db
+    .insert(InboxesTable)
+    .values({ name, type, config: {} })
+    .returning({ id: InboxesTable.id });
 
-    return NextResponse.json({ id: inbox.id });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Failed to create inbox" },
-      { status: 500 }
-    );
-  }
+  return { id: inbox.id };
 }
+
+export const POST = withApiWrapper(createInboxHandler);
