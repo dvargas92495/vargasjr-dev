@@ -56,6 +56,8 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
       - name: Run tests
         run: npm test tests/
   publish-agent:

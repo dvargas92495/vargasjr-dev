@@ -21,8 +21,8 @@ describe("Browser Sessions API through Proxy", () => {
     });
 
     await agentRunner.run();
-    
-    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   });
 
   afterAll(async () => {
@@ -32,20 +32,23 @@ describe("Browser Sessions API through Proxy", () => {
   });
 
   it("should return browser sessions through proxy", async () => {
-    const response = await fetch(`http://localhost:${testPort}/api/browser/sessions`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${testAdminToken}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `http://localhost:${testPort}/api/browser/sessions`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${testAdminToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     expect(response.status).toBe(200);
 
     const data = await response.json();
     expect(data).toHaveProperty("sessions");
     expect(Array.isArray(data.sessions)).toBe(true);
-    
+
     if (data.sessions.length > 0) {
       const session = data.sessions[0];
       expect(session).toHaveProperty("id");
@@ -57,24 +60,29 @@ describe("Browser Sessions API through Proxy", () => {
   });
 
   it("should require authentication", async () => {
-    const response = await fetch(`http://localhost:${testPort}/api/browser/sessions`);
-    
+    const response = await fetch(
+      `http://localhost:${testPort}/api/browser/sessions`
+    );
+
     expect(response.status).toBe(401);
-    
+
     const data = await response.json();
     expect(data.status).toBe("error");
     expect(data.message).toBe("Authorization header required");
   });
 
   it("should reject invalid tokens", async () => {
-    const response = await fetch(`http://localhost:${testPort}/api/browser/sessions`, {
-      headers: {
-        "Authorization": "Bearer invalid-token",
-      },
-    });
-    
+    const response = await fetch(
+      `http://localhost:${testPort}/api/browser/sessions`,
+      {
+        headers: {
+          Authorization: "Bearer invalid-token",
+        },
+      }
+    );
+
     expect(response.status).toBe(401);
-    
+
     const data = await response.json();
     expect(data.status).toBe("error");
     expect(data.message).toBe("Invalid authorization token");
