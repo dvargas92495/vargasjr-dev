@@ -163,7 +163,6 @@ export default async function InstanceDetailPage({
                   publicDns={instance?.PublicDnsName || ""}
                   keyName={instance?.KeyName || ""}
                   instanceState={instanceState || ""}
-                  onHealthStatusChange={() => {}}
                 />
               ) : (
                 <span className="text-gray-500">N/A</span>
