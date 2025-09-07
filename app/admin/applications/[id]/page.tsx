@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import DeleteApplicationButton from "@/components/delete-application-button";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
 export default async function ApplicationDetailPage({
@@ -61,7 +61,14 @@ export default async function ApplicationDetailPage({
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex gap-4">
+        <Link
+          href={`/admin/applications/${application.id}/edit`}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center gap-2"
+        >
+          <PencilIcon className="w-4 h-4" />
+          Edit Application
+        </Link>
         <DeleteApplicationButton
           applicationId={application.id}
           applicationName={application.name}
