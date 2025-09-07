@@ -122,7 +122,10 @@ export default function EditApplicationPage({
       <div className="bg-white p-6 rounded-lg shadow">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Name
             </label>
             <input
@@ -136,7 +139,10 @@ export default function EditApplicationPage({
           </div>
 
           <div>
-            <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="clientId"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Plaid Client ID
             </label>
             <input
@@ -150,7 +156,10 @@ export default function EditApplicationPage({
           </div>
 
           <div>
-            <label htmlFor="clientSecret" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="clientSecret"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Plaid Secret Key
             </label>
             <input
