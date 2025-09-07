@@ -6,6 +6,7 @@ import StartInstanceButton from "@/components/start-instance-button";
 import RebootInstanceButton from "@/components/reboot-instance-button";
 import DeleteInstanceButton from "@/components/delete-instance-button";
 import HealthStatusIndicator from "@/components/health-status-indicator";
+import BrowserSessionsIndicator from "@/components/browser-sessions-indicator";
 import CopyableText from "@/components/copyable-text";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 
@@ -207,6 +208,20 @@ export default async function InstanceDetailPage({
             <RebootInstanceButton id={instanceId} />
           )}
         </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4">Browser Sessions</h3>
+        {instanceId ? (
+          <BrowserSessionsIndicator
+            instanceId={instanceId}
+            instanceState={instanceState || ""}
+          />
+        ) : (
+          <div className="text-sm text-gray-500">
+            Browser Sessions: <span className="text-gray-400">N/A</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 import { cookies } from "next/headers";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
+import { withApiWrapper } from "@/utils/api-wrapper";
 
 const browserSessionsSchema = z.object({
   instanceId: z.string(),
@@ -125,33 +125,17 @@ async function fetchBrowserSessions(
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin-token");
+async function browserSessionsHandler(body: unknown) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("admin-token");
 
-    if (token?.value !== process.env.ADMIN_TOKEN) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { instanceId } = browserSessionsSchema.parse(body);
-
-    const result = await fetchBrowserSessions(instanceId);
-    return NextResponse.json(result);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request body", validationErrors: error.errors },
-        { status: 400 }
-      );
-    }
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Browser sessions fetch failed";
-    return NextResponse.json(
-      { error: "Browser sessions fetch failed", details: errorMessage },
-      { status: 500 }
-    );
+  if (token?.value !== process.env.ADMIN_TOKEN) {
+    throw new Error("Unauthorized");
   }
+
+  const { instanceId } = browserSessionsSchema.parse(body);
+  const result = await fetchBrowserSessions(instanceId);
+  return result;
 }
+
+export const POST = withApiWrapper(browserSessionsHandler);
