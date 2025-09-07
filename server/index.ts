@@ -5,6 +5,60 @@ import { getDb } from "@/db/connection";
 
 export { InvalidContactDataError };
 
+function parseEmailAddress(emailString: string): {
+  email: string;
+  fullName: string | null;
+} {
+  const trimmed = emailString.trim();
+
+  const match = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
+  if (match) {
+    const name = match[1].trim().replace(/^["']|["']$/g, "");
+    const email = match[2].trim();
+    return { email, fullName: name || null };
+  }
+
+  if (trimmed.includes("@") && !trimmed.includes("<")) {
+    return { email: trimmed, fullName: null };
+  }
+
+  if (trimmed.includes("@")) {
+    return { email: trimmed, fullName: null };
+  }
+
+  return { email: "", fullName: trimmed || null };
+}
+
+export const upsertEmailContact = async (
+  senderString: string
+): Promise<string> => {
+  const db = getDb();
+  const { email, fullName } = parseEmailAddress(senderString);
+
+  if (!email) {
+    throw new Error(`Invalid email format: ${senderString}`);
+  }
+
+  let contact = await db
+    .select({ id: ContactsTable.id })
+    .from(ContactsTable)
+    .where(eq(ContactsTable.email, email))
+    .limit(1)
+    .execute();
+
+  if (contact.length) {
+    return contact[0].id;
+  }
+
+  const contactData = {
+    email,
+    fullName,
+  };
+
+  const newContact = await createContactWithValidation(contactData);
+  return newContact.id;
+};
+
 export const addInboxMessage = async ({
   body,
   source,

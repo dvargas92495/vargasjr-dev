@@ -5,7 +5,7 @@ import {
   ContactsTable,
   InboxMessagesTable,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
 export async function GET(
@@ -49,12 +49,16 @@ export async function GET(
         body: InboxMessagesTable.body,
         source: InboxMessagesTable.source,
         displayName: ContactsTable.slackDisplayName,
+        fullName: ContactsTable.fullName,
         createdAt: InboxMessagesTable.createdAt,
       })
       .from(InboxMessagesTable)
       .leftJoin(
         ContactsTable,
-        eq(InboxMessagesTable.source, ContactsTable.slackId)
+        or(
+          eq(InboxMessagesTable.source, ContactsTable.slackId),
+          eq(InboxMessagesTable.source, ContactsTable.email)
+        )
       )
       .where(eq(InboxMessagesTable.inboxId, session.inboxId))
       .orderBy(InboxMessagesTable.createdAt);
@@ -71,7 +75,7 @@ export async function GET(
       messages: messages.map((msg) => ({
         id: msg.id,
         body: msg.body,
-        source: msg.displayName || msg.source,
+        source: msg.displayName || msg.fullName || msg.source,
         createdAt: msg.createdAt.toISOString(),
       })),
     });
