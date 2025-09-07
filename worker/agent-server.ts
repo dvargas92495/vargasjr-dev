@@ -21,64 +21,74 @@ export class AgentServer {
     this.setupRoutes();
   }
 
-
   private setupRoutes(): void {
     this.app.use(express.json());
 
-    this.app.use("/api/browser", async (req: express.Request, res: express.Response) => {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-          status: "error",
-          message: "Authorization header required",
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      const token = authHeader.replace('Bearer ', '');
-      if (token !== process.env.ADMIN_TOKEN) {
-        return res.status(401).json({
-          status: "error", 
-          message: "Invalid authorization token",
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      try {
-        let body: string | undefined;
-        if (req.body && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
-          body = JSON.stringify(req.body);
+    this.app.use(
+      "/api/browser",
+      async (req: express.Request, res: express.Response) => {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return res.status(401).json({
+            status: "error",
+            message: "Authorization header required",
+            timestamp: new Date().toISOString(),
+          });
         }
 
-        const targetUrl = `http://localhost:${BROWSER_PORT}${req.url}`;
-        const proxyResponse = await fetch(targetUrl, {
-          method: req.method,
-          headers: {
-            ...req.headers,
-            host: `localhost:${BROWSER_PORT}`,
-          },
-          body,
-        });
+        const token = authHeader.replace("Bearer ", "");
+        if (token !== process.env.ADMIN_TOKEN) {
+          return res.status(401).json({
+            status: "error",
+            message: "Invalid authorization token",
+            timestamp: new Date().toISOString(),
+          });
+        }
 
-        res.status(proxyResponse.status);
+        try {
+          let body: string | undefined;
+          if (
+            req.body &&
+            (req.method === "POST" ||
+              req.method === "PUT" ||
+              req.method === "PATCH")
+          ) {
+            body = JSON.stringify(req.body);
+          }
 
-        proxyResponse.headers.forEach((value, key) => {
-          res.set(key, value);
-        });
+          const targetUrl = `http://localhost:${BROWSER_PORT}${req.url}`;
+          const proxyResponse = await fetch(targetUrl, {
+            method: req.method,
+            headers: {
+              ...req.headers,
+              host: `localhost:${BROWSER_PORT}`,
+            },
+            body,
+          });
 
-        const responseBody = await proxyResponse.arrayBuffer();
-        res.send(Buffer.from(responseBody));
+          res.status(proxyResponse.status);
 
-      } catch (error) {
-        this.logger.error(`Proxy request failed: ${error instanceof Error ? error.message : String(error)}`);
-        res.status(502).json({
-          status: "error",
-          message: "Browser service unavailable", 
-          error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
-        });
+          proxyResponse.headers.forEach((value, key) => {
+            res.set(key, value);
+          });
+
+          const responseBody = await proxyResponse.arrayBuffer();
+          res.send(Buffer.from(responseBody));
+        } catch (error) {
+          this.logger.error(
+            `Proxy request failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+          res.status(502).json({
+            status: "error",
+            message: "Browser service unavailable",
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
-    });
+    );
 
     this.app.get("/health", async (req, res) => {
       try {
