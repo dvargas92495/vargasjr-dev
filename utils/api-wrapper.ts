@@ -13,7 +13,7 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
   return async (request: Request, context?: any) => {
     try {
       let body;
-      if (request.method === 'GET') {
+      if (request.method === "GET") {
         body = null;
       } else {
         try {

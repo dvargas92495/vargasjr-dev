@@ -78,13 +78,7 @@ async function checkAgentStatusHandler(body: unknown) {
       { Name: "tag:Type", Values: ["main"] },
       {
         Name: "instance-state-name",
-        Values: [
-          "running",
-          "stopped",
-          "pending",
-          "stopping",
-          "shutting-down",
-        ],
+        Values: ["running", "stopped", "pending", "stopping", "shutting-down"],
       },
     ],
   });
