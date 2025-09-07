@@ -6,5 +6,7 @@ if (process.env.CI) {
   console.log("Installing Playwright browsers for CI environment...");
   execSync("npx playwright install --with-deps", { stdio: "inherit" });
 } else {
-  console.log("Skipping Playwright browser installation (not in CI environment)");
+  console.log(
+    "Skipping Playwright browser installation (not in CI environment)"
+  );
 }
