@@ -29,6 +29,7 @@ export default async function InboxMessage({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
+      contactId: ContactsTable.id,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
       metadata: InboxMessagesTable.metadata,
@@ -83,7 +84,18 @@ export default async function InboxMessage({
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
         <div className="mb-4">
           <div className="text-sm text-gray-300">Source</div>
-          <div className="text-lg">{message.displayName || message.source}</div>
+          <div className="text-lg">
+            {message.contactId ? (
+              <Link
+                href={`/admin/crm/${message.contactId}`}
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                {message.displayName || message.source}
+              </Link>
+            ) : (
+              message.displayName || message.source
+            )}
+          </div>
         </div>
 
         {message.metadata?.subject && (
