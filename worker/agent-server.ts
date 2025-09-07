@@ -25,29 +25,29 @@ export class AgentServer {
   private createProxyHandler(targetPort: number) {
     return (req: express.Request, res: express.Response) => {
       const options = {
-        hostname: 'localhost',
+        hostname: "localhost",
         port: targetPort,
         path: req.url,
         method: req.method,
         headers: {
           ...req.headers,
-          host: `localhost:${targetPort}`
-        }
+          host: `localhost:${targetPort}`,
+        },
       };
 
       const proxyReq = http.request(options, (proxyRes) => {
         res.status(proxyRes.statusCode || 500);
-        Object.keys(proxyRes.headers).forEach(key => {
+        Object.keys(proxyRes.headers).forEach((key) => {
           const value = proxyRes.headers[key];
           if (value) {
-            res.set(key, Array.isArray(value) ? value.join(', ') : value);
+            res.set(key, Array.isArray(value) ? value.join(", ") : value);
           }
         });
 
         proxyRes.pipe(res);
       });
 
-      proxyReq.on('error', (error) => {
+      proxyReq.on("error", (error) => {
         this.logger.error(`Proxy request failed: ${error.message}`);
         if (!res.headersSent) {
           res.status(502).json({
@@ -59,7 +59,12 @@ export class AgentServer {
         }
       });
 
-      if (req.body && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
+      if (
+        req.body &&
+        (req.method === "POST" ||
+          req.method === "PUT" ||
+          req.method === "PATCH")
+      ) {
         proxyReq.write(JSON.stringify(req.body));
       }
 
