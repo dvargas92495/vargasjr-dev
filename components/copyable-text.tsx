@@ -15,7 +15,7 @@ const CopyableText = ({
 
   return (
     <span
-      className={`${className} hover:cursor-pointer hover:bg-gray-500`}
+      className={`${className} hover:cursor-pointer hover:bg-gray-500 text-gray-900`}
       onClick={copyText}
     >
       {text}
