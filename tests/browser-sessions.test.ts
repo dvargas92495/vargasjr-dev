@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { AgentRunner } from "../worker/runner";
-import { AGENT_SERVER_PORT } from "../server/constants";
+import { AGENT_SERVER_PORT, BROWSER_PORT } from "../server/constants";
 
 describe("Browser Sessions API through Proxy", () => {
   let agentRunner: AgentRunner;
   const testPort = AGENT_SERVER_PORT + 20;
-  const testBrowserPort = 3022; // Use different browser port to avoid conflicts
+  const testBrowserPort = BROWSER_PORT + 20; // Use different browser port to avoid conflicts
   const testAdminToken = "test-admin-token";
 
   beforeAll(async () => {
@@ -48,15 +48,7 @@ describe("Browser Sessions API through Proxy", () => {
     const data = await response.json();
     expect(data).toHaveProperty("sessions");
     expect(Array.isArray(data.sessions)).toBe(true);
-
-    if (data.sessions.length > 0) {
-      const session = data.sessions[0];
-      expect(session).toHaveProperty("id");
-      expect(session).toHaveProperty("createdAt");
-      expect(session).toHaveProperty("lastUsed");
-      expect(session).toHaveProperty("pageCount");
-      expect(typeof session.pageCount).toBe("number");
-    }
+    expect(data.sessions).toHaveLength(0);
   });
 
   it("should require authentication", async () => {
