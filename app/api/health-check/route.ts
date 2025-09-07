@@ -52,6 +52,67 @@ async function checkInstanceHealthHTTP(
   instanceId: string,
   region: string = AWS_DEFAULT_REGION
 ): Promise<HealthCheckResult> {
+  if (instanceId === "local-agent") {
+    try {
+      const healthUrl = `http://localhost:${AGENT_SERVER_PORT}/health`;
+      console.log(`[Health Check] Making HTTP request to local agent: ${healthUrl}`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const response = await fetch(healthUrl, {
+          method: "GET",
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          return {
+            instanceId,
+            status: "offline",
+            error: `HTTP ${response.status}: ${response.statusText}`,
+            timestamp: new Date().toISOString(),
+          };
+        }
+
+        const healthData = await response.json();
+        return {
+          instanceId,
+          status: healthData.status === "healthy" ? "healthy" : "unhealthy",
+          error: healthData.status !== "healthy" ? healthData.error : undefined,
+          timestamp: new Date().toISOString(),
+          diagnostics: {
+            healthcheck: healthData,
+          },
+        };
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        return {
+          instanceId,
+          status: "offline",
+          error: `Local agent connection failed: ${
+            fetchError instanceof Error ? fetchError.message : String(fetchError)
+          }`,
+          timestamp: new Date().toISOString(),
+        };
+      }
+    } catch (error) {
+      return {
+        instanceId,
+        status: "offline",
+        error: `Failed to check local agent: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
   const ec2 = new EC2({ region });
   try {
     const instanceResult = await ec2.describeInstances({

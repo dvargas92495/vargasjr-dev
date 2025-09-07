@@ -671,3 +671,60 @@ export abstract class OneTimeMigrationRunner {
     console.error(`❌ ${message}`);
   }
 }
+export async function checkLocalAgentHealth(): Promise<{
+  isRunning: boolean;
+  healthData?: any;
+  error?: string;
+}> {
+  try {
+    const response = await fetch("http://localhost:3001/health", {
+      method: "GET",
+      signal: AbortSignal.timeout(5000),
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const healthData = await response.json();
+      return {
+        isRunning: true,
+        healthData,
+      };
+    } else {
+      return {
+        isRunning: false,
+        error: `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
+  } catch (error) {
+    return {
+      isRunning: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export function createLocalAgentInstance(): {
+  InstanceId?: string;
+  State?: { Name?: string };
+  KeyName?: string;
+  PublicDnsName?: string;
+  InstanceType?: string;
+  ImageId?: string;
+  Tags?: Array<{ Key?: string; Value?: string }>;
+} {
+  return {
+    InstanceId: "local-agent",
+    State: { Name: "running" },
+    KeyName: "local-dev",
+    PublicDnsName: "localhost",
+    InstanceType: "local",
+    ImageId: "local-dev",
+    Tags: [
+      { Key: "Name", Value: "Local Agent" },
+      { Key: "Type", Value: "local" },
+      { Key: "Environment", Value: "development" },
+    ],
+  };
+}
