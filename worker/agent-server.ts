@@ -56,7 +56,9 @@ export class AgentServer {
             body = JSON.stringify(req.body);
           }
 
-          const targetUrl = `http://localhost:${BROWSER_PORT}${req.url}`;
+          const targetPath = req.url.replace(/^\/api\/browser/, '');
+          const browserPort = process.env.BROWSER_PORT || BROWSER_PORT;
+          const targetUrl = `http://localhost:${browserPort}/api/browser${targetPath}`;
           const proxyResponse = await fetch(targetUrl, {
             method: req.method,
             headers: {
