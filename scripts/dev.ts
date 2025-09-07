@@ -2,8 +2,10 @@
 
 import { spawn } from "child_process";
 import LocalSetup from "./setup-local";
+import * as dotenv from "dotenv";
 
 async function main() {
+  dotenv.config();
   console.log("🚀 Starting development server...\n");
 
   if (!(process.env.NEON_URL || process.env.POSTGRES_URL)) {
