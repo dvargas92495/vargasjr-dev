@@ -1,5 +1,4 @@
 import express from "express";
-import http from "http";
 import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
 import { BROWSER_PORT } from "../server/constants";
@@ -22,60 +21,64 @@ export class AgentServer {
     this.setupRoutes();
   }
 
-  private createProxyHandler(targetPort: number) {
-    return (req: express.Request, res: express.Response) => {
-      const options = {
-        hostname: "localhost",
-        port: targetPort,
-        path: req.url,
-        method: req.method,
-        headers: {
-          ...req.headers,
-          host: `localhost:${targetPort}`,
-        },
-      };
-
-      const proxyReq = http.request(options, (proxyRes) => {
-        res.status(proxyRes.statusCode || 500);
-        Object.keys(proxyRes.headers).forEach((key) => {
-          const value = proxyRes.headers[key];
-          if (value) {
-            res.set(key, Array.isArray(value) ? value.join(", ") : value);
-          }
-        });
-
-        proxyRes.pipe(res);
-      });
-
-      proxyReq.on("error", (error) => {
-        this.logger.error(`Proxy request failed: ${error.message}`);
-        if (!res.headersSent) {
-          res.status(502).json({
-            status: "error",
-            message: "Browser service unavailable",
-            error: error.message,
-            timestamp: new Date().toISOString(),
-          });
-        }
-      });
-
-      if (
-        req.body &&
-        (req.method === "POST" ||
-          req.method === "PUT" ||
-          req.method === "PATCH")
-      ) {
-        proxyReq.write(JSON.stringify(req.body));
-      }
-
-      proxyReq.end();
-    };
-  }
 
   private setupRoutes(): void {
     this.app.use(express.json());
 
-    this.app.use("/api/browser", this.createProxyHandler(BROWSER_PORT));
+    this.app.use("/api/browser", async (req: express.Request, res: express.Response) => {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+          status: "error",
+          message: "Authorization header required",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      if (token !== process.env.ADMIN_TOKEN) {
+        return res.status(401).json({
+          status: "error", 
+          message: "Invalid authorization token",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      try {
+        let body: string | undefined;
+        if (req.body && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
+          body = JSON.stringify(req.body);
+        }
+
+        const targetUrl = `http://localhost:${BROWSER_PORT}${req.url}`;
+        const proxyResponse = await fetch(targetUrl, {
+          method: req.method,
+          headers: {
+            ...req.headers,
+            host: `localhost:${BROWSER_PORT}`,
+          },
+          body,
+        });
+
+        res.status(proxyResponse.status);
+
+        proxyResponse.headers.forEach((value, key) => {
+          res.set(key, value);
+        });
+
+        const responseBody = await proxyResponse.arrayBuffer();
+        res.send(Buffer.from(responseBody));
+
+      } catch (error) {
+        this.logger.error(`Proxy request failed: ${error instanceof Error ? error.message : String(error)}`);
+        res.status(502).json({
+          status: "error",
+          message: "Browser service unavailable", 
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
+      }
+    });
 
     this.app.get("/health", async (req, res) => {
       try {
