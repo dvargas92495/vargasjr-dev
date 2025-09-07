@@ -7,7 +7,10 @@ import { retryWithBackoff } from "@/server/retry";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
-import { checkLocalAgentHealth, createLocalAgentInstance } from "@/scripts/utils";
+import {
+  checkLocalAgentHealth,
+  createLocalAgentInstance,
+} from "@/scripts/utils";
 
 async function checkWorkflowStatus() {
   try {
@@ -201,7 +204,7 @@ export default async function AdminPage() {
   if (environmentPrefix === "DEV") {
     try {
       const localAgentCheck = await checkLocalAgentHealth();
-      
+
       if (localAgentCheck.isRunning) {
         instances = [createLocalAgentInstance()];
       }

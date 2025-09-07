@@ -55,7 +55,9 @@ async function checkInstanceHealthHTTP(
   if (instanceId === "local-agent") {
     try {
       const healthUrl = `http://localhost:${AGENT_SERVER_PORT}/health`;
-      console.log(`[Health Check] Making HTTP request to local agent: ${healthUrl}`);
+      console.log(
+        `[Health Check] Making HTTP request to local agent: ${healthUrl}`
+      );
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -96,7 +98,9 @@ async function checkInstanceHealthHTTP(
           instanceId,
           status: "offline",
           error: `Local agent connection failed: ${
-            fetchError instanceof Error ? fetchError.message : String(fetchError)
+            fetchError instanceof Error
+              ? fetchError.message
+              : String(fetchError)
           }`,
           timestamp: new Date().toISOString(),
         };
