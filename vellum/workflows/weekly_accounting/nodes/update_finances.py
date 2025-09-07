@@ -1,14 +1,14 @@
 from datetime import datetime
 from services.google_sheets import prepend_rows
 from vellum.workflows.nodes import BaseNode
-from .get_plaid_transactions import GetPlaidTransactions
+from .get_capital_one_transactions import GetCapitalOneTransactions
 from .normalize_family_transactions import NormalizeFamilyTransactions
 
 SPREADSHEET_ID = "1azbspgulxIEW7YSMFgscFm7GEJkSQIS3S_6cq60E4hw"
 
 
 class UpdateFinances(BaseNode):
-    plaid_snapshot = GetPlaidTransactions.Outputs.snapshot
+    capital_one_snapshot = GetCapitalOneTransactions.Outputs.snapshot
     normalized_transactions = NormalizeFamilyTransactions.Outputs.transactions
 
     class Outputs(BaseNode.Outputs):
@@ -20,7 +20,7 @@ class UpdateFinances(BaseNode):
             spreadsheet_id=SPREADSHEET_ID,
             sheet_name="Snapshots",
             rows=[
-                [date, "Plaid Checking", self.plaid_snapshot],
+                [date, "Capital One Checking", self.capital_one_snapshot],
             ],
         )
 

@@ -5,7 +5,6 @@ import { useCallback, useState } from "react";
 import { AppTypes, AppType } from "@/db/constants";
 import TwitterForm from "@/components/TwitterForm";
 import CapitalOneForm from "@/components/CapitalOneForm";
-import PlaidForm from "@/components/PlaidForm";
 import MercuryForm from "@/components/MercuryForm";
 import SlackForm from "@/components/SlackForm";
 import RoamResearchForm from "@/components/RoamResearchForm";
@@ -95,8 +94,6 @@ export default function NewApplicationPage() {
               return <TwitterForm />;
             case "CAPITAL_ONE":
               return <CapitalOneForm />;
-            case "PLAID":
-              return <PlaidForm />;
             case "MERCURY":
               return <MercuryForm />;
             case "SLACK":

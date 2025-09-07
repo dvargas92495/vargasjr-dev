@@ -4,11 +4,11 @@ from models.types import PERSONAL_TRANSACTION_CATEGORIES, PersonalTransaction
 from services import add_transaction_rule, get_all_transaction_rules
 from vellum import ChatMessagePromptBlock, JinjaPromptBlock, PromptParameters
 from vellum.workflows.nodes import BaseNode
-from .get_plaid_transactions import GetPlaidTransactions
+from .get_capital_one_transactions import GetCapitalOneTransactions
 
 
 class NormalizeFamilyTransactions(BaseNode):
-    plaid_transactions = GetPlaidTransactions.Outputs.transactions
+    capital_one_transactions = GetCapitalOneTransactions.Outputs.transactions
 
     class Outputs(BaseNode.Outputs):
         transactions: list[PersonalTransaction]
@@ -16,11 +16,11 @@ class NormalizeFamilyTransactions(BaseNode):
     def run(self) -> Outputs:
         logger = getattr(self._context, "logger", logging.getLogger(__name__))
         
-        for transaction in self.plaid_transactions:
+        for transaction in self.capital_one_transactions:
             if transaction.date.tzinfo is not None:
                 transaction.date = transaction.date.replace(tzinfo=None)
 
-        sorted_transactions = sorted(self.plaid_transactions, key=lambda x: x.date, reverse=True)
+        sorted_transactions = sorted(self.capital_one_transactions, key=lambda x: x.date, reverse=True)
         rules = get_all_transaction_rules()
         
         for transaction in sorted_transactions:

@@ -1,7 +1,7 @@
 from vellum.workflows import BaseWorkflow
 from .nodes import (
     BuildPersonalFinancialContext,
-    GetPlaidTransactions,
+    GetCapitalOneTransactions,
     NormalizeFamilyTransactions,
     UpdateFinances,
     GetSummaryData,
@@ -25,7 +25,7 @@ from .nodes import (
 class WeeklyAccountingWorkflow(BaseWorkflow):
     graph = {
         BuildPersonalFinancialContext
-        >> GetPlaidTransactions
+        >> GetCapitalOneTransactions
         >> NormalizeFamilyTransactions
         >> UpdateFinances
         >> GetSummaryData
