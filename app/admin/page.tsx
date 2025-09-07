@@ -10,7 +10,7 @@ import { AWS_DEFAULT_REGION } from "@/server/constants";
 import {
   checkLocalAgentHealth,
   createLocalAgentInstance,
-} from "@/scripts/utils";
+} from "@/server/health-check";
 
 async function checkWorkflowStatus() {
   try {

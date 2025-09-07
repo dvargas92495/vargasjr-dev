@@ -7,7 +7,7 @@ import {
   type DescribeInstancesCommandOutput,
   type Instance as EC2Instance,
 } from "@aws-sdk/client-ec2";
-import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
+import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION, LOCAL_AGENT_INSTANCE_ID } from "@/server/constants";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),
@@ -52,7 +52,7 @@ async function checkInstanceHealthHTTP(
   instanceId: string,
   region: string = AWS_DEFAULT_REGION
 ): Promise<HealthCheckResult> {
-  if (instanceId === "local-agent") {
+  if (instanceId === LOCAL_AGENT_INSTANCE_ID) {
     try {
       const healthUrl = `http://localhost:${AGENT_SERVER_PORT}/health`;
       console.log(
