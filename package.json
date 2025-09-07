@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "format:check": "prettier --check .",
+    "postinstall": "npx tsx scripts/postinstall.ts",
     "postversion": "npx tsx scripts/sync-version.ts",
     "db:generate": "drizzle-kit generate",
     "ssh": "ssh -i ~/.ssh/vargasjr-dev.pem ubuntu@ec2-34-239-127-55.compute-1.amazonaws.com",
