@@ -7,7 +7,11 @@ import {
   type DescribeInstancesCommandOutput,
   type Instance as EC2Instance,
 } from "@aws-sdk/client-ec2";
-import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION, LOCAL_AGENT_INSTANCE_ID } from "@/server/constants";
+import {
+  AGENT_SERVER_PORT,
+  AWS_DEFAULT_REGION,
+  LOCAL_AGENT_INSTANCE_ID,
+} from "@/server/constants";
 
 const healthCheckSchema = z.object({
   instanceId: z.string(),

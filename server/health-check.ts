@@ -329,13 +329,16 @@ export async function checkLocalAgentHealth(): Promise<{
   error?: string;
 }> {
   try {
-    const response = await fetch(`http://localhost:${AGENT_SERVER_PORT}/health`, {
-      method: "GET",
-      signal: AbortSignal.timeout(5000),
-      headers: {
-        Accept: "application/json",
-      },
-    });
+    const response = await fetch(
+      `http://localhost:${AGENT_SERVER_PORT}/health`,
+      {
+        method: "GET",
+        signal: AbortSignal.timeout(5000),
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
 
     if (response.ok) {
       const healthData = await response.json();
