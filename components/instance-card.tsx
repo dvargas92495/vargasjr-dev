@@ -2,6 +2,7 @@
 
 import React from "react";
 import HealthStatusIndicator from "@/components/health-status-indicator";
+import BrowserSessionsIndicator from "@/components/browser-sessions-indicator";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import Link from "next/link";
 
@@ -72,6 +73,18 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
             />
           ) : (
             <span className="text-gray-500">N/A</span>
+          )}
+        </p>
+        <p>
+          {instanceId ? (
+            <BrowserSessionsIndicator
+              instanceId={instanceId}
+              instanceState={instanceState || ""}
+            />
+          ) : (
+            <div className="text-sm text-gray-500">
+              Browser Sessions: <span className="text-gray-400">N/A</span>
+            </div>
           )}
         </p>
       </div>
