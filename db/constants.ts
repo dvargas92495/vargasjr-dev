@@ -13,6 +13,7 @@ export const AppTypes = [
   "NOTION",
   "DEVIN",
   "CAPITAL_ONE",
+  "PLAID",
   "MERCURY",
   "SLACK",
   "ROAM_RESEARCH",
