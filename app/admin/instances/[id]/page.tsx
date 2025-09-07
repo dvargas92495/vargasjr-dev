@@ -34,16 +34,18 @@ export default async function InstanceDetailPage({
     const result = await ec2.describeInstances({
       InstanceIds: [id],
     });
-    
-    const instances = result.Reservations?.flatMap((r) => r.Instances || []) || [];
+
+    const instances =
+      result.Reservations?.flatMap((r) => r.Instances || []) || [];
     instance = instances[0] || null;
-    
+
     if (!instance) {
       errorMessage = `Instance with ID "${id}" not found.`;
     }
   } catch (error) {
     console.error("Failed to fetch instance:", error);
-    errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
   }
 
   if (errorMessage) {
@@ -63,14 +65,17 @@ export default async function InstanceDetailPage({
             Unable to Load Instance
           </h3>
           <p className="text-sm text-red-600 mb-3">
-            Failed to fetch instance details. This is likely due to missing AWS credentials or the instance not existing.
+            Failed to fetch instance details. This is likely due to missing AWS
+            credentials or the instance not existing.
           </p>
           <div className="text-sm text-red-500 font-mono bg-red-100 p-2 rounded">
             {errorMessage}
           </div>
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
             <p className="text-sm text-yellow-800">
-              <strong>Note:</strong> In production, this page should have proper AWS credentials configured to query EC2 instances. This error is expected in local development without AWS setup.
+              <strong>Note:</strong> In production, this page should have proper
+              AWS credentials configured to query EC2 instances. This error is
+              expected in local development without AWS setup.
             </p>
           </div>
         </div>
@@ -80,7 +85,9 @@ export default async function InstanceDetailPage({
 
   const instanceState = instance!.State?.Name;
   const instanceId = instance!.InstanceId;
-  const command = `ssh -i ~/.ssh/${instance!.KeyName}.pem ubuntu@${instance!.PublicDnsName}`;
+  const command = `ssh -i ~/.ssh/${instance!.KeyName}.pem ubuntu@${
+    instance!.PublicDnsName
+  }`;
   const instanceName =
     instance!.Tags?.find(
       (tag: { Key?: string; Value?: string }) => tag.Key === "Name"
@@ -122,19 +129,25 @@ export default async function InstanceDetailPage({
             <label className="block text-sm font-medium text-gray-700">
               Instance ID
             </label>
-            <p className="mt-1 text-sm text-gray-900 font-mono">{instance!.InstanceId}</p>
+            <p className="mt-1 text-sm text-gray-900 font-mono">
+              {instance!.InstanceId}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Instance Type
             </label>
-            <p className="mt-1 text-sm text-gray-900 font-mono">{instance!.InstanceType}</p>
+            <p className="mt-1 text-sm text-gray-900 font-mono">
+              {instance!.InstanceType}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
               State
             </label>
-            <p className="mt-1 text-sm text-gray-900 font-mono">{instanceState}</p>
+            <p className="mt-1 text-sm text-gray-900 font-mono">
+              {instanceState}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -154,7 +167,9 @@ export default async function InstanceDetailPage({
             <label className="block text-sm font-medium text-gray-700">
               Image ID
             </label>
-            <p className="mt-1 text-sm text-gray-900 font-mono">{instance!.ImageId}</p>
+            <p className="mt-1 text-sm text-gray-900 font-mono">
+              {instance!.ImageId}
+            </p>
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700">
@@ -176,7 +191,10 @@ export default async function InstanceDetailPage({
           {instanceState === "stopped" && instanceId && (
             <>
               <StartInstanceButton id={instanceId} />
-              <DeleteInstanceButton id={instanceId} instanceName={instanceName} />
+              <DeleteInstanceButton
+                id={instanceId}
+                instanceName={instanceName}
+              />
             </>
           )}
           {instanceState === "running" && instanceId && (

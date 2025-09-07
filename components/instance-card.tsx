@@ -35,7 +35,10 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
   return (
     <div className="border p-4 rounded-lg w-full max-w-2xl">
       <h2 className="text-lg font-semibold mb-2">
-        <Link href={`/admin/instances/${instanceId}`} className="hover:text-blue-600 transition-colors">
+        <Link
+          href={`/admin/instances/${instanceId}`}
+          className="hover:text-blue-600 transition-colors"
+        >
           {instanceName}
         </Link>
         {instanceType === "preview" && prNumber && (
