@@ -113,7 +113,6 @@ def create_contact(channel: InboxType, source: str) -> Contact:
 
         session.add(contact)
         session.commit()
-        session.refresh(contact)
         return contact
 
 

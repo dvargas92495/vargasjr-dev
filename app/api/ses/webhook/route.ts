@@ -7,25 +7,28 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
-function parseEmailAddress(emailString: string): { email: string; fullName: string | null } {
+function parseEmailAddress(emailString: string): {
+  email: string;
+  fullName: string | null;
+} {
   const trimmed = emailString.trim();
-  
+
   const match = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
   if (match) {
-    const name = match[1].trim().replace(/^["']|["']$/g, '');
+    const name = match[1].trim().replace(/^["']|["']$/g, "");
     const email = match[2].trim();
     return { email, fullName: name || null };
   }
-  
-  if (trimmed.includes('@') && !trimmed.includes('<')) {
+
+  if (trimmed.includes("@") && !trimmed.includes("<")) {
     return { email: trimmed, fullName: null };
   }
-  
-  if (trimmed.includes('@')) {
+
+  if (trimmed.includes("@")) {
     return { email: trimmed, fullName: null };
   }
-  
-  return { email: '', fullName: trimmed || null };
+
+  return { email: "", fullName: trimmed || null };
 }
 
 interface SESMail {
