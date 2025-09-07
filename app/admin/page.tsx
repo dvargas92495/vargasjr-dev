@@ -7,6 +7,10 @@ import { retryWithBackoff } from "@/server/retry";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
+import {
+  checkLocalAgentHealth,
+  createLocalAgentInstance,
+} from "@/server/health-check";
 
 async function checkWorkflowStatus() {
   try {
@@ -213,38 +217,53 @@ export default async function AdminPage() {
   }> = [];
   let errorMessage: string | null = null;
 
-  try {
-    instances = await ec2
-      .describeInstances({ Filters: filters })
-      .then(
-        (data) => data.Reservations?.flatMap((r) => r.Instances || []) || []
-      );
+  if (environmentPrefix === "DEV") {
+    try {
+      const localAgentCheck = await checkLocalAgentHealth();
 
-    if (instances.length === 0 && environmentPrefix === "") {
-      const legacyFilters = [
-        { Name: "tag:Name", Values: ["vargas-jr"] },
-        { Name: "tag:Type", Values: ["main"] },
-        {
-          Name: "instance-state-name",
-          Values: [
-            "running",
-            "stopped",
-            "pending",
-            "stopping",
-            "shutting-down",
-          ],
-        },
-      ];
+      if (localAgentCheck.isRunning) {
+        instances = [createLocalAgentInstance()];
+      }
+    } catch (error) {
+      console.error("Failed to check local agent:", error);
+      errorMessage = `Failed to check local agent: ${
+        error instanceof Error ? error.message : "Unknown error occurred"
+      }`;
+    }
+  } else {
+    try {
       instances = await ec2
-        .describeInstances({ Filters: legacyFilters })
+        .describeInstances({ Filters: filters })
         .then(
           (data) => data.Reservations?.flatMap((r) => r.Instances || []) || []
         );
+
+      if (instances.length === 0 && environmentPrefix === "") {
+        const legacyFilters = [
+          { Name: "tag:Name", Values: ["vargas-jr"] },
+          { Name: "tag:Type", Values: ["main"] },
+          {
+            Name: "instance-state-name",
+            Values: [
+              "running",
+              "stopped",
+              "pending",
+              "stopping",
+              "shutting-down",
+            ],
+          },
+        ];
+        instances = await ec2
+          .describeInstances({ Filters: legacyFilters })
+          .then(
+            (data) => data.Reservations?.flatMap((r) => r.Instances || []) || []
+          );
+      }
+    } catch (error) {
+      console.error("Failed to query EC2 instances:", error);
+      errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
     }
-  } catch (error) {
-    console.error("Failed to query EC2 instances:", error);
-    errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
   }
 
   return (
