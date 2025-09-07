@@ -4,7 +4,7 @@ import {
   OutboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
-import { eq, or, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -30,7 +30,6 @@ export default async function InboxMessage({
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
       contactId: ContactsTable.id,
-      contactEmail: ContactsTable.email,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
       metadata: InboxMessagesTable.metadata,
@@ -38,13 +37,7 @@ export default async function InboxMessage({
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      or(
-        eq(InboxMessagesTable.source, ContactsTable.slackId),
-        eq(
-          ContactsTable.email,
-          sql`CASE WHEN ${InboxMessagesTable.source} ~ '<[^>]+@[^>]+>' THEN substring(${InboxMessagesTable.source} from '<([^>]+@[^>]+)>') ELSE NULL END`
-        )
-      )
+      eq(InboxMessagesTable.source, ContactsTable.slackId)
     )
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
