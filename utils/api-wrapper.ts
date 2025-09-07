@@ -13,13 +13,17 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
   return async (request: Request, context?: any) => {
     try {
       let body;
-      try {
-        body = await request.json();
-      } catch (jsonError) {
-        return NextResponse.json(
-          { error: "Invalid JSON in request body" },
-          { status: 400 }
-        );
+      if (request.method === 'GET') {
+        body = null;
+      } else {
+        try {
+          body = await request.json();
+        } catch (jsonError) {
+          return NextResponse.json(
+            { error: "Invalid JSON in request body" },
+            { status: 400 }
+          );
+        }
       }
 
       const result = await handler(body, request, context);
