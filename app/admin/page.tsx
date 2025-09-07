@@ -10,14 +10,30 @@ import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 async function checkWorkflowStatus() {
   try {
-    const response = await fetch("/api/check-workflow-status");
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3002";
+    const url = `${baseUrl}/api/check-workflow-status`;
+
+    const response = await fetch(url);
     if (response.ok) {
-      return await response.json();
+      const data = await response.json();
+      return data;
+    } else if (response.status === 401) {
+      console.log(
+        "Workflow status check: Authentication required (expected in local dev)"
+      );
+      return { hasRunningWorkflow: false };
+    } else {
+      console.error(
+        `Workflow status check failed: ${response.status} ${response.statusText}`
+      );
+      return { hasRunningWorkflow: false };
     }
   } catch (error) {
     console.error("Failed to check workflow status:", error);
+    return { hasRunningWorkflow: false };
   }
-  return { hasRunningWorkflow: false };
 }
 
 async function getCurrentPRNumber(): Promise<string> {
