@@ -1,13 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import StopInstanceButton from "@/components/stop-instance-button";
-import StartInstanceButton from "@/components/start-instance-button";
-import RebootInstanceButton from "@/components/reboot-instance-button";
-import DeleteInstanceButton from "@/components/delete-instance-button";
+import React from "react";
 import HealthStatusIndicator from "@/components/health-status-indicator";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
-import CopyableText from "@/components/copyable-text";
+import Link from "next/link";
 
 interface InstanceCardProps {
   instance: {
@@ -22,14 +18,8 @@ interface InstanceCardProps {
 }
 
 const InstanceCard = ({ instance }: InstanceCardProps) => {
-  const [healthStatus, setHealthStatus] = useState<{
-    status: string;
-    error?: string;
-  }>({ status: "loading" });
-
   const instanceState = instance.State?.Name;
   const instanceId = instance.InstanceId;
-  const command = `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`;
   const instanceName =
     instance.Tags?.find(
       (tag: { Key?: string; Value?: string }) => tag.Key === "Name"
@@ -42,17 +32,19 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
     (tag: { Key?: string; Value?: string }) => tag.Key === "PRNumber"
   )?.Value;
 
-  const handleHealthStatusChange = useCallback(
-    (status: { status: string; error?: string }) => {
-      setHealthStatus(status);
-    },
-    []
-  );
-
   return (
     <div className="border p-4 rounded-lg w-full max-w-2xl">
       <h2 className="text-lg font-semibold mb-2">
-        {instanceName}
+        <Link
+          href={instanceId ? `/admin/instances/${instanceId}` : "#"}
+          className={
+            instanceId
+              ? "hover:text-blue-600 transition-colors"
+              : "text-gray-400 cursor-not-allowed"
+          }
+        >
+          {instanceName}
+        </Link>
         {instanceType === "preview" && prNumber && (
           <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
             PR #{prNumber}
@@ -66,51 +58,30 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
       </h2>
       <div className="space-y-1 text-sm">
         <p>
-          Instance ID: <span className="font-mono">{instance.InstanceId}</span>
-        </p>
-        <p>
-          Instance Type:{" "}
-          <span className="font-mono">{instance.InstanceType}</span>
-        </p>
-        <p>
           State: <span className="font-mono">{instanceState}</span>
         </p>
         <p className="flex items-center gap-2">
           Health:
-          <HealthStatusIndicator
-            instanceId={instanceId!}
-            publicDns={instance.PublicDnsName || ""}
-            keyName={instance.KeyName || ""}
-            instanceState={instanceState || ""}
-            onHealthStatusChange={handleHealthStatusChange}
-          />
-        </p>
-        <p>
-          ImageID: <span className="font-mono">{instance.ImageId}</span>
-        </p>
-        <p>
-          Connect: <CopyableText className="font-mono" text={command} />
-        </p>
-      </div>
-      <div className="mt-3 flex gap-2">
-        {instanceState === "running" && instanceId && (
-          <StopInstanceButton id={instanceId} />
-        )}
-        {instanceState === "stopped" && instanceId && (
-          <>
-            <StartInstanceButton id={instanceId} />
-            <DeleteInstanceButton id={instanceId} instanceName={instanceName} />
-          </>
-        )}
-        {instanceState === "running" &&
-          instanceId &&
-          healthStatus.status === "unhealthy" && (
-            <RebootInstanceButton id={instanceId} />
+          {instanceId ? (
+            <HealthStatusIndicator
+              instanceId={instanceId}
+              publicDns={instance.PublicDnsName || ""}
+              keyName={instance.KeyName || ""}
+              instanceState={instanceState || ""}
+              onHealthStatusChange={() => {}}
+            />
+          ) : (
+            <span className="text-gray-500">N/A</span>
           )}
-        {(instanceState === "pending" ||
-          instanceState === "stopping" ||
-          instanceState === "shutting-down") && <TransitionalStateRefresh />}
+        </p>
       </div>
+      {(instanceState === "pending" ||
+        instanceState === "stopping" ||
+        instanceState === "shutting-down") && (
+        <div className="mt-3">
+          <TransitionalStateRefresh />
+        </div>
+      )}
     </div>
   );
 };
