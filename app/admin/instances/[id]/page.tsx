@@ -39,8 +39,8 @@ export default async function InstanceDetailPage({
       result.Reservations?.flatMap((r) => r.Instances || []) || [];
     instance = instances[0] || null;
 
-    if (!instance) {
-      errorMessage = `Instance with ID "${id}" not found.`;
+    if (!instance || !instance.InstanceId) {
+      errorMessage = instance ? `Instance data incomplete - missing required fields` : `Instance with ID "${id}" not found.`;
     }
   } catch (error) {
     console.error("Failed to fetch instance:", error);
@@ -83,20 +83,20 @@ export default async function InstanceDetailPage({
     );
   }
 
-  const instanceState = instance!.State?.Name;
-  const instanceId = instance!.InstanceId;
-  const command = `ssh -i ~/.ssh/${instance!.KeyName}.pem ubuntu@${
-    instance!.PublicDnsName
-  }`;
+  const instanceState = instance?.State?.Name;
+  const instanceId = instance?.InstanceId;
+  const command = instance?.KeyName && instance?.PublicDnsName 
+    ? `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`
+    : "Connection details not available";
   const instanceName =
-    instance!.Tags?.find(
+    instance?.Tags?.find(
       (tag: { Key?: string; Value?: string }) => tag.Key === "Name"
     )?.Value || "Unknown";
   const instanceType =
-    instance!.Tags?.find(
+    instance?.Tags?.find(
       (tag: { Key?: string; Value?: string }) => tag.Key === "Type"
     )?.Value || "main";
-  const prNumber = instance!.Tags?.find(
+  const prNumber = instance?.Tags?.find(
     (tag: { Key?: string; Value?: string }) => tag.Key === "PRNumber"
   )?.Value;
 
@@ -130,7 +130,7 @@ export default async function InstanceDetailPage({
               Instance ID
             </label>
             <p className="mt-1 text-sm text-gray-900 font-mono">
-              {instance!.InstanceId}
+              {instance?.InstanceId || "N/A"}
             </p>
           </div>
           <div>
@@ -138,7 +138,7 @@ export default async function InstanceDetailPage({
               Instance Type
             </label>
             <p className="mt-1 text-sm text-gray-900 font-mono">
-              {instance!.InstanceType}
+              {instance?.InstanceType || "N/A"}
             </p>
           </div>
           <div>
@@ -146,7 +146,7 @@ export default async function InstanceDetailPage({
               State
             </label>
             <p className="mt-1 text-sm text-gray-900 font-mono">
-              {instanceState}
+              {instanceState || "Unknown"}
             </p>
           </div>
           <div>
@@ -154,13 +154,17 @@ export default async function InstanceDetailPage({
               Health
             </label>
             <div className="mt-1 flex items-center gap-2">
-              <HealthStatusIndicator
-                instanceId={instanceId!}
-                publicDns={instance!.PublicDnsName || ""}
-                keyName={instance!.KeyName || ""}
-                instanceState={instanceState || ""}
-                onHealthStatusChange={() => {}}
-              />
+              {instanceId ? (
+                <HealthStatusIndicator
+                  instanceId={instanceId}
+                  publicDns={instance?.PublicDnsName || ""}
+                  keyName={instance?.KeyName || ""}
+                  instanceState={instanceState || ""}
+                  onHealthStatusChange={() => {}}
+                />
+              ) : (
+                <span className="text-gray-500">N/A</span>
+              )}
             </div>
           </div>
           <div>
@@ -168,7 +172,7 @@ export default async function InstanceDetailPage({
               Image ID
             </label>
             <p className="mt-1 text-sm text-gray-900 font-mono">
-              {instance!.ImageId}
+              {instance?.ImageId || "N/A"}
             </p>
           </div>
           <div className="col-span-2">

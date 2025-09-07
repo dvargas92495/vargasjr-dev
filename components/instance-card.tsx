@@ -36,8 +36,8 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
     <div className="border p-4 rounded-lg w-full max-w-2xl">
       <h2 className="text-lg font-semibold mb-2">
         <Link
-          href={`/admin/instances/${instanceId}`}
-          className="hover:text-blue-600 transition-colors"
+          href={instanceId ? `/admin/instances/${instanceId}` : '#'}
+          className={instanceId ? "hover:text-blue-600 transition-colors" : "text-gray-400 cursor-not-allowed"}
         >
           {instanceName}
         </Link>
@@ -58,13 +58,17 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
         </p>
         <p className="flex items-center gap-2">
           Health:
-          <HealthStatusIndicator
-            instanceId={instanceId!}
-            publicDns={instance.PublicDnsName || ""}
-            keyName={instance.KeyName || ""}
-            instanceState={instanceState || ""}
-            onHealthStatusChange={() => {}}
-          />
+          {instanceId ? (
+            <HealthStatusIndicator
+              instanceId={instanceId}
+              publicDns={instance.PublicDnsName || ""}
+              keyName={instance.KeyName || ""}
+              instanceState={instanceState || ""}
+              onHealthStatusChange={() => {}}
+            />
+          ) : (
+            <span className="text-gray-500">N/A</span>
+          )}
         </p>
       </div>
       {(instanceState === "pending" ||
