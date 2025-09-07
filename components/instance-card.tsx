@@ -36,8 +36,12 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
     <div className="border p-4 rounded-lg w-full max-w-2xl">
       <h2 className="text-lg font-semibold mb-2">
         <Link
-          href={instanceId ? `/admin/instances/${instanceId}` : '#'}
-          className={instanceId ? "hover:text-blue-600 transition-colors" : "text-gray-400 cursor-not-allowed"}
+          href={instanceId ? `/admin/instances/${instanceId}` : "#"}
+          className={
+            instanceId
+              ? "hover:text-blue-600 transition-colors"
+              : "text-gray-400 cursor-not-allowed"
+          }
         >
           {instanceName}
         </Link>

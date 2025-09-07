@@ -40,7 +40,9 @@ export default async function InstanceDetailPage({
     instance = instances[0] || null;
 
     if (!instance || !instance.InstanceId) {
-      errorMessage = instance ? `Instance data incomplete - missing required fields` : `Instance with ID "${id}" not found.`;
+      errorMessage = instance
+        ? `Instance data incomplete - missing required fields`
+        : `Instance with ID "${id}" not found.`;
     }
   } catch (error) {
     console.error("Failed to fetch instance:", error);
@@ -85,9 +87,10 @@ export default async function InstanceDetailPage({
 
   const instanceState = instance?.State?.Name;
   const instanceId = instance?.InstanceId;
-  const command = instance?.KeyName && instance?.PublicDnsName 
-    ? `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`
-    : "Connection details not available";
+  const command =
+    instance?.KeyName && instance?.PublicDnsName
+      ? `ssh -i ~/.ssh/${instance.KeyName}.pem ubuntu@${instance.PublicDnsName}`
+      : "Connection details not available";
   const instanceName =
     instance?.Tags?.find(
       (tag: { Key?: string; Value?: string }) => tag.Key === "Name"
