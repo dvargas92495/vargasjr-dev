@@ -86,10 +86,13 @@ const BrowserSessionsIndicator = ({
     );
   }
 
-  if (sessionsStatus.status === "offline" || sessionsStatus.status === "error") {
+  if (
+    sessionsStatus.status === "offline" ||
+    sessionsStatus.status === "error"
+  ) {
     return (
       <div className="text-sm text-gray-500">
-        Browser Sessions: 
+        Browser Sessions:
         <span className="text-red-600 ml-1">
           {sessionsStatus.error || "Unavailable"}
         </span>
@@ -104,7 +107,7 @@ const BrowserSessionsIndicator = ({
       <div className="flex items-center gap-2">
         <span className="text-gray-600">Browser Sessions:</span>
         <span className="font-medium">
-          {sessions.length} active session{sessions.length !== 1 ? 's' : ''}
+          {sessions.length} active session{sessions.length !== 1 ? "s" : ""}
         </span>
         <button
           onClick={fetchSessions}
@@ -123,10 +126,18 @@ const BrowserSessionsIndicator = ({
             <div className="mt-2 p-2 bg-gray-50 border rounded text-xs">
               {sessions.map((session) => (
                 <div key={session.id} className="mb-2 last:mb-0">
-                  <div className="font-mono text-gray-800">ID: {session.id}</div>
-                  <div className="text-gray-600">Pages: {session.pageCount}</div>
-                  <div className="text-gray-600">Created: {formatDate(session.createdAt)}</div>
-                  <div className="text-gray-600">Last used: {formatDate(session.lastUsed)}</div>
+                  <div className="font-mono text-gray-800">
+                    ID: {session.id}
+                  </div>
+                  <div className="text-gray-600">
+                    Pages: {session.pageCount}
+                  </div>
+                  <div className="text-gray-600">
+                    Created: {formatDate(session.createdAt)}
+                  </div>
+                  <div className="text-gray-600">
+                    Last used: {formatDate(session.lastUsed)}
+                  </div>
                 </div>
               ))}
             </div>

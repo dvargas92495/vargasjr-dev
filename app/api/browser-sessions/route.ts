@@ -104,7 +104,8 @@ async function fetchBrowserSessions(
         };
       }
 
-      const errMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      const errMsg =
+        fetchError instanceof Error ? fetchError.message : String(fetchError);
       return {
         instanceId,
         status: "error",
@@ -146,7 +147,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const errorMessage = error instanceof Error ? error.message : "Browser sessions fetch failed";
+    const errorMessage =
+      error instanceof Error ? error.message : "Browser sessions fetch failed";
     return NextResponse.json(
       { error: "Browser sessions fetch failed", details: errorMessage },
       { status: 500 }
