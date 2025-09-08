@@ -90,6 +90,15 @@ export default function AdminLayoutClient({
                   Simulator
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/browser-sessions"
+                  className="block p-3 hover:bg-gray-200 hover:text-black rounded text-white"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  Browser Sessions
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>
@@ -145,6 +154,14 @@ export default function AdminLayoutClient({
                 className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
               >
                 Simulator
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/browser-sessions"
+                className="block p-2 hover:bg-gray-200 hover:text-black rounded text-white"
+              >
+                Browser Sessions
               </Link>
             </li>
           </ul>

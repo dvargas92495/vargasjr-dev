@@ -46,7 +46,7 @@ export default function ExecutionHistory({
     return (
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-semibold mb-4">Execution History</h3>
-        <p className="text-gray-500">Loading execution history...</p>
+        <p className="text-gray-700">Loading execution history...</p>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function ExecutionHistory({
       </h3>
 
       {executions.length === 0 ? (
-        <p className="text-gray-500">
+        <p className="text-gray-700">
           No executions found for this routine job.
         </p>
       ) : (

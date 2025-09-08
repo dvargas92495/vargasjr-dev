@@ -132,7 +132,7 @@ export default async function ContactPage({
                   ✓ Active Client
                 </span>
               ) : (
-                <span className="text-gray-500">Not a Client</span>
+                <span className="text-gray-700">Not a Client</span>
               )}
             </p>
           </div>

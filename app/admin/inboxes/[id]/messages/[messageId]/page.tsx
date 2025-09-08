@@ -142,7 +142,7 @@ export default async function InboxMessage({
                     </span>
                   </div>
                   <svg
-                    className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform"
+                    className="w-5 h-5 text-gray-600 group-open:rotate-180 transition-transform"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
