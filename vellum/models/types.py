@@ -34,6 +34,7 @@ class SportBroker(str, Enum):
 PersonalTransactionSource = Literal[
     "Mercury Checking",
     "Venmo Credit",
+    "Capital One Checking",
 ]
 
 PersonalTransactionCategory = Literal[
