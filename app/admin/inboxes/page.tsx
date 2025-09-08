@@ -1,4 +1,10 @@
-import { InboxesTable, InboxMessagesTable, ContactsTable, InboxMessageOperationsTable, type Inbox } from "@/db/schema";
+import {
+  InboxesTable,
+  InboxMessagesTable,
+  ContactsTable,
+  InboxMessageOperationsTable,
+  type Inbox,
+} from "@/db/schema";
 import { desc, or, eq, inArray } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
 import MessageCard from "@/components/message-card";
@@ -131,7 +137,7 @@ export default async function InboxesPage() {
           </tbody>
         </table>
       </div>
-      
+
       {/* Recent Messages Section */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Recent Messages</h2>
@@ -142,7 +148,8 @@ export default async function InboxesPage() {
                 key={message.id}
                 message={{
                   ...message,
-                  source: message.displayName || message.fullName || message.source,
+                  source:
+                    message.displayName || message.fullName || message.source,
                 }}
                 status={statuses[message.id] || "Unread"}
                 inboxId={message.inboxId}
@@ -155,7 +162,7 @@ export default async function InboxesPage() {
           </div>
         )}
       </div>
-      
+
       <div className="mt-4 flex gap-4">
         <Link
           href="/admin/inboxes/new"
