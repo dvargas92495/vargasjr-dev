@@ -64,6 +64,9 @@ export default function NewRoutineJobPage() {
 
       const workflowName = name || "test-workflow";
       if (scheduleDescription) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
         try {
           const response = await fetch("/api/jobs/routine", {
             method: "POST",
@@ -71,7 +74,10 @@ export default function NewRoutineJobPage() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ name: workflowName, scheduleDescription }),
+            signal: controller.signal,
           });
+
+          clearTimeout(timeoutId);
 
           if (!response.ok) {
             const errorData: ApiErrorResponse = await response.json();
@@ -84,9 +90,20 @@ export default function NewRoutineJobPage() {
 
           router.push("/admin/jobs");
         } catch (err) {
-          setError(
-            err instanceof Error ? err.message : "Failed to create routine job"
-          );
+          clearTimeout(timeoutId);
+
+          let errorMessage = "Failed to create routine job";
+
+          if (err instanceof Error) {
+            if (err.name === "AbortError") {
+              errorMessage =
+                "Request timed out while creating routine job. The job may still have been created successfully - please check the jobs list to verify.";
+            } else {
+              errorMessage = err.message;
+            }
+          }
+
+          setError(errorMessage);
         } finally {
           setPending(false);
         }
