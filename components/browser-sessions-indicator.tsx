@@ -80,8 +80,8 @@ const BrowserSessionsIndicator = ({
 
   if (sessionsStatus.status === "loading") {
     return (
-      <div className="text-sm text-gray-500">
-        Browser Sessions: <span className="text-gray-400">Loading...</span>
+      <div className="text-sm text-gray-700">
+        Browser Sessions: <span className="text-gray-600">Loading...</span>
       </div>
     );
   }
@@ -91,7 +91,7 @@ const BrowserSessionsIndicator = ({
     sessionsStatus.status === "error"
   ) {
     return (
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-700">
         Browser Sessions:
         <span className="text-red-600 ml-1">
           {sessionsStatus.error || "Unavailable"}
