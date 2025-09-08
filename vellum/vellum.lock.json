@@ -176,7 +176,16 @@
       "module": "workflows.weekly_groceries",
       "workflow_sandbox_id": "35257cce-fad0-4b4e-9e66-3801a3334031",
       "ignore": null,
-      "deployments": [],
+      "deployments": [
+        {
+          "id": "de250a50-3347-45a5-aa30-38490d2ce6e2",
+          "label": "Weekly Groceries",
+          "name": "weekly-groceries",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
       "container_image_name": "vargasjr",
       "container_image_tag": "1.2.5",
       "workspace": "default",
