@@ -73,9 +73,9 @@ const { pageId } = await pageResponse.json();
 // Navigate to a website
 await fetch(`/api/browser/sessions/${sessionId}/pages/${pageId}/navigate`, {
   method: "POST",
-  headers: { 
+  headers: {
     Authorization: "Bearer your-admin-token",
-    "Content-Type": "application/json" 
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({ url: "https://example.com" }),
 });

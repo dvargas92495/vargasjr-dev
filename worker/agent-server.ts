@@ -35,7 +35,11 @@ export class AgentServer {
   private setupRoutes(): void {
     this.app.use(express.json());
 
-    const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const authMiddleware = (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
@@ -57,152 +61,192 @@ export class AgentServer {
       next();
     };
 
-    this.app.post("/api/browser/sessions", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId } = req.body;
-        const id = await this.createSession(sessionId);
-        res.json({ sessionId: id });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-      }
-    });
-
-    this.app.get("/api/browser/sessions", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const sessions = this.getSessions().map((session) => ({
-          id: session.id,
-          createdAt: session.createdAt,
-          lastUsed: session.lastUsed,
-          pageCount: session.pages.size,
-        }));
-        res.json({ sessions });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-      }
-    });
-
-    this.app.delete("/api/browser/sessions/:sessionId", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId } = req.params;
-        await this.closeSession(sessionId);
-        res.json({ success: true });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-      }
-    });
-
-    this.app.post("/api/browser/sessions/:sessionId/pages", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId } = req.params;
-        const { pageId } = req.body;
-        const id = await this.createPage(sessionId, pageId);
-        res.json({ pageId: id });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
-      }
-    });
-
-    this.app.post("/api/browser/sessions/:sessionId/pages/:pageId/navigate", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId, pageId } = req.params;
-        const { url } = req.body;
-
-        const page = await this.getPage(sessionId, pageId);
-        if (!page) {
-          return res.status(404).json({ error: "Page not found" });
+    this.app.post(
+      "/api/browser/sessions",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId } = req.body;
+          const id = await this.createSession(sessionId);
+          res.json({ sessionId: id });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
         }
-
-        await page.goto(url);
-        res.json({ success: true, url });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
       }
-    });
+    );
 
-    this.app.post("/api/browser/sessions/:sessionId/pages/:pageId/screenshot", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId, pageId } = req.params;
-        const { fullPage = false } = req.body;
-
-        const page = await this.getPage(sessionId, pageId);
-        if (!page) {
-          return res.status(404).json({ error: "Page not found" });
+    this.app.get(
+      "/api/browser/sessions",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const sessions = this.getSessions().map((session) => ({
+            id: session.id,
+            createdAt: session.createdAt,
+            lastUsed: session.lastUsed,
+            pageCount: session.pages.size,
+          }));
+          res.json({ sessions });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
         }
-
-        const screenshot = await page.screenshot({
-          fullPage,
-          type: "png",
-        });
-
-        res.set("Content-Type", "image/png");
-        res.send(screenshot);
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
       }
-    });
+    );
 
-    this.app.post("/api/browser/sessions/:sessionId/pages/:pageId/click", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId, pageId } = req.params;
-        const { selector } = req.body;
-
-        const page = await this.getPage(sessionId, pageId);
-        if (!page) {
-          return res.status(404).json({ error: "Page not found" });
+    this.app.delete(
+      "/api/browser/sessions/:sessionId",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId } = req.params;
+          await this.closeSession(sessionId);
+          res.json({ success: true });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
         }
-
-        await page.click(selector);
-        res.json({ success: true });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
       }
-    });
+    );
 
-    this.app.post("/api/browser/sessions/:sessionId/pages/:pageId/type", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId, pageId } = req.params;
-        const { selector, text } = req.body;
-
-        const page = await this.getPage(sessionId, pageId);
-        if (!page) {
-          return res.status(404).json({ error: "Page not found" });
+    this.app.post(
+      "/api/browser/sessions/:sessionId/pages",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId } = req.params;
+          const { pageId } = req.body;
+          const id = await this.createPage(sessionId, pageId);
+          res.json({ pageId: id });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
         }
-
-        await page.fill(selector, text);
-        res.json({ success: true });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
       }
-    });
+    );
 
-    this.app.get("/api/browser/sessions/:sessionId/pages/:pageId/content", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId, pageId } = req.params;
+    this.app.post(
+      "/api/browser/sessions/:sessionId/pages/:pageId/navigate",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId, pageId } = req.params;
+          const { url } = req.body;
 
-        const page = await this.getPage(sessionId, pageId);
-        if (!page) {
-          return res.status(404).json({ error: "Page not found" });
+          const page = await this.getPage(sessionId, pageId);
+          if (!page) {
+            return res.status(404).json({ error: "Page not found" });
+          }
+
+          await page.goto(url);
+          res.json({ success: true, url });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
         }
-
-        const content = await page.content();
-        const title = await page.title();
-        const url = page.url();
-
-        res.json({ content, title, url });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
       }
-    });
+    );
 
-    this.app.delete("/api/browser/sessions/:sessionId/pages/:pageId", authMiddleware, async (req: express.Request, res: express.Response) => {
-      try {
-        const { sessionId, pageId } = req.params;
-        await this.closePage(sessionId, pageId);
-        res.json({ success: true });
-      } catch (error) {
-        res.status(500).json({ error: (error as Error).message });
+    this.app.post(
+      "/api/browser/sessions/:sessionId/pages/:pageId/screenshot",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId, pageId } = req.params;
+          const { fullPage = false } = req.body;
+
+          const page = await this.getPage(sessionId, pageId);
+          if (!page) {
+            return res.status(404).json({ error: "Page not found" });
+          }
+
+          const screenshot = await page.screenshot({
+            fullPage,
+            type: "png",
+          });
+
+          res.set("Content-Type", "image/png");
+          res.send(screenshot);
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
+        }
       }
-    });
+    );
+
+    this.app.post(
+      "/api/browser/sessions/:sessionId/pages/:pageId/click",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId, pageId } = req.params;
+          const { selector } = req.body;
+
+          const page = await this.getPage(sessionId, pageId);
+          if (!page) {
+            return res.status(404).json({ error: "Page not found" });
+          }
+
+          await page.click(selector);
+          res.json({ success: true });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
+        }
+      }
+    );
+
+    this.app.post(
+      "/api/browser/sessions/:sessionId/pages/:pageId/type",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId, pageId } = req.params;
+          const { selector, text } = req.body;
+
+          const page = await this.getPage(sessionId, pageId);
+          if (!page) {
+            return res.status(404).json({ error: "Page not found" });
+          }
+
+          await page.fill(selector, text);
+          res.json({ success: true });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
+        }
+      }
+    );
+
+    this.app.get(
+      "/api/browser/sessions/:sessionId/pages/:pageId/content",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId, pageId } = req.params;
+
+          const page = await this.getPage(sessionId, pageId);
+          if (!page) {
+            return res.status(404).json({ error: "Page not found" });
+          }
+
+          const content = await page.content();
+          const title = await page.title();
+          const url = page.url();
+
+          res.json({ content, title, url });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
+        }
+      }
+    );
+
+    this.app.delete(
+      "/api/browser/sessions/:sessionId/pages/:pageId",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { sessionId, pageId } = req.params;
+          await this.closePage(sessionId, pageId);
+          res.json({ success: true });
+        } catch (error) {
+          res.status(500).json({ error: (error as Error).message });
+        }
+      }
+    );
 
     this.app.get("/health", async (req, res) => {
       try {

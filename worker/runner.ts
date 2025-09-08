@@ -81,7 +81,6 @@ export class AgentRunner {
       this.logger.error(`Failed to start agent server: ${error}`);
     }
 
-
     this.mainThread();
   }
 
@@ -184,7 +183,6 @@ export class AgentRunner {
     } catch (error) {
       this.logger.error(`Error stopping agent server: ${error}`);
     }
-
 
     this.logger.info("AgentRunner stopped");
   }
