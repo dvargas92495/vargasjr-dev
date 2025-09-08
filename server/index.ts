@@ -64,6 +64,7 @@ export const addInboxMessage = async ({
   source,
   inboxName,
   threadId,
+  externalId,
   createdAt,
   metadata,
 }: {
@@ -71,6 +72,7 @@ export const addInboxMessage = async ({
   source: string;
   inboxName: string;
   threadId?: string;
+  externalId?: string;
   createdAt?: Date;
   metadata?: Record<string, string>;
 }) => {
@@ -91,6 +93,7 @@ export const addInboxMessage = async ({
     body: body,
     inboxId: inbox[0].id,
     threadId,
+    externalId,
     createdAt,
     metadata,
   });
