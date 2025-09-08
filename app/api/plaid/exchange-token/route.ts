@@ -20,14 +20,18 @@ export async function POST(request: Request) {
       .from(ApplicationsTable)
       .where(eq(ApplicationsTable.name, "Family Capital One Account"))
       .limit(1);
-    
-    if (!capitalOneApp || !capitalOneApp.clientId || !capitalOneApp.clientSecret) {
+
+    if (
+      !capitalOneApp ||
+      !capitalOneApp.clientId ||
+      !capitalOneApp.clientSecret
+    ) {
       return NextResponse.json(
         { error: "Capital One application credentials not found" },
         { status: 500 }
       );
     }
-    
+
     const plaidClientId = capitalOneApp.clientId;
     const plaidSecret = capitalOneApp.clientSecret;
     const plaidEnv = process.env.PLAID_ENV || "sandbox";
