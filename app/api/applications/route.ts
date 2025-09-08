@@ -5,6 +5,7 @@ import { withApiWrapper } from "@/utils/api-wrapper";
 
 const applicationSchema = z.object({
   name: z.string(),
+  appType: z.string(),
   clientId: z.string().optional(),
   clientSecret: z.string().optional(),
   accessToken: z.string().optional(),
@@ -12,7 +13,7 @@ const applicationSchema = z.object({
 });
 
 async function createApplicationHandler(body: unknown) {
-  const { name, clientId, clientSecret, accessToken, refreshToken } =
+  const { name, appType, clientId, clientSecret, accessToken, refreshToken } =
     applicationSchema.parse(body);
 
   const db = getDb();
@@ -22,7 +23,7 @@ async function createApplicationHandler(body: unknown) {
     .values({ name, clientId, clientSecret })
     .returning({ id: ApplicationsTable.id });
 
-  if (name.toLowerCase().includes("twitter") && (accessToken || refreshToken)) {
+  if (appType === "TWITTER" && (accessToken || refreshToken)) {
     await db.insert(ApplicationWorkspacesTable).values({
       applicationId: application.id,
       name: `${name} Workspace`,
