@@ -8,7 +8,10 @@ interface CapitalOneFormProps {
   onPlaidSuccess?: () => void;
 }
 
-export default function CapitalOneForm({ applicationId, onPlaidSuccess }: CapitalOneFormProps) {
+export default function CapitalOneForm({
+  applicationId,
+  onPlaidSuccess,
+}: CapitalOneFormProps) {
   return (
     <>
       <div>
@@ -35,14 +38,18 @@ export default function CapitalOneForm({ applicationId, onPlaidSuccess }: Capita
           className="w-full p-2 border rounded text-black"
         />
       </div>
-      
+
       {applicationId && (
         <div className="border-t pt-4 mt-4">
           <h4 className="font-medium mb-2">Connect Your Capital One Account</h4>
           <p className="text-sm text-gray-600 mb-2">
-            Connect your Capital One account to enable automatic transaction syncing.
+            Connect your Capital One account to enable automatic transaction
+            syncing.
           </p>
-          <PlaidLinkButton applicationId={applicationId} onSuccess={onPlaidSuccess} />
+          <PlaidLinkButton
+            applicationId={applicationId}
+            onSuccess={onPlaidSuccess}
+          />
         </div>
       )}
     </>

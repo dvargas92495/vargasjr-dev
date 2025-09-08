@@ -33,7 +33,7 @@ async function createApplicationHandler(body: unknown) {
       refreshToken,
     });
   }
-  
+
   if (appType === "CAPITAL_ONE") {
   }
 

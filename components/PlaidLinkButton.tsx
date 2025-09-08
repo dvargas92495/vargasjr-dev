@@ -8,24 +8,27 @@ interface PlaidLinkButtonProps {
   onSuccess?: () => void;
 }
 
-export default function PlaidLinkButton({ applicationId, onSuccess }: PlaidLinkButtonProps) {
+export default function PlaidLinkButton({
+  applicationId,
+  onSuccess,
+}: PlaidLinkButtonProps) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const createLinkToken = useCallback(async () => {
     if (!applicationId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch("/api/plaid/link-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: applicationId }),
       });
-      
+
       const data = await response.json();
       if (data.link_token) {
         setLinkToken(data.link_token);
@@ -39,21 +42,24 @@ export default function PlaidLinkButton({ applicationId, onSuccess }: PlaidLinkB
     }
   }, [applicationId]);
 
-  const onPlaidSuccess = useCallback(async (publicToken: string) => {
-    if (!applicationId) return;
-    
-    try {
-      await fetch("/api/plaid/exchange-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicToken, applicationId }),
-      });
-      
-      onSuccess?.();
-    } catch {
-      setError("Failed to save connection");
-    }
-  }, [applicationId, onSuccess]);
+  const onPlaidSuccess = useCallback(
+    async (publicToken: string) => {
+      if (!applicationId) return;
+
+      try {
+        await fetch("/api/plaid/exchange-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicToken, applicationId }),
+        });
+
+        onSuccess?.();
+      } catch {
+        setError("Failed to save connection");
+      }
+    },
+    [applicationId, onSuccess]
+  );
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
@@ -79,9 +85,7 @@ export default function PlaidLinkButton({ applicationId, onSuccess }: PlaidLinkB
       >
         {loading ? "Loading..." : "Connect with Plaid"}
       </button>
-      {error && (
-        <p className="text-red-500 text-sm mt-2">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
     </div>
   );
 }

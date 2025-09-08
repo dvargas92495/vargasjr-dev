@@ -173,16 +173,19 @@ export default function EditApplicationPage({
               placeholder="Enter your Plaid Secret Key"
             />
           </div>
-          
+
           {application.appType === "CAPITAL_ONE" && (
             <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium mb-2">Connect Your Capital One Account</h4>
+              <h4 className="font-medium mb-2">
+                Connect Your Capital One Account
+              </h4>
               <p className="text-sm text-gray-600 mb-2">
-                Connect your Capital One account to enable automatic transaction syncing.
+                Connect your Capital One account to enable automatic transaction
+                syncing.
               </p>
-              <PlaidLinkButton 
-                applicationId={application.id} 
-                onSuccess={() => window.location.reload()} 
+              <PlaidLinkButton
+                applicationId={application.id}
+                onSuccess={() => window.location.reload()}
               />
             </div>
           )}
