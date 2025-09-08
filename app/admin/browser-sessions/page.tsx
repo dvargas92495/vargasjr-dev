@@ -100,14 +100,17 @@ export default async function BrowserSessionsPage() {
             No Instances Found
           </h3>
           <p className="text-sm text-gray-600 mb-3">
-            No EC2 instances were found matching the current environment filters.
+            No EC2 instances were found matching the current environment
+            filters.
           </p>
           <div className="text-sm text-gray-700">
             <p>
               <strong>Expected tags:</strong>
             </p>
             <ul className="list-disc list-inside ml-2 space-y-1">
-              <li>Project: VargasJR (or Name: vargas-jr for legacy instances)</li>
+              <li>
+                Project: VargasJR (or Name: vargas-jr for legacy instances)
+              </li>
               <li>
                 State: running, stopped, pending, stopping, or shutting-down
               </li>
