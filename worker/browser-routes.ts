@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { BrowserManager } from "../services/BrowserManager";
+import { BrowserManager } from "./browser-manager";
 
 export function browserRoutes(browserManager: BrowserManager): Router {
   const router = Router();

@@ -8,7 +8,7 @@ import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
 import { AGENT_SERVER_PORT } from "@/server/constants";
-import { BrowserManager } from "@/browser/src/services/BrowserManager";
+import { BrowserManager } from "./browser-manager";
 
 dotenv.config();
 

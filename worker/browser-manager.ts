@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { BROWSER_PORT } from "@/server/constants";
-import { browserRoutes } from "../routes/browser";
+import { browserRoutes } from "./browser-routes";
 
 export interface BrowserSession {
   id: string;
