@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getDb } from "@/db/connection";
+import { ApplicationsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const linkTokenSchema = z.object({
   userId: z.string(),
@@ -10,16 +13,23 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userId } = linkTokenSchema.parse(body);
 
-    const plaidClientId = process.env.PLAID_CLIENT_ID;
-    const plaidSecret = process.env.PLAID_SECRET;
-    const plaidEnv = process.env.PLAID_ENV || "sandbox";
-
-    if (!plaidClientId || !plaidSecret) {
+    const db = getDb();
+    const [capitalOneApp] = await db
+      .select()
+      .from(ApplicationsTable)
+      .where(eq(ApplicationsTable.name, "Family Capital One Account"))
+      .limit(1);
+    
+    if (!capitalOneApp || !capitalOneApp.clientId || !capitalOneApp.clientSecret) {
       return NextResponse.json(
-        { error: "Plaid credentials not configured" },
+        { error: "Capital One application credentials not found" },
         { status: 500 }
       );
     }
+    
+    const plaidClientId = capitalOneApp.clientId;
+    const plaidSecret = capitalOneApp.clientSecret;
+    const plaidEnv = process.env.PLAID_ENV || "sandbox";
 
     const response = await fetch(
       `https://${plaidEnv}.plaid.com/link/token/create`,

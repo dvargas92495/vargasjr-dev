@@ -1,32 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
-import { AppTypes, AppType } from "@/db/constants";
-import TwitterForm from "@/components/TwitterForm";
-import CapitalOneForm from "@/components/CapitalOneForm";
-import MercuryForm from "@/components/MercuryForm";
-import SlackForm from "@/components/SlackForm";
-import RoamResearchForm from "@/components/RoamResearchForm";
-import GoogleForm from "@/components/GoogleForm";
-import DefaultApplicationForm from "@/components/DefaultApplicationForm";
+import { useCallback } from "react";
 
 export default function NewApplicationPage() {
   const router = useRouter();
-  const [selectedAppType, setSelectedAppType] = useState<AppType | "">("");
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name");
-      const appType = formData.get("appType");
       const clientId = formData.get("clientId");
       const clientSecret = formData.get("clientSecret");
-      const accessToken = formData.get("accessToken");
-      const refreshToken = formData.get("refreshToken");
 
-      if (name && appType) {
+      if (name) {
         const response = await fetch("/api/applications", {
           method: "POST",
           headers: {
@@ -34,11 +22,8 @@ export default function NewApplicationPage() {
           },
           body: JSON.stringify({
             name: name.toString(),
-            appType: appType.toString(),
             clientId: clientId?.toString(),
             clientSecret: clientSecret?.toString(),
-            accessToken: accessToken?.toString(),
-            refreshToken: refreshToken?.toString(),
           }),
         });
 
@@ -68,51 +53,30 @@ export default function NewApplicationPage() {
           />
         </div>
         <div>
-          <label htmlFor="appType" className="block mb-1">
-            Application Type
+          <label htmlFor="clientId" className="block mb-1">
+            Client ID
           </label>
-          <select
-            id="appType"
-            name="appType"
-            required
-            value={selectedAppType}
-            onChange={(e) => setSelectedAppType(e.target.value as AppType | "")}
+          <input
+            type="text"
+            id="clientId"
+            name="clientId"
             className="w-full p-2 border rounded text-black"
-          >
-            <option value="">Select an application type...</option>
-            {AppTypes.map((type) => (
-              <option key={type} value={type} className="capitalize">
-                {type.toLowerCase().replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
+          />
         </div>
-
-        {(() => {
-          switch (selectedAppType) {
-            case "TWITTER":
-              return <TwitterForm />;
-            case "CAPITAL_ONE":
-              return <CapitalOneForm />;
-            case "MERCURY":
-              return <MercuryForm />;
-            case "SLACK":
-              return <SlackForm />;
-            case "ROAM_RESEARCH":
-              return <RoamResearchForm />;
-            case "GOOGLE":
-              return <GoogleForm />;
-            case "NOTION":
-            case "DEVIN":
-            default:
-              return selectedAppType ? <DefaultApplicationForm /> : null;
-          }
-        })()}
-
+        <div>
+          <label htmlFor="clientSecret" className="block mb-1">
+            Client Secret
+          </label>
+          <input
+            type="password"
+            id="clientSecret"
+            name="clientSecret"
+            className="w-full p-2 border rounded text-black"
+          />
+        </div>
         <button
           type="submit"
           className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 cursor-pointer"
-          disabled={!selectedAppType}
         >
           Create Application
         </button>

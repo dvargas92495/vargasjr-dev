@@ -9,7 +9,6 @@ import PlaidLinkButton from "@/components/PlaidLinkButton";
 interface Application {
   id: string;
   name: string;
-  appType: string;
   clientId: string | null;
   clientSecret: string | null;
   createdAt: string;
@@ -174,7 +173,7 @@ export default function EditApplicationPage({
             />
           </div>
 
-          {application.appType === "CAPITAL_ONE" && (
+          {application.name.toLowerCase().includes("capital one") && (
             <div className="border-t pt-4 mt-4">
               <h4 className="font-medium mb-2">
                 Connect Your Capital One Account

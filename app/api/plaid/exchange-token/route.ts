@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDb } from "../../../../db/connection";
-import { ApplicationWorkspacesTable } from "../../../../db/schema";
+import { getDb } from "@/db/connection";
+import { ApplicationWorkspacesTable, ApplicationsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const exchangeTokenSchema = z.object({
   publicToken: z.string(),
@@ -13,16 +14,23 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { publicToken, applicationId } = exchangeTokenSchema.parse(body);
 
-    const plaidClientId = process.env.PLAID_CLIENT_ID;
-    const plaidSecret = process.env.PLAID_SECRET;
-    const plaidEnv = process.env.PLAID_ENV || "sandbox";
-
-    if (!plaidClientId || !plaidSecret) {
+    const db = getDb();
+    const [capitalOneApp] = await db
+      .select()
+      .from(ApplicationsTable)
+      .where(eq(ApplicationsTable.name, "Family Capital One Account"))
+      .limit(1);
+    
+    if (!capitalOneApp || !capitalOneApp.clientId || !capitalOneApp.clientSecret) {
       return NextResponse.json(
-        { error: "Plaid credentials not configured" },
+        { error: "Capital One application credentials not found" },
         { status: 500 }
       );
     }
+    
+    const plaidClientId = capitalOneApp.clientId;
+    const plaidSecret = capitalOneApp.clientSecret;
+    const plaidEnv = process.env.PLAID_ENV || "sandbox";
 
     const response = await fetch(
       `https://${plaidEnv}.plaid.com/item/public_token/exchange`,
@@ -42,7 +50,6 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (data.access_token) {
-      const db = getDb();
       await db.insert(ApplicationWorkspacesTable).values({
         applicationId,
         name: "Capital One Plaid Connection",
