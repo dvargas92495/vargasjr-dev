@@ -65,7 +65,7 @@ export default function NewRoutineJobPage() {
       const workflowName = name || "test-workflow";
       if (scheduleDescription) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
         try {
           const response = await fetch("/api/jobs/routine", {
@@ -174,9 +174,7 @@ export default function NewRoutineJobPage() {
           disabled={pending}
           className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 disabled:opacity-50"
         >
-          {pending
-            ? "Creating Routine Job (this may take up to 15 seconds)..."
-            : "Create Routine Job"}
+          {pending ? "Creating Routine Job..." : "Create Routine Job"}
         </button>
       </form>
     </div>
