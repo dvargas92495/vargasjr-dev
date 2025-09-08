@@ -15,7 +15,12 @@ interface MessageCardProps {
   inboxName?: string | null;
 }
 
-const MessageCard = ({ message, status, inboxId, inboxName }: MessageCardProps) => {
+const MessageCard = ({
+  message,
+  status,
+  inboxId,
+  inboxName,
+}: MessageCardProps) => {
   const router = useRouter();
 
   const handleClick = useCallback(() => {
