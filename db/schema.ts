@@ -33,6 +33,7 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
   source: varchar("source").notNull(),
   body: text("body").notNull(),
   threadId: varchar("thread_id"),
+  externalId: varchar("external_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   metadata: jsonb("metadata"),
 });

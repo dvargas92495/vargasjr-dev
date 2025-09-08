@@ -131,12 +131,12 @@ export async function POST(request: Request) {
 
     let emailBody =
       "Email content not available - only headers provided by SES";
+    const s3Key = `emails/${messageId}`;
 
     try {
       const s3Client = new S3Client({
         region: process.env.AWS_REGION || "us-east-1",
       });
-      const s3Key = `emails/${messageId}`;
 
       const getObjectCommand = new GetObjectCommand({
         Bucket: process.env.AWS_S3_INBOX_BUCKET || "vargasjr-inbox",
@@ -166,6 +166,7 @@ export async function POST(request: Request) {
       body: emailBody,
       source: email,
       inboxName: "email",
+      externalId: s3Key,
       metadata: metadata,
     });
 

@@ -32,6 +32,7 @@ export default async function InboxMessage({
       contactId: ContactsTable.id,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
+      externalId: InboxMessagesTable.externalId,
       metadata: InboxMessagesTable.metadata,
     })
     .from(InboxMessagesTable)
@@ -117,6 +118,13 @@ export default async function InboxMessage({
           <div className="text-sm text-gray-300">Status</div>
           <div className="text-lg">{statuses[message.id] || "Unread"}</div>
         </div>
+
+        {message.externalId && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">External ID</div>
+            <div className="text-lg">{message.externalId}</div>
+          </div>
+        )}
 
         <div>
           <div className="text-sm text-gray-300">Message Body</div>
