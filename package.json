@@ -55,6 +55,7 @@
     "playwright": "^1.40.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-plaid-link": "^4.1.1",
     "stripe": "^18.2.0",
     "tsscmp": "^1.0.6",
     "twilio": "^5.4.0",

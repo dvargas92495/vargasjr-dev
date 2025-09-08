@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import PlaidLinkButton from "@/components/PlaidLinkButton";
 
 interface Application {
   id: string;
@@ -171,6 +172,22 @@ export default function EditApplicationPage({
               placeholder="Enter your Plaid Secret Key"
             />
           </div>
+
+          {application.name.toLowerCase().includes("capital one") && (
+            <div className="border-t pt-4 mt-4">
+              <h4 className="font-medium mb-2">
+                Connect Your Capital One Account
+              </h4>
+              <p className="text-sm text-gray-600 mb-2">
+                Connect your Capital One account to enable automatic transaction
+                syncing.
+              </p>
+              <PlaidLinkButton
+                applicationId={application.id}
+                onSuccess={() => window.location.reload()}
+              />
+            </div>
+          )}
 
           <div className="flex gap-4 mt-6">
             <button
