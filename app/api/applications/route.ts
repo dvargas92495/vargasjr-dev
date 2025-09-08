@@ -20,7 +20,7 @@ async function createApplicationHandler(body: unknown) {
 
   const [application] = await db
     .insert(ApplicationsTable)
-    .values({ name, clientId, clientSecret })
+    .values({ name, appType, clientId, clientSecret })
     .returning({ id: ApplicationsTable.id });
 
   if (appType === "TWITTER" && (accessToken || refreshToken)) {
@@ -32,6 +32,9 @@ async function createApplicationHandler(body: unknown) {
       accessToken,
       refreshToken,
     });
+  }
+  
+  if (appType === "CAPITAL_ONE") {
   }
 
   return { id: application.id };
