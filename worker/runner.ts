@@ -8,7 +8,6 @@ import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
 import { AGENT_SERVER_PORT } from "@/server/constants";
-import { BrowserManager } from "@/browser/src/services/BrowserManager";
 
 dotenv.config();
 
@@ -30,7 +29,6 @@ export class AgentRunner {
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
   private agentServer?: AgentServer;
-  private browserManager?: BrowserManager;
 
   constructor(config: AgentRunnerConfig = {}) {
     console.log("Initializing the agent...");
@@ -73,8 +71,6 @@ export class AgentRunner {
       port: healthPort,
       logger: this.logger,
     });
-
-    this.browserManager = new BrowserManager();
   }
 
   public async run(): Promise<void> {
@@ -83,12 +79,6 @@ export class AgentRunner {
       this.logger.info("Agent server started successfully");
     } catch (error) {
       this.logger.error(`Failed to start agent server: ${error}`);
-    }
-
-    try {
-      await this.browserManager?.initialize();
-    } catch (error) {
-      this.logger.error(`Failed to start browser service: ${error}`);
     }
 
     this.mainThread();
@@ -192,12 +182,6 @@ export class AgentRunner {
       await this.agentServer?.stop();
     } catch (error) {
       this.logger.error(`Error stopping agent server: ${error}`);
-    }
-
-    try {
-      await this.browserManager?.cleanup();
-    } catch (error) {
-      this.logger.error(`Error stopping browser service: ${error}`);
     }
 
     this.logger.info("AgentRunner stopped");

@@ -118,7 +118,7 @@ export async function getHealthCheckData(): Promise<HealthCheckData> {
     "agent.log",
     "out.log",
   ];
-  const importantDirs = ["node_modules", "agent", "browser"];
+  const importantDirs = ["node_modules", "agent"];
 
   const fileStatus: Record<string, any> = {};
   importantFiles.forEach((file) => {

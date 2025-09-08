@@ -1,16 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { AgentRunner } from "../worker/runner";
-import { AGENT_SERVER_PORT, BROWSER_PORT } from "../server/constants";
+import { AGENT_SERVER_PORT } from "../server/constants";
 
 describe("Browser Sessions API through Proxy", () => {
   let agentRunner: AgentRunner;
   const testPort = AGENT_SERVER_PORT + 20;
-  const testBrowserPort = BROWSER_PORT + 20; // Use different browser port to avoid conflicts
   const testAdminToken = "test-admin-token";
 
   beforeAll(async () => {
     process.env.AGENT_SERVER_PORT = testPort.toString();
-    process.env.BROWSER_PORT = testBrowserPort.toString();
     process.env.LOG_LEVEL = "error";
     process.env.ENABLE_BROWSER = "true";
     process.env.ADMIN_TOKEN = testAdminToken;
