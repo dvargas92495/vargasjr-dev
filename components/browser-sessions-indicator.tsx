@@ -38,10 +38,9 @@ const BrowserSessionsIndicator = ({
     }
 
     try {
-      const response = await fetch("/api/browser-sessions", {
-        method: "POST",
+      const response = await fetch("/api/browser/sessions", {
+        method: "GET",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instanceId }),
       });
 
       if (response.ok) {
