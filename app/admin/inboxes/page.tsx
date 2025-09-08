@@ -1,12 +1,31 @@
-import { InboxesTable, type Inbox } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import {
+  InboxesTable,
+  InboxMessagesTable,
+  ContactsTable,
+  InboxMessageOperationsTable,
+  type Inbox,
+} from "@/db/schema";
+import { desc, or, eq, inArray } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
+import MessageCard from "@/components/message-card";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
 export default async function InboxesPage() {
   const db = getDb();
   let allInboxes: Inbox[] = [];
+  let recentMessages: Array<{
+    id: string;
+    source: string;
+    displayName: string | null;
+    fullName: string | null;
+    createdAt: Date;
+    body: string;
+    inboxId: string;
+    inboxName: string | null;
+    inboxDisplayName: string | null;
+  }> = [];
+  let statuses: Record<string, string> = {};
   let error: string | null = null;
 
   try {
@@ -14,6 +33,47 @@ export default async function InboxesPage() {
       .select()
       .from(InboxesTable)
       .orderBy(desc(InboxesTable.createdAt));
+
+    recentMessages = await db
+      .select({
+        id: InboxMessagesTable.id,
+        source: InboxMessagesTable.source,
+        displayName: ContactsTable.slackDisplayName,
+        fullName: ContactsTable.fullName,
+        createdAt: InboxMessagesTable.createdAt,
+        body: InboxMessagesTable.body,
+        inboxId: InboxMessagesTable.inboxId,
+        inboxName: InboxesTable.displayLabel,
+        inboxDisplayName: InboxesTable.name,
+      })
+      .from(InboxMessagesTable)
+      .leftJoin(
+        ContactsTable,
+        or(
+          eq(InboxMessagesTable.source, ContactsTable.slackId),
+          eq(InboxMessagesTable.source, ContactsTable.email)
+        )
+      )
+      .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
+      .orderBy(desc(InboxMessagesTable.createdAt))
+      .limit(10);
+
+    const messageOperations = await db
+      .select()
+      .from(InboxMessageOperationsTable)
+      .where(
+        inArray(
+          InboxMessageOperationsTable.inboxMessageId,
+          recentMessages.map((message) => message.id)
+        )
+      );
+
+    statuses = Object.fromEntries(
+      messageOperations.map(({ inboxMessageId, operation }) => [
+        inboxMessageId,
+        operation,
+      ])
+    );
   } catch (err) {
     console.error("Error fetching inboxes:", err);
     if (
@@ -26,6 +86,8 @@ export default async function InboxesPage() {
     } else {
       error = "Unable to load inboxes at this time. Please try again later.";
     }
+    recentMessages = [];
+    statuses = {};
   }
 
   if (error) {
@@ -75,6 +137,32 @@ export default async function InboxesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Recent Messages Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Recent Messages</h2>
+        {recentMessages.length > 0 ? (
+          <div className="space-y-3">
+            {recentMessages.map((message) => (
+              <MessageCard
+                key={message.id}
+                message={{
+                  ...message,
+                  source:
+                    message.displayName || message.fullName || message.source,
+                }}
+                status={statuses[message.id] || "Unread"}
+                inboxId={message.inboxId}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-gray-500 text-center py-8">
+            No recent messages found.
+          </div>
+        )}
+      </div>
+
       <div className="mt-4 flex gap-4">
         <Link
           href="/admin/inboxes/new"
