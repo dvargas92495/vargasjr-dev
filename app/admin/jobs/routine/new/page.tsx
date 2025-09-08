@@ -91,17 +91,18 @@ export default function NewRoutineJobPage() {
           router.push("/admin/jobs");
         } catch (err) {
           clearTimeout(timeoutId);
-          
+
           let errorMessage = "Failed to create routine job";
-          
+
           if (err instanceof Error) {
             if (err.name === "AbortError") {
-              errorMessage = "Request timed out while creating routine job. The job may still have been created successfully - please check the jobs list to verify.";
+              errorMessage =
+                "Request timed out while creating routine job. The job may still have been created successfully - please check the jobs list to verify.";
             } else {
               errorMessage = err.message;
             }
           }
-          
+
           setError(errorMessage);
         } finally {
           setPending(false);
@@ -173,7 +174,9 @@ export default function NewRoutineJobPage() {
           disabled={pending}
           className="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 disabled:opacity-50"
         >
-          {pending ? "Creating Routine Job (this may take up to 15 seconds)..." : "Create Routine Job"}
+          {pending
+            ? "Creating Routine Job (this may take up to 15 seconds)..."
+            : "Create Routine Job"}
         </button>
       </form>
     </div>
