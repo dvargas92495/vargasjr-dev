@@ -4,7 +4,7 @@ import { z } from "zod";
 import { withApiWrapper } from "@/utils/api-wrapper";
 
 const approvePrSchema = z.object({
-  prNumber: z.number(),
+  prNumber: z.coerce.number(),
 });
 
 async function approvePrHandler(body: unknown) {
