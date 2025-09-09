@@ -29,7 +29,7 @@ export default function SimulatorPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold mb-2">App Simulator</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-700">
           Simulate preview environments for different applications
         </p>
       </div>
@@ -51,7 +51,7 @@ export default function SimulatorPage() {
                 <h3 className="font-semibold text-gray-800 text-lg">
                   {app.name}
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">{app.description}</p>
+                <p className="text-sm text-gray-700 mt-1">{app.description}</p>
               </div>
             </div>
           </Link>

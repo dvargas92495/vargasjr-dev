@@ -150,7 +150,7 @@ export default async function AdminPage() {
     return (
       <div className="flex flex-col gap-4 justify-start items-start">
         <h1 className="text-2xl font-bold">Vargas JR</h1>
-        <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
+        <p className="text-sm text-gray-700">Manage Vargas Jr Settings</p>
 
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
           <h3 className="font-semibold text-yellow-800 mb-2">
@@ -181,7 +181,7 @@ export default async function AdminPage() {
           <p className="text-sm text-gray-600 mb-3">
             Preview environments require a valid PR number to show instances.
           </p>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-700">
             <p>
               Current environment is in preview mode but no PR number was
               detected.
@@ -269,7 +269,7 @@ export default async function AdminPage() {
   return (
     <div className="flex flex-col gap-4 justify-start items-start">
       <h1 className="text-2xl font-bold">Vargas JR</h1>
-      <p className="text-sm text-gray-500">Manage Vargas Jr Settings</p>
+      <p className="text-sm text-gray-700">Manage Vargas Jr Settings</p>
 
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
         <h3 className="font-semibold text-yellow-800 mb-2">Environment Info</h3>
@@ -360,7 +360,7 @@ export default async function AdminPage() {
             No EC2 instances were found matching the current environment
             filters.
           </p>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-700">
             <p>
               <strong>Expected tags:</strong>
             </p>

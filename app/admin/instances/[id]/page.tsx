@@ -167,7 +167,7 @@ export default async function InstanceDetailPage({
                   instanceState={instanceState || ""}
                 />
               ) : (
-                <span className="text-gray-500">N/A</span>
+                <span className="text-gray-700">N/A</span>
               )}
             </div>
           </div>
@@ -219,8 +219,8 @@ export default async function InstanceDetailPage({
             instanceState={instanceState || ""}
           />
         ) : (
-          <div className="text-sm text-gray-500">
-            Browser Sessions: <span className="text-gray-400">N/A</span>
+          <div className="text-sm text-gray-700">
+            Browser Sessions: <span className="text-gray-600">N/A</span>
           </div>
         )}
       </div>
