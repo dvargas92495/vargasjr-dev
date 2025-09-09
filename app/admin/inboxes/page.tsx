@@ -153,6 +153,7 @@ export default async function InboxesPage() {
                 }}
                 status={statuses[message.id] || "Unread"}
                 inboxId={message.inboxId}
+                inboxName={message.inboxName}
               />
             ))}
           </div>

@@ -12,9 +12,15 @@ interface MessageCardProps {
   };
   status: string;
   inboxId: string;
+  inboxName?: string | null;
 }
 
-const MessageCard = ({ message, status, inboxId }: MessageCardProps) => {
+const MessageCard = ({
+  message,
+  status,
+  inboxId,
+  inboxName,
+}: MessageCardProps) => {
   const router = useRouter();
 
   const handleClick = useCallback(() => {
@@ -49,9 +55,16 @@ const MessageCard = ({ message, status, inboxId }: MessageCardProps) => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              {message.source}
-            </p>
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {message.source}
+              </p>
+              {inboxName && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {inboxName}
+                </span>
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <span
                 className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
