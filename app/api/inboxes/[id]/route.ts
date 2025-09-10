@@ -15,13 +15,14 @@ const updateInboxSchema = z.object({
 async function getInboxHandler(
   body: unknown,
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   const db = getDb();
   const [inbox] = await db
     .select()
     .from(InboxesTable)
-    .where(eq(InboxesTable.id, context.params.id))
+    .where(eq(InboxesTable.id, params.id))
     .limit(1);
 
   if (!inbox) {
@@ -34,8 +35,9 @@ async function getInboxHandler(
 async function updateInboxHandler(
   body: unknown,
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   const { name, displayLabel, type, config } = updateInboxSchema.parse(body);
 
   const db = getDb();
@@ -47,7 +49,7 @@ async function updateInboxHandler(
       type,
       config,
     })
-    .where(eq(InboxesTable.id, context.params.id))
+    .where(eq(InboxesTable.id, params.id))
     .returning();
 
   if (!updatedInbox) {
