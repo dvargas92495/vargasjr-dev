@@ -59,7 +59,9 @@ export default function EditContactPage({
         await updateContact(contact.id, formData);
         router.push(`/admin/crm/${contact.id}`);
       } catch (error) {
-        setError(error instanceof Error ? error.message : "Failed to update contact");
+        setError(
+          error instanceof Error ? error.message : "Failed to update contact"
+        );
       } finally {
         setSaving(false);
       }

@@ -18,10 +18,7 @@ export async function GET(
       .then((results) => results[0]);
 
     if (!contact) {
-      return NextResponse.json(
-        { error: "Contact not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Contact not found" }, { status: 404 });
     }
 
     return NextResponse.json({
