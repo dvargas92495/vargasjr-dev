@@ -31,14 +31,13 @@ describe("Browser Sessions API through Proxy", () => {
 
   it("should return browser sessions through proxy", async () => {
     const response = await fetch(
-      `http://localhost:${testPort}/api/browser-sessions`,
+      `http://localhost:${testPort}/api/browser/sessions`,
       {
-        method: "POST",
+        method: "GET",
         headers: {
           Authorization: `Bearer ${testAdminToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ instanceId: "i-test123" }),
       }
     );
 
@@ -52,14 +51,7 @@ describe("Browser Sessions API through Proxy", () => {
 
   it("should require authentication", async () => {
     const response = await fetch(
-      `http://localhost:${testPort}/api/browser-sessions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ instanceId: "i-test123" }),
-      }
+      `http://localhost:${testPort}/api/browser/sessions`
     );
 
     expect(response.status).toBe(401);
@@ -71,14 +63,11 @@ describe("Browser Sessions API through Proxy", () => {
 
   it("should reject invalid tokens", async () => {
     const response = await fetch(
-      `http://localhost:${testPort}/api/browser-sessions`,
+      `http://localhost:${testPort}/api/browser/sessions`,
       {
-        method: "POST",
         headers: {
           Authorization: "Bearer invalid-token",
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ instanceId: "i-test123" }),
       }
     );
 
