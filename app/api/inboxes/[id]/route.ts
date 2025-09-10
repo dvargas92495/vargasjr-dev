@@ -12,7 +12,11 @@ const updateInboxSchema = z.object({
   config: z.record(z.any()).optional().default({}),
 });
 
-async function getInboxHandler(body: unknown, request: Request, context: { params: { id: string } }) {
+async function getInboxHandler(
+  body: unknown,
+  request: Request,
+  context: { params: { id: string } }
+) {
   const db = getDb();
   const [inbox] = await db
     .select()
@@ -27,7 +31,11 @@ async function getInboxHandler(body: unknown, request: Request, context: { param
   return inbox;
 }
 
-async function updateInboxHandler(body: unknown, request: Request, context: { params: { id: string } }) {
+async function updateInboxHandler(
+  body: unknown,
+  request: Request,
+  context: { params: { id: string } }
+) {
   const { name, displayLabel, type, config } = updateInboxSchema.parse(body);
 
   const db = getDb();
