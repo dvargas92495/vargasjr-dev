@@ -15,9 +15,9 @@ const updateInboxSchema = z.object({
 async function getInboxHandler(
   body: unknown,
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context?: unknown
 ) {
-  const params = await context.params;
+  const params = await (context as { params: Promise<{ id: string }> }).params;
   const db = getDb();
   const [inbox] = await db
     .select()
@@ -35,9 +35,9 @@ async function getInboxHandler(
 async function updateInboxHandler(
   body: unknown,
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context?: unknown
 ) {
-  const params = await context.params;
+  const params = await (context as { params: Promise<{ id: string }> }).params;
   const { name, displayLabel, type, config } = updateInboxSchema.parse(body);
 
   const db = getDb();
