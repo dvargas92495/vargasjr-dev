@@ -31,7 +31,7 @@ describe("Browser Sessions API through Proxy", () => {
 
   it("should return browser sessions through proxy", async () => {
     const response = await fetch(
-      `http://localhost:${testPort}/api/browser/sessions`,
+      `http://localhost:${testPort}/api/browser-sessions`,
       {
         method: "GET",
         headers: {
@@ -51,7 +51,7 @@ describe("Browser Sessions API through Proxy", () => {
 
   it("should require authentication", async () => {
     const response = await fetch(
-      `http://localhost:${testPort}/api/browser/sessions`
+      `http://localhost:${testPort}/api/browser-sessions`
     );
 
     expect(response.status).toBe(401);
@@ -63,7 +63,7 @@ describe("Browser Sessions API through Proxy", () => {
 
   it("should reject invalid tokens", async () => {
     const response = await fetch(
-      `http://localhost:${testPort}/api/browser/sessions`,
+      `http://localhost:${testPort}/api/browser-sessions`,
       {
         headers: {
           Authorization: "Bearer invalid-token",
