@@ -212,7 +212,9 @@ export default async function InstanceDetailPage({
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">Browser Sessions</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">
+          Browser Sessions
+        </h3>
         {instanceId ? (
           <BrowserSessionsIndicator
             instanceId={instanceId}
