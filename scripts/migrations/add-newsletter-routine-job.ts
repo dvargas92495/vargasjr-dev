@@ -8,7 +8,7 @@ export class AddNewsletterRoutineJobMigration extends OneTimeMigrationRunner {
 
   async runMigration(): Promise<void> {
     const db = getDb();
-    
+
     await db
       .insert(RoutineJobsTable)
       .values({

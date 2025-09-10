@@ -40,12 +40,13 @@ Newsletters to summarize:
         )
     ]
 
-    class Outputs(BaseNode.Outputs):
+    class Outputs(InlinePromptNode.Outputs):
         digest_content: str
 
     def run(self) -> Outputs:
         digest_content = super().run().text
         
         return self.Outputs(
+            text=digest_content,
             digest_content=digest_content
         )

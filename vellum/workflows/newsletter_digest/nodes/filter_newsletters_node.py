@@ -49,7 +49,7 @@ Emails to classify:
         )
     ]
 
-    class Outputs(BaseNode.Outputs):
+    class Outputs(InlinePromptNode.Outputs):
         newsletters: List[Dict[str, Any]]
         newsletters_count: int
 
@@ -69,6 +69,7 @@ Emails to classify:
                     break
         
         return self.Outputs(
+            text=classification_result,
             newsletters=newsletters,
             newsletters_count=len(newsletters)
         )
