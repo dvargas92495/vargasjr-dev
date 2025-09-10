@@ -6,6 +6,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import Stripe from "stripe";
 import { getDb } from "@/db/connection";
 import DeleteContactButton from "@/components/delete-contact-button";
+import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 
@@ -79,14 +81,28 @@ export default async function ContactPage({
 
   return (
     <div className="flex flex-col p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">
+      <div className="flex items-center gap-4 mb-4">
+        <Link href="/admin/crm">
+          <button className="flex items-center gap-2 text-gray-300 hover:text-white">
+            <ArrowLeftIcon className="w-5 h-5" />
+          </button>
+        </Link>
+        <h1 className="text-2xl font-bold flex-1">
           {contactData.fullName || "Contact Details"}
         </h1>
-        <DeleteContactButton
-          id={id}
-          contactName={contactData.fullName || "Contact"}
-        />
+        <div className="flex gap-2">
+          <Link
+            href={`/admin/crm/${id}/edit`}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            <PencilIcon className="w-4 h-4 inline mr-2" />
+            Edit
+          </Link>
+          <DeleteContactButton
+            id={id}
+            contactName={contactData.fullName || "Contact"}
+          />
+        </div>
       </div>
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-2 gap-4">
