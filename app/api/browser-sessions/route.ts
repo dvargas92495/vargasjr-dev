@@ -18,6 +18,7 @@ interface BrowserSessionsResult {
     pageCount: number;
   }>;
   error?: string;
+  source?: "agent-server" | "aws-ec2" | "next-api";
   timestamp: string;
 }
 
@@ -37,6 +38,7 @@ async function fetchBrowserSessions(
         instanceId,
         status: "offline",
         error: "Instance not found",
+        source: "aws-ec2",
         timestamp: new Date().toISOString(),
       };
     }
@@ -46,6 +48,7 @@ async function fetchBrowserSessions(
         instanceId,
         status: "offline",
         error: `Instance is ${instance.State?.Name}`,
+        source: "aws-ec2",
         timestamp: new Date().toISOString(),
       };
     }
@@ -56,6 +59,7 @@ async function fetchBrowserSessions(
         instanceId,
         status: "offline",
         error: "Instance has no public IP address",
+        source: "aws-ec2",
         timestamp: new Date().toISOString(),
       };
     }
@@ -81,7 +85,8 @@ async function fetchBrowserSessions(
         return {
           instanceId,
           status: "error",
-          error: `HTTP ${response.status}: ${response.statusText}`,
+          error: `Agent Server returned HTTP ${response.status}: ${response.statusText}`,
+          source: "agent-server",
           timestamp: new Date().toISOString(),
         };
       }
@@ -100,6 +105,7 @@ async function fetchBrowserSessions(
           instanceId,
           status: "error",
           error: "Browser sessions request timed out after 10 seconds",
+          source: "agent-server",
           timestamp: new Date().toISOString(),
         };
       }
@@ -109,7 +115,8 @@ async function fetchBrowserSessions(
       return {
         instanceId,
         status: "error",
-        error: `HTTP request failed: ${errMsg}`,
+        error: `HTTP request to Agent Server failed: ${errMsg}`,
+        source: "agent-server",
         timestamp: new Date().toISOString(),
       };
     }
@@ -117,9 +124,10 @@ async function fetchBrowserSessions(
     return {
       instanceId,
       status: "error",
-      error: `Failed to get instance details: ${
+      error: `Failed to get instance details from AWS: ${
         error instanceof Error ? error.message : String(error)
       }`,
+      source: "aws-ec2",
       timestamp: new Date().toISOString(),
     };
   }
