@@ -76,6 +76,7 @@ async function fetchBrowserSessions(
         signal: controller.signal,
         headers: {
           Accept: "application/json",
+          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
         },
       });
 
