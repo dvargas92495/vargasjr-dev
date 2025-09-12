@@ -38,9 +38,10 @@ const BrowserSessionsIndicator = ({
     }
 
     try {
-      const response = await fetch("/api/browser/sessions", {
-        method: "GET",
+      const response = await fetch("/api/browser-sessions", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instanceId }),
       });
 
       if (response.ok) {
@@ -51,10 +52,34 @@ const BrowserSessionsIndicator = ({
           error: data.error,
         });
       } else {
-        const errorText = await response.text();
+        let errorMessage = "Failed to fetch browser sessions";
+
+        try {
+          const errorData = await response.json();
+          if (errorData.error && errorData.source) {
+            errorMessage = `${errorMessage} (${errorData.source}): ${errorData.error}`;
+          } else if (errorData.error) {
+            errorMessage = `${errorMessage}: ${errorData.error}`;
+          } else {
+            errorMessage = `${errorMessage} (HTTP ${response.status})`;
+          }
+        } catch {
+          const errorText = await response.text();
+          if (
+            errorText.includes("<!DOCTYPE html>") ||
+            errorText.includes("<html")
+          ) {
+            errorMessage = `${errorMessage} (Next.js routing error - HTML response received)`;
+          } else if (errorText) {
+            errorMessage = `${errorMessage} (HTTP ${response.status}): ${errorText}`;
+          } else {
+            errorMessage = `${errorMessage} (HTTP ${response.status})`;
+          }
+        }
+
         setSessionsStatus({
           status: "error",
-          error: `Failed to fetch browser sessions: ${errorText}`,
+          error: errorMessage,
         });
       }
     } catch (error) {
