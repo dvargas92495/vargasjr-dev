@@ -38,7 +38,9 @@ export default function RoutineJobDetailClient({
             <label className="block text-sm font-medium text-gray-700">
               Name
             </label>
-            <p className="mt-1 text-sm text-gray-900">{currentRoutineJob.name}</p>
+            <p className="mt-1 text-sm text-gray-900">
+              {currentRoutineJob.name}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -48,9 +50,9 @@ export default function RoutineJobDetailClient({
               <p className="text-sm text-gray-900">
                 {currentRoutineJob.cronExpression}
               </p>
-              <EditCronButton 
-                routineJob={currentRoutineJob} 
-                onUpdate={handleCronUpdate} 
+              <EditCronButton
+                routineJob={currentRoutineJob}
+                onUpdate={handleCronUpdate}
               />
             </div>
           </div>

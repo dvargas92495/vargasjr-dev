@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import EditCronModal, { EditCronModalHandle } from "@/components/edit-cron-modal";
+import EditCronModal, {
+  EditCronModalHandle,
+} from "@/components/edit-cron-modal";
 
 interface RoutineJob {
   id: string;
@@ -17,7 +19,10 @@ interface EditCronButtonProps {
   onUpdate: (updatedJob: RoutineJob) => void;
 }
 
-export default function EditCronButton({ routineJob, onUpdate }: EditCronButtonProps) {
+export default function EditCronButton({
+  routineJob,
+  onUpdate,
+}: EditCronButtonProps) {
   const modalRef = useRef<EditCronModalHandle>(null);
   const [loading, setLoading] = useState(false);
 

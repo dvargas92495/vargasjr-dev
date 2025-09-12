@@ -20,7 +20,7 @@ export async function PUT(
     }
 
     const db = getDb();
-    
+
     const existingJob = await db
       .select()
       .from(RoutineJobsTable)

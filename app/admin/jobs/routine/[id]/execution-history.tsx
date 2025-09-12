@@ -45,7 +45,9 @@ export default function ExecutionHistory({
   if (loading) {
     return (
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">Execution History</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">
+          Execution History
+        </h3>
         <p className="text-gray-700">Loading execution history...</p>
       </div>
     );
@@ -54,7 +56,9 @@ export default function ExecutionHistory({
   if (error) {
     return (
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">Execution History</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">
+          Execution History
+        </h3>
         <p className="text-red-600">Error: {error}</p>
       </div>
     );
