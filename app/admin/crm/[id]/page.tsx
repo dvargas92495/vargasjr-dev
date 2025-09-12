@@ -1,5 +1,5 @@
-import { ContactsTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { ContactsTable, InboxMessagesTable, InboxMessageOperationsTable, InboxesTable } from "@/db/schema";
+import { eq, or, desc, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -8,6 +8,7 @@ import { getDb } from "@/db/connection";
 import DeleteContactButton from "@/components/delete-contact-button";
 import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import MessageCard from "@/components/message-card";
 
 dayjs.extend(relativeTime);
 
@@ -29,6 +30,52 @@ export default async function ContactPage({
   }
 
   const contactData = contact[0];
+
+  const recentMessages = await db
+    .select({
+      id: InboxMessagesTable.id,
+      source: InboxMessagesTable.source,
+      displayName: ContactsTable.slackDisplayName,
+      fullName: ContactsTable.fullName,
+      createdAt: InboxMessagesTable.createdAt,
+      body: InboxMessagesTable.body,
+      inboxId: InboxMessagesTable.inboxId,
+      inboxName: InboxesTable.displayLabel,
+    })
+    .from(InboxMessagesTable)
+    .leftJoin(
+      ContactsTable,
+      or(
+        eq(InboxMessagesTable.source, ContactsTable.slackId),
+        eq(InboxMessagesTable.source, ContactsTable.email)
+      )
+    )
+    .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
+    .where(
+      or(
+        ...(contactData.email ? [eq(InboxMessagesTable.source, contactData.email)] : []),
+        ...(contactData.slackId ? [eq(InboxMessagesTable.source, contactData.slackId)] : [])
+      )
+    )
+    .orderBy(desc(InboxMessagesTable.createdAt))
+    .limit(10);
+
+  const messageOperations = await db
+    .select()
+    .from(InboxMessageOperationsTable)
+    .where(
+      inArray(
+        InboxMessageOperationsTable.inboxMessageId,
+        recentMessages.map((message) => message.id)
+      )
+    );
+
+  const messageStatuses = Object.fromEntries(
+    messageOperations.map(({ inboxMessageId, operation }) => [
+      inboxMessageId,
+      operation,
+    ])
+  );
 
   let isClient = false;
   let clientSince: Date | null = null;
@@ -163,6 +210,30 @@ export default async function ContactPage({
             </div>
           )}
         </div>
+      </div>
+      
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Messages</h2>
+        {recentMessages.length > 0 ? (
+          <div className="space-y-3">
+            {recentMessages.map((message) => (
+              <MessageCard
+                key={message.id}
+                message={{
+                  ...message,
+                  source: message.displayName || message.fullName || message.source,
+                }}
+                status={messageStatuses[message.id] || "Unread"}
+                inboxId={message.inboxId}
+                inboxName={message.inboxName}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-gray-500 text-center py-8 bg-white rounded-lg shadow">
+            No recent messages found for this contact.
+          </div>
+        )}
       </div>
     </div>
   );
