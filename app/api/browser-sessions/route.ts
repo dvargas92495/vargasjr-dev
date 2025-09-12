@@ -64,7 +64,7 @@ async function fetchBrowserSessions(
       };
     }
 
-    const sessionsUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/browser/sessions`;
+    const sessionsUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/api/browser/sessions`;
     console.log(`[Browser Sessions] Making HTTP request to: ${sessionsUrl}`);
 
     const controller = new AbortController();
