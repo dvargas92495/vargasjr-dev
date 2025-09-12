@@ -33,6 +33,9 @@ export async function POST(request: Request) {
             type: "STRING",
           },
         ],
+        metadata: {
+          environment: process.env.AGENT_ENVIRONMENT || "unknown",
+        },
       });
 
       if (response.data.state !== "FULFILLED") {

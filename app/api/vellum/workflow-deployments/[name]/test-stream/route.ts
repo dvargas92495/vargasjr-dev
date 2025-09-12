@@ -40,6 +40,9 @@ export async function GET(
           const workflowStream = await vellumClient.executeWorkflowStream({
             workflowDeploymentName: name,
             inputs: [],
+            metadata: {
+              environment: process.env.AGENT_ENVIRONMENT || "unknown",
+            },
           });
           let workflowOutputs: unknown = null;
 

@@ -106,6 +106,9 @@ export class RoutineJob {
       const stream = await vellumClient.executeWorkflowStream({
         workflowDeploymentName: this.name,
         inputs: [],
+        metadata: {
+          environment: process.env.AGENT_ENVIRONMENT || "unknown",
+        },
       });
 
       let workflowOutputs: any = null;
