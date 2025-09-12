@@ -78,6 +78,11 @@ export default async function InboxPage({
         <h1 className="text-2xl font-bold">
           {inbox[0].displayLabel || inbox[0].name}
         </h1>
+        <Link href={`/admin/inboxes/${id}/edit`}>
+          <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Edit
+          </button>
+        </Link>
       </div>
       <div className="space-y-3">
         {messages.map((message) => (
