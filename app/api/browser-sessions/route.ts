@@ -64,7 +64,7 @@ async function fetchBrowserSessions(
       };
     }
 
-    const sessionsUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/browser/sessions`;
+    const sessionsUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/api/browser/sessions`;
     console.log(`[Browser Sessions] Making HTTP request to: ${sessionsUrl}`);
 
     const controller = new AbortController();
@@ -76,16 +76,18 @@ async function fetchBrowserSessions(
         signal: controller.signal,
         headers: {
           Accept: "application/json",
+          Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
         },
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const errorText = await response.text();
         return {
           instanceId,
           status: "error",
-          error: `Agent Server returned HTTP ${response.status}: ${response.statusText}`,
+          error: `Agent Server returned HTTP ${response.status}: ${errorText}`,
           source: "agent-server",
           timestamp: new Date().toISOString(),
         };
