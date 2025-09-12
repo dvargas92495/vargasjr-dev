@@ -83,10 +83,11 @@ async function fetchBrowserSessions(
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const errorText = await response.text();
         return {
           instanceId,
           status: "error",
-          error: `Agent Server returned HTTP ${response.status}: ${response.statusText}`,
+          error: `Agent Server returned HTTP ${response.status}: ${errorText}`,
           source: "agent-server",
           timestamp: new Date().toISOString(),
         };
