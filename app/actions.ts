@@ -219,6 +219,32 @@ export async function deleteContact(id: string) {
   return deletedContact[0];
 }
 
+export async function updateContact(id: string, formData: FormData) {
+  const fullName = formData.get("fullName") as string;
+  const email = formData.get("email") as string;
+  const phoneNumber = formData.get("phoneNumber") as string;
+
+  const db = getDb();
+  const updatedContact = await db
+    .update(ContactsTable)
+    .set({
+      fullName: fullName || null,
+      email: email || null,
+      phoneNumber: phoneNumber || null,
+    })
+    .where(eq(ContactsTable.id, id))
+    .returning()
+    .execute();
+
+  if (!updatedContact.length) {
+    throw new Error("Contact not found");
+  }
+
+  revalidatePath("/admin/crm");
+  revalidatePath(`/admin/crm/${id}`);
+  return updatedContact[0];
+}
+
 export async function deleteMessage(messageId: string, inboxId: string) {
   const db = getDb();
 
