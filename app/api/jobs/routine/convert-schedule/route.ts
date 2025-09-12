@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { VellumClient } from "vellum-ai";
-import { getEnvironmentPrefix, getPRNumber } from "../../constants";
+import { getEnvironmentPrefix, getPRNumber } from "../../../constants";
 
 export async function POST(request: Request) {
   try {
