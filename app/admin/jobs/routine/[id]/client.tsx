@@ -1,7 +1,10 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import TestButton from "./test-button";
 import ExecutionHistory from "./execution-history";
 import DeleteRoutineJobButton from "@/components/delete-routine-job-button";
+import EditCronButton from "./edit-cron-button";
 
 interface RoutineJob {
   id: string;
@@ -19,6 +22,12 @@ interface RoutineJobDetailClientProps {
 export default function RoutineJobDetailClient({
   routineJob,
 }: RoutineJobDetailClientProps) {
+  const [currentRoutineJob, setCurrentRoutineJob] = useState(routineJob);
+
+  const handleCronUpdate = (updatedJob: RoutineJob) => {
+    setCurrentRoutineJob(updatedJob);
+  };
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <h2 className="text-xl font-bold">Routine Job Details</h2>
@@ -29,22 +38,30 @@ export default function RoutineJobDetailClient({
             <label className="block text-sm font-medium text-gray-700">
               Name
             </label>
-            <p className="mt-1 text-sm text-gray-900">{routineJob.name}</p>
+            <p className="mt-1 text-sm text-gray-900">
+              {currentRoutineJob.name}
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Cron Expression
             </label>
-            <p className="mt-1 text-sm text-gray-900">
-              {routineJob.cronExpression}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-gray-900">
+                {currentRoutineJob.cronExpression}
+              </p>
+              <EditCronButton
+                routineJob={currentRoutineJob}
+                onUpdate={handleCronUpdate}
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Status
             </label>
             <p className="mt-1 text-sm text-gray-900">
-              {routineJob.enabled ? (
+              {currentRoutineJob.enabled ? (
                 <span className="text-green-600 font-semibold">✓ Enabled</span>
               ) : (
                 <span className="text-red-600 font-semibold">✗ Disabled</span>
@@ -56,18 +73,18 @@ export default function RoutineJobDetailClient({
               Created At
             </label>
             <p className="mt-1 text-sm text-gray-900">
-              {new Date(routineJob.createdAt).toLocaleDateString()}
+              {new Date(currentRoutineJob.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
       </div>
 
       <div className="flex gap-4">
-        <TestButton routineJobId={routineJob.id} />
+        <TestButton routineJobId={currentRoutineJob.id} />
 
-        {routineJob.sandboxUrl && (
+        {currentRoutineJob.sandboxUrl && (
           <a
-            href={routineJob.sandboxUrl}
+            href={currentRoutineJob.sandboxUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -77,12 +94,12 @@ export default function RoutineJobDetailClient({
         )}
 
         <DeleteRoutineJobButton
-          id={routineJob.id}
-          routineJobName={routineJob.name}
+          id={currentRoutineJob.id}
+          routineJobName={currentRoutineJob.name}
         />
       </div>
 
-      <ExecutionHistory routineJobId={routineJob.id} />
+      <ExecutionHistory routineJobId={currentRoutineJob.id} />
     </div>
   );
 }
