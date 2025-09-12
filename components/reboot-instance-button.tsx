@@ -35,12 +35,15 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
 
       if (response.ok) {
         const healthData = await response.json();
-        
+
         if (healthData.status === "healthy") {
-          setRebootStatus({ status: "success", message: "Agent rebooted successfully!" });
+          setRebootStatus({
+            status: "success",
+            message: "Agent rebooted successfully!",
+          });
           setError(null);
           localStorage.removeItem(REBOOT_STORAGE_KEY);
-          
+
           if (pollingIntervalRef.current) {
             clearInterval(pollingIntervalRef.current);
             pollingIntervalRef.current = null;
@@ -49,7 +52,7 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
           }
-          
+
           setTimeout(() => {
             setRebootStatus({ status: "idle", message: "" });
             router.refresh();
@@ -81,12 +84,12 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     const timeout = setTimeout(() => {
       setRebootStatus({ status: "error", message: "Reboot timed out" });
       setError("Reboot operation timed out after 5 minutes");
       localStorage.removeItem(REBOOT_STORAGE_KEY);
-      
+
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
@@ -138,7 +141,8 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
         localStorage.removeItem(REBOOT_STORAGE_KEY);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to reboot agent";
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to reboot agent";
       setRebootStatus({ status: "error", message: errorMsg });
       setError(errorMsg);
       localStorage.removeItem(REBOOT_STORAGE_KEY);
@@ -180,7 +184,9 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
           if (elapsed < REBOOT_TIMEOUT) {
             setRebootStatus({
               status: "rebooting",
-              message: `Resuming reboot monitoring... (${Math.floor(elapsed / 1000)}s)`,
+              message: `Resuming reboot monitoring... (${Math.floor(
+                elapsed / 1000
+              )}s)`,
               startTime,
             });
             startPolling();
@@ -219,7 +225,8 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
     return null;
   };
 
-  const isDisabled = rebootStatus.status === "rebooting" || rebootStatus.status === "success";
+  const isDisabled =
+    rebootStatus.status === "rebooting" || rebootStatus.status === "success";
 
   return (
     <div>
@@ -244,9 +251,7 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
           {rebootStatus.message}
         </p>
       )}
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 };
