@@ -78,6 +78,25 @@
       "target_directory": null
     },
     {
+      "module": "workflows.newsletter_digest",
+      "workflow_sandbox_id": "d2e20bbd-bbac-4c10-8904-eba3178b761a",
+      "ignore": null,
+      "deployments": [
+        {
+          "id": "7be01752-1857-4192-ad58-7a0b62d587ed",
+          "label": "Newsletter Digest",
+          "name": "newsletter-digest",
+          "description": null,
+          "release_tags": null,
+          "release_description": null
+        }
+      ],
+      "container_image_name": null,
+      "container_image_tag": null,
+      "workspace": "default",
+      "target_directory": null
+    },
+    {
       "module": "workflows.post_twitter",
       "workflow_sandbox_id": "c545dc9b-664f-4dc2-859a-2760781cf6b9",
       "ignore": null,
