@@ -7,7 +7,7 @@ class SummarizeNewslettersNode(InlinePromptNode):
     newsletters = FilterNewslettersNode.Outputs.newsletters
     
     prompt_inputs = {"newsletters": newsletters}
-    ml_model = "gpt-4o-mini"
+    ml_model = "gpt-5"
     blocks = [
         ChatMessagePromptBlock(
             chat_role="SYSTEM",

@@ -9,7 +9,7 @@ class FilterNewslettersNode(InlinePromptNode):
     emails = FetchEmailsNode.Outputs.emails
     
     prompt_inputs = {"emails": emails}
-    ml_model = "gpt-4o-mini"
+    ml_model = "gpt-5"
     blocks = [
         ChatMessagePromptBlock(
             chat_role="SYSTEM",
