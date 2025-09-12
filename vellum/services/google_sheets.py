@@ -3,14 +3,13 @@ import os
 from typing import Any, Optional
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from services import get_application_by_name
 
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 def get_spreadsheets() -> Any:
-    from services import get_application_by_name
-    
     google_app = get_application_by_name("Google")
     if not google_app:
         raise ValueError("Google application not found in database")

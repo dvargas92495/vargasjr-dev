@@ -6,6 +6,8 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 import base64
+from services import get_application_by_name
+from services.aws import send_email as aws_send_email
 
 
 SCOPES = [
@@ -15,8 +17,6 @@ SCOPES = [
 
 
 def get_gmail_service() -> Any:
-    from services import get_application_by_name
-    
     google_app = get_application_by_name("Google")
     if not google_app:
         raise ValueError("Google application not found in database")
@@ -112,7 +112,6 @@ def extract_email_body(payload: Dict[str, Any]) -> str:
 def send_email(to: str, subject: str, body: str) -> bool:
     """Send an email using AWS SES"""
     try:
-        from services.aws import send_email as aws_send_email
         aws_send_email(to=to, subject=subject, body=body)
         return True
     except Exception as e:
