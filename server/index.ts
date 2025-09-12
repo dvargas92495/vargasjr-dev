@@ -67,6 +67,7 @@ export const addInboxMessage = async ({
   externalId,
   createdAt,
   metadata,
+  contactId,
 }: {
   body: string;
   source: string;
@@ -75,6 +76,7 @@ export const addInboxMessage = async ({
   externalId?: string;
   createdAt?: Date;
   metadata?: Record<string, string>;
+  contactId?: string;
 }) => {
   const db = getDb();
   const inbox = await db
@@ -96,6 +98,7 @@ export const addInboxMessage = async ({
     externalId,
     createdAt,
     metadata,
+    contactId,
   });
 };
 

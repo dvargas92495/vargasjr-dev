@@ -196,7 +196,7 @@ export async function POST(request: Request) {
         try {
           const inboxName = `slack-${event.channel}`;
           const displayLabel = await resolveSlackChannel(event.channel);
-          await upsertSlackContact(event.user);
+          const contactId = await upsertSlackContact(event.user);
 
           const db = getDb();
           let inbox = await db
@@ -230,6 +230,7 @@ export async function POST(request: Request) {
             source: event.user,
             inboxName: inboxName,
             createdAt: new Date(event.ts * 1000),
+            contactId: contactId,
           });
         } catch (dbError) {
           console.error(

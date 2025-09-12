@@ -27,6 +27,7 @@ export async function sendChatMessage(sessionId: string, formData: FormData) {
     .select({
       id: ChatSessionsTable.id,
       contactEmail: ContactsTable.email,
+      contactId: ChatSessionsTable.contactId,
     })
     .from(ChatSessionsTable)
     .innerJoin(ContactsTable, eq(ChatSessionsTable.contactId, ContactsTable.id))
@@ -44,6 +45,7 @@ export async function sendChatMessage(sessionId: string, formData: FormData) {
     source: session.contactEmail || "Anonymous",
     inboxName: "chat-sessions",
     threadId: sessionId,
+    contactId: session.contactId,
   });
 
   revalidatePath(`/chat/${sessionId}`);

@@ -159,7 +159,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await upsertEmailContact(sender);
+    const contactId = await upsertEmailContact(sender);
 
     const { email } = parseEmailAddress(sender);
     await addInboxMessage({
@@ -168,6 +168,7 @@ export async function POST(request: Request) {
       inboxName: "email",
       externalId: s3Key,
       metadata: metadata,
+      contactId: contactId,
     });
 
     return NextResponse.json({ received: true });
