@@ -8,6 +8,7 @@ import DeleteInstanceButton from "@/components/delete-instance-button";
 import HealthStatusIndicator from "@/components/health-status-indicator";
 import BrowserSessionsIndicator from "@/components/browser-sessions-indicator";
 import CopyableText from "@/components/copyable-text";
+import AgentVersionDisplay from "@/components/agent-version-display";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 export default async function InstanceDetailPage({
@@ -161,6 +162,23 @@ export default async function InstanceDetailPage({
             <div className="mt-1 flex items-center gap-2">
               {instanceId ? (
                 <HealthStatusIndicator
+                  instanceId={instanceId}
+                  publicDns={instance?.PublicDnsName || ""}
+                  keyName={instance?.KeyName || ""}
+                  instanceState={instanceState || ""}
+                />
+              ) : (
+                <span className="text-gray-700">N/A</span>
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Agent Version
+            </label>
+            <div className="mt-1">
+              {instanceId ? (
+                <AgentVersionDisplay
                   instanceId={instanceId}
                   publicDns={instance?.PublicDnsName || ""}
                   keyName={instance?.KeyName || ""}
