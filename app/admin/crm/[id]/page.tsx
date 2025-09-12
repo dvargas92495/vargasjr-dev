@@ -1,4 +1,9 @@
-import { ContactsTable, InboxMessagesTable, InboxMessageOperationsTable, InboxesTable } from "@/db/schema";
+import {
+  ContactsTable,
+  InboxMessagesTable,
+  InboxMessageOperationsTable,
+  InboxesTable,
+} from "@/db/schema";
 import { eq, or, desc, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
@@ -53,8 +58,12 @@ export default async function ContactPage({
     .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
     .where(
       or(
-        ...(contactData.email ? [eq(InboxMessagesTable.source, contactData.email)] : []),
-        ...(contactData.slackId ? [eq(InboxMessagesTable.source, contactData.slackId)] : [])
+        ...(contactData.email
+          ? [eq(InboxMessagesTable.source, contactData.email)]
+          : []),
+        ...(contactData.slackId
+          ? [eq(InboxMessagesTable.source, contactData.slackId)]
+          : [])
       )
     )
     .orderBy(desc(InboxMessagesTable.createdAt))
@@ -211,7 +220,7 @@ export default async function ContactPage({
           )}
         </div>
       </div>
-      
+
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-4">Recent Messages</h2>
         {recentMessages.length > 0 ? (
@@ -221,7 +230,8 @@ export default async function ContactPage({
                 key={message.id}
                 message={{
                   ...message,
-                  source: message.displayName || message.fullName || message.source,
+                  source:
+                    message.displayName || message.fullName || message.source,
                 }}
                 status={messageStatuses[message.id] || "Unread"}
                 inboxId={message.inboxId}
