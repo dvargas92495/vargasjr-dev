@@ -25,6 +25,7 @@ export async function POST(
       .select({
         id: ChatSessionsTable.id,
         contactEmail: ContactsTable.email,
+        contactId: ChatSessionsTable.contactId,
       })
       .from(ChatSessionsTable)
       .innerJoin(
@@ -47,6 +48,7 @@ export async function POST(
       body: message,
       source: session.contactEmail || "Anonymous",
       inboxName: "chat-sessions",
+      contactId: session.contactId,
       threadId: id,
     });
 

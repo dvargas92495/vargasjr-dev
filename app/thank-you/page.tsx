@@ -97,6 +97,7 @@ What would you like me to work on first?`;
             source: "Vargas JR",
             inboxName: "chat-sessions",
             threadId: chatSession[0].id,
+            contactId: contact[0].id,
           });
 
           redirect(`/chat/${chatSession[0].id}`);

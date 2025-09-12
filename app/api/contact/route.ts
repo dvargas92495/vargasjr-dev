@@ -10,12 +10,13 @@ async function contactFormHandler(body: unknown) {
     })
     .parse(body);
 
-  await upsertEmailContact(email);
+  const contactId = await upsertEmailContact(email);
 
   await addInboxMessage({
     body: message,
     source: email,
     inboxName: "landing-page",
+    contactId: contactId,
   });
 
   return { success: true };
