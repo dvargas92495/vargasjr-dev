@@ -15,12 +15,17 @@ SCOPES = [
 
 
 def get_gmail_service() -> Any:
-    creds_json = os.getenv("GOOGLE_CREDENTIALS")
-    if not creds_json:
-        raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
-
+    from services import get_application_by_name
+    
+    google_app = get_application_by_name("Google")
+    if not google_app:
+        raise ValueError("Google application not found in database")
+    
+    if not google_app.client_secret:
+        raise ValueError("Google application credentials not properly configured")
+    
     google_credentials = Credentials.from_service_account_info(
-        json.loads(creds_json),
+        json.loads(google_app.client_secret),
         scopes=SCOPES,
     )
     
@@ -105,24 +110,11 @@ def extract_email_body(payload: Dict[str, Any]) -> str:
 
 
 def send_email(to: str, subject: str, body: str) -> bool:
-    """Send an email using Gmail API"""
+    """Send an email using AWS SES"""
     try:
-        service = get_gmail_service()
-        
-        message = MIMEText(body)
-        message['to'] = to
-        message['subject'] = subject
-        message['from'] = os.getenv("GMAIL_USER_EMAIL", "dvargas92495@gmail.com")
-        
-        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
-        
-        service.users().messages().send(
-            userId='me',
-            body={'raw': raw_message}
-        ).execute()
-        
+        from services.aws import send_email as aws_send_email
+        aws_send_email(to=to, subject=subject, body=body)
         return True
-        
     except Exception as e:
         print(f"Error sending email: {e}")
         return False

@@ -9,12 +9,17 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 def get_spreadsheets() -> Any:
-    creds_json = os.getenv("GOOGLE_CREDENTIALS")
-    if not creds_json:
-        raise ValueError("GOOGLE_CREDENTIALS environment variable not set")
+    from services import get_application_by_name
+    
+    google_app = get_application_by_name("Google")
+    if not google_app:
+        raise ValueError("Google application not found in database")
+    
+    if not google_app.client_secret:
+        raise ValueError("Google application credentials not properly configured")
 
     google_credentials = Credentials.from_service_account_info(
-        json.loads(creds_json),
+        json.loads(google_app.client_secret),
         scopes=SCOPES,
     )
     service = build("sheets", "v4", credentials=google_credentials)
