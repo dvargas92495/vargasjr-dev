@@ -46,9 +46,7 @@ const AgentVersionDisplay = ({
     fetchVersion();
   }, [fetchVersion]);
 
-  return (
-    <span className="text-sm text-gray-900 font-mono">{version}</span>
-  );
+  return <span className="text-sm text-gray-900 font-mono">{version}</span>;
 };
 
 export default AgentVersionDisplay;
