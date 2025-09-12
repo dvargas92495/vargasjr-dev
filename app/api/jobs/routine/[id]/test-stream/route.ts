@@ -3,6 +3,7 @@ import { getDb } from "@/db/connection";
 import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { VellumClient } from "vellum-ai";
+import { getEnvironmentPrefix, getPRNumber } from "../../constants";
 
 export async function GET(
   request: NextRequest,
@@ -63,7 +64,8 @@ export async function GET(
             workflowDeploymentName: routineJob.name,
             inputs: [],
             metadata: {
-              environment: process.env.AGENT_ENVIRONMENT || "unknown",
+              environment: getEnvironmentPrefix(),
+              pr_number: await getPRNumber(),
             },
           });
           let workflowOutputs: unknown = null;

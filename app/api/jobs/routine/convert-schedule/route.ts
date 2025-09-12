@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { VellumClient } from "vellum-ai";
+import { getEnvironmentPrefix, getPRNumber } from "../../constants";
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
           },
         ],
         metadata: {
-          environment: process.env.AGENT_ENVIRONMENT || "unknown",
+          environment: getEnvironmentPrefix(),
+          pr_number: await getPRNumber(),
         },
       });
 
