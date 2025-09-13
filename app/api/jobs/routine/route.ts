@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
 import { VellumClient } from "vellum-ai";
+import { getEnvironmentMetadata } from "../../constants";
 
 export async function GET() {
   try {
@@ -53,6 +54,9 @@ export async function POST(request: Request) {
             type: "STRING",
           },
         ],
+        metadata: {
+          environment: await getEnvironmentMetadata(),
+        },
       });
 
       if (response.data.state !== "FULFILLED") {

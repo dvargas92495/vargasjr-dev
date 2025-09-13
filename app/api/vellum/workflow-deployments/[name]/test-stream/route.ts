@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { VellumClient } from "vellum-ai";
+import { getEnvironmentMetadata } from "../../../../constants";
 
 export async function GET(
   request: NextRequest,
@@ -40,6 +41,9 @@ export async function GET(
           const workflowStream = await vellumClient.executeWorkflowStream({
             workflowDeploymentName: name,
             inputs: [],
+            metadata: {
+              environment: await getEnvironmentMetadata(),
+            },
           });
           let workflowOutputs: unknown = null;
 

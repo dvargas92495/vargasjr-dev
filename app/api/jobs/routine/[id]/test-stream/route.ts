@@ -3,6 +3,7 @@ import { getDb } from "@/db/connection";
 import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { VellumClient } from "vellum-ai";
+import { getEnvironmentMetadata } from "../../../../constants";
 
 export async function GET(
   request: NextRequest,
@@ -62,6 +63,9 @@ export async function GET(
           const workflowStream = await vellumClient.executeWorkflowStream({
             workflowDeploymentName: routineJob.name,
             inputs: [],
+            metadata: {
+              environment: await getEnvironmentMetadata(),
+            },
           });
           let workflowOutputs: unknown = null;
 
