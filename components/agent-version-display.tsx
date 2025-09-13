@@ -17,16 +17,18 @@ const AgentVersionDisplay = ({
     if (instanceState !== "running") {
       return "N/A";
     }
-    
+
     if (!healthData) {
       return "Loading...";
     }
-    
+
     const agentVersion = healthData.diagnostics?.environment?.agentVersion;
     return agentVersion || "Unknown";
   };
 
-  return <span className="text-sm text-gray-900 font-mono">{getVersionText()}</span>;
+  return (
+    <span className="text-sm text-gray-900 font-mono">{getVersionText()}</span>
+  );
 };
 
 export default AgentVersionDisplay;

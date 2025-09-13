@@ -87,7 +87,6 @@ export default function InstanceDetailPage({
     setHealthData(status);
   };
 
-
   if (errorMessage) {
     return (
       <div className="flex flex-col gap-4 p-6">
