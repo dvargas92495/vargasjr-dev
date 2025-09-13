@@ -14,12 +14,48 @@ import CopyableText from "@/components/copyable-text";
 import AgentVersionDisplay from "@/components/agent-version-display";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 
-interface HealthData {
+interface HealthStatus {
   status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
   error?: string;
   diagnostics?: {
-    environment?: {
+    ssm?: {
+      registered?: boolean;
+      pingStatus?: string;
+      lastPingDateTime?: Date;
+      timeSinceLastPing?: string;
+      platformType?: string;
       agentVersion?: string;
+      associationStatus?: string;
+      lastAssociationExecutionDate?: Date;
+    };
+    healthcheck?: {
+      environmentVariables?: {
+        critical?: Record<string, boolean>;
+        optional?: Record<string, boolean>;
+      };
+      processes?: string;
+      memory?: string;
+      fatalErrors?: boolean;
+    };
+    networkError?: {
+      message: string;
+      type: string;
+      statusCode?: number;
+      statusText?: string;
+      timing?: number;
+      connectivity: {
+        healthCheckApi: boolean;
+        basicConnectivity: boolean;
+      };
+      attemptedUrl?: string;
+      errorName?: string;
+      errorCode?: string | number;
+      timedOut?: boolean;
+    };
+    memoryDiagnostics?: {
+      hasMemoryIssues: boolean;
+      memoryErrors: string[];
+      consoleOutputError?: string;
     };
   };
 }
@@ -30,7 +66,7 @@ export default function InstanceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const [id, setId] = useState<string>("");
-  const [healthData, setHealthData] = useState<HealthData | null>(null);
+  const [healthData, setHealthData] = useState<HealthStatus | null>(null);
   const [instance, setInstance] = useState<{
     InstanceId?: string;
     State?: { Name?: string };
@@ -83,7 +119,7 @@ export default function InstanceDetailPage({
     fetchInstance();
   }, [id]);
 
-  const handleHealthStatusChange = (status: HealthData) => {
+  const handleHealthStatusChange = (status: HealthStatus) => {
     setHealthData(status);
   };
 
