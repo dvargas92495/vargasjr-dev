@@ -2,7 +2,12 @@
 
 import { OneTimeMigrationRunner } from "./utils";
 import { getDb } from "../db/connection";
-import { InboxMessagesTable, ContactsTable, InboxMessageOperationsTable, OutboxMessagesTable } from "../db/schema";
+import {
+  InboxMessagesTable,
+  ContactsTable,
+  InboxMessageOperationsTable,
+  OutboxMessagesTable,
+} from "../db/schema";
 import { eq, or, isNull } from "drizzle-orm";
 
 class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
@@ -11,9 +16,9 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
 
   protected async runMigration(): Promise<void> {
     const db = getDb();
-    
+
     this.logSection("Starting Contact ID Backfill Migration");
-    
+
     this.logSection("Querying messages without contact IDs");
     const messagesWithoutContactId = await db
       .select({
@@ -24,7 +29,9 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
       .from(InboxMessagesTable)
       .where(isNull(InboxMessagesTable.contactId));
 
-    this.logSuccess(`Found ${messagesWithoutContactId.length} messages without contact IDs`);
+    this.logSuccess(
+      `Found ${messagesWithoutContactId.length} messages without contact IDs`
+    );
 
     if (messagesWithoutContactId.length === 0) {
       this.logSuccess("No messages need contact ID backfill");
@@ -55,7 +62,7 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
 
         if (matchingContacts.length === 1) {
           const contact = matchingContacts[0];
-          
+
           if (!this.isPreviewMode) {
             await db
               .update(InboxMessagesTable)
@@ -64,7 +71,11 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
           }
 
           this.logSuccess(
-            `${this.isPreviewMode ? "[PREVIEW] Would update" : "Updated"} message ${message.id} with contact ${contact.id} (source: ${message.source})`
+            `${
+              this.isPreviewMode ? "[PREVIEW] Would update" : "Updated"
+            } message ${message.id} with contact ${contact.id} (source: ${
+              message.source
+            })`
           );
           matchedCount++;
         } else if (matchingContacts.length > 1) {
@@ -76,7 +87,9 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
           if (!this.isPreviewMode) {
             await db
               .delete(InboxMessageOperationsTable)
-              .where(eq(InboxMessageOperationsTable.inboxMessageId, message.id));
+              .where(
+                eq(InboxMessageOperationsTable.inboxMessageId, message.id)
+              );
 
             await db
               .delete(OutboxMessagesTable)
@@ -88,7 +101,11 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
           }
 
           this.logWarning(
-            `${this.isPreviewMode ? "[PREVIEW] Would delete" : "Deleted"} message ${message.id} - no matching contact for source: ${message.source}`
+            `${
+              this.isPreviewMode ? "[PREVIEW] Would delete" : "Deleted"
+            } message ${message.id} - no matching contact for source: ${
+              message.source
+            }`
           );
           deletedCount++;
         }
@@ -99,7 +116,9 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
     }
 
     this.logSection("Migration Summary");
-    this.logSuccess(`Total messages processed: ${messagesWithoutContactId.length}`);
+    this.logSuccess(
+      `Total messages processed: ${messagesWithoutContactId.length}`
+    );
     this.logSuccess(`Messages matched and updated: ${matchedCount}`);
     this.logWarning(`Messages deleted (no contact found): ${deletedCount}`);
     if (errorCount > 0) {
