@@ -1,52 +1,32 @@
-"use client";
-
-import React, { useCallback, useEffect, useState } from "react";
-
 interface AgentVersionDisplayProps {
-  instanceId: string;
-  publicDns: string;
-  keyName: string;
+  healthData?: {
+    diagnostics?: {
+      environment?: {
+        agentVersion?: string;
+      };
+    };
+  };
   instanceState: string;
 }
 
 const AgentVersionDisplay = ({
-  instanceId,
-  publicDns,
-  keyName,
+  healthData,
   instanceState,
 }: AgentVersionDisplayProps) => {
-  const [version, setVersion] = useState<string>("Loading...");
-
-  const fetchVersion = useCallback(async () => {
+  const getVersionText = () => {
     if (instanceState !== "running") {
-      setVersion("N/A");
-      return;
+      return "N/A";
     }
-
-    try {
-      const response = await fetch("/api/health-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instanceId, publicDns, keyName }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const agentVersion = data.diagnostics?.environment?.agentVersion;
-        setVersion(agentVersion || "Unknown");
-      } else {
-        setVersion("Unknown");
-      }
-    } catch {
-      setVersion("Unknown");
+    
+    if (!healthData) {
+      return "Loading...";
     }
-  }, [instanceId, publicDns, keyName, instanceState]);
+    
+    const agentVersion = healthData.diagnostics?.environment?.agentVersion;
+    return agentVersion || "Unknown";
+  };
 
-  useEffect(() => {
-    fetchVersion();
-  }, [fetchVersion]);
-
-  return <span className="text-sm text-gray-900 font-mono">{version}</span>;
+  return <span className="text-sm text-gray-900 font-mono">{getVersionText()}</span>;
 };
 
 export default AgentVersionDisplay;
