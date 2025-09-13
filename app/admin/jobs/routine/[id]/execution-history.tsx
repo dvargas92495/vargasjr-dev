@@ -111,7 +111,7 @@ export default function ExecutionHistory({
                     </a>
                   </td>
                   <td className="py-2 px-4 text-sm text-gray-700">
-                    {execution.environment || 'unknown'}
+                    {execution.environment || "unknown"}
                   </td>
                   <td
                     className={`py-2 px-4 text-sm ${
