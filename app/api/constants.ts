@@ -92,7 +92,7 @@ export async function getPRNumber(): Promise<string> {
 export async function getEnvironmentMetadata(): Promise<string> {
   const environment = getEnvironmentPrefix();
   const prNumber = await getPRNumber();
-  
+
   if (environment === "") {
     return "PRODUCTION";
   }

@@ -107,7 +107,9 @@ export class RoutineJob {
         workflowDeploymentName: this.name,
         inputs: [],
         metadata: {
-          environment: `${process.env.AGENT_ENVIRONMENT || "unknown"}-${process.env.PR_NUMBER || "none"}`,
+          environment: `${process.env.AGENT_ENVIRONMENT || "unknown"}-${
+            process.env.PR_NUMBER || "none"
+          }`,
         },
       });
 

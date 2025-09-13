@@ -38,7 +38,6 @@ async function checkWorkflowStatus() {
   }
 }
 
-
 export default async function AdminPage() {
   const ec2 = new EC2({
     region: AWS_DEFAULT_REGION,
