@@ -9,7 +9,9 @@ const REBOOT_TIMEOUT = 300000;
 
 const RebootInstanceButton = ({ id }: { id: string }) => {
   const router = useRouter();
-  const [status, setStatus] = useState<"idle" | "rebooting" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "rebooting" | "success" | "error"
+  >("idle");
   const [message, setMessage] = useState("");
   const [startTime, setStartTime] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -165,12 +167,18 @@ const RebootInstanceButton = ({ id }: { id: string }) => {
     const storedState = localStorage.getItem(REBOOT_STORAGE_KEY);
     if (storedState) {
       try {
-        const { instanceId, startTime: storedStartTime, status: storedStatus } = JSON.parse(storedState);
+        const {
+          instanceId,
+          startTime: storedStartTime,
+          status: storedStatus,
+        } = JSON.parse(storedState);
         if (instanceId === id && storedStatus === "rebooting") {
           const elapsed = Date.now() - storedStartTime;
           if (elapsed < REBOOT_TIMEOUT) {
             setStatus("rebooting");
-            setMessage(`Resuming reboot monitoring... (${Math.floor(elapsed / 1000)}s)`);
+            setMessage(
+              `Resuming reboot monitoring... (${Math.floor(elapsed / 1000)}s)`
+            );
             setStartTime(storedStartTime);
             startPolling();
           } else {
