@@ -44,7 +44,7 @@ export async function GET(
     const session = chatSession[0];
 
     const messages = await db
-      .select({
+      .selectDistinct({
         id: InboxMessagesTable.id,
         body: InboxMessagesTable.body,
         source: InboxMessagesTable.source,

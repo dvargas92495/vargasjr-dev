@@ -35,7 +35,7 @@ export default async function InboxesPage() {
       .orderBy(desc(InboxesTable.createdAt));
 
     recentMessages = await db
-      .select({
+      .selectDistinct({
         id: InboxMessagesTable.id,
         source: InboxMessagesTable.source,
         displayName: ContactsTable.slackDisplayName,

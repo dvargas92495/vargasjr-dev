@@ -30,7 +30,7 @@ export default async function InboxPage({
   }
 
   const messages = await db
-    .select({
+    .selectDistinct({
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
