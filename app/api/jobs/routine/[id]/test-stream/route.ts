@@ -3,7 +3,7 @@ import { getDb } from "@/db/connection";
 import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { VellumClient } from "vellum-ai";
-import { getEnvironmentMetadata } from "../../constants";
+import { getEnvironmentMetadata } from "../../../../constants";
 
 export async function GET(
   request: NextRequest,

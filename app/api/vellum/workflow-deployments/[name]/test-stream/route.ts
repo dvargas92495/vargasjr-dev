@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { VellumClient } from "vellum-ai";
-import { getEnvironmentMetadata } from "../../constants";
+import { getEnvironmentMetadata } from "../../../../constants";
 
 export async function GET(
   request: NextRequest,
