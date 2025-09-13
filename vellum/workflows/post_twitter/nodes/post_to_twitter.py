@@ -3,6 +3,8 @@ from logging import Logger
 import logging
 import tweepy
 from vellum.workflows.nodes import BaseNode
+from vellum.workflows.exceptions import NodeException
+from vellum.workflows.errors.types import WorkflowErrorCode
 from .select_tweet import SelectTweet
 from services import get_application_by_name
 
@@ -19,13 +21,13 @@ class PostToTwitter(BaseNode):
         
         twitter_app = get_application_by_name("Twitter")
         if not twitter_app:
-            raise ValueError("Twitter application not found in database")
+            raise NodeException("Twitter application not found in database", WorkflowErrorCode.INVALID_INPUTS)
         
         if not twitter_app.client_id or not twitter_app.client_secret:
-            raise ValueError("Twitter API consumer key and secret not configured")
+            raise NodeException("Twitter API consumer key and secret not configured", WorkflowErrorCode.PROVIDER_CREDENTIALS_UNAVAILABLE)
         
         if not twitter_app.access_token or not twitter_app.refresh_token:
-            raise ValueError("Twitter access token and secret not configured")
+            raise NodeException("Twitter access token and secret not configured", WorkflowErrorCode.PROVIDER_CREDENTIALS_UNAVAILABLE)
         
         tweet_text = self.selected_tweet.text
         if self.selected_tweet.hashtags:
@@ -51,20 +53,20 @@ class PostToTwitter(BaseNode):
         except tweepy.Unauthorized as e:
             error_msg = f"Twitter authentication failed: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise NodeException(error_msg, WorkflowErrorCode.PROVIDER_ERROR)
         except tweepy.Forbidden as e:
             error_msg = f"Twitter API access forbidden: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise NodeException(error_msg, WorkflowErrorCode.PROVIDER_ERROR)
         except tweepy.TooManyRequests as e:
             error_msg = f"Twitter API rate limit exceeded: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise NodeException(error_msg, WorkflowErrorCode.PROVIDER_ERROR)
         except tweepy.TwitterServerError as e:
             error_msg = f"Twitter server error: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise NodeException(error_msg, WorkflowErrorCode.PROVIDER_ERROR)
         except Exception as e:
             error_msg = f"Unexpected error posting to Twitter: {str(e)}"
             logger.error(error_msg)
-            raise ValueError(error_msg)
+            raise NodeException(error_msg, WorkflowErrorCode.NODE_EXECUTION)
