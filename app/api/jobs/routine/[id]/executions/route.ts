@@ -62,6 +62,7 @@ export async function GET(
         createdAt: execution.start,
         outputs: execution.outputs,
         error: execution.error,
+        environment: execution.metadata?.environment || "unknown",
       })) || [];
 
     return NextResponse.json(transformedExecutions);
