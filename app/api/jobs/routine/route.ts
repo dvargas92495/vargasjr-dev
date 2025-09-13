@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
 import { VellumClient } from "vellum-ai";
-import { getEnvironmentPrefix, getPRNumber } from "../../constants";
+import { getEnvironmentMetadata } from "../../constants";
 
 export async function GET() {
   try {
@@ -55,8 +55,7 @@ export async function POST(request: Request) {
           },
         ],
         metadata: {
-          environment: getEnvironmentPrefix(),
-          pr_number: await getPRNumber(),
+          environment: await getEnvironmentMetadata(),
         },
       });
 

@@ -2,10 +2,8 @@ import InstanceCard from "@/components/instance-card";
 import CreateAgentButton from "@/components/create-agent-button";
 import ApprovePRButton from "@/components/approve-pr-button";
 import { EC2 } from "@aws-sdk/client-ec2";
-import { getEnvironmentPrefix } from "@/app/api/constants";
-import { retryWithBackoff } from "@/server/retry";
+import { getEnvironmentPrefix, getPRNumber } from "@/app/api/constants";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
-import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 import {
   checkLocalAgentHealth,
@@ -40,81 +38,6 @@ async function checkWorkflowStatus() {
   }
 }
 
-async function getCurrentPRNumber(): Promise<string> {
-  if (
-    process.env.VERCEL_GIT_PULL_REQUEST_ID &&
-    process.env.VERCEL_GIT_PULL_REQUEST_ID !== "null"
-  ) {
-    console.log(
-      `✅ Found PR from VERCEL_GIT_PULL_REQUEST_ID: ${process.env.VERCEL_GIT_PULL_REQUEST_ID}`
-    );
-    return process.env.VERCEL_GIT_PULL_REQUEST_ID;
-  }
-
-  const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
-  if (commitRef) {
-    const branchName = commitRef.replace("refs/heads/", "");
-
-    const githubRepo = "dvargas92495/vargasjr-dev";
-    if (!branchName) {
-      console.log(
-        "⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback"
-      );
-      return "local-dev";
-    }
-
-    if (githubRepo && branchName) {
-      try {
-        const prNumber = await retryWithBackoff(
-          async () => {
-            const [owner] = githubRepo.split("/");
-            const headFilter = `${owner}:${branchName}`;
-
-            const headers = await getGitHubAuthHeaders();
-            const response = await fetch(
-              `https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`,
-              {
-                headers,
-              }
-            );
-
-            if (!response.ok) {
-              throw new Error(
-                `GitHub API error: ${response.status} ${response.statusText}`
-              );
-            }
-
-            const prs = await response.json();
-            if (prs.length === 1) {
-              console.log(
-                `✅ Found PR #${prs[0].number} for branch: ${branchName}`
-              );
-              return prs[0].number.toString();
-            } else if (prs.length === 0) {
-              throw new Error(`No open PRs found for branch: ${branchName}`);
-            } else {
-              throw new Error(
-                `Multiple open PRs found for branch: ${branchName}`
-              );
-            }
-          },
-          3,
-          2000
-        );
-
-        return prNumber;
-      } catch (error) {
-        console.log(`⚠️ GitHub API lookup failed, using fallback: ${error}`);
-        return "local-dev";
-      }
-    }
-  }
-
-  console.log(
-    "⚠️ Running in local development mode - no Vercel environment variables found"
-  );
-  return "local-dev";
-}
 
 export default async function AdminPage() {
   const ec2 = new EC2({
@@ -127,7 +50,7 @@ export default async function AdminPage() {
 
   if (environmentPrefix !== "") {
     try {
-      currentPRNumber = await getCurrentPRNumber();
+      currentPRNumber = await getPRNumber();
     } catch (error) {
       console.error("Failed to get PR number:", error);
       prNumberError =

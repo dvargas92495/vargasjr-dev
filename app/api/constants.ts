@@ -88,3 +88,13 @@ export async function getPRNumber(): Promise<string> {
   );
   return "local-dev";
 }
+
+export async function getEnvironmentMetadata(): Promise<string> {
+  const environment = getEnvironmentPrefix();
+  const prNumber = await getPRNumber();
+  
+  if (environment === "") {
+    return "PRODUCTION";
+  }
+  return `${environment}-${prNumber}`;
+}
