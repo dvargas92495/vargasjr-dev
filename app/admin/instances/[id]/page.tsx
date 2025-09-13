@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { EC2 } from "@aws-sdk/client-ec2";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import StopInstanceButton from "@/components/stop-instance-button";
@@ -12,7 +11,6 @@ import HealthStatusIndicator from "@/components/health-status-indicator";
 import BrowserSessionsIndicator from "@/components/browser-sessions-indicator";
 import CopyableText from "@/components/copyable-text";
 import AgentVersionDisplay from "@/components/agent-version-display";
-import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 interface HealthStatus {
   status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
@@ -86,27 +84,19 @@ export default function InstanceDetailPage({
     if (!id) return;
 
     const fetchInstance = async () => {
-      const ec2 = new EC2({
-        region: AWS_DEFAULT_REGION,
-      });
-
       try {
-        const result = await ec2.describeInstances({
-          InstanceIds: [id],
-        });
+        const response = await fetch(`/api/instances/${id}`);
+        const data = await response.json();
 
-        const instances =
-          result.Reservations?.flatMap((r) => r.Instances || []) || [];
-        const instanceData = instances[0] || null;
+        if (!response.ok) {
+          setErrorMessage(data.error || "Failed to fetch instance details");
+          return;
+        }
 
-        if (!instanceData || !instanceData.InstanceId) {
-          setErrorMessage(
-            instanceData
-              ? `Instance data incomplete - missing required fields`
-              : `Instance with ID "${id}" not found.`
-          );
+        if (data.instance) {
+          setInstance(data.instance);
         } else {
-          setInstance(instanceData);
+          setErrorMessage("Instance data not found");
         }
       } catch (error) {
         console.error("Failed to fetch instance:", error);
