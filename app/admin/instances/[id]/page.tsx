@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -8,19 +11,63 @@ import DeleteInstanceButton from "@/components/delete-instance-button";
 import HealthStatusIndicator from "@/components/health-status-indicator";
 import BrowserSessionsIndicator from "@/components/browser-sessions-indicator";
 import CopyableText from "@/components/copyable-text";
+import AgentVersionDisplay from "@/components/agent-version-display";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 
-export default async function InstanceDetailPage({
+interface HealthStatus {
+  status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
+  error?: string;
+  diagnostics?: {
+    ssm?: {
+      registered?: boolean;
+      pingStatus?: string;
+      lastPingDateTime?: Date;
+      timeSinceLastPing?: string;
+      platformType?: string;
+      agentVersion?: string;
+      associationStatus?: string;
+      lastAssociationExecutionDate?: Date;
+    };
+    healthcheck?: {
+      environmentVariables?: {
+        critical?: Record<string, boolean>;
+        optional?: Record<string, boolean>;
+      };
+      processes?: string;
+      memory?: string;
+      fatalErrors?: boolean;
+    };
+    networkError?: {
+      message: string;
+      type: string;
+      statusCode?: number;
+      statusText?: string;
+      timing?: number;
+      connectivity: {
+        healthCheckApi: boolean;
+        basicConnectivity: boolean;
+      };
+      attemptedUrl?: string;
+      errorName?: string;
+      errorCode?: string | number;
+      timedOut?: boolean;
+    };
+    memoryDiagnostics?: {
+      hasMemoryIssues: boolean;
+      memoryErrors: string[];
+      consoleOutputError?: string;
+    };
+  };
+}
+
+export default function InstanceDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const ec2 = new EC2({
-    region: AWS_DEFAULT_REGION,
-  });
-
-  let instance: {
+  const [id, setId] = useState<string>("");
+  const [healthData, setHealthData] = useState<HealthStatus | null>(null);
+  const [instance, setInstance] = useState<{
     InstanceId?: string;
     State?: { Name?: string };
     KeyName?: string;
@@ -28,28 +75,53 @@ export default async function InstanceDetailPage({
     InstanceType?: string;
     ImageId?: string;
     Tags?: Array<{ Key?: string; Value?: string }>;
-  } | null = null;
-  let errorMessage: string | null = null;
+  } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  try {
-    const result = await ec2.describeInstances({
-      InstanceIds: [id],
-    });
+  useEffect(() => {
+    params.then((p) => setId(p.id));
+  }, [params]);
 
-    const instances =
-      result.Reservations?.flatMap((r) => r.Instances || []) || [];
-    instance = instances[0] || null;
+  useEffect(() => {
+    if (!id) return;
 
-    if (!instance || !instance.InstanceId) {
-      errorMessage = instance
-        ? `Instance data incomplete - missing required fields`
-        : `Instance with ID "${id}" not found.`;
-    }
-  } catch (error) {
-    console.error("Failed to fetch instance:", error);
-    errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
-  }
+    const fetchInstance = async () => {
+      const ec2 = new EC2({
+        region: AWS_DEFAULT_REGION,
+      });
+
+      try {
+        const result = await ec2.describeInstances({
+          InstanceIds: [id],
+        });
+
+        const instances =
+          result.Reservations?.flatMap((r) => r.Instances || []) || [];
+        const instanceData = instances[0] || null;
+
+        if (!instanceData || !instanceData.InstanceId) {
+          setErrorMessage(
+            instanceData
+              ? `Instance data incomplete - missing required fields`
+              : `Instance with ID "${id}" not found.`
+          );
+        } else {
+          setInstance(instanceData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch instance:", error);
+        setErrorMessage(
+          error instanceof Error ? error.message : "Unknown error occurred"
+        );
+      }
+    };
+
+    fetchInstance();
+  }, [id]);
+
+  const handleHealthStatusChange = (status: HealthStatus) => {
+    setHealthData(status);
+  };
 
   if (errorMessage) {
     return (
@@ -164,6 +236,22 @@ export default async function InstanceDetailPage({
                   instanceId={instanceId}
                   publicDns={instance?.PublicDnsName || ""}
                   keyName={instance?.KeyName || ""}
+                  instanceState={instanceState || ""}
+                  onHealthStatusChange={handleHealthStatusChange}
+                />
+              ) : (
+                <span className="text-gray-700">N/A</span>
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Agent Version
+            </label>
+            <div className="mt-1">
+              {instanceId ? (
+                <AgentVersionDisplay
+                  healthData={healthData}
                   instanceState={instanceState || ""}
                 />
               ) : (

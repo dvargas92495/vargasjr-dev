@@ -1,5 +1,6 @@
 import { execSync, spawn } from "child_process";
-import { getVersion, createFileLogger, Logger } from "./utils";
+import { createFileLogger, Logger } from "./utils";
+import { getVersion } from "@/server/versioning";
 
 interface GitHubRelease {
   tag_name: string;

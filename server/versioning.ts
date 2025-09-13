@@ -16,3 +16,13 @@ export function findPackageJson(): string {
 
   return fs.readFileSync(packageJsonPath, "utf-8");
 }
+
+export function getVersion(): string {
+  try {
+    const content = findPackageJson();
+    const packageJson = JSON.parse(content);
+    return packageJson.version || "unknown";
+  } catch (error) {
+    return "unknown";
+  }
+}
