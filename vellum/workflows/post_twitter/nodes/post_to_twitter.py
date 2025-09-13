@@ -21,8 +21,11 @@ class PostToTwitter(BaseNode):
         if not twitter_app:
             raise ValueError("Twitter application not found in database")
         
-        api_key = twitter_app.client_id
-        api_secret = twitter_app.client_secret
+        if not twitter_app.client_id or not twitter_app.client_secret:
+            raise ValueError("Twitter API consumer key and secret not configured")
+        
+        if not twitter_app.access_token or not twitter_app.refresh_token:
+            raise ValueError("Twitter access token and secret not configured")
         
         tweet_text = self.selected_tweet.text
         if self.selected_tweet.hashtags:
@@ -30,7 +33,38 @@ class PostToTwitter(BaseNode):
             if len(tweet_text + hashtag_text) <= 280:
                 tweet_text += hashtag_text
         
-        tweet_id = "mock_tweet_id"
-        summary = f"Mock tweet prepared: '{tweet_text}'"
-        logger.info(summary)
-        return self.Outputs(tweet_id=tweet_id, summary=summary)
+        try:
+            client = tweepy.Client(
+                consumer_key=twitter_app.client_id,
+                consumer_secret=twitter_app.client_secret,
+                access_token=twitter_app.access_token,
+                access_token_secret=twitter_app.refresh_token
+            )
+            
+            response = client.create_tweet(text=tweet_text)
+            tweet_id = response.data['id']
+            summary = f"Successfully posted tweet: '{tweet_text}' (ID: {tweet_id})"
+            logger.info(summary)
+            
+            return self.Outputs(tweet_id=str(tweet_id), summary=summary)
+            
+        except tweepy.Unauthorized as e:
+            error_msg = f"Twitter authentication failed: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        except tweepy.Forbidden as e:
+            error_msg = f"Twitter API access forbidden: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        except tweepy.TooManyRequests as e:
+            error_msg = f"Twitter API rate limit exceeded: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        except tweepy.TwitterServerError as e:
+            error_msg = f"Twitter server error: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error posting to Twitter: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
