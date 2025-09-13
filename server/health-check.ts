@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
 import { readFileSync, existsSync, statSync } from "fs";
 import { AGENT_SERVER_PORT, LOCAL_AGENT_INSTANCE_ID } from "./constants";
-import { getVersion } from "../worker/utils";
+import { getVersion } from "./versioning";
 
 export interface HealthCheckData {
   status: "healthy" | "unhealthy" | "fatal";
