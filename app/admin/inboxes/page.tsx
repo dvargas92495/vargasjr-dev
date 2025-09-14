@@ -88,12 +88,12 @@ export default async function InboxesPage({
 
     const archivedMessageIds = new Set(
       messageOperations
-        .filter(op => op.operation === "ARCHIVED")
-        .map(op => op.inboxMessageId)
+        .filter((op) => op.operation === "ARCHIVED")
+        .map((op) => op.inboxMessageId)
     );
 
     recentMessages = allRecentMessages
-      .filter(message => !archivedMessageIds.has(message.id))
+      .filter((message) => !archivedMessageIds.has(message.id))
       .slice(0, pageSize);
 
     statuses = Object.fromEntries(
