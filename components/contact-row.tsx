@@ -4,7 +4,11 @@ import type { Contact } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
-const ContactRow = ({ contact }: { contact: Contact }) => {
+const ContactRow = ({
+  contact,
+}: {
+  contact: Contact & { lastMessageAt: Date | null };
+}) => {
   const router = useRouter();
   const handleClick = useCallback(() => {
     router.push(`/admin/crm/${contact.id}`);
@@ -20,7 +24,9 @@ const ContactRow = ({ contact }: { contact: Contact }) => {
       <td className="px-6 py-4 border-b">{contact.email || "N/A"}</td>
       <td className="px-6 py-4 border-b">{contact.phoneNumber || "N/A"}</td>
       <td className="px-6 py-4 border-b">
-        {contact.createdAt.toLocaleDateString()}
+        {contact.lastMessageAt
+          ? contact.lastMessageAt.toLocaleDateString()
+          : "N/A"}
       </td>
     </tr>
   );
