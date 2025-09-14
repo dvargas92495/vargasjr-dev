@@ -1,14 +1,28 @@
-import { ContactsTable } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { ContactsTable, InboxMessagesTable } from "@/db/schema";
+import { desc, max, eq } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
 
 export default async function CRMPage() {
   const db = getDb();
   const allContacts = await db
-    .select()
+    .select({
+      id: ContactsTable.id,
+      email: ContactsTable.email,
+      phoneNumber: ContactsTable.phoneNumber,
+      fullName: ContactsTable.fullName,
+      slackId: ContactsTable.slackId,
+      slackDisplayName: ContactsTable.slackDisplayName,
+      createdAt: ContactsTable.createdAt,
+      lastMessageAt: max(InboxMessagesTable.createdAt),
+    })
     .from(ContactsTable)
-    .orderBy(desc(ContactsTable.createdAt));
+    .leftJoin(
+      InboxMessagesTable,
+      eq(ContactsTable.id, InboxMessagesTable.contactId)
+    )
+    .groupBy(ContactsTable.id)
+    .orderBy(desc(max(InboxMessagesTable.createdAt)));
 
   return (
     <>
