@@ -10,6 +10,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    
+    const currentPage = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = 10;
+    const offset = (currentPage - 1) * pageSize;
 
     const db = getDb();
     const routineJob = await db
@@ -49,11 +54,16 @@ export async function GET(
       );
     }
 
-    const executions =
-      await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
+    const [executions, totalExecutions] = await Promise.all([
+      vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
         deployment.id,
-        { limit: 10 }
-      );
+        { limit: pageSize, offset: offset }
+      ),
+      vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
+        deployment.id,
+        { limit: 1000 }
+      )
+    ]);
 
     const transformedExecutions =
       executions.results?.map((execution) => ({
@@ -72,7 +82,12 @@ export async function GET(
             : "unknown",
       })) || [];
 
-    return NextResponse.json(transformedExecutions);
+    const totalCount = totalExecutions.results?.length || 0;
+
+    return NextResponse.json({
+      executions: transformedExecutions,
+      totalCount: totalCount,
+    });
   } catch (error) {
     console.error("Error fetching routine job executions:", error);
     return NextResponse.json(
