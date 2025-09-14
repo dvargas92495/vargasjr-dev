@@ -391,6 +391,9 @@ class VellumWorkflowPusher {
       lockFileContent.workflows.forEach((workflow: any) => {
         if (workflow.container_image_name === "vargasjr") {
           workflow.container_image_tag = newTag;
+        } else if (workflow.container_image_name === null || workflow.container_image_name === undefined) {
+          workflow.container_image_name = "vargasjr";
+          workflow.container_image_tag = newTag;
         }
       });
     }
@@ -405,6 +408,8 @@ class VellumWorkflowPusher {
           cwd: process.cwd(),
         }
       ).trim();
+
+      console.log(`📋 Git diff output:\n${gitDiff}`);
 
       if (gitDiff) {
         console.log(
