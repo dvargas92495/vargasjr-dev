@@ -7,7 +7,6 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
-
 interface SESMail {
   messageId: string;
   commonHeaders: {

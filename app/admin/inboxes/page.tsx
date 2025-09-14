@@ -174,7 +174,10 @@ export default async function InboxesPage({
                 message={{
                   ...message,
                   source:
-                    message.displayName || message.fullName || message.email || "Unknown",
+                    message.displayName ||
+                    message.fullName ||
+                    message.email ||
+                    "Unknown",
                 }}
                 status={statuses[message.id] || "Unread"}
                 inboxId={message.inboxId}

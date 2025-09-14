@@ -39,10 +39,7 @@ export default async function InboxPage({
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
-    .leftJoin(
-      ContactsTable,
-      eq(InboxMessagesTable.contactId, ContactsTable.id)
-    )
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
     .limit(25);
@@ -87,7 +84,11 @@ export default async function InboxPage({
             key={message.id}
             message={{
               ...message,
-              source: message.displayName || message.fullName || message.email || "Unknown",
+              source:
+                message.displayName ||
+                message.fullName ||
+                message.email ||
+                "Unknown",
             }}
             status={statuses[message.id] || "Unread"}
             inboxId={id}

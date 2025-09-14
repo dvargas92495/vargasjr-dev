@@ -38,10 +38,7 @@ export default async function InboxMessage({
       metadata: InboxMessagesTable.metadata,
     })
     .from(InboxMessagesTable)
-    .leftJoin(
-      ContactsTable,
-      eq(InboxMessagesTable.contactId, ContactsTable.id)
-    )
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
 
@@ -98,10 +95,16 @@ export default async function InboxMessage({
                 href={`/admin/crm/${message.contactId}`}
                 className="text-blue-600 hover:text-blue-800 underline"
               >
-                {message.displayName || message.fullName || message.email || "Unknown"}
+                {message.displayName ||
+                  message.fullName ||
+                  message.email ||
+                  "Unknown"}
               </Link>
             ) : (
-              message.displayName || message.fullName || message.email || "Unknown"
+              message.displayName ||
+              message.fullName ||
+              message.email ||
+              "Unknown"
             )}
           </div>
         </div>

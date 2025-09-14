@@ -25,12 +25,16 @@ class RemoveSourceColumnMigration extends OneTimeMigrationRunner {
       .where(isNull(InboxMessagesTable.contactId))
       .execute();
 
-    this.logSuccess(`Found ${messagesWithNullContactId.length} messages with null contactId`);
+    this.logSuccess(
+      `Found ${messagesWithNullContactId.length} messages with null contactId`
+    );
 
     if (messagesWithNullContactId.length === 0) {
       this.logSuccess("No messages need contactId population");
     } else {
-      this.logSection("Step 2: Populating contactId for messages with null values");
+      this.logSection(
+        "Step 2: Populating contactId for messages with null values"
+      );
 
       let emailCount = 0;
       let slackCount = 0;
@@ -79,8 +83,12 @@ class RemoveSourceColumnMigration extends OneTimeMigrationRunner {
       .execute();
 
     if (remainingNullContactIds.length > 0) {
-      this.logError(`Still have ${remainingNullContactIds.length} messages with null contactId`);
-      throw new Error("Migration incomplete - some messages still have null contactId");
+      this.logError(
+        `Still have ${remainingNullContactIds.length} messages with null contactId`
+      );
+      throw new Error(
+        "Migration incomplete - some messages still have null contactId"
+      );
     }
 
     this.logSuccess("All messages now have valid contactId values");
