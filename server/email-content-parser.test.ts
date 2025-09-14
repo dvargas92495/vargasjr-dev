@@ -9,7 +9,7 @@ Received: from mail.example.com
 Date: Mon, 1 Jan 2024 12:00:00 +0000
 
 ---------- Forwarded message ----------
-From: John Doe <john@example.com>
+From: Test User <testuser@example.com>
 Date: Mon, 1 Jan 2024 at 11:00 AM
 Subject: Test Subject
 To: recipient@example.com
@@ -19,12 +19,12 @@ Hi there,
 This is the actual email content that should be preserved.
 
 Best regards,
-John
+Test User
 `;
 
     const cleaned = parseEmailBody(forwardedEmail);
     expect(cleaned).toBe(
-      "Hi there,\n\nThis is the actual email content that should be preserved.\n\nBest regards,\nJohn"
+      "Hi there,\n\nThis is the actual email content that should be preserved.\n\nBest regards,\nTest User"
     );
   });
 
@@ -49,9 +49,9 @@ Hi there,
 This is the main email content.
 
 --
-John Doe
+Test User
 CEO, Example Corp
-john@example.com
+testuser@example.com
 `;
 
     const cleaned = parseEmailBody(emailWithSignature);
@@ -75,12 +75,12 @@ for hello@example.dev;
 Sun, 14 Sep 2025 17:44:15 +0000 (UTC)
 
 ---------- Forwarded message ----------
-From: John Smith <john@example.com>
+From: Test Recruiter <recruiter@example.com>
 Date: Fri, Sep 12, 2025 at 2:17+E2+80+AFPM
 Subject: Scaling start up - Extending their Full Stack Engineering team.
 To: <user@example.com>
 
-Hi Alex
+Hi Test User
 
 I=E2=80=99m reaching out about an exciting Full Stack Engineer opportunity =
 with a
@@ -109,21 +109,21 @@ radar so I can keep you in mind for future opportunities.
 
 [Image: Planet Shine]
 
-*John Smith*
+*Test Recruiter*
 Senior Recruiter, *Example Corp*
 
 AI/ML & Software Recruitment Specialist
 +1 646-298-3569 • 15464293569•
 www.example.com
 
-This email was sent to user@example.com by John Smith.
+This email was sent to user@example.com by Test Recruiter.
 To remove your email address permanently from future mailings, please click
 here.
 `;
 
     const cleaned = parseEmailBody(userForwardedEmail);
     expect(cleaned).toBe(
-      "Hi Alex\n\nI=E2m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They=E2s scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\n\nHere=E2s what=E2s on offer:\n\n- **Where:** Remote based role\n- **Package:** Up to $200k base salary + meaningful equity, unlimited PTO\nand more\n- **Tech Stack:** TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry =E2 giving you the chance to build solutions with real-worlds\nimpact.\n\nWould you be open to a quick chat to explore this role further? If =E2s not\nquite what you=E2re looking for, I=E2d still love to hear what=E2s next on your\nradar so I can keep you in mind for future opportunities.\n\n[Image: Planet Shine]\n\n*John Smith*\nSenior Recruiter, *Example Corp*\n\nAI/ML & Software Recruitment Specialist\n+1 646-298-3569 • 15464293569•\nwww.example.com"
+      "Hi Test User\n\nI=E2m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They=E2s scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\n\nHere=E2s what=E2s on offer:\n\n- **Where:** Remote based role\n- **Package:** Up to $200k base salary + meaningful equity, unlimited PTO\nand more\n- **Tech Stack:** TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry =E2 giving you the chance to build solutions with real-worlds\nimpact.\n\nWould you be open to a quick chat to explore this role further? If =E2s not\nquite what you=E2re looking for, I=E2d still love to hear what=E2s next on your\nradar so I can keep you in mind for future opportunities.\n\n[Image: Planet Shine]\n\n*Test Recruiter*\nSenior Recruiter, *Example Corp*\n\nAI/ML & Software Recruitment Specialist\n+1 646-298-3569 • 15464293569•\nwww.example.com"
     );
   });
 
@@ -137,12 +137,12 @@ Content-Type: text/plain; charset="UTF-8"
 Apply to this job for me
 
 ---------- Forwarded message ---------
-From: John Smith <john@example.com>
+From: Test Recruiter <recruiter@example.com>
 Date: Fri, Sep 12, 2025 at 2:17 PM
 Subject: Scaling start up - Expanding their Full Stack Engineering team.
 To: <user@example.com>
 
-Hi Alex
+Hi Test User
 I'm reaching out about an exciting Full Stack Engineer opportunity.
 --boundary123
 Content-Type: text/html; charset="UTF-8"
@@ -153,7 +153,7 @@ Content-Type: text/html; charset="UTF-8"
 
       const result = parseEmailBody(multipartEmail);
       expect(result).toBe(
-        "Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: John Smith <john@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Alex\nI'm reaching out about an exciting Full Stack Engineer opportunity."
+        "Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: Test Recruiter <recruiter@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Test User\nI'm reaching out about an exciting Full Stack Engineer opportunity."
       );
     });
 
@@ -203,13 +203,13 @@ Content-Transfer-Encoding: quoted-printable
 Apply to this job for me
 
 ---------- Forwarded message ---------
-From: John Smith <john@example.com>
+From: Test Recruiter <recruiter@example.com>
 Date: Fri, Sep 12, 2025 at 2:17=E2=80=AFPM
 Subject: Scaling start up - Expanding their Full Stack Engineering team.
 To: <user@example.com>
 
 
-Hi Alex
+Hi Test User
 I=E2=80=99m reaching out about an exciting Full Stack Engineer opportunity =
 with a
 fast-growing Series B SaaS company. They=E2=80=99re scaling quickly and inv=
@@ -238,8 +238,8 @@ Content-Transfer-Encoding: quoted-printable
 <div dir=3D"ltr">Apply to this job for me<br><br><div class=3D"gmail_quote =
 gmail_quote_container"><div dir=3D"ltr" class=3D"gmail_attr">---------- For=
 warded message ---------<br>From: <strong class=3D"gmail_sendername" dir=3D=
-"auto">John Smith</strong> <span dir=3D"auto">&lt;<a href=3D"mailto:john=
-@example.com">john@example.com</a>&gt;</span><br>Date: Fri, Sep 12=
+"auto">Test Recruiter</strong> <span dir=3D"auto">&lt;<a href=3D"mailto:john=
+@example.com">recruiter@example.com</a>&gt;</span><br>Date: Fri, Sep 12=
 , 2025 at 2:17=E2=80=AFPM<br>Subject: Scaling start up - Expanding their Ful=
 l Stack Engineering team.<br>To:  &lt;<a href=3D"mailto:user@example.=
 com">user@example.com</a>&gt;<br></div><br><br>
@@ -247,7 +247,7 @@ com">user@example.com</a>&gt;<br></div><br><br>
 
       const result = parseEmailBody(userEmail);
       expect(result).toBe(
-        "Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: John Smith <john@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Alex\nI’m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They’re scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\nHere’s a snapshot of what’s on offer:\n\n   - *Where:* Remote based role\n   - *Package:* Up to $220k base salary + meaningful equity, unlimited PTO\n   and more\n   - *Tech Stack:* TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry — giving you the chance to build solutions with real-world impact.\nWould you be open to a quick chat to explore this role further? If it’s not\nquite what you’re looking for, I’d still love to hear what’s next on your\nradar so I can keep you in mind for future opportunities."
+        "Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: Test Recruiter <recruiter@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Test User\nI’m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They’re scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\nHere’s a snapshot of what’s on offer:\n\n   - *Where:* Remote based role\n   - *Package:* Up to $220k base salary + meaningful equity, unlimited PTO\n   and more\n   - *Tech Stack:* TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry — giving you the chance to build solutions with real-world impact.\nWould you be open to a quick chat to explore this role further? If it’s not\nquite what you’re looking for, I’d still love to hear what’s next on your\nradar so I can keep you in mind for future opportunities."
       );
     });
   });
