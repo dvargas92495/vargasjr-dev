@@ -323,7 +323,10 @@ export async function markMessageAsUnread(messageId: string, inboxId: string) {
   revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
-export async function markMessageAsArchived(messageId: string, inboxId: string) {
+export async function markMessageAsArchived(
+  messageId: string,
+  inboxId: string
+) {
   const db = getDb();
 
   await db
