@@ -1,11 +1,76 @@
 import { JSDOM } from "jsdom";
 
-export function cleanEmailContent(rawContent: string): string {
+function decodeQuotedPrintable(text: string): string {
+  let result = text;
+
+  result = result.replace(/=\r?\n/g, "");
+
+  result = result.replace(/=([0-9A-F]{2})/gi, (match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
+
+  try {
+    const bytes = [];
+    for (let i = 0; i < result.length; i++) {
+      bytes.push(result.charCodeAt(i));
+    }
+
+    const decoder = new TextDecoder("utf-8");
+    return decoder.decode(new Uint8Array(bytes));
+  } catch (error) {
+    return result;
+  }
+}
+
+export function parseEmailBody(rawContent: string): string {
   if (!rawContent || typeof rawContent !== "string") {
     return "";
   }
 
   let content = rawContent;
+
+  const contentTypeMatch = rawContent.match(
+    /Content-Type:\s*multipart\/[^;]+;\s*boundary="?([^"\s;]+)"?/i
+  );
+  if (contentTypeMatch) {
+    const boundary = contentTypeMatch[1];
+    const parts = rawContent.split(`--${boundary}`);
+
+    let textPlainContent = "";
+    let textHtmlContent = "";
+
+    for (const part of parts) {
+      if (part.includes("Content-Type: text/plain")) {
+        const contentMatch = part.split(/\r?\n\r?\n/);
+        if (contentMatch.length > 1) {
+          let partContent = contentMatch.slice(1).join("\n\n");
+
+          if (part.includes("Content-Transfer-Encoding: quoted-printable")) {
+            partContent = decodeQuotedPrintable(partContent);
+          }
+
+          textPlainContent = partContent.trim();
+          break;
+        }
+      } else if (
+        part.includes("Content-Type: text/html") &&
+        !textPlainContent
+      ) {
+        const contentMatch = part.split(/\r?\n\r?\n/);
+        if (contentMatch.length > 1) {
+          let partContent = contentMatch.slice(1).join("\n\n");
+
+          if (part.includes("Content-Transfer-Encoding: quoted-printable")) {
+            partContent = decodeQuotedPrintable(partContent);
+          }
+
+          textHtmlContent = partContent.trim();
+        }
+      }
+    }
+
+    content = textPlainContent || textHtmlContent || rawContent;
+  }
 
   if (content.includes("<html") || content.includes("<!DOCTYPE")) {
     try {
