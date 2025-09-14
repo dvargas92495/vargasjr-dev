@@ -280,7 +280,10 @@ export async function deleteMessage(messageId: string, inboxId: string) {
       await s3Client.send(deleteCommand);
       console.log(`Deleted S3 object: ${message[0].externalId}`);
     } catch (error) {
-      console.error(`Failed to delete S3 object ${message[0].externalId}:`, error);
+      console.error(
+        `Failed to delete S3 object ${message[0].externalId}:`,
+        error
+      );
     }
   }
 
