@@ -8,6 +8,7 @@ import requests
 from models.contact import Contact
 from models.inbox import Inbox
 from models.application import Application
+from models.application_workspace import ApplicationWorkspace
 import boto3
 
 import os
@@ -321,7 +322,6 @@ def get_twitter_application_by_name(name: str) -> Optional[dict]:
         if not application:
             return None
             
-        from models.application_workspace import ApplicationWorkspace
         workspace_statement = select(ApplicationWorkspace).where(
             ApplicationWorkspace.application_id == application.id
         )
