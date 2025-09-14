@@ -3,7 +3,6 @@ import { drizzle as drizzleNode } from "drizzle-orm/node-postgres";
 import { sql } from "@vercel/postgres";
 import { Pool } from "pg";
 
-/** @public */
 export function createDatabaseConnection() {
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
 

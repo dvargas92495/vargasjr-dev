@@ -40,7 +40,21 @@
     "knip.config.json",
     "app/lib/vellum-utils.ts",
     "terraform/lambda/lambda-email-processor.js",
-    "terraform/main.ts"
+    "terraform/main.ts",
+    "utils/format-zod-error.ts",
+    "utils/error-response.ts",
+    "db/connection.ts",
+    "scripts/utils.ts",
+    "worker/database.ts",
+    "server/versioning.ts",
+    "server/index.ts",
+    "app/actions.ts",
+    "app/lib/webauthn.ts",
+    "app/lib/pdf-generator.ts",
+    "app/lib/s3-client.ts",
+    "app/lib/vellum-server-utils.ts",
+    "worker/runner.ts",
+    "worker/agent-server.ts"
   ],
   "ignoreDependencies": [
     "@stripe/stripe-js",

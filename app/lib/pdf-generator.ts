@@ -1,6 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-/** @public */
 export interface ContractData {
   contractorName?: string;
   position?: string;
@@ -9,7 +8,6 @@ export interface ContractData {
   companyName?: string;
 }
 
-/** @public */
 export async function generateContractorAgreementPDF(
   data: ContractData = {}
 ): Promise<Uint8Array> {

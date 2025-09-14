@@ -13,7 +13,6 @@ const s3Client = new S3Client({
   },
 });
 
-/** @public */
 export function generateS3Key(baseKey: string): string {
   if (process.env.VERCEL_ENV === "production") {
     return baseKey;

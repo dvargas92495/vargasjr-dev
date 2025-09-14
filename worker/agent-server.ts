@@ -4,7 +4,6 @@ import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
 import { rebootAgent } from "./reboot-manager";
 
-/** @public */
 export interface BrowserSession {
   id: string;
   context: BrowserContext;
@@ -13,13 +12,11 @@ export interface BrowserSession {
   lastUsed: Date;
 }
 
-/** @public */
 export interface AgentServerConfig {
   port: number;
   logger: Logger;
 }
 
-/** @public */
 export class AgentServer {
   private app: express.Application;
   private server?: any;

@@ -4,7 +4,6 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-/** @public */
 export function createDatabaseConnection() {
   const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
 
@@ -15,12 +14,10 @@ export function createDatabaseConnection() {
   return drizzle(sql);
 }
 
-/** @public */
 export function getDb() {
   return createDatabaseConnection();
 }
 
-/** @public */
 export function postgresSession() {
   return getDb();
 }

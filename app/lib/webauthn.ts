@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import { getBaseUrl } from "@/app/api/constants";
 
-/** @public */
 export interface PublicKeyCredentialCreationOptionsJSON {
   rp: {
     name: string;
@@ -26,7 +25,6 @@ export interface PublicKeyCredentialCreationOptionsJSON {
   };
 }
 
-/** @public */
 export interface PublicKeyCredentialRequestOptionsJSON {
   challenge: string;
   timeout: number;
@@ -38,7 +36,6 @@ export interface PublicKeyCredentialRequestOptionsJSON {
   userVerification: "required" | "preferred" | "discouraged";
 }
 
-/** @public */
 export function getRpId(clientOrigin?: string): {
   rpId: string;
   debugInfo: string;
@@ -95,12 +92,10 @@ export function getRpId(clientOrigin?: string): {
   }
 }
 
-/** @public */
 export function generateChallenge(): string {
   return crypto.randomBytes(32).toString("base64url");
 }
 
-/** @public */
 export function generateRegistrationOptions(
   userId: string,
   clientOrigin?: string
@@ -131,7 +126,6 @@ export function generateRegistrationOptions(
   };
 }
 
-/** @public */
 export function generateAuthenticationOptions(
   credentialIds: string[],
   clientOrigin?: string
@@ -149,12 +143,10 @@ export function generateAuthenticationOptions(
   };
 }
 
-/** @public */
 export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return Buffer.from(buffer).toString("base64");
 }
 
-/** @public */
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   return Buffer.from(base64, "base64").buffer;
 }
