@@ -36,7 +36,9 @@ export async function GET() {
         created_at: string;
         html_url: string;
       }) =>
-        run.path === ".github/workflows/ci.yaml" && run.status === "in_progress"
+        (run.path === ".github/workflows/ci.yaml" ||
+          run.path === ".github/workflows/create-production-agent.yaml") &&
+        run.status === "in_progress"
     );
 
     if (agentCreationWorkflows.length > 0) {
