@@ -17,7 +17,10 @@ export default async function CRMPage() {
       lastMessageAt: max(InboxMessagesTable.createdAt),
     })
     .from(ContactsTable)
-    .leftJoin(InboxMessagesTable, eq(ContactsTable.id, InboxMessagesTable.contactId))
+    .leftJoin(
+      InboxMessagesTable,
+      eq(ContactsTable.id, InboxMessagesTable.contactId)
+    )
     .groupBy(ContactsTable.id)
     .orderBy(desc(max(InboxMessagesTable.createdAt)));
 
