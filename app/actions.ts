@@ -273,3 +273,15 @@ export async function deleteMessage(messageId: string, inboxId: string) {
   revalidatePath(`/admin/inboxes/${inboxId}`);
   return deletedMessage[0];
 }
+
+export async function markMessageAsUnread(messageId: string, inboxId: string) {
+  const db = getDb();
+
+  await db
+    .delete(InboxMessageOperationsTable)
+    .where(eq(InboxMessageOperationsTable.inboxMessageId, messageId))
+    .execute();
+
+  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+  revalidatePath(`/admin/inboxes/${inboxId}`);
+}
