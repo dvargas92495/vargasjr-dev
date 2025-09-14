@@ -102,9 +102,9 @@ class LocalSetup {
 
       this.addToEnvFile("POSTGRES_URL", postgresUrl);
       console.log("✅ Added POSTGRES_URL to .env file.");
-      
+
       dotenv.config();
-      
+
       console.log("\n🎉 Local setup complete!");
       console.log(`Database URL: ${postgresUrl.replace(/:[^:@]*@/, ":***@")}`);
     } catch (error) {
@@ -254,7 +254,7 @@ class LocalSetup {
 
   private async checkAndApplyMigrations(): Promise<void> {
     console.log("🔍 Checking database migrations...");
-    
+
     const postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL;
     if (!postgresUrl) {
       console.log("⚠️  No database URL found, skipping migration check.");
@@ -273,7 +273,9 @@ class LocalSetup {
       console.log("✅ Database migrations applied successfully!");
     } catch (error) {
       console.error("❌ Failed to apply migrations:", error);
-      console.log("💡 You may need to check your database connection or schema.");
+      console.log(
+        "💡 You may need to check your database connection or schema."
+      );
     }
   }
 }
