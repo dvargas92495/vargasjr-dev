@@ -398,35 +398,41 @@ class VellumWorkflowPusher {
 
   private async handleServicesChanges(): Promise<void> {
     try {
-      const gitStatus = execSync(
-        "git status --porcelain vellum/services/",
-        {
-          encoding: "utf8",
-          cwd: process.cwd(),
-        }
-      ).trim();
+      const gitStatus = execSync("git status --porcelain vellum/services/", {
+        encoding: "utf8",
+        cwd: process.cwd(),
+      }).trim();
 
       if (gitStatus) {
-        console.log("🔍 Detected changes in vellum/services, building new image...");
-        
+        console.log(
+          "🔍 Detected changes in vellum/services, building new image..."
+        );
+
         const lockFilePath = join(this.agentDir, "vellum.lock.json");
         if (!existsSync(lockFilePath)) {
-          console.log("⚠️  No vellum.lock.json found, creating initial version...");
+          console.log(
+            "⚠️  No vellum.lock.json found, creating initial version..."
+          );
           const initialLockFile = {
-            workflows: [{
-              container_image_name: "vargasjr",
-              container_image_tag: "1.0.0"
-            }]
+            workflows: [
+              {
+                container_image_name: "vargasjr",
+                container_image_tag: "1.0.0",
+              },
+            ],
           };
           writeFileSync(lockFilePath, JSON.stringify(initialLockFile, null, 2));
         }
 
         const lockFileContent = JSON.parse(readFileSync(lockFilePath, "utf8"));
-        const currentTag = lockFileContent.workflows[0]?.container_image_tag || "1.0.0";
+        const currentTag =
+          lockFileContent.workflows[0]?.container_image_tag || "1.0.0";
         const newTag = this.incrementPatchVersion(currentTag);
-        
-        console.log(`📦 Building and pushing new container image with tag: ${newTag}`);
-        
+
+        console.log(
+          `📦 Building and pushing new container image with tag: ${newTag}`
+        );
+
         const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
         const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
 
@@ -440,8 +446,10 @@ class VellumWorkflowPusher {
         });
 
         this.hasDockerImageBeenPushed = true;
-        console.log(`✅ Successfully pushed container image: vargasjr:${newTag}`);
-        
+        console.log(
+          `✅ Successfully pushed container image: vargasjr:${newTag}`
+        );
+
         this.updateLockFileTag(lockFileContent, newTag);
         writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
         console.log(`📝 Updated vellum.lock.json with new tag: ${newTag}`);
