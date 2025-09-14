@@ -4,6 +4,8 @@ from .email_reply_node import EmailReplyNode
 from .email_initiate_node import EmailInitiateNode
 from .text_reply_node import TextReplyNode
 from .slack_reply_node import SlackReplyNode
+from .job_opportunity_recruiter_response_node import JobOpportunityRecruiterResponseNode
+from .job_opportunity_forwarder_confirmation_node import JobOpportunityForwarderConfirmationNode
 from .read_message_node import ReadMessageNode
 
 
@@ -12,12 +14,16 @@ class StoreOutboxMessageNode(BaseNode):
         EmailReplyNode.Outputs.summary.coalesce(EmailInitiateNode.Outputs.summary)
         .coalesce(TextReplyNode.Outputs.summary)
         .coalesce(SlackReplyNode.Outputs.summary)
+        .coalesce(JobOpportunityRecruiterResponseNode.Outputs.summary)
+        .coalesce(JobOpportunityForwarderConfirmationNode.Outputs.summary)
     )
 
     outbox_message = (
         EmailReplyNode.Outputs.outbox_message.coalesce(EmailInitiateNode.Outputs.outbox_message)
         .coalesce(TextReplyNode.Outputs.outbox_message)
         .coalesce(SlackReplyNode.Outputs.outbox_message)
+        .coalesce(JobOpportunityRecruiterResponseNode.Outputs.outbox_message)
+        .coalesce(JobOpportunityForwarderConfirmationNode.Outputs.outbox_message)
     )
 
     message = ReadMessageNode.Outputs.message
