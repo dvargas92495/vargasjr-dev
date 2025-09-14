@@ -4,10 +4,10 @@ import React from "react";
 import Link from "next/link";
 import type { ApplicationWorkspace } from "@/db/schema";
 
-const WorkspaceRow = ({ 
+const WorkspaceRow = ({
   workspace,
-  applicationId 
-}: { 
+  applicationId,
+}: {
   workspace: ApplicationWorkspace;
   applicationId: string;
 }) => {

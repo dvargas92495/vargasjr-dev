@@ -12,7 +12,7 @@ export default async function WorkspaceDetailPage({
 }) {
   const { id, workspaceId } = await params;
   const db = getDb();
-  
+
   const [workspace, application] = await Promise.all([
     db
       .select()
@@ -23,7 +23,7 @@ export default async function WorkspaceDetailPage({
       .select()
       .from(ApplicationsTable)
       .where(eq(ApplicationsTable.id, id))
-      .then((results) => results[0])
+      .then((results) => results[0]),
   ]);
 
   if (!workspace || !application || workspace.applicationId !== id) {

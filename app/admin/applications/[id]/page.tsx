@@ -84,9 +84,9 @@ export default async function ApplicationDetailPage({
               </thead>
               <tbody>
                 {workspaces.map((workspace) => (
-                  <WorkspaceRow 
-                    key={workspace.id} 
-                    workspace={workspace} 
+                  <WorkspaceRow
+                    key={workspace.id}
+                    workspace={workspace}
                     applicationId={application.id}
                   />
                 ))}
