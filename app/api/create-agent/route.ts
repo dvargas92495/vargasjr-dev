@@ -28,13 +28,8 @@ async function createAgentHandler() {
 
   const headers = await getGitHubAuthHeaders();
 
-  const workflowFile =
-    environmentPrefix === "PREVIEW"
-      ? "ci.yaml"
-      : "create-production-agent.yaml";
-
   const response = await fetch(
-    `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/${workflowFile}/dispatches`,
+    `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/create-agent.yaml/dispatches`,
     {
       method: "POST",
       headers: {
