@@ -33,9 +33,12 @@ const MessageCard = ({
     router.push(`/admin/inboxes/${inboxId}/messages/${message.id}`);
   }, [router, inboxId, message.id]);
 
-  const handleCheckboxClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-  }, []);
+  const handleCheckboxClick = useCallback(
+    (e: React.MouseEvent<HTMLInputElement>) => {
+      e.stopPropagation();
+    },
+    []
+  );
 
   const handleCheckboxChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
