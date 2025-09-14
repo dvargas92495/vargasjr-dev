@@ -13,11 +13,8 @@ class ParseFunctionCallNode(BaseNode):
         )
         text_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("text_reply")))
         slack_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("slack_reply")))
-        job_opportunity_recruiter_response = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_recruiter_response"))
-        )
-        job_opportunity_forwarder_confirmation = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_forwarder_confirmation"))
+        job_opportunity_response = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_response"))
         )
 
     class Outputs(BaseNode.Outputs):

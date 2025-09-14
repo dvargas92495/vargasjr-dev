@@ -73,28 +73,38 @@ def slack_reply(
     )
 
 
-def job_opportunity_recruiter_response(
+def job_opportunity_response(
     original_recruiter_email: str,
-    subject: str,
-    body: str,
+    recruiter_subject: str,
+    recruiter_body: str,
+    forwarder_confirmation_body: str,
 ):
     """
-    Send an enthusiastic response to the original recruiter about a job opportunity that was
-    forwarded to you. The response should express excitement about the role and highlight
-    relevant experience to maximize chances of getting an initial interview. Extract the
-    original recruiter's email from the forwarded message content.
-    """
-    pass
-
-
-def job_opportunity_forwarder_confirmation(
-    body: str,
-):
-    """
-    Send a confirmation email to the person who forwarded the job opportunity, letting them
-    know that you have reached out to the recruiter. The body should include a link to the
-    admin message at /admin/inboxes/{inbox_id}/messages/{message_id} where they can view
-    your response to the recruiter.
+    Handle a job opportunity that was forwarded to you by sending two emails sequentially:
+    1. First, send an enthusiastic response to the original recruiter
+    2. Then, send a confirmation to the person who forwarded the opportunity
+    
+    Use this function when:
+    - A job opportunity has been forwarded to you from another person
+    - The message contains job-related content like positions, roles, opportunities, recruitment
+    - You need to respond to both the original recruiter and acknowledge the forwarder
+    
+    To detect job opportunities, look for:
+    - Keywords like "job", "position", "role", "opportunity", "hiring", "recruitment"
+    - Forwarded email patterns with "FWD:", "Fwd:", "Forward:", etc. in subject
+    - Email content that mentions companies, job titles, or recruiting
+    
+    To extract the original recruiter's email, look for:
+    - "From:" lines in the forwarded message body
+    - "Sent by:" or similar forwarding indicators
+    - Email signatures or contact information in the forwarded content
+    - Original sender information preserved in forwarding headers
+    
+    The recruiter response should express excitement about the role and highlight relevant 
+    experience to maximize chances of getting an initial interview.
+    
+    The forwarder confirmation should include a link to the admin message at 
+    /admin/inboxes/{inbox_id}/messages/{message_id} where they can view your response.
     """
     pass
 
@@ -108,13 +118,7 @@ class TriageMessageNode(BaseInlinePromptNode):
                 JinjaPromptBlock(
                     template="""You are triaging the latest unread message from your inbox. It was from \
 {{ contact }} and was submitted via {{ channel }}. Pick the most relevant action. Your message should \
-give the recipient confidence that you will be tending to their request and that you are working on it now.
-
-For job opportunities that have been forwarded to you:
-- Use job_opportunity_recruiter_response to send an enthusiastic response to the original recruiter
-- Use job_opportunity_forwarder_confirmation to confirm with the forwarder that you've responded
-- Extract the original recruiter's email address from the forwarded message content
-- Look for patterns like "From:", "Sent by:", or email signatures in forwarded messages""",
+give the recipient confidence that you will be tending to their request and that you are working on it now.""",
                 ),
             ],
         ),
@@ -140,8 +144,7 @@ For job opportunities that have been forwarded to you:
         email_initiate,
         text_reply,
         slack_reply,
-        job_opportunity_recruiter_response,
-        job_opportunity_forwarder_confirmation,
+        job_opportunity_response,
     ]
     parameters = PromptParameters(
         max_tokens=1000,

@@ -8,8 +8,7 @@ from .email_reply_node import EmailReplyNode
 from .email_initiate_node import EmailInitiateNode
 from .text_reply_node import TextReplyNode
 from .slack_reply_node import SlackReplyNode
-from .job_opportunity_recruiter_response_node import JobOpportunityRecruiterResponseNode
-from .job_opportunity_forwarder_confirmation_node import JobOpportunityForwarderConfirmationNode
+from .job_opportunity_response_node import JobOpportunityResponseNode
 from .store_outbox_message_node import StoreOutboxMessageNode
 
 __all__ = [
@@ -23,7 +22,6 @@ __all__ = [
     "EmailInitiateNode",
     "TextReplyNode",
     "SlackReplyNode",
-    "JobOpportunityRecruiterResponseNode",
-    "JobOpportunityForwarderConfirmationNode",
+    "JobOpportunityResponseNode",
     "StoreOutboxMessageNode",
 ]
