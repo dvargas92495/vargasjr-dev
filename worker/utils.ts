@@ -1,16 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { findPackageJson } from "@/server/versioning";
-
-export function getVersion(): string {
-  try {
-    const content = findPackageJson();
-    const packageJson = JSON.parse(content);
-    return packageJson.version || "unknown";
-  } catch (error) {
-    return "unknown";
-  }
-}
+import { getVersion } from "@/server/versioning";
 
 export interface Logger {
   info(message: string): void;

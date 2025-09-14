@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import * as dotenv from "dotenv";
-import { createFileLogger, getVersion, Logger } from "./utils";
+import { createFileLogger, Logger } from "./utils";
+import { getVersion } from "@/server/versioning";
 import { postgresSession } from "./database";
 import { RoutineJob } from "./routine-job";
 import { checkAndRebootIfNeeded } from "./reboot-manager";

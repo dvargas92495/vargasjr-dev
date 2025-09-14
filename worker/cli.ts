@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { AgentRunner } from "./runner";
-import { getVersion } from "./utils";
+import { getVersion } from "@/server/versioning";
 import { getLatestVersion, rebootAgent } from "./reboot-manager";
 
 function agent(): void {

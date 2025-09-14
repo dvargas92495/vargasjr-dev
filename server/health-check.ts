@@ -1,6 +1,7 @@
 import { execSync } from "child_process";
 import { readFileSync, existsSync, statSync } from "fs";
 import { AGENT_SERVER_PORT, LOCAL_AGENT_INSTANCE_ID } from "./constants";
+import { getVersion } from "./versioning";
 
 export interface HealthCheckData {
   status: "healthy" | "unhealthy" | "fatal";
@@ -10,6 +11,7 @@ export interface HealthCheckData {
     prNumber: string;
     workingDirectory: string;
     nodeVersion: string;
+    agentVersion: string;
   };
   environmentVariables: {
     critical: Record<string, boolean>;
@@ -293,6 +295,7 @@ export async function getHealthCheckData(): Promise<HealthCheckData> {
       prNumber,
       workingDirectory: process.cwd(),
       nodeVersion: process.version,
+      agentVersion: getVersion(),
     },
     environmentVariables: {
       critical: criticalEnvStatus,
