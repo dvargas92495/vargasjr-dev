@@ -66,7 +66,7 @@ export default async function ContactPage({
           : [])
       )
     )
-    .orderBy(desc(InboxMessagesTable.createdAt))
+    .orderBy(InboxMessagesTable.id, desc(InboxMessagesTable.createdAt))
     .limit(10);
 
   const messageOperations = await db

@@ -61,7 +61,7 @@ export async function GET(
         )
       )
       .where(eq(InboxMessagesTable.inboxId, session.inboxId))
-      .orderBy(InboxMessagesTable.createdAt);
+      .orderBy(InboxMessagesTable.id, InboxMessagesTable.createdAt);
 
     return NextResponse.json({
       session: {

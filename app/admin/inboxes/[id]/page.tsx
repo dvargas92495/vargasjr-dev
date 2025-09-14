@@ -47,7 +47,7 @@ export default async function InboxPage({
       )
     )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
-    .orderBy(desc(InboxMessagesTable.createdAt))
+    .orderBy(InboxMessagesTable.id, desc(InboxMessagesTable.createdAt))
     .limit(25);
 
   const messageOperations = await db

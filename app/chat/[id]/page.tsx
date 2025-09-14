@@ -56,7 +56,7 @@ export default async function ChatSessionPage({
       )
     )
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
-    .orderBy(InboxMessagesTable.createdAt);
+    .orderBy(InboxMessagesTable.id, InboxMessagesTable.createdAt);
 
   return (
     <div className="flex flex-col p-4 max-w-4xl mx-auto">
