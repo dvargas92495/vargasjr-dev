@@ -342,7 +342,6 @@ export async function markMessageAsArchived(
   revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
-<<<<<<< HEAD
 export async function deleteInbox(inboxId: string) {
   const db = getDb();
 
