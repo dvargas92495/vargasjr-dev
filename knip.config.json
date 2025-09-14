@@ -1,0 +1,44 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}", 
+    "scripts/**/*.ts",
+    "worker/**/*.ts",
+    "server/**/*.ts",
+    "utils/**/*.ts",
+    "db/schema.ts",
+    "db/connection.ts",
+    "db/constants.ts",
+    "terraform/main.ts"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx,js,jsx}",
+    "components/**/*.{ts,tsx,js,jsx}",
+    "scripts/**/*.{ts,tsx,js,jsx}",
+    "worker/**/*.{ts,tsx,js,jsx}",
+    "server/**/*.{ts,tsx,js,jsx}",
+    "utils/**/*.{ts,tsx,js,jsx}",
+    "db/schema.ts",
+    "db/connection.ts", 
+    "db/constants.ts",
+    "terraform/main.ts",
+    "!**/*.test.{ts,tsx,js,jsx}",
+    "!**/*.spec.{ts,tsx,js,jsx}",
+    "!eslint-rules/**/*.js"
+  ],
+  "ignore": [
+    "dist/**",
+    "node_modules/**",
+    "**/*.test.{ts,tsx,js,jsx}",
+    "**/*.spec.{ts,tsx,js,jsx}",
+    "eslint-rules/**/*.js",
+    "drizzle.config.ts",
+    "next.config.ts",
+    "tailwind.config.ts",
+    "vitest.config.ts",
+    "knip.config.json"
+  ],
+  "include": ["exports"],
+  "ignoreDependencies": []
+}
