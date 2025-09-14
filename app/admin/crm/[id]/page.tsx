@@ -11,6 +11,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import Stripe from "stripe";
 import { getDb } from "@/db/connection";
 import DeleteContactButton from "@/components/delete-contact-button";
+import MergeContactButton from "@/components/merge-contact-button";
 import PaginationControls from "@/components/pagination-controls";
 import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -157,6 +158,10 @@ export default async function ContactPage({
             <PencilIcon className="w-4 h-4 inline mr-2" />
             Edit
           </Link>
+          <MergeContactButton
+            currentContactId={id}
+            currentContactName={contactData.fullName || "Contact"}
+          />
           <DeleteContactButton
             id={id}
             contactName={contactData.fullName || "Contact"}

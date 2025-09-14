@@ -322,3 +322,57 @@ export async function markMessageAsUnread(messageId: string, inboxId: string) {
   revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
   revalidatePath(`/admin/inboxes/${inboxId}`);
 }
+
+export async function mergeContact(currentContactId: string, targetContactId: string) {
+  if (currentContactId === targetContactId) {
+    throw new Error("Cannot merge a contact with itself");
+  }
+
+  const db = getDb();
+
+  return await db.transaction(async (tx) => {
+    const targetContact = await tx
+      .select()
+      .from(ContactsTable)
+      .where(eq(ContactsTable.id, targetContactId))
+      .limit(1);
+
+    if (!targetContact.length) {
+      throw new Error("Target contact not found");
+    }
+
+    const currentContact = await tx
+      .select()
+      .from(ContactsTable)
+      .where(eq(ContactsTable.id, currentContactId))
+      .limit(1);
+
+    if (!currentContact.length) {
+      throw new Error("Current contact not found");
+    }
+
+    await tx
+      .update(InboxMessagesTable)
+      .set({ contactId: currentContactId })
+      .where(eq(InboxMessagesTable.contactId, targetContactId));
+
+    await tx
+      .update(ChatSessionsTable)
+      .set({ contactId: currentContactId })
+      .where(eq(ChatSessionsTable.contactId, targetContactId));
+
+    const deletedContact = await tx
+      .delete(ContactsTable)
+      .where(eq(ContactsTable.id, targetContactId))
+      .returning();
+
+    if (!deletedContact.length) {
+      throw new Error("Failed to delete target contact");
+    }
+
+    revalidatePath("/admin/crm");
+    revalidatePath(`/admin/crm/${currentContactId}`);
+    
+    return deletedContact[0];
+  });
+}
