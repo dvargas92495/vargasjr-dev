@@ -9,6 +9,7 @@ interface RoutineJobExecution {
   error?: unknown;
   createdAt: string;
   environment?: string;
+  location?: string;
 }
 
 interface ExecutionHistoryProps {
@@ -87,7 +88,7 @@ export default function ExecutionHistory({
                   Execution Link
                 </th>
                 <th className="text-left py-2 px-4 font-medium text-gray-700">
-                  Environment
+                  Metadata
                 </th>
                 <th className="text-left py-2 px-4 font-medium text-gray-700">
                   Status
@@ -111,7 +112,10 @@ export default function ExecutionHistory({
                     </a>
                   </td>
                   <td className="py-2 px-4 text-sm text-gray-700">
-                    {execution.environment || "unknown"}
+                    <div>
+                      <div>Env: {execution.environment || "unknown"}</div>
+                      <div>Location: {execution.location || "unknown"}</div>
+                    </div>
                   </td>
                   <td
                     className={`py-2 px-4 text-sm ${

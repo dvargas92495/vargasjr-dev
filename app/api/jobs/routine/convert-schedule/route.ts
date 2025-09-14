@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         ],
         metadata: {
           environment: await getEnvironmentMetadata(),
+          location: "schedule-conversion",
         },
       });
 

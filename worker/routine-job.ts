@@ -110,6 +110,7 @@ export class RoutineJob {
           environment: `${process.env.AGENT_ENVIRONMENT || "unknown"}-${
             process.env.PR_NUMBER || "none"
           }`,
+          location: "routine-job-execution",
         },
       });
 

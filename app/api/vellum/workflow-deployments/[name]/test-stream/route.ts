@@ -43,6 +43,7 @@ export async function GET(
             inputs: [],
             metadata: {
               environment: await getEnvironmentMetadata(),
+              location: "workflow-deployment-test",
             },
           });
           let workflowOutputs: unknown = null;

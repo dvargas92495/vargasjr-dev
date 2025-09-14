@@ -65,6 +65,7 @@ export async function GET(
             inputs: [],
             metadata: {
               environment: await getEnvironmentMetadata(),
+              location: "routine-job-test",
             },
           });
           let workflowOutputs: unknown = null;
