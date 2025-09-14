@@ -2,7 +2,6 @@
 
 import { AgentRunner } from "./runner";
 import { getVersion } from "@/server/versioning";
-import { getLatestVersion, rebootAgent } from "./reboot-manager";
 
 function agent(): void {
   const agentRunner = new AgentRunner({ sleepTime: 5 });
@@ -28,59 +27,11 @@ function main(): void {
 
   if (!command || command === "agent") {
     agent();
-  } else if (command === "reboot") {
-    const versionArg = args.find((arg) => arg.startsWith("--version="));
-    const checkOnlyArg = args.includes("--check-only");
-
-    if (checkOnlyArg) {
-      const currentVersion = getVersion();
-      console.log(`Current version: ${currentVersion}`);
-      getLatestVersion().then((latestVersion) => {
-        console.log(`Latest version: ${latestVersion || "unknown"}`);
-        if (latestVersion && latestVersion !== currentVersion) {
-          console.log("Update available");
-        } else {
-          console.log("No update needed");
-        }
-        process.exit(0);
-      });
-      return;
-    }
-
-    const targetVersion = versionArg ? versionArg.split("=")[1] : undefined;
-    rebootAgent(targetVersion).then((success) => {
-      process.exit(success ? 0 : 1);
-    });
   } else {
-    console.log("Usage: cli.ts [agent|reboot] [options]");
+    console.log("Usage: cli.ts [agent] [options]");
     process.exit(1);
   }
 }
 
-function reboot(): void {
-  const args = process.argv.slice(2);
-  const versionArg = args.find((arg) => arg.startsWith("--version="));
-  const checkOnlyArg = args.includes("--check-only");
 
-  if (checkOnlyArg) {
-    const currentVersion = getVersion();
-    console.log(`Current version: ${currentVersion}`);
-    getLatestVersion().then((latestVersion) => {
-      console.log(`Latest version: ${latestVersion || "unknown"}`);
-      if (latestVersion && latestVersion !== currentVersion) {
-        console.log("Update available");
-      } else {
-        console.log("No update needed");
-      }
-      process.exit(0);
-    });
-    return;
-  }
-
-  const targetVersion = versionArg ? versionArg.split("=")[1] : undefined;
-  rebootAgent(targetVersion).then((success) => {
-    process.exit(success ? 0 : 1);
-  });
-}
-
-export { agent, main, reboot };
+export { agent, main };
