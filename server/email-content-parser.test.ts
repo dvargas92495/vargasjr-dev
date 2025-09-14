@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { cleanEmailContent } from './email-content-parser';
+import { describe, it, expect } from "vitest";
+import { cleanEmailContent } from "./email-content-parser";
 
-describe('cleanEmailContent', () => {
-  it('should handle forwarded emails with Gmail format', () => {
+describe("cleanEmailContent", () => {
+  it("should handle forwarded emails with Gmail format", () => {
     const forwardedEmail = `
 Return-Path: <sender@example.com>
 Received: from mail.example.com
@@ -23,10 +23,12 @@ John
 `;
 
     const cleaned = cleanEmailContent(forwardedEmail);
-    expect(cleaned).toBe("Hi there,\n\nThis is the actual email content that should be preserved.\n\nBest regards,\nJohn");
+    expect(cleaned).toBe(
+      "Hi there,\n\nThis is the actual email content that should be preserved.\n\nBest regards,\nJohn"
+    );
   });
 
-  it('should handle HTML emails', () => {
+  it("should handle HTML emails", () => {
     const htmlEmail = `
 <html>
 <body>
@@ -40,7 +42,7 @@ John
     expect(cleaned).toBe("Hello World\nThis is an HTML email.");
   });
 
-  it('should remove email signatures', () => {
+  it("should remove email signatures", () => {
     const emailWithSignature = `
 Hi there,
 
@@ -56,13 +58,13 @@ john@example.com
     expect(cleaned).toBe("Hi there,\n\nThis is the main email content.");
   });
 
-  it('should handle empty or invalid input', () => {
-    expect(cleanEmailContent('')).toBe('');
-    expect(cleanEmailContent(null as any)).toBe('');
-    expect(cleanEmailContent(undefined as any)).toBe('');
+  it("should handle empty or invalid input", () => {
+    expect(cleanEmailContent("")).toBe("");
+    expect(cleanEmailContent(null as any)).toBe("");
+    expect(cleanEmailContent(undefined as any)).toBe("");
   });
 
-  it('should handle the specific forwarded email from user attachment', () => {
+  it("should handle the specific forwarded email from user attachment", () => {
     const userForwardedEmail = `
 Message Body
 
@@ -120,6 +122,8 @@ here.
 `;
 
     const cleaned = cleanEmailContent(userForwardedEmail);
-    expect(cleaned).toBe("Hi David\n\nI=E2m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They=E2s scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\n\nHere=E2s what=E2s on offer:\n\n- **Where:** Remote based role\n- **Package:** Up to $200k base salary + meaningful equity, unlimited PTO\nand more\n- **Tech Stack:** TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry =E2 giving you the chance to build solutions with real-worlds\nimpact.\n\nWould you be open to a quick chat to explore this role further? If =E2s not\nquite what you=E2re looking for, I=E2d still love to hear what=E2s next on your\nradar so I can keep you in mind for future opportunities.\n\n[Image: Planet Shine]\n\n*John Smith*\nSenior Recruiter, *Example Corp*\n\nAI/ML & Software Recruitment Specialist\n+1 646-298-3569 • 15464293569•\nwww.example.com");
+    expect(cleaned).toBe(
+      "Hi David\n\nI=E2m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They=E2s scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\n\nHere=E2s what=E2s on offer:\n\n- **Where:** Remote based role\n- **Package:** Up to $200k base salary + meaningful equity, unlimited PTO\nand more\n- **Tech Stack:** TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry =E2 giving you the chance to build solutions with real-worlds\nimpact.\n\nWould you be open to a quick chat to explore this role further? If =E2s not\nquite what you=E2re looking for, I=E2d still love to hear what=E2s next on your\nradar so I can keep you in mind for future opportunities.\n\n[Image: Planet Shine]\n\n*John Smith*\nSenior Recruiter, *Example Corp*\n\nAI/ML & Software Recruitment Specialist\n+1 646-298-3569 • 15464293569•\nwww.example.com"
+    );
   });
 });
