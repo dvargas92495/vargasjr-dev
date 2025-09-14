@@ -54,7 +54,10 @@ export default async function InboxesPage({
         lastMessageDate: sql<Date | null>`MAX(${InboxMessagesTable.createdAt})`,
       })
       .from(InboxesTable)
-      .leftJoin(InboxMessagesTable, eq(InboxesTable.id, InboxMessagesTable.inboxId))
+      .leftJoin(
+        InboxMessagesTable,
+        eq(InboxesTable.id, InboxMessagesTable.inboxId)
+      )
       .groupBy(InboxesTable.id)
       .orderBy(desc(sql`MAX(${InboxMessagesTable.createdAt})`));
 
@@ -155,7 +158,9 @@ export default async function InboxesPage({
             <tr className="bg-gray-500 text-white">
               <th className="px-6 py-3 border-b text-left">Name</th>
               <th className="px-6 py-3 border-b text-left">Created At</th>
-              <th className="px-6 py-3 border-b text-left">Last Message Date</th>
+              <th className="px-6 py-3 border-b text-left">
+                Last Message Date
+              </th>
               <th className="px-6 py-3 border-b text-left">Type</th>
             </tr>
           </thead>
