@@ -54,7 +54,8 @@
     "eslint",
     "eslint-config-next",
     "madge",
-    "postcss-load-config"
+    "postcss-load-config",
+    "test-trigger-ci"
   ],
   "ignoreBinaries": ["prettier"]
 }
