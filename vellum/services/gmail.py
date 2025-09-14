@@ -87,6 +87,9 @@ def get_emails_from_last_day() -> List[Dict[str, Any]]:
 
 def extract_email_body(payload: Dict[str, Any]) -> str:
     """Extract the body text from email payload"""
+    import re
+    from html import unescape
+    
     body = ""
     
     if 'parts' in payload:
@@ -106,7 +109,77 @@ def extract_email_body(payload: Dict[str, Any]) -> str:
             if 'data' in payload['body']:
                 body = base64.urlsafe_b64decode(payload['body']['data']).decode('utf-8')
     
-    return body
+    return clean_email_content_python(body)
+
+
+def clean_email_content_python(raw_content: str) -> str:
+    """Clean email content to extract only the actual email body"""
+    import re
+    from html import unescape
+    
+    if not raw_content or not isinstance(raw_content, str):
+        return ''
+    
+    content = raw_content
+    
+    if '<html' in content.lower() or '<!doctype' in content.lower():
+        content = re.sub(r'<[^>]+>', '', content)
+        content = unescape(content)
+    
+    forwarding_patterns = [
+        r'---------- Forwarded message ----------[\s\S]*?(?=\n\n|\nFrom:|\nDate:|$)',
+        r'Begin forwarded message:[\s\S]*?(?=\n\n|\nFrom:|\nDate:|$)',
+        r'-----Original Message-----[\s\S]*?(?=\n\n|\nFrom:|\nDate:|$)',
+        r'From:.*?Sent:.*?To:.*?Subject:.*?(?=\n\n|$)',
+        r'On .* wrote:[\s\S]*?(?=\n\n|$)',
+    ]
+    
+    for pattern in forwarding_patterns:
+        match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
+        if match:
+            forwarding_end = match.end()
+            content = content[forwarding_end:].strip()
+            break
+    
+    lines = content.split('\n')
+    cleaned_lines = []
+    skip_headers = True
+    in_signature = False
+    
+    for i, line in enumerate(lines):
+        line_stripped = line.strip()
+        
+        if skip_headers and not line_stripped:
+            continue
+        
+        if skip_headers:
+            if re.match(r'^(Return-Path|Received|Message-ID|Date|From|To|Subject|Cc|Bcc|Reply-To|MIME-Version|Content-Type|Content-Transfer-Encoding|X-.*?):\s', line_stripped, re.IGNORECASE):
+                continue
+            elif line_stripped:
+                skip_headers = False
+        
+        if (re.match(r'^--\s*$', line_stripped) or 
+            re.match(r'^_{3,}$', line_stripped) or 
+            re.match(r'^-{3,}$', line_stripped) or
+            re.match(r'^Sent from my (iPhone|iPad|Android)', line_stripped, re.IGNORECASE) or
+            re.match(r'^Get Outlook for', line_stripped, re.IGNORECASE) or
+            re.match(r'^This email was sent to .* by', line_stripped, re.IGNORECASE)):
+            in_signature = True
+        
+        if in_signature:
+            continue
+        
+        if not skip_headers:
+            cleaned_lines.append(line)
+    
+    result = '\n'.join(cleaned_lines).strip()
+    
+    result = re.sub(r'\n{3,}', '\n\n', result)
+    
+    result = re.sub(r'=\d{2}', '', result)
+    result = re.sub(r'=\n', '', result)
+    
+    return result
 
 
 def send_email(to: str, subject: str, body: str) -> bool:
