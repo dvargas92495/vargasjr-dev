@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const { instanceId } = rebootSchema.parse(body);
 
     const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
-    
+
     try {
       const instanceResult = await ec2.describeInstances({
         InstanceIds: [instanceId],

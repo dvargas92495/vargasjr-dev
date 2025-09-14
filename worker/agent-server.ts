@@ -272,7 +272,7 @@ export class AgentServer {
           this.logger.info("Reboot endpoint called");
           const { rebootAgent } = await import("./reboot-manager");
           const success = await rebootAgent(undefined, this.logger);
-          
+
           if (success) {
             res.json({
               status: "success",
@@ -281,7 +281,7 @@ export class AgentServer {
             });
           } else {
             res.status(500).json({
-              status: "error", 
+              status: "error",
               message: "Failed to initiate reboot",
               timestamp: new Date().toISOString(),
             });
