@@ -4,7 +4,11 @@ import type { Inbox } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
-const InboxRow = ({ inbox }: { inbox: Inbox }) => {
+const InboxRow = ({
+  inbox,
+}: {
+  inbox: Inbox & { lastMessageDate: Date | null };
+}) => {
   const router = useRouter();
   const handleClick = useCallback(() => {
     router.push(`/admin/inboxes/${inbox.id}`);
@@ -18,6 +22,11 @@ const InboxRow = ({ inbox }: { inbox: Inbox }) => {
       <td className="px-6 py-4 border-b">{inbox.displayLabel || inbox.name}</td>
       <td className="px-6 py-4 border-b">
         {inbox.createdAt.toLocaleDateString()}
+      </td>
+      <td className="px-6 py-4 border-b">
+        {inbox.lastMessageDate
+          ? inbox.lastMessageDate.toLocaleDateString()
+          : "No messages"}
       </td>
       <td className="px-6 py-4 border-b">{inbox.type}</td>
     </tr>
