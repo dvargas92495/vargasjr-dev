@@ -79,11 +79,16 @@ export default async function ApplicationDetailPage({
                   <th className="px-6 py-3 border-b text-left">Workspace ID</th>
                   <th className="px-6 py-3 border-b text-left">Client ID</th>
                   <th className="px-6 py-3 border-b text-left">Created At</th>
+                  <th className="px-6 py-3 border-b text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {workspaces.map((workspace) => (
-                  <WorkspaceRow key={workspace.id} workspace={workspace} />
+                  <WorkspaceRow
+                    key={workspace.id}
+                    workspace={workspace}
+                    applicationId={application.id}
+                  />
                 ))}
               </tbody>
             </table>
