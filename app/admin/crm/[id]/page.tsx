@@ -4,25 +4,31 @@ import {
   InboxMessageOperationsTable,
   InboxesTable,
 } from "@/db/schema";
-import { eq, or, desc, inArray } from "drizzle-orm";
+import { eq, or, desc, inArray, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Stripe from "stripe";
 import { getDb } from "@/db/connection";
 import DeleteContactButton from "@/components/delete-contact-button";
+import PaginationControls from "@/components/pagination-controls";
 import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
 
 dayjs.extend(relativeTime);
 
+export const dynamic = "force-dynamic";
+
 export default async function ContactPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { id } = await params;
+  const searchParamsData = await searchParams;
   const db = getDb();
   const contact = await db
     .select()
@@ -35,6 +41,26 @@ export default async function ContactPage({
   }
 
   const contactData = contact[0];
+
+  const currentPage = parseInt((searchParamsData.page as string) || "1", 10);
+  const pageSize = 10;
+  const offset = (currentPage - 1) * pageSize;
+
+  const totalMessagesResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(InboxMessagesTable)
+    .where(
+      or(
+        ...(contactData.email
+          ? [eq(InboxMessagesTable.source, contactData.email)]
+          : []),
+        ...(contactData.slackId
+          ? [eq(InboxMessagesTable.source, contactData.slackId)]
+          : [])
+      )
+    );
+  const totalMessages = totalMessagesResult[0]?.count || 0;
+  const totalPages = Math.ceil(totalMessages / pageSize);
 
   const recentMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
@@ -67,7 +93,8 @@ export default async function ContactPage({
       )
     )
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
-    .limit(10);
+    .limit(pageSize)
+    .offset(offset);
 
   const messageOperations = await db
     .select()
@@ -222,7 +249,14 @@ export default async function ContactPage({
       </div>
 
       <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Recent Messages</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Recent Messages</h2>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl={`/admin/crm/${id}`}
+          />
+        </div>
         {recentMessages.length > 0 ? (
           <div className="space-y-3">
             {recentMessages.map((message) => (
