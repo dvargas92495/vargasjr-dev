@@ -38,7 +38,6 @@
     "tailwind.config.ts",
     "vitest.config.ts",
     "knip.config.json",
-    "app/lib/vellum-utils.ts",
     "terraform/lambda/lambda-email-processor.js",
     "terraform/main.ts",
     "utils/format-zod-error.ts",
