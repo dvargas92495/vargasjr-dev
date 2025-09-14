@@ -4,7 +4,6 @@ import { createFileLogger, Logger } from "./utils";
 import { getVersion } from "@/server/versioning";
 import { postgresSession } from "./database";
 import { RoutineJob } from "./routine-job";
-import { checkAndRebootIfNeeded } from "./reboot-manager";
 import { RoutineJobsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
@@ -25,8 +24,6 @@ export class AgentRunner {
   private cancelSignal: EventEmitter;
   private sleepTime: number;
   private maxLoops?: number;
-  private lastUpdated: Date;
-  private updateInterval: number;
   private routineJobs: RoutineJob[] = [];
   private mainInterval?: NodeJS.Timeout;
   private agentServer?: AgentServer;
@@ -48,8 +45,6 @@ export class AgentRunner {
     this.cancelSignal = config.cancelSignal || new EventEmitter();
     this.sleepTime = (config.sleepTime || 0.01) * 1000;
     this.maxLoops = config.maxLoops;
-    this.lastUpdated = new Date();
-    this.updateInterval = 60000;
 
     this.loadRoutineJobs()
       .then((jobs) => {
@@ -126,17 +121,6 @@ export class AgentRunner {
           }
         }
 
-        if (Date.now() - this.lastUpdated.getTime() > this.updateInterval) {
-          this.logger.info("Checking for updates...");
-          this.lastUpdated = new Date();
-
-          try {
-            this.checkAndRebootIfNeeded();
-          } catch (error) {
-            this.logger.error(`Failed to check for updates: ${error}`);
-          }
-        }
-
         if (this.shouldRun()) {
           setTimeout(runLoop, this.sleepTime);
         }
@@ -164,10 +148,6 @@ export class AgentRunner {
       this.logger.error(`Failed to load routine jobs: ${error}`);
       return [];
     }
-  }
-
-  private checkAndRebootIfNeeded(): void {
-    checkAndRebootIfNeeded(this.logger);
   }
 
   public async stop(): Promise<void> {
