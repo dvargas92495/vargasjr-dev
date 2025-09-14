@@ -33,7 +33,7 @@
     "vitest.config.ts",
     "knip.config.json",
     "terraform/lambda/lambda-email-processor.js",
-    "utils/format-zod-error.ts",
+    "terraform/main.ts",
     "utils/error-response.ts",
     "db/connection.ts",
     "scripts/utils.ts",
