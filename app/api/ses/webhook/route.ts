@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       });
 
       const getObjectCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_INBOX_BUCKET || AWS_S3_BUCKETS.INBOX,
+        Bucket: AWS_S3_BUCKETS.INBOX,
         Key: s3Key,
       });
 
