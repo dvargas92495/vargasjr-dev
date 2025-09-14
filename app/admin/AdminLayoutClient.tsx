@@ -152,7 +152,7 @@ export default function AdminLayoutClient({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 lg:p-8 flex flex-col">
+      <div className="flex-1 p-4 lg:p-8 flex flex-col overflow-x-hidden">
         {/* Mobile header with hamburger menu */}
         <div className="lg:hidden flex items-center justify-between mb-4">
           <button
@@ -169,7 +169,7 @@ export default function AdminLayoutClient({
           Admin Dashboard
         </h1>
 
-        <div className="lg:overflow-x-auto flex flex-col flex-1">
+        <div className="overflow-x-hidden flex flex-col flex-1 min-w-0">
           {children}
         </div>
       </div>
