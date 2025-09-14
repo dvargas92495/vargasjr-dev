@@ -310,3 +310,34 @@ def get_application_by_name(name: str) -> Optional[Application]:
     with postgres_session() as session:
         statement = select(Application).where(Application.name == name)
         return session.exec(statement).one_or_none()
+
+
+def get_twitter_application_by_name(name: str) -> Optional[dict]:
+    """Get Twitter application credentials including workspace tokens from the database"""
+    with postgres_session() as session:
+        statement = select(Application).where(Application.name == name)
+        application = session.exec(statement).one_or_none()
+        
+        if not application:
+            return None
+            
+        from models.application_workspace import ApplicationWorkspace
+        workspace_statement = select(ApplicationWorkspace).where(
+            ApplicationWorkspace.application_id == application.id
+        )
+        workspace = session.exec(workspace_statement).first()
+        
+        if not workspace:
+            return {
+                'client_id': application.client_id,
+                'client_secret': application.client_secret,
+                'access_token': None,
+                'refresh_token': None
+            }
+            
+        return {
+            'client_id': workspace.client_id or application.client_id,
+            'client_secret': workspace.client_secret or application.client_secret,
+            'access_token': workspace.access_token,
+            'refresh_token': workspace.refresh_token
+        }
