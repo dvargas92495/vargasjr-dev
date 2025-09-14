@@ -9,51 +9,8 @@ on:
         type: string
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: ".nvmrc"
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
-      - name: Install Node.js dependencies
-        run: npm install
-      - name: Run ESLint
-        run: npm run lint
-      - name: Run Prettier check
-        run: npm run format:check
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: ".nvmrc"
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
-      - name: Install Node.js dependencies
-        run: npm install
-      - name: Run tests
-        run: npm test tests/
   create-production-agent:
     runs-on: ubuntu-latest
-    needs: [lint, test]
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout repo
@@ -81,3 +38,4 @@ jobs:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}

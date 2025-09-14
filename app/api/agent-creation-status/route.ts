@@ -21,8 +21,7 @@ async function checkWorkflowFailure(creationStartTime: number) {
       const failedWorkflows =
         data.workflow_runs?.filter(
           (run: { path: string; created_at: string; status: string }) =>
-            (run.path === ".github/workflows/ci.yaml" ||
-              run.path === ".github/workflows/create-production-agent.yaml") &&
+            run.path === ".github/workflows/create-production-agent.yaml" &&
             new Date(run.created_at).getTime() >= creationStartTime
         ) || [];
 
