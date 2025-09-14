@@ -7,6 +7,7 @@ import {
 import { eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
+import MarkAsUnreadButton from "@/components/mark-as-unread-button";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
@@ -82,7 +83,12 @@ export default async function InboxMessage({
           </Link>
           <h1 className="text-2xl font-bold">Message</h1>
         </div>
-        <DeleteMessageButton messageId={message.id} inboxId={inboxId} />
+        <div className="flex items-center gap-2">
+          {statuses[message.id] === "READ" && (
+            <MarkAsUnreadButton messageId={message.id} inboxId={inboxId} />
+          )}
+          <DeleteMessageButton messageId={message.id} inboxId={inboxId} />
+        </div>
       </div>
 
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
