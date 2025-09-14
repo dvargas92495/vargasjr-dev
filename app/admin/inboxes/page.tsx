@@ -67,7 +67,7 @@ export default async function InboxesPage({
     const totalMessages = totalMessagesResult[0]?.count || 0;
     totalPages = Math.ceil(totalMessages / pageSize);
 
-    recentMessages = await db
+    const allRecentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
         id: InboxMessagesTable.id,
         displayName: ContactsTable.slackDisplayName,
@@ -86,7 +86,7 @@ export default async function InboxesPage({
       )
       .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
       .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
-      .limit(pageSize)
+      .limit(pageSize * 2)
       .offset(offset);
 
     const messageOperations = await db
@@ -95,9 +95,19 @@ export default async function InboxesPage({
       .where(
         inArray(
           InboxMessageOperationsTable.inboxMessageId,
-          recentMessages.map((message) => message.id)
+          allRecentMessages.map((message) => message.id)
         )
       );
+
+    const archivedMessageIds = new Set(
+      messageOperations
+        .filter((op) => op.operation === "ARCHIVED")
+        .map((op) => op.inboxMessageId)
+    );
+
+    recentMessages = allRecentMessages
+      .filter((message) => !archivedMessageIds.has(message.id))
+      .slice(0, pageSize);
 
     statuses = Object.fromEntries(
       messageOperations.map(({ inboxMessageId, operation }) => [
