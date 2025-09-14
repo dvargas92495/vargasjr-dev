@@ -354,6 +354,31 @@ export async function mergeContact(
       throw new Error("Current contact not found");
     }
 
+    const updateFields: Partial<typeof ContactsTable.$inferInsert> = {};
+    
+    if (!currentContact[0].email && targetContact[0].email) {
+      updateFields.email = targetContact[0].email;
+    }
+    if (!currentContact[0].phoneNumber && targetContact[0].phoneNumber) {
+      updateFields.phoneNumber = targetContact[0].phoneNumber;
+    }
+    if (!currentContact[0].fullName && targetContact[0].fullName) {
+      updateFields.fullName = targetContact[0].fullName;
+    }
+    if (!currentContact[0].slackId && targetContact[0].slackId) {
+      updateFields.slackId = targetContact[0].slackId;
+    }
+    if (!currentContact[0].slackDisplayName && targetContact[0].slackDisplayName) {
+      updateFields.slackDisplayName = targetContact[0].slackDisplayName;
+    }
+
+    if (Object.keys(updateFields).length > 0) {
+      await tx
+        .update(ContactsTable)
+        .set(updateFields)
+        .where(eq(ContactsTable.id, currentContactId));
+    }
+
     await tx
       .update(InboxMessagesTable)
       .set({ contactId: currentContactId })
