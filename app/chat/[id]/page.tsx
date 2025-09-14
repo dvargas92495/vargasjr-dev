@@ -39,7 +39,7 @@ export default async function ChatSessionPage({
   const session = chatSession[0];
 
   const messages = await db
-    .selectDistinct({
+    .selectDistinctOn([InboxMessagesTable.id], {
       id: InboxMessagesTable.id,
       body: InboxMessagesTable.body,
       source: InboxMessagesTable.source,

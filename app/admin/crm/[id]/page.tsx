@@ -37,7 +37,7 @@ export default async function ContactPage({
   const contactData = contact[0];
 
   const recentMessages = await db
-    .selectDistinct({
+    .selectDistinctOn([InboxMessagesTable.id], {
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
