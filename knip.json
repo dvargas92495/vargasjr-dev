@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
     "app/**/*.{ts,tsx}",
-    "components/**/*.{ts,tsx}", 
+    "components/**/*.{ts,tsx}",
     "scripts/**/*.ts",
     "worker/**/*.ts",
     "server/**/*.ts",
@@ -20,7 +20,7 @@
     "server/**/*.{ts,tsx,js,jsx}",
     "utils/**/*.{ts,tsx,js,jsx}",
     "db/schema.ts",
-    "db/connection.ts", 
+    "db/connection.ts",
     "db/constants.ts",
     "terraform/main.ts",
     "!**/*.test.{ts,tsx,js,jsx}",
@@ -45,7 +45,7 @@
   "ignoreDependencies": [
     "@stripe/stripe-js",
     "cors",
-    "helmet", 
+    "helmet",
     "twilio",
     "@cdktf/provider-aws",
     "@types/cors",
@@ -56,7 +56,5 @@
     "madge",
     "postcss-load-config"
   ],
-  "ignoreBinaries": [
-    "prettier"
-  ]
+  "ignoreBinaries": ["prettier"]
 }
