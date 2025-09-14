@@ -77,10 +77,24 @@ export default function TestButton({
       });
 
       eventSource.onerror = () => {
+        const errorDetails = [];
+        
+        if (eventSource.readyState === EventSource.CONNECTING) {
+          errorDetails.push("Connection failed - unable to establish connection to streaming endpoint");
+        } else if (eventSource.readyState === EventSource.CLOSED) {
+          errorDetails.push("Connection closed unexpectedly");
+        }
+        
+        errorDetails.push(`Endpoint: /api/vellum/workflow-deployments/${workflowDeploymentName}/test-stream`);
+        
+        const errorMessage = errorDetails.length > 0 
+          ? errorDetails.join(". ") 
+          : "Failed to connect to streaming endpoint";
+        
         setWorkflowStatus((prev) => ({
           status: "error",
           message: "Connection error occurred",
-          error: "Failed to connect to streaming endpoint",
+          error: errorMessage,
           executionId: prev.executionId,
         }));
         eventSource.close();
