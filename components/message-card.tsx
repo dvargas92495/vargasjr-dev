@@ -13,6 +13,9 @@ interface MessageCardProps {
   status: string;
   inboxId: string;
   inboxName?: string | null;
+  isSelected?: boolean;
+  onSelectionChange?: (messageId: string, selected: boolean) => void;
+  showCheckbox?: boolean;
 }
 
 const MessageCard = ({
@@ -20,12 +23,20 @@ const MessageCard = ({
   status,
   inboxId,
   inboxName,
+  isSelected = false,
+  onSelectionChange,
+  showCheckbox = false,
 }: MessageCardProps) => {
   const router = useRouter();
 
   const handleClick = useCallback(() => {
     router.push(`/admin/inboxes/${inboxId}/messages/${message.id}`);
   }, [router, inboxId, message.id]);
+
+  const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onSelectionChange?.(message.id, e.target.checked);
+  }, [message.id, onSelectionChange]);
 
   const getInitials = (source: string) => {
     return source
@@ -52,6 +63,16 @@ const MessageCard = ({
       className="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 hover:shadow-md cursor-pointer transition-all duration-200"
     >
       <div className="flex items-start space-x-4">
+        {showCheckbox && (
+          <div className="flex-shrink-0 flex items-center">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={handleCheckboxChange}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+          </div>
+        )}
         <div className="flex-shrink-0">
           <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-sm font-semibold text-gray-700">
             {getInitials(message.source)}
