@@ -8,6 +8,7 @@ on:
       - "browser/**"
       - "worker/**"
       - "run_agent.sh"
+      - "knip.json"
   pull_request:
     paths:
       - "vellum/pyproject.toml"
@@ -20,6 +21,7 @@ on:
       - "tests/**"
       - "eslint.config.mjs"
       - "package.json"
+      - "knip.json"
       - ".github/workflows/ci.yaml"
       - "run_agent.sh"
   workflow_dispatch:
