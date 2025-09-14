@@ -1,18 +1,18 @@
-import { JSDOM } from "jsdom";
+import { JSDOM } from 'jsdom';
 
 export function cleanEmailContent(rawContent: string): string {
-  if (!rawContent || typeof rawContent !== "string") {
-    return "";
+  if (!rawContent || typeof rawContent !== 'string') {
+    return '';
   }
 
   let content = rawContent;
 
-  if (content.includes("<html") || content.includes("<!DOCTYPE")) {
+  if (content.includes('<html') || content.includes('<!DOCTYPE')) {
     try {
       const dom = new JSDOM(content);
       content = dom.window.document.body?.textContent || content;
     } catch (error) {
-      console.warn("Failed to parse HTML email content:", error);
+      console.warn('Failed to parse HTML email content:', error);
     }
   }
 
@@ -33,38 +33,32 @@ export function cleanEmailContent(rawContent: string): string {
     }
   }
 
-  const lines = content.split("\n");
+  const lines = content.split('\n');
   const cleanedLines: string[] = [];
   let skipHeaders = true;
   let inSignature = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-
+    
     if (skipHeaders && !line) {
       continue;
     }
-
+    
     if (skipHeaders) {
-      if (
-        line.match(
-          /^(Return-Path|Received|Message-ID|Date|From|To|Subject|Cc|Bcc|Reply-To|MIME-Version|Content-Type|Content-Transfer-Encoding|X-.*?):\s/i
-        )
-      ) {
+      if (line.match(/^(Return-Path|Received|Message-ID|Date|From|To|Subject|Cc|Bcc|Reply-To|MIME-Version|Content-Type|Content-Transfer-Encoding|X-.*?):\s/i)) {
         continue;
       } else if (line) {
         skipHeaders = false;
       }
     }
 
-    if (
-      line.match(/^--\s*$/) ||
-      line.match(/^_{3,}$/) ||
-      line.match(/^-{3,}$/) ||
-      line.match(/^Sent from my (iPhone|iPad|Android)/i) ||
-      line.match(/^Get Outlook for/i) ||
-      line.match(/^This email was sent to .* by/i)
-    ) {
+    if (line.match(/^--\s*$/) || 
+        line.match(/^_{3,}$/) || 
+        line.match(/^-{3,}$/) ||
+        line.match(/^Sent from my (iPhone|iPad|Android)/i) ||
+        line.match(/^Get Outlook for/i) ||
+        line.match(/^This email was sent to .* by/i)) {
       inSignature = true;
     }
 
@@ -77,12 +71,12 @@ export function cleanEmailContent(rawContent: string): string {
     }
   }
 
-  let result = cleanedLines.join("\n").trim();
-
-  result = result.replace(/\n{3,}/g, "\n\n");
-
-  result = result.replace(/=\d{2}/g, ""); // Remove quoted-printable artifacts like =E2=80=99
-  result = result.replace(/=\n/g, ""); // Remove soft line breaks
-
+  let result = cleanedLines.join('\n').trim();
+  
+  result = result.replace(/\n{3,}/g, '\n\n');
+  
+  result = result.replace(/=\d{2}/g, ''); // Remove quoted-printable artifacts like =E2=80=99
+  result = result.replace(/=\n/g, ''); // Remove soft line breaks
+  
   return result;
 }

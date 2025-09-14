@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { AWS_S3_BUCKETS } from "@/app/lib/constants";
-import { cleanEmailContent } from "@/utils/email-content-parser";
+import { cleanEmailContent } from "@/server/email-content-parser";
 
 interface SESMail {
   messageId: string;
