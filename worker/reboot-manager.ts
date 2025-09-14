@@ -140,7 +140,10 @@ export async function rebootAgent(
     rebootLogger.error(
       `Failed to reboot to version: ${targetVersion} - ${error}`
     );
-    return { success: false, error: `Failed to reboot to version: ${targetVersion} - ${error}` };
+    return {
+      success: false,
+      error: `Failed to reboot to version: ${targetVersion} - ${error}`,
+    };
   }
 }
 
