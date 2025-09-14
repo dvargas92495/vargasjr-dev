@@ -23,7 +23,7 @@ export default async function ApplicationDetailPage({
     db
       .select()
       .from(ApplicationWorkspacesTable)
-      .where(eq(ApplicationWorkspacesTable.applicationId, id))
+      .where(eq(ApplicationWorkspacesTable.applicationId, id)),
   ]);
 
   if (!application) {
