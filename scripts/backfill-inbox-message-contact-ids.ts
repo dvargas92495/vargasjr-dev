@@ -9,6 +9,7 @@ import {
   OutboxMessagesTable,
 } from "../db/schema";
 import { eq, or, isNull } from "drizzle-orm";
+import { asc } from "drizzle-orm";
 
 class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
   protected migrationName = "Backfill Inbox Message Contact IDs";
@@ -58,9 +59,10 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
               eq(ContactsTable.email, message.source),
               eq(ContactsTable.slackId, message.source)
             )
-          );
+          )
+          .orderBy(asc(ContactsTable.id));
 
-        if (matchingContacts.length === 1) {
+        if (matchingContacts.length >= 1) {
           const contact = matchingContacts[0];
 
           if (!this.isPreviewMode) {
@@ -68,6 +70,12 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
               .update(InboxMessagesTable)
               .set({ contactId: contact.id })
               .where(eq(InboxMessagesTable.id, message.id));
+          }
+
+          if (matchingContacts.length > 1) {
+            this.logWarning(
+              `Multiple contacts found for source "${message.source}" - using first contact ${contact.id} for message ${message.id}`
+            );
           }
 
           this.logSuccess(
@@ -78,11 +86,6 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
             })`
           );
           matchedCount++;
-        } else if (matchingContacts.length > 1) {
-          this.logWarning(
-            `Multiple contacts found for source "${message.source}" - skipping message ${message.id}`
-          );
-          errorCount++;
         } else {
           if (!this.isPreviewMode) {
             await db
@@ -136,9 +139,9 @@ class BackfillInboxMessageContactIds extends OneTimeMigrationRunner {
 - Messages with errors/multiple matches: ${errorCount}
 
 **Actions:**
-- ✅ Update messages where source matches exactly one contact (email or slackId)
+- ✅ Update messages where source matches one or more contacts (email or slackId)
+- ✅ For multiple matches, use the first contact (ordered by ID)
 - ⚠️ Delete messages where no matching contact is found
-- ⚠️ Skip messages with multiple potential contact matches
 
 This migration will backfill the \`contactId\` field in \`InboxMessagesTable\` by matching the \`source\` field with contacts in \`ContactsTable\`. Messages that cannot be matched to any contact will be safely deleted along with their related records.
       `;
