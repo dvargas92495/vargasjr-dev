@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useState } from "react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, HomeIcon } from "@heroicons/react/24/outline";
 
 export default function AdminLayoutClient({
   children,
@@ -36,6 +36,16 @@ export default function AdminLayoutClient({
           </div>
           <nav>
             <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 p-3 hover:bg-gray-200 hover:text-black rounded text-white"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <HomeIcon className="h-5 w-5" />
+                  Home
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/admin"
@@ -99,6 +109,15 @@ export default function AdminLayoutClient({
       <div className="hidden lg:block w-64 bg-gray-500 p-4">
         <nav>
           <ul className="space-y-2">
+            <li>
+              <Link
+                href="/"
+                className="flex items-center gap-2 p-2 hover:bg-gray-200 hover:text-black rounded text-white"
+              >
+                <HomeIcon className="h-5 w-5" />
+                Home
+              </Link>
+            </li>
             <li>
               <Link
                 href="/admin"
