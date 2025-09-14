@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import PaginationControls from "@/components/pagination-controls";
 
 interface RoutineJobExecution {
   id: string;
@@ -16,24 +18,42 @@ interface ExecutionHistoryProps {
   routineJobId: string;
 }
 
+interface ExecutionHistoryResponse {
+  executions: RoutineJobExecution[];
+  totalCount: number;
+}
+
 export default function ExecutionHistory({
   routineJobId,
 }: ExecutionHistoryProps) {
   const [executions, setExecutions] = useState<RoutineJobExecution[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = 10;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   useEffect(() => {
     const fetchExecutions = async () => {
       try {
-        const response = await fetch(
-          `/api/jobs/routine/${routineJobId}/executions`
+        const url = new URL(
+          `/api/jobs/routine/${routineJobId}/executions`,
+          window.location.origin
         );
+        if (currentPage > 1) {
+          url.searchParams.set("page", currentPage.toString());
+        }
+
+        const response = await fetch(url.toString());
         if (!response.ok) {
           throw new Error("Failed to fetch executions");
         }
-        const data = await response.json();
-        setExecutions(data);
+        const data: ExecutionHistoryResponse = await response.json();
+        setExecutions(data.executions);
+        setTotalCount(data.totalCount);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -42,7 +62,7 @@ export default function ExecutionHistory({
     };
 
     fetchExecutions();
-  }, [routineJobId]);
+  }, [routineJobId, currentPage]);
 
   if (loading) {
     return (
@@ -68,9 +88,18 @@ export default function ExecutionHistory({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">
-        Execution History (Last 10)
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">
+          Execution History
+        </h3>
+        {totalPages > 1 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl={`/admin/jobs/routine/${routineJobId}`}
+          />
+        )}
+      </div>
 
       {executions.length === 0 ? (
         <p className="text-gray-700">
