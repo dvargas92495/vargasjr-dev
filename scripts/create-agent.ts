@@ -515,7 +515,8 @@ class VargasJRAgentCreator {
 
       let envContent = `POSTGRES_URL=${postgresUrl}
 LOG_LEVEL=INFO
-VELLUM_API_KEY=${envVars.VELLUM_API_KEY}`;
+VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
+ADMIN_TOKEN=${envVars.ADMIN_TOKEN}`;
 
       if (this.config.prNumber) {
         const githubAuth = new GitHubAppAuth();
@@ -772,6 +773,7 @@ AGENT_ENVIRONMENT=production`;
       "VELLUM_API_KEY",
       "NEON_API_KEY",
       "GITHUB_PRIVATE_KEY",
+      "ADMIN_TOKEN",
     ];
     const optionalVars: string[] = [];
     const envVars: Record<string, string> = {};
