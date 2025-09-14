@@ -4,7 +4,7 @@ import {
   InboxMessageOperationsTable,
   InboxesTable,
 } from "@/db/schema";
-import { eq, or, desc, inArray, sql } from "drizzle-orm";
+import { eq, desc, inArray, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -49,25 +49,16 @@ export default async function ContactPage({
   const totalMessagesResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(InboxMessagesTable)
-    .where(
-      or(
-        ...(contactData.email
-          ? [eq(InboxMessagesTable.source, contactData.email)]
-          : []),
-        ...(contactData.slackId
-          ? [eq(InboxMessagesTable.source, contactData.slackId)]
-          : [])
-      )
-    );
+    .where(eq(InboxMessagesTable.contactId, contactData.id));
   const totalMessages = totalMessagesResult[0]?.count || 0;
   const totalPages = Math.ceil(totalMessages / pageSize);
 
   const recentMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
-      source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
+      email: ContactsTable.email,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
       inboxId: InboxMessagesTable.inboxId,
@@ -76,22 +67,10 @@ export default async function ContactPage({
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      or(
-        eq(InboxMessagesTable.source, ContactsTable.slackId),
-        eq(InboxMessagesTable.source, ContactsTable.email)
-      )
+      eq(InboxMessagesTable.contactId, ContactsTable.id)
     )
     .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
-    .where(
-      or(
-        ...(contactData.email
-          ? [eq(InboxMessagesTable.source, contactData.email)]
-          : []),
-        ...(contactData.slackId
-          ? [eq(InboxMessagesTable.source, contactData.slackId)]
-          : [])
-      )
-    )
+    .where(eq(InboxMessagesTable.contactId, contactData.id))
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
     .limit(pageSize)
     .offset(offset);
@@ -265,7 +244,7 @@ export default async function ContactPage({
                 message={{
                   ...message,
                   source:
-                    message.displayName || message.fullName || message.source,
+                    message.displayName || message.fullName || message.email || "Unknown",
                 }}
                 status={messageStatuses[message.id] || "Unread"}
                 inboxId={message.inboxId}
