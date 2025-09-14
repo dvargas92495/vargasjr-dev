@@ -335,10 +335,6 @@ export async function markMessageAsArchived(
       inboxMessageId: messageId,
       operation: "ARCHIVED",
     })
-    .onConflictDoUpdate({
-      target: InboxMessageOperationsTable.inboxMessageId,
-      set: { operation: "ARCHIVED" },
-    })
     .execute();
 
   revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);

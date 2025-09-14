@@ -20,6 +20,9 @@ const MarkAsArchivedButton = ({
       router.refresh();
     } catch (error) {
       console.error("Failed to mark message as archived:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to archive message"
+      );
     }
   }, [messageId, inboxId, router]);
 
