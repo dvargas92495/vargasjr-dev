@@ -613,6 +613,81 @@ export async function postGitHubComment(
   }
 }
 
+export async function getAddedFilesInPR(prNumber?: string): Promise<string[]> {
+  const githubRepo = "dvargas92495/vargasjr-dev";
+
+  if (!prNumber) {
+    console.warn("PR number not available, falling back to empty array");
+    return [];
+  }
+
+  try {
+    const headers = await getGitHubAuthHeaders();
+    const response = await fetch(
+      `https://api.github.com/repos/${githubRepo}/pulls/${prNumber}/files`,
+      {
+        headers,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.statusText}`);
+    }
+
+    const files = await response.json();
+
+    const addedFiles = files
+      .filter((file: any) => file.status === "added")
+      .map((file: any) => file.filename);
+
+    console.log(`📁 Found ${addedFiles.length} added files in PR #${prNumber}`);
+    return addedFiles;
+  } catch (error) {
+    console.warn(`Could not get PR files from GitHub API: ${error}`);
+    return [];
+  }
+}
+
+export async function findPRByBranch(branchName: string): Promise<string> {
+  console.log(`🔍 Finding PR for branch: ${branchName}...`);
+
+  const githubRepo = "dvargas92495/vargasjr-dev";
+  const [owner, repo] = githubRepo.split("/");
+  const headFilter = `${owner}:${branchName}`;
+
+  try {
+    const headers = await getGitHubAuthHeaders();
+    const response = await fetch(
+      `https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`,
+      {
+        headers,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.statusText}`);
+    }
+
+    const prs = await response.json();
+
+    if (prs.length === 0) {
+      throw new Error(`No open PRs found for branch: ${branchName}`);
+    }
+
+    if (prs.length > 1) {
+      throw new Error(
+        `Multiple open PRs found for branch: ${branchName}. Expected exactly one.`
+      );
+    }
+
+    const pr = prs[0];
+    console.log(`✅ Found PR #${pr.number} for branch: ${branchName}`);
+    return pr.number.toString();
+  } catch (error) {
+    throw new Error(`Failed to find PR for branch ${branchName}: ${error}`);
+  }
+}
+
 export abstract class OneTimeMigrationRunner {
   protected isPreviewMode: boolean;
   protected abstract migrationName: string;

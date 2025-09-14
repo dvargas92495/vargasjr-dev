@@ -3,7 +3,7 @@
 import { execSync, spawn } from "child_process";
 import { readdirSync, statSync, existsSync, readFileSync } from "fs";
 import { join, extname, relative } from "path";
-import { postGitHubComment } from "./utils";
+import { postGitHubComment, getAddedFilesInPR, findPRByBranch } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface ScriptResult {
@@ -92,7 +92,7 @@ class DraftPRScriptRunner {
 
   private async discoverScripts(): Promise<string[]> {
     try {
-      const addedFiles = await this.getAddedFilesInPR();
+      const addedFiles = await getAddedFilesInPR(this.prNumber);
       const scriptsRootFiles = addedFiles.filter((file) => {
         const parts = file.split("/");
         return (
@@ -116,95 +116,34 @@ class DraftPRScriptRunner {
   }
 
   private async findPRByBranch(): Promise<string> {
-    console.log(`🔍 Finding PR for branch: ${this.branchName}...`);
+    const prNumber = await findPRByBranch(this.branchName);
 
     const githubRepo = "dvargas92495/vargasjr-dev";
+    const headers = await getGitHubAuthHeaders();
+    const response = await fetch(
+      `https://api.github.com/repos/${githubRepo}/pulls/${prNumber}`,
+      { headers }
+    );
 
-    const [owner, repo] = githubRepo.split("/");
-    const headFilter = `${owner}:${this.branchName}`;
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.statusText}`);
+    }
 
-    try {
-      const headers = await getGitHubAuthHeaders();
-      const response = await fetch(
-        `https://api.github.com/repos/${githubRepo}/pulls?head=${headFilter}&state=open`,
-        {
-          headers,
-        }
-      );
+    const pr = await response.json();
 
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
-      }
-
-      const prs = await response.json();
-
-      if (prs.length === 0) {
-        throw new Error(`No open PRs found for branch: ${this.branchName}`);
-      }
-
-      if (prs.length > 1) {
-        throw new Error(
-          `Multiple open PRs found for branch: ${this.branchName}. Expected exactly one.`
-        );
-      }
-
-      const pr = prs[0];
-
-      if (!pr.draft) {
-        throw new Error(
-          `PR #${pr.number} for branch ${this.branchName} is not a draft PR`
-        );
-      }
-
-      console.log(
-        `✅ Found draft PR #${pr.number} for branch: ${this.branchName}`
-      );
-      console.log(
-        `✅ Found PR #${pr.number}, using current HEAD for script discovery`
-      );
-      return pr.number.toString();
-    } catch (error) {
+    if (!pr.draft) {
       throw new Error(
-        `Failed to find PR for branch ${this.branchName}: ${error}`
+        `PR #${pr.number} for branch ${this.branchName} is not a draft PR`
       );
     }
-  }
 
-  private async getAddedFilesInPR(): Promise<string[]> {
-    const githubRepo = "dvargas92495/vargasjr-dev";
-
-    if (!this.prNumber) {
-      console.warn("PR number not available, falling back to empty array");
-      return [];
-    }
-
-    try {
-      const headers = await getGitHubAuthHeaders();
-      const response = await fetch(
-        `https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}/files`,
-        {
-          headers,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
-      }
-
-      const files = await response.json();
-
-      const addedFiles = files
-        .filter((file: any) => file.status === "added")
-        .map((file: any) => file.filename);
-
-      console.log(
-        `📁 Found ${addedFiles.length} added files in PR #${this.prNumber}`
-      );
-      return addedFiles;
-    } catch (error) {
-      console.warn(`Could not get PR files from GitHub API: ${error}`);
-      return [];
-    }
+    console.log(
+      `✅ Found draft PR #${pr.number} for branch: ${this.branchName}`
+    );
+    console.log(
+      `✅ Found PR #${pr.number}, using current HEAD for script discovery`
+    );
+    return prNumber;
   }
 
   private getExecutableFiles(dir: string): string[] {

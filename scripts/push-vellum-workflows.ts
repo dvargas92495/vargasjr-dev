@@ -11,6 +11,7 @@ import {
 import { join } from "path";
 import { postGitHubComment } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
+import { getAddedFilesInPR, findPRByBranch } from "./utils";
 
 const toTitleCase = (str: string) => {
   return str
@@ -391,6 +392,12 @@ class VellumWorkflowPusher {
       lockFileContent.workflows.forEach((workflow: any) => {
         if (workflow.container_image_name === "vargasjr") {
           workflow.container_image_tag = newTag;
+        } else if (
+          workflow.container_image_name === null ||
+          workflow.container_image_name === undefined
+        ) {
+          workflow.container_image_name = "vargasjr";
+          workflow.container_image_tag = newTag;
         }
       });
     }
@@ -398,15 +405,35 @@ class VellumWorkflowPusher {
 
   private async handleServicesChanges(): Promise<void> {
     try {
-      const gitDiff = execSync(
-        "git diff --name-only origin/main...HEAD vellum/services/",
-        {
-          encoding: "utf8",
-          cwd: process.cwd(),
-        }
-      ).trim();
+      let prNumber = process.env.PR_NUMBER;
 
-      if (gitDiff) {
+      if (!prNumber) {
+        try {
+          const branchName = execSync("git branch --show-current", {
+            encoding: "utf8",
+            cwd: process.cwd(),
+          }).trim();
+          prNumber = await findPRByBranch(branchName);
+        } catch (error) {
+          console.warn(
+            "Could not determine PR number, skipping services change detection"
+          );
+          return;
+        }
+      }
+
+      const addedFiles = await getAddedFilesInPR(prNumber);
+      const servicesFiles = addedFiles.filter((file) =>
+        file.startsWith("vellum/services/")
+      );
+
+      console.log(
+        `📋 Added files in vellum/services: ${
+          servicesFiles.join(", ") || "none"
+        }`
+      );
+
+      if (servicesFiles.length > 0) {
         console.log(
           "🔍 Detected changes in vellum/services, building new image..."
         );
