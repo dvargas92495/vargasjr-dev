@@ -33,6 +33,10 @@ const MessageCard = ({
     router.push(`/admin/inboxes/${inboxId}/messages/${message.id}`);
   }, [router, inboxId, message.id]);
 
+  const handleCheckboxClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+  }, []);
+
   const handleCheckboxChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       e.stopPropagation();
@@ -40,7 +44,6 @@ const MessageCard = ({
     },
     [message.id, onSelectionChange]
   );
-
   const getInitials = (source: string) => {
     return source
       .split(" ")
@@ -71,6 +74,7 @@ const MessageCard = ({
             <input
               type="checkbox"
               checked={isSelected}
+              onClick={handleCheckboxClick}
               onChange={handleCheckboxChange}
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
