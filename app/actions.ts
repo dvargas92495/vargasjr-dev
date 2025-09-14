@@ -355,7 +355,7 @@ export async function mergeContact(
     }
 
     const updateFields: Partial<typeof ContactsTable.$inferInsert> = {};
-    
+
     if (!currentContact[0].email && targetContact[0].email) {
       updateFields.email = targetContact[0].email;
     }
@@ -368,7 +368,10 @@ export async function mergeContact(
     if (!currentContact[0].slackId && targetContact[0].slackId) {
       updateFields.slackId = targetContact[0].slackId;
     }
-    if (!currentContact[0].slackDisplayName && targetContact[0].slackDisplayName) {
+    if (
+      !currentContact[0].slackDisplayName &&
+      targetContact[0].slackDisplayName
+    ) {
       updateFields.slackDisplayName = targetContact[0].slackDisplayName;
     }
 
