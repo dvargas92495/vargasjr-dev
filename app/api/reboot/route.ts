@@ -1,102 +1,82 @@
-import { NextResponse } from "next/server";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 import { cookies } from "next/headers";
-import { SSM } from "@aws-sdk/client-ssm";
-import { checkInstanceHealth } from "@/scripts/utils";
-import { AWS_DEFAULT_REGION } from "@/server/constants";
+import { EC2 } from "@aws-sdk/client-ec2";
+import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
+import { withApiWrapper } from "@/utils/api-wrapper";
 
 const rebootSchema = z.object({
   instanceId: z.string(),
 });
 
-export async function POST(request: Request) {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin-token");
+export const POST = withApiWrapper(async (body: unknown) => {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("admin-token");
 
-    if (token?.value !== process.env.ADMIN_TOKEN) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { instanceId } = rebootSchema.parse(body);
-
-    try {
-      const ssm = new SSM({ region: AWS_DEFAULT_REGION });
-
-      const healthCheck = await checkInstanceHealth(instanceId);
-      if (healthCheck.status !== "healthy") {
-        return NextResponse.json(
-          {
-            error: `Cannot reboot agent: ${healthCheck.error}`,
-          },
-          { status: 400 }
-        );
-      }
-
-      const commandResult = await ssm.sendCommand({
-        InstanceIds: [instanceId],
-        DocumentName: "AWS-RunShellScript",
-        Parameters: {
-          commands: ["~/run_agent.sh"],
-        },
-        TimeoutSeconds: 60,
-      });
-
-      const commandId = commandResult.Command?.CommandId;
-      if (!commandId) {
-        throw new Error("Failed to get command ID from SSM");
-      }
-
-      return NextResponse.json({
-        success: true,
-        commandId: commandId,
-        message: "Agent reboot initiated",
-      });
-    } catch (awsError) {
-      const errorMessage =
-        awsError instanceof Error ? awsError.message : "AWS error";
-
-      if (errorMessage.includes("Could not load credentials")) {
-        console.log(
-          "AWS credentials not available - returning mock success for development"
-        );
-
-        return NextResponse.json({
-          success: true,
-          commandId: "mock-command-id-dev",
-          message: "Agent reboot initiated (development mode)",
-          isDevelopment: true,
-        });
-      }
-
-      if (
-        errorMessage.includes("InvalidInstanceId.NotFound") ||
-        errorMessage.includes("not registered")
-      ) {
-        return NextResponse.json(
-          {
-            error: "Instance not managed by Systems Manager",
-          },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json(
-        {
-          error: errorMessage,
-        },
-        { status: 500 }
-      );
-    }
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({ error: "Reboot failed" }, { status: 500 });
+  if (token?.value !== process.env.ADMIN_TOKEN) {
+    throw new Error("Unauthorized");
   }
-}
+
+  const { instanceId } = rebootSchema.parse(body);
+
+  const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
+
+  const instanceResult = await ec2.describeInstances({
+    InstanceIds: [instanceId],
+  });
+
+  const instance = instanceResult.Reservations?.[0]?.Instances?.[0];
+  if (!instance) {
+    throw new Error("Instance not found");
+  }
+
+  if (instance.State?.Name !== "running") {
+    throw new Error(`Instance is ${instance.State?.Name}`);
+  }
+
+  const publicIp = instance.PublicIpAddress;
+  if (!publicIp) {
+    throw new Error("Instance has no public IP address");
+  }
+
+  const rebootUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/api/reboot`;
+  console.log(`[Reboot] Making HTTP request to: ${rebootUrl}`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const response = await fetch(rebootUrl, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.ADMIN_TOKEN}`,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Agent Server returned HTTP ${response.status}: ${errorText}`
+      );
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      message: data.message || "Agent reboot initiated",
+      timestamp: data.timestamp,
+    };
+  } catch (fetchError) {
+    clearTimeout(timeoutId);
+    if (fetchError instanceof Error && fetchError.name === "AbortError") {
+      throw new Error("Reboot request timed out after 30 seconds");
+    }
+
+    const errMsg =
+      fetchError instanceof Error ? fetchError.message : String(fetchError);
+    throw new Error(`HTTP request to Agent Server failed: ${errMsg}`);
+  }
+});

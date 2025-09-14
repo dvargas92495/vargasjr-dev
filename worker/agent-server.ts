@@ -2,6 +2,7 @@ import express from "express";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
+import { rebootAgent } from "./reboot-manager";
 
 export interface BrowserSession {
   id: string;
@@ -263,6 +264,39 @@ export class AgentServer {
         });
       }
     });
+
+    this.app.post(
+      "/api/reboot",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          this.logger.info("Reboot endpoint called");
+          const result = await rebootAgent(undefined, this.logger);
+
+          if (result.success) {
+            res.json({
+              status: "success",
+              message: "Agent reboot initiated",
+              timestamp: new Date().toISOString(),
+            });
+          } else {
+            res.status(500).json({
+              status: "error",
+              message: result.error || "Failed to initiate reboot",
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          this.logger.error(`Reboot failed: ${error}`);
+          res.status(500).json({
+            status: "error",
+            message: "Reboot failed",
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    );
 
     this.app.get("/ping", (req, res) => {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
