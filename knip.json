@@ -37,8 +37,27 @@
     "next.config.ts",
     "tailwind.config.ts",
     "vitest.config.ts",
-    "knip.config.json"
+    "knip.config.json",
+    "app/lib/vellum-utils.ts",
+    "terraform/lambda/lambda-email-processor.js",
+    "terraform/main.ts"
   ],
   "include": ["exports"],
-  "ignoreDependencies": []
+  "ignoreDependencies": [
+    "@stripe/stripe-js",
+    "cors",
+    "helmet", 
+    "twilio",
+    "@cdktf/provider-aws",
+    "@types/cors",
+    "cdktf",
+    "cdktf-cli",
+    "eslint",
+    "eslint-config-next",
+    "madge",
+    "postcss-load-config"
+  ],
+  "ignoreBinaries": [
+    "prettier"
+  ]
 }
