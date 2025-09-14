@@ -2,28 +2,18 @@
 
 import { spawn } from "child_process";
 import LocalSetup from "./setup-local";
-import * as dotenv from "dotenv";
 
 async function main() {
-  dotenv.config();
   console.log("🚀 Starting development server...\n");
 
-  if (!(process.env.NEON_URL || process.env.POSTGRES_URL)) {
-    console.log("⚠️  POSTGRES_URL not found in environment variables.");
-    console.log("🔧 Running local setup to configure PostgreSQL...\n");
-
-    try {
-      const setup = new LocalSetup();
-      await setup.run();
-      console.log("\n✅ Local setup completed successfully!");
-    } catch (error) {
-      console.error("❌ Local setup failed:", error);
-      process.exit(1);
-    }
-  } else {
-    console.log(
-      "✅ POSTGRES_URL found, using existing database configuration."
-    );
+  console.log("🔧 Running local setup...\n");
+  try {
+    const setup = new LocalSetup();
+    await setup.run();
+    console.log("\n✅ Local setup completed successfully!");
+  } catch (error) {
+    console.error("❌ Local setup failed:", error);
+    process.exit(1);
   }
 
   console.log("\n🌟 Starting Next.js development server...\n");
