@@ -11,7 +11,7 @@ import {
 import { join } from "path";
 import { postGitHubComment } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
-import { getAddedFilesInPR } from "./utils";
+import { getAddedFilesInPR, findPRByBranch } from "./utils";
 
 const toTitleCase = (str: string) => {
   return str
@@ -405,9 +405,24 @@ class VellumWorkflowPusher {
 
   private async handleServicesChanges(): Promise<void> {
     try {
-      const prNumber = process.env.PR_NUMBER || (await this.getPRNumber());
-      const addedFiles = await getAddedFilesInPR(prNumber);
+      let prNumber = process.env.PR_NUMBER;
 
+      if (!prNumber) {
+        try {
+          const branchName = execSync("git branch --show-current", {
+            encoding: "utf8",
+            cwd: process.cwd(),
+          }).trim();
+          prNumber = await findPRByBranch(branchName);
+        } catch (error) {
+          console.warn(
+            "Could not determine PR number, skipping services change detection"
+          );
+          return;
+        }
+      }
+
+      const addedFiles = await getAddedFilesInPR(prNumber);
       const servicesFiles = addedFiles.filter((file) =>
         file.startsWith("vellum/services/")
       );
@@ -464,23 +479,6 @@ class VellumWorkflowPusher {
       }
     } catch (error) {
       console.error(`⚠️  Failed to handle services changes: ${error}`);
-    }
-  }
-
-  private async getPRNumber(): Promise<string | undefined> {
-    try {
-      const branchName = execSync("git branch --show-current", {
-        encoding: "utf8",
-        cwd: process.cwd(),
-      }).trim();
-
-      console.warn(
-        "Could not determine PR number from branch name, using fallback"
-      );
-      return undefined;
-    } catch (error) {
-      console.warn("Could not determine PR number from branch name");
-      return undefined;
     }
   }
 
