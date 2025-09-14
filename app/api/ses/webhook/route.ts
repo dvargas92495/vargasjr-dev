@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       });
 
       const getObjectCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_INBOX_BUCKET || "vargasjr-inbox",
+        Bucket: process.env.AWS_S3_INBOX_BUCKET || "vargas-jr-inbox",
         Key: s3Key,
       });
 
