@@ -188,8 +188,10 @@ export default async function InboxMessage({
       )}
       {messageOperations.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4 text-white">Recent Operations</h2>
-          
+          <h2 className="text-xl font-semibold mb-4 text-white">
+            Recent Operations
+          </h2>
+
           <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full">
