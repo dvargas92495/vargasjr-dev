@@ -196,7 +196,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-bold">Vargas JR</h1>
         <Link
           href="/"
-          className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded-lg transition-colors"
         >
           <HomeIcon className="h-4 w-4" />
           Back to Home
