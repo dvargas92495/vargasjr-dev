@@ -6,6 +6,7 @@ import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { AWS_S3_BUCKETS } from "@/app/lib/constants";
 
 interface SESMail {
   messageId: string;
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
       });
 
       const getObjectCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_INBOX_BUCKET || "vargas-jr-inbox",
+        Bucket: process.env.AWS_S3_INBOX_BUCKET || AWS_S3_BUCKETS.INBOX,
         Key: s3Key,
       });
 
