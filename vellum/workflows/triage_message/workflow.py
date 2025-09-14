@@ -10,6 +10,7 @@ from .nodes import (
     EmailInitiateNode,
     TextReplyNode,
     SlackReplyNode,
+    JobOpportunityResponseNode,
     StoreOutboxMessageNode,
 )
 
@@ -27,6 +28,7 @@ class TriageMessageWorkflow(BaseWorkflow):
                 ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
                 ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
                 ParseFunctionCallNode.Ports.slack_reply >> SlackReplyNode,
+                ParseFunctionCallNode.Ports.job_opportunity_response >> JobOpportunityResponseNode,
             }
             >> StoreOutboxMessageNode,
         },

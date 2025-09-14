@@ -73,6 +73,42 @@ def slack_reply(
     )
 
 
+def job_opportunity_response(
+    original_recruiter_email: str,
+    recruiter_subject: str,
+    recruiter_body: str,
+    forwarder_confirmation_body: str,
+):
+    """
+    Handle a job opportunity that was forwarded to you by sending two emails sequentially:
+    1. First, send an enthusiastic response to the original recruiter
+    2. Then, send a confirmation to the person who forwarded the opportunity
+    
+    Use this function when:
+    - A job opportunity has been forwarded to you from another person
+    - The message contains job-related content like positions, roles, opportunities, recruitment
+    - You need to respond to both the original recruiter and acknowledge the forwarder
+    
+    To detect job opportunities, look for:
+    - Keywords like "job", "position", "role", "opportunity", "hiring", "recruitment"
+    - Forwarded email patterns with "FWD:", "Fwd:", "Forward:", etc. in subject
+    - Email content that mentions companies, job titles, or recruiting
+    
+    To extract the original recruiter's email, look for:
+    - "From:" lines in the forwarded message body
+    - "Sent by:" or similar forwarding indicators
+    - Email signatures or contact information in the forwarded content
+    - Original sender information preserved in forwarding headers
+    
+    The recruiter response should express excitement about the role and highlight relevant 
+    experience to maximize chances of getting an initial interview.
+    
+    The forwarder confirmation should include a link to the admin message at 
+    /admin/inboxes/{inbox_id}/messages/{message_id} where they can view your response.
+    """
+    pass
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -108,6 +144,7 @@ give the recipient confidence that you will be tending to their request and that
         email_initiate,
         text_reply,
         slack_reply,
+        job_opportunity_response,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
