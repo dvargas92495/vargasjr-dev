@@ -124,7 +124,7 @@ const EditCronModal = forwardRef<EditCronModalHandle, EditCronModalProps>(
                 </h3>
                 <div className="mt-4 space-y-4">
                   <div className="flex items-center space-x-4">
-                    <label className="flex items-center">
+                    <label className="flex items-center text-gray-900">
                       <input
                         type="radio"
                         checked={useNaturalLanguage}
@@ -133,7 +133,7 @@ const EditCronModal = forwardRef<EditCronModalHandle, EditCronModalProps>(
                       />
                       Natural Language
                     </label>
-                    <label className="flex items-center">
+                    <label className="flex items-center text-gray-900">
                       <input
                         type="radio"
                         checked={!useNaturalLanguage}
@@ -154,9 +154,9 @@ const EditCronModal = forwardRef<EditCronModalHandle, EditCronModalProps>(
                         value={scheduleDescription}
                         onChange={(e) => setScheduleDescription(e.target.value)}
                         placeholder="e.g., every day at 8am, every Monday at 5pm"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-700 mt-1">
                         Describe when you want this job to run in plain English
                       </p>
                     </div>
@@ -170,9 +170,9 @@ const EditCronModal = forwardRef<EditCronModalHandle, EditCronModalProps>(
                         value={cronExpression}
                         onChange={(e) => setCronExpression(e.target.value)}
                         placeholder="0 8 * * *"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono"
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 font-mono text-gray-900"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-700 mt-1">
                         Format: minute hour day month weekday
                       </p>
                     </div>
