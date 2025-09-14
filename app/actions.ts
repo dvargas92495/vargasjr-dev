@@ -346,7 +346,10 @@ export async function deleteInbox(inboxId: string) {
   const db = getDb();
 
   const messages = await db
-    .select({ id: InboxMessagesTable.id, externalId: InboxMessagesTable.externalId })
+    .select({
+      id: InboxMessagesTable.id,
+      externalId: InboxMessagesTable.externalId,
+    })
     .from(InboxMessagesTable)
     .where(eq(InboxMessagesTable.inboxId, inboxId));
 

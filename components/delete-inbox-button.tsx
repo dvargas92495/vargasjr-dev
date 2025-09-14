@@ -40,8 +40,8 @@ const DeleteInboxButton = ({ inboxId }: { inboxId: string }) => {
         header="Delete Inbox"
         body={
           <p className="text-sm text-gray-300">
-            Are you sure you want to delete this inbox and all its messages? This action
-            cannot be undone.
+            Are you sure you want to delete this inbox and all its messages?
+            This action cannot be undone.
           </p>
         }
         onConfirm={onConfirm}
