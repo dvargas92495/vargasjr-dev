@@ -41,6 +41,14 @@ export class AgentServer {
       res: express.Response,
       next: express.NextFunction
     ) => {
+      if (!process.env.ADMIN_TOKEN) {
+        return res.status(401).json({
+          status: "error",
+          message: "Admin token not configured",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
