@@ -44,7 +44,7 @@ export async function GET(
     const session = chatSession[0];
 
     const messages = await db
-      .select({
+      .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
         id: InboxMessagesTable.id,
         body: InboxMessagesTable.body,
         source: InboxMessagesTable.source,
@@ -61,7 +61,7 @@ export async function GET(
         )
       )
       .where(eq(InboxMessagesTable.inboxId, session.inboxId))
-      .orderBy(InboxMessagesTable.createdAt);
+      .orderBy(InboxMessagesTable.createdAt, InboxMessagesTable.id);
 
     return NextResponse.json({
       session: {
