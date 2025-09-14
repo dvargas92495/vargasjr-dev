@@ -4,7 +4,7 @@ import {
   ContactsTable,
   InboxMessagesTable,
 } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import ChatInput from "@/components/ChatInput";
@@ -42,19 +42,13 @@ export default async function ChatSessionPage({
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
       body: InboxMessagesTable.body,
-      source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
+      email: ContactsTable.email,
       createdAt: InboxMessagesTable.createdAt,
     })
     .from(InboxMessagesTable)
-    .leftJoin(
-      ContactsTable,
-      or(
-        eq(InboxMessagesTable.source, ContactsTable.slackId),
-        eq(InboxMessagesTable.source, ContactsTable.email)
-      )
-    )
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
     .orderBy(InboxMessagesTable.createdAt, InboxMessagesTable.id);
 
@@ -67,7 +61,10 @@ export default async function ChatSessionPage({
             <div key={message.id} className="bg-gray-700 rounded-lg p-4">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-semibold text-blue-300">
-                  {message.displayName || message.fullName || message.source}
+                  {message.displayName ||
+                    message.fullName ||
+                    message.email ||
+                    "Unknown"}
                 </span>
                 <span className="text-xs text-gray-400">
                   {message.createdAt.toLocaleString()}

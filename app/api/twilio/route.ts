@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { InboxesTable, InboxMessagesTable } from "@/db/schema";
+import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import { getDb } from "@/db/connection";
+import { addInboxMessage, upsertEmailContact } from "@/server";
 
 const bodySchema = z.object({
   ToCountry: z.string(),
@@ -52,9 +53,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Inbox not found" }, { status: 404 });
     }
 
-    await db
-      .insert(InboxMessagesTable)
-      .values({ source: From, body: Body, inboxId: inbox[0].id });
+    const contactId = await upsertEmailContact(From);
+
+    await addInboxMessage({
+      body: Body,
+      inboxName: `twilio-phone-${To}`,
+      contactId: contactId,
+    });
 
     return NextResponse.json({
       headers: {

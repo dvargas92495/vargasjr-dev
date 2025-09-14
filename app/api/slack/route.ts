@@ -227,7 +227,6 @@ export async function POST(request: Request) {
 
           await addInboxMessage({
             body: event.text,
-            source: event.user,
             inboxName: inboxName,
             createdAt: new Date(event.ts * 1000),
             contactId: contactId,

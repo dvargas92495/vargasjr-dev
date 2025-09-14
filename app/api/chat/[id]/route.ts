@@ -5,7 +5,7 @@ import {
   ContactsTable,
   InboxMessagesTable,
 } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
 export async function GET(
@@ -47,18 +47,15 @@ export async function GET(
       .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
         id: InboxMessagesTable.id,
         body: InboxMessagesTable.body,
-        source: InboxMessagesTable.source,
         displayName: ContactsTable.slackDisplayName,
         fullName: ContactsTable.fullName,
+        email: ContactsTable.email,
         createdAt: InboxMessagesTable.createdAt,
       })
       .from(InboxMessagesTable)
       .leftJoin(
         ContactsTable,
-        or(
-          eq(InboxMessagesTable.source, ContactsTable.slackId),
-          eq(InboxMessagesTable.source, ContactsTable.email)
-        )
+        eq(InboxMessagesTable.contactId, ContactsTable.id)
       )
       .where(eq(InboxMessagesTable.inboxId, session.inboxId))
       .orderBy(InboxMessagesTable.createdAt, InboxMessagesTable.id);
@@ -75,7 +72,7 @@ export async function GET(
       messages: messages.map((msg) => ({
         id: msg.id,
         body: msg.body,
-        source: msg.displayName || msg.fullName || msg.source,
+        source: msg.displayName || msg.fullName || msg.email || "Unknown",
         createdAt: msg.createdAt.toISOString(),
       })),
     });

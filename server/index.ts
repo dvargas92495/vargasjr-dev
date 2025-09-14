@@ -61,7 +61,6 @@ export const upsertEmailContact = async (
 
 export const addInboxMessage = async ({
   body,
-  source,
   inboxName,
   threadId,
   externalId,
@@ -70,13 +69,12 @@ export const addInboxMessage = async ({
   contactId,
 }: {
   body: string;
-  source: string;
   inboxName: string;
   threadId?: string;
   externalId?: string;
   createdAt?: Date;
   metadata?: Record<string, string>;
-  contactId?: string;
+  contactId: string;
 }) => {
   const db = getDb();
   const inbox = await db
@@ -91,7 +89,6 @@ export const addInboxMessage = async ({
   }
 
   await db.insert(InboxMessagesTable).values({
-    source,
     body: body,
     inboxId: inbox[0].id,
     threadId,

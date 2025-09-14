@@ -30,11 +30,12 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
   inboxId: uuid("inbox_id")
     .notNull()
     .references(() => InboxesTable.id),
-  source: varchar("source").notNull(),
   body: text("body").notNull(),
   threadId: varchar("thread_id"),
   externalId: varchar("external_id"),
-  contactId: uuid("contact_id").references(() => ContactsTable.id),
+  contactId: uuid("contact_id")
+    .notNull()
+    .references(() => ContactsTable.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   metadata: jsonb("metadata"),
 });

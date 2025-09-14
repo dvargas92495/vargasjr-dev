@@ -5,7 +5,7 @@ import {
   InboxMessageOperationsTable,
   type Inbox,
 } from "@/db/schema";
-import { desc, or, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
 import MessageCard from "@/components/message-card";
 import PaginationControls from "@/components/pagination-controls";
@@ -23,9 +23,9 @@ export default async function InboxesPage({
   let allInboxes: Inbox[] = [];
   let recentMessages: Array<{
     id: string;
-    source: string;
     displayName: string | null;
     fullName: string | null;
+    email: string | null;
     createdAt: Date;
     body: string;
     inboxId: string;
@@ -57,9 +57,9 @@ export default async function InboxesPage({
     recentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
         id: InboxMessagesTable.id,
-        source: InboxMessagesTable.source,
         displayName: ContactsTable.slackDisplayName,
         fullName: ContactsTable.fullName,
+        email: ContactsTable.email,
         createdAt: InboxMessagesTable.createdAt,
         body: InboxMessagesTable.body,
         inboxId: InboxMessagesTable.inboxId,
@@ -69,10 +69,7 @@ export default async function InboxesPage({
       .from(InboxMessagesTable)
       .leftJoin(
         ContactsTable,
-        or(
-          eq(InboxMessagesTable.source, ContactsTable.slackId),
-          eq(InboxMessagesTable.source, ContactsTable.email)
-        )
+        eq(InboxMessagesTable.contactId, ContactsTable.id)
       )
       .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
       .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
@@ -177,7 +174,10 @@ export default async function InboxesPage({
                 message={{
                   ...message,
                   source:
-                    message.displayName || message.fullName || message.source,
+                    message.displayName ||
+                    message.fullName ||
+                    message.email ||
+                    "Unknown",
                 }}
                 status={statuses[message.id] || "Unread"}
                 inboxId={message.inboxId}
