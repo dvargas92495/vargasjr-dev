@@ -73,10 +73,15 @@ class ReadMessageNode(BaseNode):
                     )
                 )
                 session.commit()
+                contact_source = "Unknown"
+                if hasattr(inbox_message, 'contact') and inbox_message.contact:
+                    contact = inbox_message.contact
+                    contact_source = contact.slack_display_name or contact.full_name or contact.email or "Unknown"
+                
                 message = SlimMessage(
                     message_id=inbox_message.id,
                     body=inbox_message.body,
-                    source=inbox_message.source,
+                    source=contact_source,
                     channel=inbox_type,
                     inbox_name=inbox_name,
                     inbox_id=inbox_message.inbox_id,

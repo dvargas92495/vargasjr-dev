@@ -4,7 +4,7 @@ import {
   OutboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import MarkAsUnreadButton from "@/components/mark-as-unread-button";
@@ -28,8 +28,9 @@ export default async function InboxMessage({
   const messages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
-      source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
+      fullName: ContactsTable.fullName,
+      email: ContactsTable.email,
       contactId: ContactsTable.id,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
@@ -39,10 +40,7 @@ export default async function InboxMessage({
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      or(
-        eq(InboxMessagesTable.source, ContactsTable.slackId),
-        eq(InboxMessagesTable.source, ContactsTable.email)
-      )
+      eq(InboxMessagesTable.contactId, ContactsTable.id)
     )
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
@@ -100,10 +98,10 @@ export default async function InboxMessage({
                 href={`/admin/crm/${message.contactId}`}
                 className="text-blue-600 hover:text-blue-800 underline"
               >
-                {message.displayName || message.source}
+                {message.displayName || message.fullName || message.email || "Unknown"}
               </Link>
             ) : (
-              message.displayName || message.source
+              message.displayName || message.fullName || message.email || "Unknown"
             )}
           </div>
         </div>

@@ -42,7 +42,6 @@ export async function sendChatMessage(sessionId: string, formData: FormData) {
 
   await addInboxMessage({
     body: message.trim(),
-    source: session.contactEmail || "Anonymous",
     inboxName: "chat-sessions",
     threadId: sessionId,
     contactId: session.contactId,

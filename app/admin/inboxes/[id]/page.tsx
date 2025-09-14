@@ -4,7 +4,7 @@ import {
   InboxesTable,
   ContactsTable,
 } from "@/db/schema";
-import { desc, eq, inArray, or } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -32,19 +32,16 @@ export default async function InboxPage({
   const messages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
-      source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
+      email: ContactsTable.email,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
     })
     .from(InboxMessagesTable)
     .leftJoin(
       ContactsTable,
-      or(
-        eq(InboxMessagesTable.source, ContactsTable.slackId),
-        eq(InboxMessagesTable.source, ContactsTable.email)
-      )
+      eq(InboxMessagesTable.contactId, ContactsTable.id)
     )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
@@ -90,7 +87,7 @@ export default async function InboxPage({
             key={message.id}
             message={{
               ...message,
-              source: message.displayName || message.fullName || message.source,
+              source: message.displayName || message.fullName || message.email || "Unknown",
             }}
             status={statuses[message.id] || "Unread"}
             inboxId={id}

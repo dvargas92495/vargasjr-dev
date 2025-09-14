@@ -46,7 +46,6 @@ export async function POST(
 
     await addInboxMessage({
       body: message,
-      source: session.contactEmail || "Anonymous",
       inboxName: "chat-sessions",
       contactId: session.contactId,
       threadId: id,

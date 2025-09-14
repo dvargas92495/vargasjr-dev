@@ -14,7 +14,6 @@ async function contactFormHandler(body: unknown) {
 
   await addInboxMessage({
     body: message,
-    source: email,
     inboxName: "landing-page",
     contactId: contactId,
   });
