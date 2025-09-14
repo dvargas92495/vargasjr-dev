@@ -20,7 +20,10 @@ logger = logging.getLogger(__name__)
 class SlimMessage(UniversalBaseModel):
     message_id: UUID
     body: str
-    source: str
+    contact_email: Optional[str] = None
+    contact_id: UUID
+    contact_full_name: Optional[str] = None
+    contact_slack_display_name: Optional[str] = None
     channel: InboxType
     inbox_name: str
     inbox_id: UUID
@@ -57,7 +60,10 @@ class ReadMessageNode(BaseNode):
                         message=SlimMessage(
                             message_id=uuid4(),
                             body="No messages found",
-                            source="",
+                            contact_email=None,
+                            contact_id=uuid4(),
+                            contact_full_name=None,
+                            contact_slack_display_name=None,
                             channel=InboxType.NONE,
                             inbox_name="",
                             inbox_id=uuid4(),
@@ -73,15 +79,24 @@ class ReadMessageNode(BaseNode):
                     )
                 )
                 session.commit()
-                contact_source = "Unknown"
+                contact_email = None
+                contact_full_name = None
+                contact_slack_display_name = None
+                contact_id = inbox_message.contact_id
+                
                 if hasattr(inbox_message, 'contact') and inbox_message.contact:
                     contact = inbox_message.contact
-                    contact_source = contact.slack_display_name or contact.full_name or contact.email or "Unknown"
+                    contact_email = contact.email
+                    contact_full_name = contact.full_name
+                    contact_slack_display_name = contact.slack_display_name
                 
                 message = SlimMessage(
                     message_id=inbox_message.id,
                     body=inbox_message.body,
-                    source=contact_source,
+                    contact_email=contact_email,
+                    contact_id=contact_id,
+                    contact_full_name=contact_full_name,
+                    contact_slack_display_name=contact_slack_display_name,
                     channel=inbox_type,
                     inbox_name=inbox_name,
                     inbox_id=inbox_message.inbox_id,
@@ -92,7 +107,10 @@ class ReadMessageNode(BaseNode):
                 message=SlimMessage(
                     message_id=uuid4(),
                     body="No messages found",
-                    source="",
+                    contact_email=None,
+                    contact_id=uuid4(),
+                    contact_full_name=None,
+                    contact_slack_display_name=None,
                     channel=InboxType.NONE,
                     inbox_name="",
                     inbox_id=uuid4(),
