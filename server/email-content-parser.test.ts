@@ -152,7 +152,9 @@ Content-Type: text/html; charset="UTF-8"
 --boundary123--`;
 
       const result = parseEmailBody(multipartEmail);
-      expect(result).toBe("Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: John Smith <john@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Alex\nI'm reaching out about an exciting Full Stack Engineer opportunity.");
+      expect(result).toBe(
+        "Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: John Smith <john@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Alex\nI'm reaching out about an exciting Full Stack Engineer opportunity."
+      );
     });
 
     it("should decode quoted-printable encoding", () => {
@@ -167,7 +169,9 @@ with a fast-growing company. They=E2=80=99re scaling quickly.
 --boundary123--`;
 
       const result = parseEmailBody(quotedPrintableEmail);
-      expect(result).toBe("I’m reaching out about an exciting opportunitywith a fast-growing company. They’re scaling quickly.");
+      expect(result).toBe(
+        "I’m reaching out about an exciting opportunitywith a fast-growing company. They’re scaling quickly."
+      );
     });
 
     it("should handle non-multipart emails", () => {
@@ -242,7 +246,9 @@ com">user@example.com</a>&gt;<br></div><br><br>
 --000000000000940f27063ec8e887--`;
 
       const result = parseEmailBody(userEmail);
-      expect(result).toBe("Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: John Smith <john@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Alex\nI’m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They’re scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\nHere’s a snapshot of what’s on offer:\n\n   - *Where:* Remote based role\n   - *Package:* Up to $220k base salary + meaningful equity, unlimited PTO\n   and more\n   - *Tech Stack:* TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry — giving you the chance to build solutions with real-world impact.\nWould you be open to a quick chat to explore this role further? If it’s not\nquite what you’re looking for, I’d still love to hear what’s next on your\nradar so I can keep you in mind for future opportunities.");
+      expect(result).toBe(
+        "Apply to this job for me\n\n---------- Forwarded message ---------\nFrom: John Smith <john@example.com>\nDate: Fri, Sep 12, 2025 at 2:17 PM\nSubject: Scaling start up - Expanding their Full Stack Engineering team.\nTo: <user@example.com>\n\nHi Alex\nI’m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They’re scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\nHere’s a snapshot of what’s on offer:\n\n   - *Where:* Remote based role\n   - *Package:* Up to $220k base salary + meaningful equity, unlimited PTO\n   and more\n   - *Tech Stack:* TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry — giving you the chance to build solutions with real-world impact.\nWould you be open to a quick chat to explore this role further? If it’s not\nquite what you’re looking for, I’d still love to hear what’s next on your\nradar so I can keep you in mind for future opportunities."
+      );
     });
   });
 });
