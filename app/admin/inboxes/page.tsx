@@ -5,13 +5,20 @@ import {
   InboxMessageOperationsTable,
   type Inbox,
 } from "@/db/schema";
-import { desc, or, eq, inArray } from "drizzle-orm";
+import { desc, or, eq, inArray, sql } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
 import MessageCard from "@/components/message-card";
+import PaginationControls from "@/components/pagination-controls";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
-export default async function InboxesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function InboxesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const db = getDb();
   let allInboxes: Inbox[] = [];
   let recentMessages: Array<{
@@ -27,12 +34,25 @@ export default async function InboxesPage() {
   }> = [];
   let statuses: Record<string, string> = {};
   let error: string | null = null;
+  let currentPage = 1;
+  let totalPages = 1;
 
   try {
+    const params = await searchParams;
+    currentPage = parseInt((params.page as string) || "1", 10);
+    const pageSize = 10;
+    const offset = (currentPage - 1) * pageSize;
+
     allInboxes = await db
       .select()
       .from(InboxesTable)
       .orderBy(desc(InboxesTable.createdAt));
+
+    const totalMessagesResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(InboxMessagesTable);
+    const totalMessages = totalMessagesResult[0]?.count || 0;
+    totalPages = Math.ceil(totalMessages / pageSize);
 
     recentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
@@ -56,7 +76,8 @@ export default async function InboxesPage() {
       )
       .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
       .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
-      .limit(10);
+      .limit(pageSize)
+      .offset(offset);
 
     const messageOperations = await db
       .select()
@@ -140,7 +161,14 @@ export default async function InboxesPage() {
 
       {/* Recent Messages Section */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Recent Messages</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Recent Messages</h2>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            baseUrl="/admin/inboxes"
+          />
+        </div>
         {recentMessages.length > 0 ? (
           <div className="space-y-3">
             {recentMessages.map((message) => (
