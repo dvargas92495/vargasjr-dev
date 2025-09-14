@@ -21,20 +21,23 @@ const MergeContactButton = ({
     mergeModalRef.current?.openModal();
   }, [mergeModalRef]);
 
-  const onMerge = useCallback(async (targetContactId: string) => {
-    setIsMerging(true);
-    try {
-      await mergeContact(currentContactId, targetContactId);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error merging contact:", error);
-      alert(
-        error instanceof Error ? error.message : "Failed to merge contact"
-      );
-    } finally {
-      setIsMerging(false);
-    }
-  }, [currentContactId]);
+  const onMerge = useCallback(
+    async (targetContactId: string) => {
+      setIsMerging(true);
+      try {
+        await mergeContact(currentContactId, targetContactId);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error merging contact:", error);
+        alert(
+          error instanceof Error ? error.message : "Failed to merge contact"
+        );
+      } finally {
+        setIsMerging(false);
+      }
+    },
+    [currentContactId]
+  );
 
   return (
     <>

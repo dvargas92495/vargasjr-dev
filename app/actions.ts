@@ -323,7 +323,10 @@ export async function markMessageAsUnread(messageId: string, inboxId: string) {
   revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
-export async function mergeContact(currentContactId: string, targetContactId: string) {
+export async function mergeContact(
+  currentContactId: string,
+  targetContactId: string
+) {
   if (currentContactId === targetContactId) {
     throw new Error("Cannot merge a contact with itself");
   }
@@ -372,7 +375,7 @@ export async function mergeContact(currentContactId: string, targetContactId: st
 
     revalidatePath("/admin/crm");
     revalidatePath(`/admin/crm/${currentContactId}`);
-    
+
     return deletedContact[0];
   });
 }

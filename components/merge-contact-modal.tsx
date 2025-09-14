@@ -27,7 +27,9 @@ const MergeContactModal = forwardRef<
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,28 +55,35 @@ const MergeContactModal = forwardRef<
     closeModal,
   }));
 
-  const searchContacts = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setContacts([]);
-      return;
-    }
-
-    setSearchLoading(true);
-    try {
-      const response = await fetch(
-        `/api/contacts/search?q=${encodeURIComponent(query)}&exclude=${currentContactId}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to search contacts");
+  const searchContacts = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setContacts([]);
+        return;
       }
-      const searchResults = await response.json();
-      setContacts(searchResults);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to search contacts");
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [currentContactId]);
+
+      setSearchLoading(true);
+      try {
+        const response = await fetch(
+          `/api/contacts/search?q=${encodeURIComponent(
+            query
+          )}&exclude=${currentContactId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to search contacts");
+        }
+        const searchResults = await response.json();
+        setContacts(searchResults);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to search contacts"
+        );
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [currentContactId]
+  );
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -103,7 +112,7 @@ const MergeContactModal = forwardRef<
     }
   }, [selectedContactId, onMerge, closeModal]);
 
-  const selectedContact = contacts.find(c => c.id === selectedContactId);
+  const selectedContact = contacts.find((c) => c.id === selectedContactId);
 
   if (!isOpen) return null;
 
@@ -136,13 +145,17 @@ const MergeContactModal = forwardRef<
               <div className="mt-4 space-y-4">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                   <p className="text-sm text-yellow-800">
-                    <strong>Warning:</strong> This action cannot be undone. All messages and chat sessions from the selected contact will be transferred to &quot;{currentContactName}&quot;, and the selected contact will be deleted.
+                    <strong>Warning:</strong> This action cannot be undone. All
+                    messages and chat sessions from the selected contact will be
+                    transferred to &quot;{currentContactName}&quot;, and the
+                    selected contact will be deleted.
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Search for contact to merge into &quot;{currentContactName}&quot;
+                    Search for contact to merge into &quot;{currentContactName}
+                    &quot;
                   </label>
                   <input
                     type="text"
@@ -180,7 +193,9 @@ const MergeContactModal = forwardRef<
                           <tr
                             key={contact.id}
                             className={`hover:bg-gray-50 cursor-pointer ${
-                              selectedContactId === contact.id ? "bg-blue-50" : ""
+                              selectedContactId === contact.id
+                                ? "bg-blue-50"
+                                : ""
                             }`}
                             onClick={() => setSelectedContactId(contact.id)}
                           >
@@ -188,7 +203,9 @@ const MergeContactModal = forwardRef<
                               <input
                                 type="radio"
                                 checked={selectedContactId === contact.id}
-                                onChange={() => setSelectedContactId(contact.id)}
+                                onChange={() =>
+                                  setSelectedContactId(contact.id)
+                                }
                                 className="text-blue-600"
                               />
                             </td>
@@ -214,10 +231,14 @@ const MergeContactModal = forwardRef<
                 {selectedContact && (
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
                     <p className="text-sm text-blue-800">
-                      <strong>Selected:</strong> {selectedContact.fullName || "Unnamed Contact"} ({selectedContact.email || "No email"})
+                      <strong>Selected:</strong>{" "}
+                      {selectedContact.fullName || "Unnamed Contact"} (
+                      {selectedContact.email || "No email"})
                     </p>
                     <p className="text-xs text-blue-600 mt-1">
-                      This contact&apos;s messages and chat sessions will be transferred to &quot;{currentContactName}&quot;, and this contact will be deleted.
+                      This contact&apos;s messages and chat sessions will be
+                      transferred to &quot;{currentContactName}&quot;, and this
+                      contact will be deleted.
                     </p>
                   </div>
                 )}
