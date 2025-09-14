@@ -613,6 +613,41 @@ export async function postGitHubComment(
   }
 }
 
+export async function getAddedFilesInPR(prNumber?: string): Promise<string[]> {
+  const githubRepo = "dvargas92495/vargasjr-dev";
+
+  if (!prNumber) {
+    console.warn("PR number not available, falling back to empty array");
+    return [];
+  }
+
+  try {
+    const headers = await getGitHubAuthHeaders();
+    const response = await fetch(
+      `https://api.github.com/repos/${githubRepo}/pulls/${prNumber}/files`,
+      {
+        headers,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.statusText}`);
+    }
+
+    const files = await response.json();
+
+    const addedFiles = files
+      .filter((file: any) => file.status === "added")
+      .map((file: any) => file.filename);
+
+    console.log(`📁 Found ${addedFiles.length} added files in PR #${prNumber}`);
+    return addedFiles;
+  } catch (error) {
+    console.warn(`Could not get PR files from GitHub API: ${error}`);
+    return [];
+  }
+}
+
 export abstract class OneTimeMigrationRunner {
   protected isPreviewMode: boolean;
   protected abstract migrationName: string;

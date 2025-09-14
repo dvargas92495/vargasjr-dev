@@ -3,7 +3,7 @@
 import { execSync, spawn } from "child_process";
 import { readdirSync, statSync, existsSync, readFileSync } from "fs";
 import { join, extname, relative } from "path";
-import { postGitHubComment } from "./utils";
+import { postGitHubComment, getAddedFilesInPR } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 interface ScriptResult {
@@ -171,40 +171,7 @@ class DraftPRScriptRunner {
   }
 
   private async getAddedFilesInPR(): Promise<string[]> {
-    const githubRepo = "dvargas92495/vargasjr-dev";
-
-    if (!this.prNumber) {
-      console.warn("PR number not available, falling back to empty array");
-      return [];
-    }
-
-    try {
-      const headers = await getGitHubAuthHeaders();
-      const response = await fetch(
-        `https://api.github.com/repos/${githubRepo}/pulls/${this.prNumber}/files`,
-        {
-          headers,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.statusText}`);
-      }
-
-      const files = await response.json();
-
-      const addedFiles = files
-        .filter((file: any) => file.status === "added")
-        .map((file: any) => file.filename);
-
-      console.log(
-        `📁 Found ${addedFiles.length} added files in PR #${this.prNumber}`
-      );
-      return addedFiles;
-    } catch (error) {
-      console.warn(`Could not get PR files from GitHub API: ${error}`);
-      return [];
-    }
+    return getAddedFilesInPR(this.prNumber);
   }
 
   private getExecutableFiles(dir: string): string[] {
