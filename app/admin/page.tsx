@@ -9,6 +9,8 @@ import {
   checkLocalAgentHealth,
   createLocalAgentInstance,
 } from "@/server/health-check";
+import Link from "next/link";
+import { HomeIcon } from "@heroicons/react/24/outline";
 
 async function checkWorkflowStatus() {
   try {
@@ -190,7 +192,16 @@ export default async function AdminPage() {
 
   return (
     <div className="flex flex-col gap-4 justify-start items-start">
-      <h1 className="text-2xl font-bold">Vargas JR</h1>
+      <div className="flex items-center gap-4">
+        <h1 className="text-2xl font-bold">Vargas JR</h1>
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded-lg transition-colors"
+        >
+          <HomeIcon className="h-4 w-4" />
+          Back to Home
+        </Link>
+      </div>
       <p className="text-sm text-gray-700">Manage Vargas Jr Settings</p>
 
       <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg w-full max-w-2xl">
