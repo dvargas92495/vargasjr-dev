@@ -191,6 +191,22 @@ export default async function ContactPage({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
+              Slack ID
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {contactData.slackId || "N/A"}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Slack Display Name
+            </label>
+            <p className="mt-1 text-sm text-gray-900">
+              {contactData.slackDisplayName || "N/A"}
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
               Created At
             </label>
             <p className="mt-1 text-sm text-gray-900">
