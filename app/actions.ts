@@ -224,6 +224,8 @@ export async function updateContact(id: string, formData: FormData) {
   const fullName = formData.get("fullName") as string;
   const email = formData.get("email") as string;
   const phoneNumber = formData.get("phoneNumber") as string;
+  const slackId = formData.get("slackId") as string;
+  const slackDisplayName = formData.get("slackDisplayName") as string;
 
   const db = getDb();
   const updatedContact = await db
@@ -232,6 +234,8 @@ export async function updateContact(id: string, formData: FormData) {
       fullName: fullName || null,
       email: email || null,
       phoneNumber: phoneNumber || null,
+      slackId: slackId || null,
+      slackDisplayName: slackDisplayName || null,
     })
     .where(eq(ContactsTable.id, id))
     .returning()

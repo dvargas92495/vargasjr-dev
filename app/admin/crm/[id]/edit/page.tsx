@@ -11,6 +11,8 @@ interface Contact {
   fullName: string | null;
   email: string | null;
   phoneNumber: string | null;
+  slackId: string | null;
+  slackDisplayName: string | null;
   createdAt: string;
 }
 
@@ -152,6 +154,40 @@ export default function EditContactPage({
               defaultValue={contact.phoneNumber || ""}
               className="w-full p-2 border rounded text-black"
               placeholder="Enter phone number"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="slackId"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Slack ID
+            </label>
+            <input
+              type="text"
+              id="slackId"
+              name="slackId"
+              defaultValue={contact.slackId || ""}
+              className="w-full p-2 border rounded text-black"
+              placeholder="Enter Slack ID"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="slackDisplayName"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Slack Display Name
+            </label>
+            <input
+              type="text"
+              id="slackDisplayName"
+              name="slackDisplayName"
+              defaultValue={contact.slackDisplayName || ""}
+              className="w-full p-2 border rounded text-black"
+              placeholder="Enter Slack display name"
             />
           </div>
 
