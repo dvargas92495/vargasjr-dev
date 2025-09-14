@@ -39,7 +39,7 @@ export default async function ChatSessionPage({
   const session = chatSession[0];
 
   const messages = await db
-    .selectDistinctOn([InboxMessagesTable.id], {
+    .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
       body: InboxMessagesTable.body,
       source: InboxMessagesTable.source,
@@ -56,7 +56,7 @@ export default async function ChatSessionPage({
       )
     )
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
-    .orderBy(InboxMessagesTable.id, InboxMessagesTable.createdAt);
+    .orderBy(InboxMessagesTable.createdAt, InboxMessagesTable.id);
 
   return (
     <div className="flex flex-col p-4 max-w-4xl mx-auto">

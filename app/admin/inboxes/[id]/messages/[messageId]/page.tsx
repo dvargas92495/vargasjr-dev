@@ -25,7 +25,7 @@ export default async function InboxMessage({
 
   const db = getDb();
   const messages = await db
-    .selectDistinctOn([InboxMessagesTable.id], {
+    .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
       source: InboxMessagesTable.source,
       displayName: ContactsTable.slackDisplayName,
