@@ -62,7 +62,10 @@ export async function GET(
         createdAt: execution.start,
         outputs: execution.outputs,
         error: execution.error,
-        environment: execution.metadata?.environment || "unknown",
+        environment:
+          execution.parentContext?.type === "WORKFLOW_RELEASE_TAG"
+            ? execution.parentContext.metadata?.environment
+            : "unknown",
       })) || [];
 
     return NextResponse.json(transformedExecutions);
