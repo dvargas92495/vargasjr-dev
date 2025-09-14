@@ -14,6 +14,9 @@ import {
 import { eq, desc } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { AWS_S3_BUCKETS } from "@/app/lib/constants";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
@@ -249,6 +252,38 @@ export async function updateContact(id: string, formData: FormData) {
 export async function deleteMessage(messageId: string, inboxId: string) {
   const db = getDb();
 
+  const message = await db
+    .select({ externalId: InboxMessagesTable.externalId })
+    .from(InboxMessagesTable)
+    .where(eq(InboxMessagesTable.id, messageId))
+    .limit(1);
+
+  if (!message.length) {
+    throw new Error("Message not found");
+  }
+
+  if (message[0].externalId) {
+    try {
+      const s3Client = new S3Client({
+        region: AWS_DEFAULT_REGION,
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        },
+      });
+
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: AWS_S3_BUCKETS.INBOX,
+        Key: message[0].externalId,
+      });
+
+      await s3Client.send(deleteCommand);
+      console.log(`Deleted S3 object: ${message[0].externalId}`);
+    } catch (error) {
+      console.error(`Failed to delete S3 object ${message[0].externalId}:`, error);
+    }
+  }
+
   await db
     .delete(InboxMessageOperationsTable)
     .where(eq(InboxMessageOperationsTable.inboxMessageId, messageId))
@@ -264,10 +299,6 @@ export async function deleteMessage(messageId: string, inboxId: string) {
     .where(eq(InboxMessagesTable.id, messageId))
     .returning()
     .execute();
-
-  if (!deletedMessage.length) {
-    throw new Error("Message not found");
-  }
 
   revalidatePath(`/admin/inboxes/${inboxId}`);
   return deletedMessage[0];
