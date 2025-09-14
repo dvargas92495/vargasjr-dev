@@ -33,7 +33,7 @@ export default async function CRMPage() {
               <th className="px-6 py-3 border-b text-left">Name</th>
               <th className="px-6 py-3 border-b text-left">Email</th>
               <th className="px-6 py-3 border-b text-left">Phone</th>
-              <th className="px-6 py-3 border-b text-left">Created At</th>
+              <th className="px-6 py-3 border-b text-left">Last Message&apos;d Date</th>
             </tr>
           </thead>
           <tbody>
