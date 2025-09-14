@@ -53,6 +53,7 @@ export const InboxMessageOperationsTable = pgTable("inbox_message_operations", {
     .notNull()
     .references(() => InboxMessagesTable.id),
   operation: InboxMessageOperationTypesEnum("operation").notNull(),
+  executionId: varchar("execution_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

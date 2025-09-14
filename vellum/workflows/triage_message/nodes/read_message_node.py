@@ -72,10 +72,14 @@ class ReadMessageNode(BaseNode):
                     )
 
                 inbox_message, inbox_type, inbox_name = result
+                
+                execution_id = getattr(self._context, "execution_id", None)
+                
                 session.add(
                     InboxMessageOperation(
                         inbox_message_id=inbox_message.id,
                         operation=InboxMessageOperationType.READ,
+                        execution_id=execution_id,
                     )
                 )
                 session.commit()
