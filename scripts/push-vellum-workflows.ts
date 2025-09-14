@@ -398,30 +398,24 @@ class VellumWorkflowPusher {
 
   private async handleServicesChanges(): Promise<void> {
     try {
-      const gitStatus = execSync("git status --porcelain vellum/services/", {
-        encoding: "utf8",
-        cwd: process.cwd(),
-      }).trim();
+      const gitDiff = execSync(
+        "git diff --name-only origin/main...HEAD vellum/services/",
+        {
+          encoding: "utf8",
+          cwd: process.cwd(),
+        }
+      ).trim();
 
-      if (gitStatus) {
+      if (gitDiff) {
         console.log(
           "🔍 Detected changes in vellum/services, building new image..."
         );
 
         const lockFilePath = join(this.agentDir, "vellum.lock.json");
         if (!existsSync(lockFilePath)) {
-          console.log(
-            "⚠️  No vellum.lock.json found, creating initial version..."
+          throw new Error(
+            "vellum.lock.json not found - cannot update container image tag"
           );
-          const initialLockFile = {
-            workflows: [
-              {
-                container_image_name: "vargasjr",
-                container_image_tag: "1.0.0",
-              },
-            ],
-          };
-          writeFileSync(lockFilePath, JSON.stringify(initialLockFile, null, 2));
         }
 
         const lockFileContent = JSON.parse(readFileSync(lockFilePath, "utf8"));
