@@ -33,10 +33,13 @@ const MessageCard = ({
     router.push(`/admin/inboxes/${inboxId}/messages/${message.id}`);
   }, [router, inboxId, message.id]);
 
-  const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    onSelectionChange?.(message.id, e.target.checked);
-  }, [message.id, onSelectionChange]);
+  const handleCheckboxChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation();
+      onSelectionChange?.(message.id, e.target.checked);
+    },
+    [message.id, onSelectionChange]
+  );
 
   const getInitials = (source: string) => {
     return source

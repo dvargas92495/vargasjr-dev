@@ -30,22 +30,27 @@ const RecentMessagesSection = ({
   currentPage,
   totalPages,
 }: RecentMessagesSectionProps) => {
-  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
+    new Set()
+  );
 
-  const handleSelectionChange = useCallback((messageId: string, selected: boolean) => {
-    setSelectedMessageIds(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(messageId);
-      } else {
-        newSet.delete(messageId);
-      }
-      return newSet;
-    });
-  }, []);
+  const handleSelectionChange = useCallback(
+    (messageId: string, selected: boolean) => {
+      setSelectedMessageIds((prev) => {
+        const newSet = new Set(prev);
+        if (selected) {
+          newSet.add(messageId);
+        } else {
+          newSet.delete(messageId);
+        }
+        return newSet;
+      });
+    },
+    []
+  );
 
   const handleSelectAll = useCallback(() => {
-    setSelectedMessageIds(new Set(recentMessages.map(msg => msg.id)));
+    setSelectedMessageIds(new Set(recentMessages.map((msg) => msg.id)));
   }, [recentMessages]);
 
   const handleDeselectAll = useCallback(() => {

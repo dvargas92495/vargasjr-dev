@@ -43,14 +43,16 @@ const BulkActionsToolbar = ({
     }
   }, [selectedMessageIds, inboxId, onClearSelection, router]);
 
-  const allSelected = selectedMessageIds.size === totalMessages && totalMessages > 0;
+  const allSelected =
+    selectedMessageIds.size === totalMessages && totalMessages > 0;
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <span className="text-sm font-medium text-blue-900">
-            {selectedMessageIds.size} message{selectedMessageIds.size !== 1 ? 's' : ''} selected
+            {selectedMessageIds.size} message
+            {selectedMessageIds.size !== 1 ? "s" : ""} selected
           </span>
           <div className="flex space-x-2">
             {!allSelected ? (
