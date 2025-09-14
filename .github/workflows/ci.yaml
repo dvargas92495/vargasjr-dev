@@ -8,6 +8,7 @@ on:
       - "browser/**"
       - "worker/**"
       - "run_agent.sh"
+      - "knip.json"
   pull_request:
     paths:
       - "vellum/pyproject.toml"
