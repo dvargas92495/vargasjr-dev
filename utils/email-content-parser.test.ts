@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { cleanEmailContent } from './email-content-parser';
+import { describe, it, expect } from "vitest";
+import { cleanEmailContent } from "./email-content-parser";
 
-describe('cleanEmailContent', () => {
-  it('should handle forwarded emails with Gmail format', () => {
+describe("cleanEmailContent", () => {
+  it("should handle forwarded emails with Gmail format", () => {
     const forwardedEmail = `
 Return-Path: <sender@example.com>
 Received: from mail.example.com
@@ -23,13 +23,13 @@ John
 `;
 
     const cleaned = cleanEmailContent(forwardedEmail);
-    expect(cleaned).toContain('Hi there');
-    expect(cleaned).toContain('This is the actual email content');
-    expect(cleaned).not.toContain('Return-Path:');
-    expect(cleaned).not.toContain('---------- Forwarded message ----------');
+    expect(cleaned).toContain("Hi there");
+    expect(cleaned).toContain("This is the actual email content");
+    expect(cleaned).not.toContain("Return-Path:");
+    expect(cleaned).not.toContain("---------- Forwarded message ----------");
   });
 
-  it('should handle HTML emails', () => {
+  it("should handle HTML emails", () => {
     const htmlEmail = `
 <html>
 <body>
@@ -40,13 +40,13 @@ John
 `;
 
     const cleaned = cleanEmailContent(htmlEmail);
-    expect(cleaned).toContain('Hello World');
-    expect(cleaned).toContain('This is an HTML email');
-    expect(cleaned).not.toContain('<html>');
-    expect(cleaned).not.toContain('<p>');
+    expect(cleaned).toContain("Hello World");
+    expect(cleaned).toContain("This is an HTML email");
+    expect(cleaned).not.toContain("<html>");
+    expect(cleaned).not.toContain("<p>");
   });
 
-  it('should remove email signatures', () => {
+  it("should remove email signatures", () => {
     const emailWithSignature = `
 Hi there,
 
@@ -59,18 +59,18 @@ john@example.com
 `;
 
     const cleaned = cleanEmailContent(emailWithSignature);
-    expect(cleaned).toContain('This is the main email content');
-    expect(cleaned).not.toContain('CEO, Example Corp');
-    expect(cleaned).not.toContain('john@example.com');
+    expect(cleaned).toContain("This is the main email content");
+    expect(cleaned).not.toContain("CEO, Example Corp");
+    expect(cleaned).not.toContain("john@example.com");
   });
 
-  it('should handle empty or invalid input', () => {
-    expect(cleanEmailContent('')).toBe('');
-    expect(cleanEmailContent(null as any)).toBe('');
-    expect(cleanEmailContent(undefined as any)).toBe('');
+  it("should handle empty or invalid input", () => {
+    expect(cleanEmailContent("")).toBe("");
+    expect(cleanEmailContent(null as any)).toBe("");
+    expect(cleanEmailContent(undefined as any)).toBe("");
   });
 
-  it('should handle the specific forwarded email from user attachment', () => {
+  it("should handle the specific forwarded email from user attachment", () => {
     const userForwardedEmail = `
 Message Body
 
@@ -128,11 +128,11 @@ here.
 `;
 
     const cleaned = cleanEmailContent(userForwardedEmail);
-    expect(cleaned).toContain('Hi David');
-    expect(cleaned).toContain('Full Stack Engineer opportunity');
-    expect(cleaned).toContain('TypeScript, React, Node.js, AWS, Postgres');
-    expect(cleaned).not.toContain('Return-Path:');
-    expect(cleaned).not.toContain('---------- Forwarded message ----------');
-    expect(cleaned).not.toContain('Received: from');
+    expect(cleaned).toContain("Hi David");
+    expect(cleaned).toContain("Full Stack Engineer opportunity");
+    expect(cleaned).toContain("TypeScript, React, Node.js, AWS, Postgres");
+    expect(cleaned).not.toContain("Return-Path:");
+    expect(cleaned).not.toContain("---------- Forwarded message ----------");
+    expect(cleaned).not.toContain("Received: from");
   });
 });
