@@ -30,7 +30,7 @@ export default function ExecutionHistory({
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const pageSize = 10;
@@ -39,11 +39,14 @@ export default function ExecutionHistory({
   useEffect(() => {
     const fetchExecutions = async () => {
       try {
-        const url = new URL(`/api/jobs/routine/${routineJobId}/executions`, window.location.origin);
+        const url = new URL(
+          `/api/jobs/routine/${routineJobId}/executions`,
+          window.location.origin
+        );
         if (currentPage > 1) {
           url.searchParams.set("page", currentPage.toString());
         }
-        
+
         const response = await fetch(url.toString());
         if (!response.ok) {
           throw new Error("Failed to fetch executions");

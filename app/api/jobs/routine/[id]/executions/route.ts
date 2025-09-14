@@ -11,7 +11,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    
+
     const currentPage = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = 10;
     const offset = (currentPage - 1) * pageSize;
@@ -62,7 +62,7 @@ export async function GET(
       vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
         deployment.id,
         { limit: 1000 }
-      )
+      ),
     ]);
 
     const transformedExecutions =
