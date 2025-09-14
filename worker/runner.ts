@@ -11,6 +11,7 @@ import { AGENT_SERVER_PORT } from "@/server/constants";
 
 dotenv.config();
 
+/** @public */
 export interface AgentRunnerConfig {
   cancelSignal?: EventEmitter;
   logger?: Logger;
@@ -18,6 +19,7 @@ export interface AgentRunnerConfig {
   maxLoops?: number;
 }
 
+/** @public */
 export class AgentRunner {
   private currentVersion: string;
   private logger: Logger;

@@ -13,6 +13,7 @@ import {
 } from "@/server/constants";
 import { retryWithBackoff } from "@/server/retry";
 
+/** @public */
 export interface EC2Instance {
   InstanceId?: string;
   State?: { Name?: string };
@@ -20,16 +21,19 @@ export interface EC2Instance {
   ImageId?: string;
 }
 
+/** @public */
 export function toAgentName(prNumber?: string): string {
   return prNumber
     ? `${DEFAULT_PRODUCTION_AGENT_NAME}-pr-${prNumber}`
     : DEFAULT_PRODUCTION_AGENT_NAME;
 }
 
+/** @public */
 export function toSshKeySecretName(agentName: string): string {
   return `${agentName}-key`;
 }
 
+/** @public */
 export async function findInstancesByFilters(
   ec2: EC2,
   filters: Array<{ Name: string; Values: string[] }>
@@ -38,6 +42,7 @@ export async function findInstancesByFilters(
   return result.Reservations?.flatMap((r) => r.Instances || []) || [];
 }
 
+/** @public */
 export async function terminateInstances(
   ec2: EC2,
   instanceIds: string[]
@@ -47,6 +52,7 @@ export async function terminateInstances(
   await ec2.terminateInstances({ InstanceIds: instanceIds });
 }
 
+/** @public */
 export async function waitForInstancesTerminated(
   ec2: EC2,
   instanceIds: string[],
@@ -91,6 +97,7 @@ export async function waitForInstancesTerminated(
   throw new Error("Instances failed to terminate within timeout");
 }
 
+/** @public */
 export async function deleteKeyPair(
   ec2: EC2,
   keyPairName: string
@@ -110,6 +117,7 @@ export async function deleteKeyPair(
   }
 }
 
+/** @public */
 export async function findOrCreateSecurityGroup(
   ec2: EC2,
   groupName: string,
@@ -157,6 +165,7 @@ export async function findOrCreateSecurityGroup(
   }
 }
 
+/** @public */
 export async function createSecret(
   secretName: string,
   secretValue: string,
@@ -246,6 +255,7 @@ export async function createSecret(
   }
 }
 
+/** @public */
 export async function getSecret(
   secretName: string,
   region: string = AWS_DEFAULT_REGION
@@ -278,6 +288,7 @@ export async function getSecret(
   }
 }
 
+/** @public */
 export async function deleteSecret(
   secretName: string,
   region: string = AWS_DEFAULT_REGION
@@ -310,6 +321,7 @@ export async function deleteSecret(
   }
 }
 
+/** @public */
 export async function getNeonPreviewDatabaseUrl(
   branchName?: string
 ): Promise<string> {
@@ -390,6 +402,7 @@ export async function getNeonPreviewDatabaseUrl(
   }
 }
 
+/** @public */
 export interface HealthCheckResult {
   instanceId: string;
   status: "healthy" | "unhealthy" | "offline";
@@ -419,12 +432,14 @@ export interface HealthCheckResult {
   };
 }
 
+/** @public */
 export interface HealthCheckOptions {
   environment?: "preview" | "production";
   version?: string;
   prNumber?: string;
 }
 
+/** @public */
 export async function checkInstanceHealth(
   instanceId: string,
   region: string = AWS_DEFAULT_REGION
@@ -527,6 +542,7 @@ export async function checkInstanceHealth(
   }
 }
 
+/** @public */
 export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   const iam = new IAMClient({ region: AWS_DEFAULT_REGION });
   const instanceProfileName = "VargasJR-SSM-InstanceProfile";
@@ -549,6 +565,7 @@ export async function findOrCreateSSMInstanceProfile(): Promise<string> {
   }
 }
 
+/** @public */
 export async function postGitHubComment(
   content: string,
   userAgent: string,
@@ -687,6 +704,7 @@ export async function findPRByBranch(branchName: string): Promise<string> {
     throw new Error(`Failed to find PR for branch ${branchName}: ${error}`);
   }
 }
+
 
 export abstract class OneTimeMigrationRunner {
   protected isPreviewMode: boolean;

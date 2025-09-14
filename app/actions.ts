@@ -71,6 +71,7 @@ export async function getRoutineJob(id: string) {
   };
 }
 
+/** @public */
 export async function getJobs() {
   const db = getDb();
   const jobs = await db
@@ -92,6 +93,7 @@ export async function getJobs() {
   return jobsWithLabels;
 }
 
+/** @public */
 export async function createJob(formData: FormData) {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -118,6 +120,7 @@ export async function createJob(formData: FormData) {
   return newJob[0];
 }
 
+/** @public */
 export async function updateJob(id: string, formData: FormData) {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -149,6 +152,7 @@ export async function updateJob(id: string, formData: FormData) {
   return updatedJob[0];
 }
 
+/** @public */
 export async function deleteJob(id: string) {
   const db = getDb();
   const deletedJob = await db

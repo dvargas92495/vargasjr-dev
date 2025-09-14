@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 
+/** @public */
 export function findPackageJson(): string {
   let packageJsonPath = "package.json";
   const LIMIT = 10;
@@ -17,6 +18,7 @@ export function findPackageJson(): string {
   return fs.readFileSync(packageJsonPath, "utf-8");
 }
 
+/** @public */
 export function getVersion(): string {
   try {
     const content = findPackageJson();

@@ -3,6 +3,7 @@ import { NotFoundError, InvalidContactDataError } from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
+/** @public */
 export { InvalidContactDataError };
 
 function parseEmailAddress(emailString: string): {
@@ -29,6 +30,7 @@ function parseEmailAddress(emailString: string): {
   return { email: "", fullName: trimmed || null };
 }
 
+/** @public */
 export const upsertEmailContact = async (
   senderString: string
 ): Promise<string> => {
@@ -99,6 +101,7 @@ export const addInboxMessage = async ({
   });
 };
 
+/** @public */
 export const postSlackMessage = async ({
   channel,
   message,
@@ -125,6 +128,7 @@ export const postSlackMessage = async ({
   return response.json();
 };
 
+/** @public */
 export const upsertSlackContact = async (userId: string): Promise<string> => {
   const db = getDb();
 
@@ -167,6 +171,7 @@ export const upsertSlackContact = async (userId: string): Promise<string> => {
   return newContact.id;
 };
 
+/** @public */
 export const resolveSlackChannel = async (
   channelId: string
 ): Promise<string> => {
@@ -189,6 +194,7 @@ export const resolveSlackChannel = async (
   return `slack-${channelId}`;
 };
 
+/** @public */
 export const shouldCreateContact = (contactData: {
   email?: string | null;
   phoneNumber?: string | null;
@@ -208,6 +214,7 @@ export const shouldCreateContact = (contactData: {
   return hasEmail || hasPhone || hasName;
 };
 
+/** @public */
 export const createContactWithValidation = async (contactData: {
   email?: string | null;
   phoneNumber?: string | null;

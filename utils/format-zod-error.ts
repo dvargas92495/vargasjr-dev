@@ -1,5 +1,6 @@
 import { ZodError, ZodIssue } from "zod";
 
+/** @public */
 export const formatZodIssue = (issue: ZodIssue, indentation = 0): string => {
   const issuePath = issue.path.join(".") || "[root]";
   if (issue.code === "invalid_type") {

@@ -6,6 +6,7 @@ interface WorkflowDeployment {
   workflow_sandbox_id?: string;
 }
 
+/** @public */
 export async function getVellumSandboxUrlServer(
   workflowName: string
 ): Promise<string | null> {
@@ -36,6 +37,7 @@ export async function getVellumSandboxUrlServer(
   }
 }
 
+/** @public */
 export async function getAllWorkflowDeployments(): Promise<
   WorkflowDeployment[]
 > {

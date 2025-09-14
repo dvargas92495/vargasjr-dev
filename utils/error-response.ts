@@ -8,6 +8,7 @@ interface ErrorResponse {
   troubleshooting?: string[];
 }
 
+/** @public */
 export function createErrorResponse(
   error: string,
   options: {
@@ -25,6 +26,7 @@ export function createErrorResponse(
   };
 }
 
+/** @public */
 export function createNetworkErrorResponse(
   baseMessage: string,
   statusCode?: number,
