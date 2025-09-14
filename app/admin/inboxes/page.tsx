@@ -5,7 +5,7 @@ import {
   InboxMessageOperationsTable,
   type Inbox,
 } from "@/db/schema";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, max, sql } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
 import MessageCard from "@/components/message-card";
 import PaginationControls from "@/components/pagination-controls";
@@ -51,7 +51,7 @@ export default async function InboxesPage({
         createdAt: InboxesTable.createdAt,
         type: InboxesTable.type,
         config: InboxesTable.config,
-        lastMessageDate: sql<Date | null>`MAX(${InboxMessagesTable.createdAt})`,
+        lastMessageDate: max(InboxMessagesTable.createdAt),
       })
       .from(InboxesTable)
       .leftJoin(
@@ -59,7 +59,7 @@ export default async function InboxesPage({
         eq(InboxesTable.id, InboxMessagesTable.inboxId)
       )
       .groupBy(InboxesTable.id)
-      .orderBy(desc(sql`MAX(${InboxMessagesTable.createdAt})`));
+      .orderBy(desc(max(InboxMessagesTable.createdAt)));
 
     const totalMessagesResult = await db
       .select({ count: sql<number>`count(*)` })
