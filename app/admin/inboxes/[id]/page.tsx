@@ -10,6 +10,7 @@ import { getDb } from "@/db/connection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
+import DeleteInboxButton from "@/components/delete-inbox-button";
 
 // params will contain the dynamic [id] value
 export default async function InboxPage({
@@ -77,6 +78,7 @@ export default async function InboxPage({
             Edit
           </button>
         </Link>
+        <DeleteInboxButton inboxId={id} />
       </div>
       <div className="space-y-3">
         {messages.map((message) => (

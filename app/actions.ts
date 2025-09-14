@@ -10,8 +10,9 @@ import {
   InboxMessagesTable,
   InboxMessageOperationsTable,
   OutboxMessagesTable,
+  InboxesTable,
 } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
@@ -339,6 +340,88 @@ export async function markMessageAsArchived(
 
   revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
   revalidatePath(`/admin/inboxes/${inboxId}`);
+}
+
+export async function deleteInbox(inboxId: string) {
+  const db = getDb();
+
+  const messages = await db
+    .select({
+      id: InboxMessagesTable.id,
+      externalId: InboxMessagesTable.externalId,
+    })
+    .from(InboxMessagesTable)
+    .where(eq(InboxMessagesTable.inboxId, inboxId));
+
+  for (const message of messages) {
+    if (message.externalId) {
+      try {
+        const s3Client = new S3Client({
+          region: AWS_DEFAULT_REGION,
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+          },
+        });
+
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: AWS_S3_BUCKETS.INBOX,
+          Key: message.externalId,
+        });
+
+        await s3Client.send(deleteCommand);
+        console.log(`Deleted S3 object: ${message.externalId}`);
+      } catch (error) {
+        console.error(
+          `Failed to delete S3 object ${message.externalId}:`,
+          error
+        );
+      }
+    }
+  }
+
+  await db
+    .delete(InboxMessageOperationsTable)
+    .where(
+      inArray(
+        InboxMessageOperationsTable.inboxMessageId,
+        messages.map((m) => m.id)
+      )
+    )
+    .execute();
+
+  await db
+    .delete(OutboxMessagesTable)
+    .where(
+      inArray(
+        OutboxMessagesTable.parentInboxMessageId,
+        messages.map((m) => m.id)
+      )
+    )
+    .execute();
+
+  await db
+    .delete(InboxMessagesTable)
+    .where(eq(InboxMessagesTable.inboxId, inboxId))
+    .execute();
+
+  await db
+    .delete(ChatSessionsTable)
+    .where(eq(ChatSessionsTable.inboxId, inboxId))
+    .execute();
+
+  const deletedInbox = await db
+    .delete(InboxesTable)
+    .where(eq(InboxesTable.id, inboxId))
+    .returning()
+    .execute();
+
+  if (!deletedInbox.length) {
+    throw new Error("Inbox not found");
+  }
+
+  revalidatePath("/admin/inboxes");
+  return deletedInbox[0];
 }
 
 export async function mergeContact(
