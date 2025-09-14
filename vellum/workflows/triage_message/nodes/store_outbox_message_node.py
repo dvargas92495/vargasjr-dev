@@ -4,7 +4,7 @@ from .email_reply_node import EmailReplyNode
 from .email_initiate_node import EmailInitiateNode
 from .text_reply_node import TextReplyNode
 from .slack_reply_node import SlackReplyNode
-gfrom .job_opportunity_response_node import JobOpportunityResponseNode
+from .job_opportunity_response_node import JobOpportunityResponseNode
 from .read_message_node import ReadMessageNode
 
 
