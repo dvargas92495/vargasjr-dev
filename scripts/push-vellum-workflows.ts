@@ -391,7 +391,10 @@ class VellumWorkflowPusher {
       lockFileContent.workflows.forEach((workflow: any) => {
         if (workflow.container_image_name === "vargasjr") {
           workflow.container_image_tag = newTag;
-        } else if (workflow.container_image_name === null || workflow.container_image_name === undefined) {
+        } else if (
+          workflow.container_image_name === null ||
+          workflow.container_image_name === undefined
+        ) {
           workflow.container_image_name = "vargasjr";
           workflow.container_image_tag = newTag;
         }
