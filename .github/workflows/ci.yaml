@@ -120,66 +120,9 @@ jobs:
           generate_release_notes: true
 
   create-preview-agent:
-    runs-on: ubuntu-latest
     needs: [lint, test, publish-agent]
     if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: ".nvmrc"
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
-      - name: Install dependencies
-        run: npm install
-      - name: Create preview agent
-        run: npm run create-agent -- pr-${{ github.event.number }}
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
-          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_HEAD_REF: ${{ github.head_ref }}
-
-  create-production-agent:
-    runs-on: ubuntu-latest
-    needs: [lint, test]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: ".nvmrc"
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
-      - name: Install dependencies
-        run: npm install
-      - name: Create production agent
-        run: npm run create-agent -- ${{ github.event.inputs.agent_name || '' }}
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
-          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+    uses: ./.github/workflows/create-agent.yaml
+    with:
+      agent_name: pr-${{ github.event.number }}
+    secrets: inherit

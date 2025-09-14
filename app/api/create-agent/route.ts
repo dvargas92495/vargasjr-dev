@@ -29,7 +29,7 @@ async function createAgentHandler() {
   const headers = await getGitHubAuthHeaders();
 
   const response = await fetch(
-    `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/ci.yaml/dispatches`,
+    `https://api.github.com/repos/dvargas92495/vargasjr-dev/actions/workflows/create-agent.yaml/dispatches`,
     {
       method: "POST",
       headers: {
