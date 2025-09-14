@@ -186,6 +186,61 @@ export default async function InboxMessage({
           </div>
         </div>
       )}
+      {messageOperations.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4 text-white">
+            Recent Operations
+          </h2>
+
+          <div className="bg-gray-800 shadow rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Created Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Workflow Execution
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {messageOperations.map((operation) => (
+                    <tr key={operation.id} className="hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-600 text-gray-200">
+                          {operation.operation}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {operation.createdAt.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {operation.executionId ? (
+                          <a
+                            href={`https://app.vellum.ai/workflows/executions/${operation.executionId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 underline"
+                          >
+                            {operation.executionId}
+                          </a>
+                        ) : (
+                          <span className="text-gray-500">No execution</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
