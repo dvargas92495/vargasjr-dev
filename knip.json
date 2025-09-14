@@ -42,7 +42,6 @@
     "terraform/lambda/lambda-email-processor.js",
     "terraform/main.ts"
   ],
-  "include": ["exports"],
   "ignoreDependencies": [
     "@stripe/stripe-js",
     "cors",
