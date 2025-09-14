@@ -48,10 +48,7 @@ export default async function ChatSessionPage({
       createdAt: InboxMessagesTable.createdAt,
     })
     .from(InboxMessagesTable)
-    .leftJoin(
-      ContactsTable,
-      eq(InboxMessagesTable.contactId, ContactsTable.id)
-    )
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
     .where(eq(InboxMessagesTable.inboxId, session.inboxId))
     .orderBy(InboxMessagesTable.createdAt, InboxMessagesTable.id);
 
@@ -64,7 +61,10 @@ export default async function ChatSessionPage({
             <div key={message.id} className="bg-gray-700 rounded-lg p-4">
               <div className="flex justify-between items-start mb-2">
                 <span className="font-semibold text-blue-300">
-                  {message.displayName || message.fullName || message.email || "Unknown"}
+                  {message.displayName ||
+                    message.fullName ||
+                    message.email ||
+                    "Unknown"}
                 </span>
                 <span className="text-xs text-gray-400">
                   {message.createdAt.toLocaleString()}

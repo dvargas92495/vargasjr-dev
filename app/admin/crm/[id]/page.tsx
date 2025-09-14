@@ -65,10 +65,7 @@ export default async function ContactPage({
       inboxName: InboxesTable.displayLabel,
     })
     .from(InboxMessagesTable)
-    .leftJoin(
-      ContactsTable,
-      eq(InboxMessagesTable.contactId, ContactsTable.id)
-    )
+    .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
     .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
     .where(eq(InboxMessagesTable.contactId, contactData.id))
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
@@ -244,7 +241,10 @@ export default async function ContactPage({
                 message={{
                   ...message,
                   source:
-                    message.displayName || message.fullName || message.email || "Unknown",
+                    message.displayName ||
+                    message.fullName ||
+                    message.email ||
+                    "Unknown",
                 }}
                 status={messageStatuses[message.id] || "Unread"}
                 inboxId={message.inboxId}
