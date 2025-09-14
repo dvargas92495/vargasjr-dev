@@ -7,10 +7,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { AWS_S3_BUCKETS } from "@/app/lib/constants";
-import {
-  cleanEmailContent,
-  parseMimeEmail,
-} from "@/server/email-content-parser";
+import { parseEmailBody } from "@/server/email-content-parser";
 
 interface SESMail {
   messageId: string;
@@ -127,8 +124,7 @@ export async function POST(request: Request) {
       const s3Response = await s3Client.send(getObjectCommand);
       if (s3Response.Body) {
         const rawEmailBody = await s3Response.Body.transformToString();
-        const mimeProcessedBody = parseMimeEmail(rawEmailBody);
-        emailBody = cleanEmailContent(mimeProcessedBody);
+        emailBody = parseEmailBody(rawEmailBody);
       }
     } catch (error) {
       console.error("Failed to retrieve email body from S3:", error);

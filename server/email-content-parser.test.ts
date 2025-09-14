@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { cleanEmailContent, parseMimeEmail } from "./email-content-parser";
+import { parseEmailBody } from "./email-content-parser";
 
-describe("cleanEmailContent", () => {
+describe("parseEmailBody", () => {
   it("should handle forwarded emails with Gmail format", () => {
     const forwardedEmail = `
 Return-Path: <sender@example.com>
@@ -22,7 +22,7 @@ Best regards,
 John
 `;
 
-    const cleaned = cleanEmailContent(forwardedEmail);
+    const cleaned = parseEmailBody(forwardedEmail);
     expect(cleaned).toBe(
       "Hi there,\n\nThis is the actual email content that should be preserved.\n\nBest regards,\nJohn"
     );
@@ -38,7 +38,7 @@ John
 </html>
 `;
 
-    const cleaned = cleanEmailContent(htmlEmail);
+    const cleaned = parseEmailBody(htmlEmail);
     expect(cleaned).toBe("Hello World\nThis is an HTML email.");
   });
 
@@ -54,14 +54,14 @@ CEO, Example Corp
 john@example.com
 `;
 
-    const cleaned = cleanEmailContent(emailWithSignature);
+    const cleaned = parseEmailBody(emailWithSignature);
     expect(cleaned).toBe("Hi there,\n\nThis is the main email content.");
   });
 
   it("should handle empty or invalid input", () => {
-    expect(cleanEmailContent("")).toBe("");
-    expect(cleanEmailContent(null as any)).toBe("");
-    expect(cleanEmailContent(undefined as any)).toBe("");
+    expect(parseEmailBody("")).toBe("");
+    expect(parseEmailBody(null as any)).toBe("");
+    expect(parseEmailBody(undefined as any)).toBe("");
   });
 
   it("should handle the specific forwarded email from user attachment", () => {
@@ -121,13 +121,13 @@ To remove your email address permanently from future mailings, please click
 here.
 `;
 
-    const cleaned = cleanEmailContent(userForwardedEmail);
+    const cleaned = parseEmailBody(userForwardedEmail);
     expect(cleaned).toBe(
       "Hi David\n\nI=E2m reaching out about an exciting Full Stack Engineer opportunity with a\nfast-growing Series B SaaS company. They=E2s scaling quickly and investing\nheavily into their engineering practice, having doubled the headcount size\nin the last month alone.\n\nHere=E2s what=E2s on offer:\n\n- **Where:** Remote based role\n- **Package:** Up to $200k base salary + meaningful equity, unlimited PTO\nand more\n- **Tech Stack:** TypeScript, React, Node.js, AWS, Postgres\n\nThe work is focused on addressing major inefficiencies in the construction\nindustry =E2 giving you the chance to build solutions with real-worlds\nimpact.\n\nWould you be open to a quick chat to explore this role further? If =E2s not\nquite what you=E2re looking for, I=E2d still love to hear what=E2s next on your\nradar so I can keep you in mind for future opportunities.\n\n[Image: Planet Shine]\n\n*John Smith*\nSenior Recruiter, *Example Corp*\n\nAI/ML & Software Recruitment Specialist\n+1 646-298-3569 • 15464293569•\nwww.example.com"
     );
   });
 
-  describe("parseMimeEmail", () => {
+  describe("parseEmailBody MIME parsing", () => {
     it("should extract text/plain content from multipart email", () => {
       const multipartEmail = `Content-Type: multipart/alternative; boundary="boundary123"
 
@@ -151,7 +151,7 @@ Content-Type: text/html; charset="UTF-8"
 <p>HTML version content</p>
 --boundary123--`;
 
-      const result = parseMimeEmail(multipartEmail);
+      const result = parseEmailBody(multipartEmail);
       expect(result).toContain("Apply to this job for me");
       expect(result).toContain("Hi David");
       expect(result).not.toContain("<p>");
@@ -168,7 +168,7 @@ I=E2=80=99m reaching out about an exciting opportunity=
 with a fast-growing company. They=E2=80=99re scaling quickly.
 --boundary123--`;
 
-      const result = parseMimeEmail(quotedPrintableEmail);
+      const result = parseEmailBody(quotedPrintableEmail);
       expect(result).toContain("reaching out about an exciting");
       expect(result).toContain("opportunitywith a fast-growing");
       expect(result).toContain("scaling quickly");
@@ -177,7 +177,7 @@ with a fast-growing company. They=E2=80=99re scaling quickly.
 
     it("should handle non-multipart emails", () => {
       const simpleEmail = "Simple email content";
-      const result = parseMimeEmail(simpleEmail);
+      const result = parseEmailBody(simpleEmail);
       expect(result).toBe("Simple email content");
     });
 
@@ -190,7 +190,7 @@ Content-Type: text/html; charset="UTF-8"
 <p>HTML only content</p>
 --boundary123--`;
 
-      const result = parseMimeEmail(htmlOnlyEmail);
+      const result = parseEmailBody(htmlOnlyEmail);
       expect(result).toContain("<p>HTML only content</p>");
     });
 
@@ -246,7 +246,7 @@ l Stack Engineering team.<br>To:  &lt;<a href=3D"mailto:dvargas92495@gmail.=
 com">dvargas92495@gmail.com</a>&gt;<br></div><br><br>
 --000000000000940f27063ec8e887--`;
 
-      const result = parseMimeEmail(userEmail);
+      const result = parseEmailBody(userEmail);
       expect(result).toContain("Apply to this job for me");
       expect(result).toContain("reaching out about an exciting");
       expect(result).toContain("scaling quickly");

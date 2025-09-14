@@ -22,60 +22,55 @@ function decodeQuotedPrintable(text: string): string {
   }
 }
 
-export function parseMimeEmail(rawContent: string): string {
-  if (!rawContent || typeof rawContent !== "string") {
-    return rawContent;
-  }
-
-  const contentTypeMatch = rawContent.match(
-    /Content-Type:\s*multipart\/[^;]+;\s*boundary="?([^"\s;]+)"?/i
-  );
-  if (!contentTypeMatch) {
-    return rawContent;
-  }
-
-  const boundary = contentTypeMatch[1];
-  const parts = rawContent.split(`--${boundary}`);
-
-  let textPlainContent = "";
-  let textHtmlContent = "";
-
-  for (const part of parts) {
-    if (part.includes("Content-Type: text/plain")) {
-      const contentMatch = part.split(/\r?\n\r?\n/);
-      if (contentMatch.length > 1) {
-        let content = contentMatch.slice(1).join("\n\n");
-
-        if (part.includes("Content-Transfer-Encoding: quoted-printable")) {
-          content = decodeQuotedPrintable(content);
-        }
-
-        textPlainContent = content.trim();
-        break;
-      }
-    } else if (part.includes("Content-Type: text/html") && !textPlainContent) {
-      const contentMatch = part.split(/\r?\n\r?\n/);
-      if (contentMatch.length > 1) {
-        let content = contentMatch.slice(1).join("\n\n");
-
-        if (part.includes("Content-Transfer-Encoding: quoted-printable")) {
-          content = decodeQuotedPrintable(content);
-        }
-
-        textHtmlContent = content.trim();
-      }
-    }
-  }
-
-  return textPlainContent || textHtmlContent || rawContent;
-}
-
-export function cleanEmailContent(rawContent: string): string {
+export function parseEmailBody(rawContent: string): string {
   if (!rawContent || typeof rawContent !== "string") {
     return "";
   }
 
   let content = rawContent;
+
+  const contentTypeMatch = rawContent.match(
+    /Content-Type:\s*multipart\/[^;]+;\s*boundary="?([^"\s;]+)"?/i
+  );
+  if (contentTypeMatch) {
+    const boundary = contentTypeMatch[1];
+    const parts = rawContent.split(`--${boundary}`);
+
+    let textPlainContent = "";
+    let textHtmlContent = "";
+
+    for (const part of parts) {
+      if (part.includes("Content-Type: text/plain")) {
+        const contentMatch = part.split(/\r?\n\r?\n/);
+        if (contentMatch.length > 1) {
+          let partContent = contentMatch.slice(1).join("\n\n");
+
+          if (part.includes("Content-Transfer-Encoding: quoted-printable")) {
+            partContent = decodeQuotedPrintable(partContent);
+          }
+
+          textPlainContent = partContent.trim();
+          break;
+        }
+      } else if (
+        part.includes("Content-Type: text/html") &&
+        !textPlainContent
+      ) {
+        const contentMatch = part.split(/\r?\n\r?\n/);
+        if (contentMatch.length > 1) {
+          let partContent = contentMatch.slice(1).join("\n\n");
+
+          if (part.includes("Content-Transfer-Encoding: quoted-printable")) {
+            partContent = decodeQuotedPrintable(partContent);
+          }
+
+          textHtmlContent = partContent.trim();
+        }
+      }
+    }
+
+    content = textPlainContent || textHtmlContent || rawContent;
+  }
 
   if (content.includes("<html") || content.includes("<!DOCTYPE")) {
     try {
