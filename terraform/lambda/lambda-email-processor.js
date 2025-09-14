@@ -1,6 +1,9 @@
 const https = require("https");
 const crypto = require("crypto");
 
+/**
+ * @public
+ */
 exports.handler = async (event) => {
   console.log("Received SES event:", JSON.stringify(event, null, 2));
 
