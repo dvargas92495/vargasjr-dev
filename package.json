@@ -26,7 +26,6 @@
     "agent:build": "npx tsx scripts/build-agent.ts",
     "agent:dev": "tsx worker/index.ts",
     "agent:start": "node dist/worker.js",
-    "agent:agent": "tsx worker/cli.ts agent",
     "agent:publish": "npx tsx scripts/publish-agent.ts",
     "connect": "npx tsx scripts/ssh-connect.ts"
   },

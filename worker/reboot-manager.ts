@@ -49,7 +49,7 @@ export async function getLatestVersion(): Promise<string | null> {
 export async function rebootAgent(
   targetVersion?: string,
   logger?: Logger
-): Promise<boolean> {
+): Promise<{ success: boolean; error?: string }> {
   const currentVersion = getVersion();
   const rebootLogger =
     logger || createFileLogger("reboot", "reboot.log", currentVersion);
@@ -61,7 +61,7 @@ export async function rebootAgent(
     const latestVersion = await getLatestVersion();
     if (!latestVersion) {
       rebootLogger.error("Failed to get latest version");
-      return false;
+      return { success: false, error: "Failed to get latest version" };
     }
     targetVersion = latestVersion;
   }
@@ -70,7 +70,7 @@ export async function rebootAgent(
 
   if (targetVersion === currentVersion) {
     rebootLogger.info(`Already on target version: ${targetVersion}`);
-    return true;
+    return { success: true };
   }
 
   try {
@@ -82,7 +82,7 @@ export async function rebootAgent(
       rebootLogger.info("Removed old agent");
     } catch (error) {
       rebootLogger.error("Failed to remove old agent");
-      return false;
+      return { success: false, error: "Failed to remove old agent" };
     }
 
     try {
@@ -92,7 +92,7 @@ export async function rebootAgent(
       rebootLogger.info("Removed old virtualenvs");
     } catch (error) {
       rebootLogger.error("Failed to remove old virtualenvs");
-      return false;
+      return { success: false, error: "Failed to remove old virtualenvs" };
     }
 
     const downloadUrl = `https://github.com/dvargas92495/vargasjr-dev/releases/download/v${targetVersion}/vargasjr_dev_agent-${targetVersion}.tar.gz`;
@@ -101,7 +101,7 @@ export async function rebootAgent(
       rebootLogger.info("Downloaded new agent");
     } catch (error) {
       rebootLogger.error("Failed to download new agent");
-      return false;
+      return { success: false, error: "Failed to download new agent" };
     }
 
     try {
@@ -111,7 +111,7 @@ export async function rebootAgent(
       rebootLogger.info("Extracted new agent");
     } catch (error) {
       rebootLogger.error("Failed to extract new agent");
-      return false;
+      return { success: false, error: "Failed to extract new agent" };
     }
 
     process.chdir(`vargasjr_dev_agent-${targetVersion}`);
@@ -121,7 +121,7 @@ export async function rebootAgent(
       rebootLogger.info("Copied .env file");
     } catch (error) {
       rebootLogger.error("Failed to copy .env file");
-      return false;
+      return { success: false, error: "Failed to copy .env file" };
     }
 
     const screenName = `agent-${targetVersion.replace(/\./g, "-")}`;
@@ -135,12 +135,12 @@ export async function rebootAgent(
     );
     rebootLogger.info(`Started new agent in screen session: ${screenName}`);
 
-    return true;
+    return { success: true };
   } catch (error) {
     rebootLogger.error(
       `Failed to reboot to version: ${targetVersion} - ${error}`
     );
-    return false;
+    return { success: false, error: `Failed to reboot to version: ${targetVersion} - ${error}` };
   }
 }
 
@@ -159,8 +159,8 @@ export async function checkAndRebootIfNeeded(logger: Logger): Promise<void> {
   }
 
   logger.info(`New version available: ${latestVersion}`);
-  const success = await rebootAgent(latestVersion, logger);
-  if (success) {
+  const result = await rebootAgent(latestVersion, logger);
+  if (result.success) {
     process.exit(0);
   }
 }
