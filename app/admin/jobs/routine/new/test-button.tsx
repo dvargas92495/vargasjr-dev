@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import WorkflowOutputDisplay from "@/components/workflow-output-display";
-import { handleStreamingError } from "@/components/streaming-error-handler";
+import { handleStreamingError } from "@/app/components/streaming-error-handler";
 import { Vellum } from "vellum-ai";
 
 interface TestButtonProps {
