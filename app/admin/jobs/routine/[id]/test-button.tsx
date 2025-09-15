@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import WorkflowOutputDisplay from "@/components/workflow-output-display";
+import { handleStreamingError } from "@/app/components/streaming-error-handler";
 import { Vellum } from "vellum-ai";
 
 interface TestButtonProps {
@@ -72,11 +73,17 @@ export default function TestButton({ routineJobId }: TestButtonProps) {
         eventSource.close();
       });
 
-      eventSource.onerror = () => {
+      eventSource.onerror = (event) => {
+        const errorDetails = handleStreamingError(
+          event,
+          eventSource,
+          `/api/jobs/routine/${routineJobId}/test-stream`
+        );
+
         setWorkflowStatus((prev) => ({
           status: "error",
-          message: "Connection error occurred",
-          error: "Failed to connect to streaming endpoint",
+          message: errorDetails.message,
+          error: errorDetails.error,
           executionId: prev.executionId,
         }));
         eventSource.close();
