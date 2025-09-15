@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { createHmac } from "node:crypto";
 import { createErrorResponse } from "@/utils/error-response";
-import formatZodError from "@/utils/format-zod-error";
+import formatZodError from "@/components/format-zod-error";
 import { internalFetch } from "@/utils/internal-fetch";
 
 const testRequestSchema = z.object({
