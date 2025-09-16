@@ -120,7 +120,7 @@ export default function Home() {
               const vCardContent = `BEGIN:VCARD
 VERSION:3.0
 FN:Vargas JR
-ORG:VargasJR Development
+ORG:Vargas JR
 TEL:+18777804236
 URL:https://vargasjr.dev
 END:VCARD`;
@@ -137,8 +137,13 @@ END:VCARD`;
             }}
             className="w-full bg-white border-2 border-gray-200 text-gray-800 py-4 px-6 rounded-lg hover:border-primary hover:shadow-md transition-all duration-200 flex flex-col items-center gap-3 mb-6"
           >
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-2xl font-bold">
-              VJ
+            <div className="relative w-16 h-16">
+              <Image
+                src="/avatar.webp"
+                alt="Vargas JR Avatar"
+                fill
+                className="rounded-full border-2 border-primary"
+              />
             </div>
             <div className="text-center">
               <div className="font-semibold text-lg">Vargas JR</div>
