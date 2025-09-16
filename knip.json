@@ -33,7 +33,6 @@
     "vitest.config.ts",
     "knip.config.json",
     "terraform/lambda/lambda-email-processor.js",
-    "db/connection.ts",
     "scripts/utils.ts",
     "worker/database.ts",
     "server/versioning.ts",
