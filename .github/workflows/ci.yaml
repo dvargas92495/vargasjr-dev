@@ -41,20 +41,36 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Cache npm dependencies
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          CACHE_KEY=$(npx tsx -e "
+            import { readFileSync, existsSync } from 'fs';
+            import { createHash } from 'crypto';
+            const packageLockPath = 'package-lock.json';
+            if (!existsSync(packageLockPath)) throw new Error('package-lock.json not found');
+            const packageLock = JSON.parse(readFileSync(packageLockPath, 'utf8'));
+            const stablePackageLock = { ...packageLock };
+            delete stablePackageLock.version;
+            delete stablePackageLock.lockfileVersion;
+            if (stablePackageLock.packages && stablePackageLock.packages['']) {
+              const rootPackage = { ...stablePackageLock.packages[''] };
+              delete rootPackage.version;
+              stablePackageLock.packages[''] = rootPackage;
+            }
+            const stableContent = JSON.stringify(stablePackageLock, null, 2);
+            console.log(createHash('sha256').update(stableContent).digest('hex').substring(0, 16));
+          ")
+          echo "cache-key=deps-${{ runner.os }}-${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+      - name: Cache dependencies and browsers
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: ${{ steps.cache-key.outputs.cache-key }}
           restore-keys: |
-            npm-${{ runner.os }}-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
+            deps-${{ runner.os }}-
       - name: Install Node.js dependencies
         run: npm install
       - name: Run ESLint
@@ -70,20 +86,36 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Cache npm dependencies
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          CACHE_KEY=$(npx tsx -e "
+            import { readFileSync, existsSync } from 'fs';
+            import { createHash } from 'crypto';
+            const packageLockPath = 'package-lock.json';
+            if (!existsSync(packageLockPath)) throw new Error('package-lock.json not found');
+            const packageLock = JSON.parse(readFileSync(packageLockPath, 'utf8'));
+            const stablePackageLock = { ...packageLock };
+            delete stablePackageLock.version;
+            delete stablePackageLock.lockfileVersion;
+            if (stablePackageLock.packages && stablePackageLock.packages['']) {
+              const rootPackage = { ...stablePackageLock.packages[''] };
+              delete rootPackage.version;
+              stablePackageLock.packages[''] = rootPackage;
+            }
+            const stableContent = JSON.stringify(stablePackageLock, null, 2);
+            console.log(createHash('sha256').update(stableContent).digest('hex').substring(0, 16));
+          ")
+          echo "cache-key=deps-${{ runner.os }}-${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+      - name: Cache dependencies and browsers
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: ${{ steps.cache-key.outputs.cache-key }}
           restore-keys: |
-            npm-${{ runner.os }}-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
+            deps-${{ runner.os }}-
       - name: Install Node.js dependencies
         run: npm install
       - name: Run tests
@@ -101,20 +133,36 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Cache npm dependencies
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          CACHE_KEY=$(npx tsx -e "
+            import { readFileSync, existsSync } from 'fs';
+            import { createHash } from 'crypto';
+            const packageLockPath = 'package-lock.json';
+            if (!existsSync(packageLockPath)) throw new Error('package-lock.json not found');
+            const packageLock = JSON.parse(readFileSync(packageLockPath, 'utf8'));
+            const stablePackageLock = { ...packageLock };
+            delete stablePackageLock.version;
+            delete stablePackageLock.lockfileVersion;
+            if (stablePackageLock.packages && stablePackageLock.packages['']) {
+              const rootPackage = { ...stablePackageLock.packages[''] };
+              delete rootPackage.version;
+              stablePackageLock.packages[''] = rootPackage;
+            }
+            const stableContent = JSON.stringify(stablePackageLock, null, 2);
+            console.log(createHash('sha256').update(stableContent).digest('hex').substring(0, 16));
+          ")
+          echo "cache-key=deps-${{ runner.os }}-${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+      - name: Cache dependencies and browsers
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: ${{ steps.cache-key.outputs.cache-key }}
           restore-keys: |
-            npm-${{ runner.os }}-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-browsers-${{ runner.os }}-
+            deps-${{ runner.os }}-
       - name: Install Node.js dependencies
         run: npm install
       - name: Get version from package.json
