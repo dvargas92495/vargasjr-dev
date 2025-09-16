@@ -609,10 +609,10 @@ AGENT_ENVIRONMENT=production`;
       console.log(
         `📋 Starting setup commands execution (${setupCommands.length} commands total)`
       );
-      
+
       let failureCount = 0;
       const maxFailures = 3;
-      
+
       for (let i = 0; i < setupCommands.length; i++) {
         const commandObj = setupCommands[i];
 
@@ -631,23 +631,30 @@ AGENT_ENVIRONMENT=production`;
         } catch (error) {
           failureCount++;
           console.error(
-            `❌ [${i + 1}/${
-              setupCommands.length
-            }] Setup command failed: [${commandObj.tag}] ${
-              commandObj.command
-            }`
+            `❌ [${i + 1}/${setupCommands.length}] Setup command failed: [${
+              commandObj.tag
+            }] ${commandObj.command}`
           );
           console.error(`Error details: ${this.formatError(error)}`);
-          
+
           if (commandObj.tag === "START_SERVICE") {
-            console.error(`🔍 START_SERVICE failed - gathering diagnostic information...`);
-            await this.gatherServiceDiagnostics(keyPath, instanceDetails.publicDns);
+            console.error(
+              `🔍 START_SERVICE failed - gathering diagnostic information...`
+            );
+            await this.gatherServiceDiagnostics(
+              keyPath,
+              instanceDetails.publicDns
+            );
           }
-          
+
           if (failureCount >= maxFailures) {
-            console.error(`🚨 Reached ${maxFailures} failures - entering diagnostic mode`);
+            console.error(
+              `🚨 Reached ${maxFailures} failures - entering diagnostic mode`
+            );
             await this.enterDiagnosticMode(keyPath, instanceDetails.publicDns);
-            throw new Error(`Setup failed after ${maxFailures} command failures`);
+            throw new Error(
+              `Setup failed after ${maxFailures} command failures`
+            );
           }
         }
       }
@@ -800,11 +807,13 @@ AGENT_ENVIRONMENT=production`;
         return;
       } catch (error: any) {
         attempts++;
-        
-        console.error(`[${tag}] SSH command failed (attempt ${attempts}/${maxAttempts})`);
+
+        console.error(
+          `[${tag}] SSH command failed (attempt ${attempts}/${maxAttempts})`
+        );
         console.error(`[${tag}] Command: ${command}`);
         console.error(`[${tag}] Error message: ${error.message}`);
-        
+
         if (error.stdout) {
           console.error(`[${tag}] STDOUT: ${error.stdout.toString()}`);
         }
@@ -814,7 +823,7 @@ AGENT_ENVIRONMENT=production`;
         if (error.status) {
           console.error(`[${tag}] Exit code: ${error.status}`);
         }
-        
+
         if (attempts >= maxAttempts) {
           let detailedError = `SSH command failed after ${maxAttempts} attempts. Command: "${command}". Error: ${error.message}`;
           if (error.stderr) {
@@ -822,8 +831,10 @@ AGENT_ENVIRONMENT=production`;
           }
           throw new Error(detailedError);
         }
-        
-        console.log(`[${tag}] Retrying in 5 seconds... (${attempts}/${maxAttempts})`);
+
+        console.log(
+          `[${tag}] Retrying in 5 seconds... (${attempts}/${maxAttempts})`
+        );
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
     }
@@ -833,100 +844,134 @@ AGENT_ENVIRONMENT=production`;
     return error instanceof Error ? error.message : String(error);
   }
 
-  private async gatherServiceDiagnostics(keyPath: string, publicDns: string): Promise<void> {
+  private async gatherServiceDiagnostics(
+    keyPath: string,
+    publicDns: string
+  ): Promise<void> {
     console.log(`🔍 Gathering systemd service diagnostics...`);
-    
+
     const diagnosticCommands = [
       {
         name: "Service Status",
-        command: "sudo systemctl status vargasjr-agent.service --no-pager -l"
+        command: "sudo systemctl status vargasjr-agent.service --no-pager -l",
       },
       {
         name: "Service Logs",
-        command: "sudo journalctl -u vargasjr-agent.service --no-pager -l --since '5 minutes ago'"
+        command:
+          "sudo journalctl -u vargasjr-agent.service --no-pager -l --since '5 minutes ago'",
       },
       {
         name: "Service Is-Active",
-        command: "sudo systemctl is-active vargasjr-agent.service"
+        command: "sudo systemctl is-active vargasjr-agent.service",
       },
       {
         name: "Service Is-Enabled",
-        command: "sudo systemctl is-enabled vargasjr-agent.service"
+        command: "sudo systemctl is-enabled vargasjr-agent.service",
       },
       {
         name: "Check run_agent.sh exists",
-        command: "ls -la /home/ubuntu/run_agent.sh"
+        command: "ls -la /home/ubuntu/run_agent.sh",
       },
       {
         name: "Check .env exists",
-        command: "ls -la /home/ubuntu/.env"
-      }
+        command: "ls -la /home/ubuntu/.env",
+      },
     ];
 
     for (const diagnostic of diagnosticCommands) {
       try {
         console.log(`📊 Running diagnostic: ${diagnostic.name}`);
-        await this.executeSSHCommand(keyPath, publicDns, diagnostic.command, `DIAG-${diagnostic.name.replace(/\s+/g, '-')}`);
+        await this.executeSSHCommand(
+          keyPath,
+          publicDns,
+          diagnostic.command,
+          `DIAG-${diagnostic.name.replace(/\s+/g, "-")}`
+        );
       } catch (error) {
-        console.error(`⚠️ Diagnostic command failed: ${diagnostic.name} - ${this.formatError(error)}`);
+        console.error(
+          `⚠️ Diagnostic command failed: ${
+            diagnostic.name
+          } - ${this.formatError(error)}`
+        );
       }
     }
   }
 
-  private async enterDiagnosticMode(keyPath: string, publicDns: string): Promise<void> {
-    console.log(`🚨 ENTERING DIAGNOSTIC MODE - Gathering comprehensive error information`);
+  private async enterDiagnosticMode(
+    keyPath: string,
+    publicDns: string
+  ): Promise<void> {
+    console.log(
+      `🚨 ENTERING DIAGNOSTIC MODE - Gathering comprehensive error information`
+    );
     console.log(`Instance: ${publicDns}`);
-    
+
     const comprehensiveDiagnostics = [
       {
         name: "System Logs",
-        command: "sudo journalctl --since '10 minutes ago' --no-pager -l | tail -50"
+        command:
+          "sudo journalctl --since '10 minutes ago' --no-pager -l | tail -50",
       },
       {
         name: "Disk Space",
-        command: "df -h"
+        command: "df -h",
       },
       {
         name: "Memory Usage",
-        command: "free -h"
+        command: "free -h",
       },
       {
         name: "Process List",
-        command: "ps aux | grep -E '(agent|systemd)' | head -20"
+        command: "ps aux | grep -E '(agent|systemd)' | head -20",
       },
       {
         name: "Network Status",
-        command: "ss -tuln | head -10"
+        command: "ss -tuln | head -10",
       },
       {
         name: "Environment Check",
-        command: "env | grep -E '(PATH|HOME|USER)'"
+        command: "env | grep -E '(PATH|HOME|USER)'",
       },
       {
         name: "File Permissions",
-        command: "ls -la /home/ubuntu/ | grep -E '(run_agent|env)'"
+        command: "ls -la /home/ubuntu/ | grep -E '(run_agent|env)'",
       },
       {
         name: "Systemd Failed Units",
-        command: "sudo systemctl --failed --no-pager"
-      }
+        command: "sudo systemctl --failed --no-pager",
+      },
     ];
 
-    console.log(`📋 Running ${comprehensiveDiagnostics.length} comprehensive diagnostic checks...`);
-    
+    console.log(
+      `📋 Running ${comprehensiveDiagnostics.length} comprehensive diagnostic checks...`
+    );
+
     for (const diagnostic of comprehensiveDiagnostics) {
       try {
         console.log(`🔍 Diagnostic: ${diagnostic.name}`);
-        await this.executeSSHCommand(keyPath, publicDns, diagnostic.command, `COMPREHENSIVE-${diagnostic.name.replace(/\s+/g, '-')}`);
+        await this.executeSSHCommand(
+          keyPath,
+          publicDns,
+          diagnostic.command,
+          `COMPREHENSIVE-${diagnostic.name.replace(/\s+/g, "-")}`
+        );
       } catch (error) {
-        console.error(`⚠️ Comprehensive diagnostic failed: ${diagnostic.name} - ${this.formatError(error)}`);
+        console.error(
+          `⚠️ Comprehensive diagnostic failed: ${
+            diagnostic.name
+          } - ${this.formatError(error)}`
+        );
       }
     }
-    
+
     await this.gatherServiceDiagnostics(keyPath, publicDns);
-    
-    console.log(`🚨 DIAGNOSTIC MODE COMPLETE - All available error information has been collected`);
-    console.log(`💡 Review the logs above to identify the root cause of the failures`);
+
+    console.log(
+      `🚨 DIAGNOSTIC MODE COMPLETE - All available error information has been collected`
+    );
+    console.log(
+      `💡 Review the logs above to identify the root cause of the failures`
+    );
   }
 
   private getEnvironmentVariables() {
