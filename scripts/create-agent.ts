@@ -388,11 +388,44 @@ class VargasJRAgentCreator {
     securityGroupId: string,
     iamInstanceProfile?: string
   ): Promise<string> {
+    const userData = `#!/bin/bash
+cd /home/ubuntu
+
+# Create systemd service for automatic agent startup
+cat > /etc/systemd/system/vargasjr-agent.service << 'EOF'
+[Unit]
+Description=VargasJR Agent Service
+After=network.target cloud-final.service
+Wants=network.target
+
+[Service]
+Type=forking
+RemainAfterExit=yes
+User=ubuntu
+WorkingDirectory=/home/ubuntu
+ExecStart=/bin/bash /home/ubuntu/run_agent.sh
+Restart=on-failure
+RestartSec=30
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/home/ubuntu
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable the service (but don't start it yet - let it start after files are copied)
+systemctl enable vargasjr-agent.service
+
+# Log the service creation
+echo "VargasJR agent service created and enabled" >> /var/log/vargasjr-startup.log
+`;
+
     const result = await this.ec2.runInstances({
       ImageId: imageId,
       InstanceType: "t3.micro",
       KeyName: this.keyPairName,
       SecurityGroupIds: [securityGroupId],
+      UserData: Buffer.from(userData).toString("base64"),
       ...(iamInstanceProfile && {
         IamInstanceProfile: {
           Name: iamInstanceProfile,
@@ -568,14 +601,19 @@ AGENT_ENVIRONMENT=production`;
           command: "chmod +x /home/ubuntu/run_agent.sh",
         },
         {
-          tag: "AGENT",
-          command: "cd /home/ubuntu && ./run_agent.sh",
+          tag: "START_SERVICE",
+          command:
+            "sudo systemctl start vargasjr-agent.service && sleep 3 && sudo systemctl is-active vargasjr-agent.service && sudo systemctl status vargasjr-agent.service --no-pager -l",
         },
       ];
 
       console.log(
         `📋 Starting setup commands execution (${setupCommands.length} commands total)`
       );
+
+      let failureCount = 0;
+      const maxFailures = 3;
+
       for (let i = 0; i < setupCommands.length; i++) {
         const commandObj = setupCommands[i];
 
@@ -592,14 +630,33 @@ AGENT_ENVIRONMENT=production`;
             }]`
           );
         } catch (error) {
+          failureCount++;
           console.error(
-            `⚠️ [${i + 1}/${
-              setupCommands.length
-            }] Setup command failed but continuing: [${commandObj.tag}] ${
-              commandObj.command
-            }`
+            `❌ [${i + 1}/${setupCommands.length}] Setup command failed: [${
+              commandObj.tag
+            }] ${commandObj.command}`
           );
-          console.error(`Error: ${this.formatError(error)}`);
+          console.error(`Error details: ${this.formatError(error)}`);
+
+          if (commandObj.tag === "START_SERVICE") {
+            console.error(
+              `🔍 START_SERVICE failed - gathering diagnostic information...`
+            );
+            await this.gatherServiceDiagnostics(
+              keyPath,
+              instanceDetails.publicDns
+            );
+          }
+
+          if (failureCount >= maxFailures) {
+            console.error(
+              `🚨 Reached ${maxFailures} failures - entering diagnostic mode`
+            );
+            await this.enterDiagnosticMode(keyPath, instanceDetails.publicDns);
+            throw new Error(
+              `Setup failed after ${maxFailures} command failures`
+            );
+          }
         }
       }
       setupTimingResults.push({
@@ -728,7 +785,7 @@ AGENT_ENVIRONMENT=production`;
     const maxAttempts = 3;
     let attempts = 0;
 
-    console.log(`🔄 About to execute ${tag}`);
+    console.log(`🔄 About to execute ${tag}: ${command}`);
 
     while (attempts < maxAttempts) {
       try {
@@ -745,17 +802,39 @@ AGENT_ENVIRONMENT=production`;
               console.log(`[${tag}] ${line}`);
             }
           });
+        } else {
+          console.log(`[${tag}] Command completed with no output`);
         }
         return;
       } catch (error: any) {
         attempts++;
-        if (attempts >= maxAttempts) {
-          throw new Error(
-            `SSH command failed after ${maxAttempts} attempts: ${error.message}`
-          );
+
+        console.error(
+          `[${tag}] SSH command failed (attempt ${attempts}/${maxAttempts})`
+        );
+        console.error(`[${tag}] Command: ${command}`);
+        console.error(`[${tag}] Error message: ${error.message}`);
+
+        if (error.stdout) {
+          console.error(`[${tag}] STDOUT: ${error.stdout.toString()}`);
         }
+        if (error.stderr) {
+          console.error(`[${tag}] STDERR: ${error.stderr.toString()}`);
+        }
+        if (error.status) {
+          console.error(`[${tag}] Exit code: ${error.status}`);
+        }
+
+        if (attempts >= maxAttempts) {
+          let detailedError = `SSH command failed after ${maxAttempts} attempts. Command: "${command}". Error: ${error.message}`;
+          if (error.stderr) {
+            detailedError += `. STDERR: ${error.stderr.toString()}`;
+          }
+          throw new Error(detailedError);
+        }
+
         console.log(
-          `[${tag}] SSH command failed ${error.message}. Retrying... (${attempts}/${maxAttempts})`
+          `[${tag}] Retrying in 5 seconds... (${attempts}/${maxAttempts})`
         );
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
@@ -764,6 +843,136 @@ AGENT_ENVIRONMENT=production`;
 
   private formatError(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+  }
+
+  private async gatherServiceDiagnostics(
+    keyPath: string,
+    publicDns: string
+  ): Promise<void> {
+    console.log(`🔍 Gathering systemd service diagnostics...`);
+
+    const diagnosticCommands = [
+      {
+        name: "Service Status",
+        command: "sudo systemctl status vargasjr-agent.service --no-pager -l",
+      },
+      {
+        name: "Service Logs",
+        command:
+          "sudo journalctl -u vargasjr-agent.service --no-pager -l --since '5 minutes ago'",
+      },
+      {
+        name: "Service Is-Active",
+        command: "sudo systemctl is-active vargasjr-agent.service",
+      },
+      {
+        name: "Service Is-Enabled",
+        command: "sudo systemctl is-enabled vargasjr-agent.service",
+      },
+      {
+        name: "Check run_agent.sh exists",
+        command: "ls -la /home/ubuntu/run_agent.sh",
+      },
+      {
+        name: "Check .env exists",
+        command: "ls -la /home/ubuntu/.env",
+      },
+    ];
+
+    for (const diagnostic of diagnosticCommands) {
+      try {
+        console.log(`📊 Running diagnostic: ${diagnostic.name}`);
+        await this.executeSSHCommand(
+          keyPath,
+          publicDns,
+          diagnostic.command,
+          `DIAG-${diagnostic.name.replace(/\s+/g, "-")}`
+        );
+      } catch (error) {
+        console.error(
+          `⚠️ Diagnostic command failed: ${
+            diagnostic.name
+          } - ${this.formatError(error)}`
+        );
+      }
+    }
+  }
+
+  private async enterDiagnosticMode(
+    keyPath: string,
+    publicDns: string
+  ): Promise<void> {
+    console.log(
+      `🚨 ENTERING DIAGNOSTIC MODE - Gathering comprehensive error information`
+    );
+    console.log(`Instance: ${publicDns}`);
+
+    const comprehensiveDiagnostics = [
+      {
+        name: "System Logs",
+        command:
+          "sudo journalctl --since '10 minutes ago' --no-pager -l | tail -50",
+      },
+      {
+        name: "Disk Space",
+        command: "df -h",
+      },
+      {
+        name: "Memory Usage",
+        command: "free -h",
+      },
+      {
+        name: "Process List",
+        command: "ps aux | grep -E '(agent|systemd)' | head -20",
+      },
+      {
+        name: "Network Status",
+        command: "ss -tuln | head -10",
+      },
+      {
+        name: "Environment Check",
+        command: "env | grep -E '(PATH|HOME|USER)'",
+      },
+      {
+        name: "File Permissions",
+        command: "ls -la /home/ubuntu/ | grep -E '(run_agent|env)'",
+      },
+      {
+        name: "Systemd Failed Units",
+        command: "sudo systemctl --failed --no-pager",
+      },
+    ];
+
+    console.log(
+      `📋 Running ${comprehensiveDiagnostics.length} comprehensive diagnostic checks...`
+    );
+
+    for (const diagnostic of comprehensiveDiagnostics) {
+      try {
+        console.log(`🔍 Diagnostic: ${diagnostic.name}`);
+        await this.executeSSHCommand(
+          keyPath,
+          publicDns,
+          diagnostic.command,
+          `COMPREHENSIVE-${diagnostic.name.replace(/\s+/g, "-")}`
+        );
+      } catch (error) {
+        console.error(
+          `⚠️ Comprehensive diagnostic failed: ${
+            diagnostic.name
+          } - ${this.formatError(error)}`
+        );
+      }
+    }
+
+    await this.gatherServiceDiagnostics(keyPath, publicDns);
+
+    console.log(
+      `🚨 DIAGNOSTIC MODE COMPLETE - All available error information has been collected`
+    );
+    console.log(
+      `💡 Review the logs above to identify the root cause of the failures`
+    );
   }
 
   private getEnvironmentVariables() {
