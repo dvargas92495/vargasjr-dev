@@ -64,6 +64,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@actions/cache": "^4.0.5",
     "@cdktf/provider-aws": "^21.0.0",
     "@eslint/eslintrc": "^3",
     "@testing-library/jest-dom": "^6.6.3",

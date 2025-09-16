@@ -41,18 +41,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Generate cache key
-        id: cache-key
-        run: npx tsx scripts/preinstall.ts
-      - name: Cache dependencies and browsers
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/ms-playwright
-          key: ${{ steps.cache-key.outputs.cache-key }}
-          restore-keys: |
-            deps-${{ runner.os }}-
       - name: Install Node.js dependencies
         run: npm install
       - name: Run ESLint
@@ -68,18 +56,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Generate cache key
-        id: cache-key
-        run: npx tsx scripts/preinstall.ts
-      - name: Cache dependencies and browsers
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/ms-playwright
-          key: ${{ steps.cache-key.outputs.cache-key }}
-          restore-keys: |
-            deps-${{ runner.os }}-
       - name: Install Node.js dependencies
         run: npm install
       - name: Run tests
@@ -97,18 +73,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Generate cache key
-        id: cache-key
-        run: npx tsx scripts/preinstall.ts
-      - name: Cache dependencies and browsers
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/ms-playwright
-          key: ${{ steps.cache-key.outputs.cache-key }}
-          restore-keys: |
-            deps-${{ runner.os }}-
       - name: Install Node.js dependencies
         run: npm install
       - name: Get version from package.json
