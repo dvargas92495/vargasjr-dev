@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
-import formatZodError from "@/utils/format-zod-error";
+import formatZodError from "@/components/format-zod-error";
 import { addInboxMessage } from "@/server";
 import { NotFoundError } from "@/server/errors";
 import { ChatSessionsTable, ContactsTable } from "@/db/schema";
