@@ -113,6 +113,50 @@ export default function Home() {
 
         <div className="w-full max-w-md">
           <div className="text-center mb-4">
+            <p className="text-sm text-gray-600">Add me to your contacts:</p>
+          </div>
+          <button
+            onClick={() => {
+              const vCardContent = `BEGIN:VCARD
+VERSION:3.0
+FN:Vargas JR
+ORG:Vargas JR
+TEL:+18336597438
+URL:https://vargasjr.dev
+END:VCARD`;
+
+              const blob = new Blob([vCardContent], { type: "text/vcard" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "VargasJR.vcf";
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }}
+            className="w-full bg-white border-2 border-gray-200 text-gray-800 py-4 px-6 rounded-lg hover:border-primary hover:shadow-md transition-all duration-200 flex flex-col items-center gap-3 mb-6"
+          >
+            <div className="relative w-16 h-16">
+              <Image
+                src="/avatar.webp"
+                alt="Vargas JR Avatar"
+                fill
+                className="rounded-full border-2 border-primary"
+              />
+            </div>
+            <div className="text-center">
+              <div className="font-semibold text-lg">Vargas JR</div>
+              <div className="text-primary font-medium">+1 (833) 659-7438</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Tap to add contact
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="w-full max-w-md">
+          <div className="text-center mb-4">
             <p className="text-sm text-gray-600">Or hire me directly:</p>
           </div>
           <button
