@@ -424,6 +424,25 @@ export async function deleteInbox(inboxId: string) {
   return deletedInbox[0];
 }
 
+export async function bulkArchiveMessages(
+  messageIds: string[],
+  inboxId: string
+) {
+  const db = getDb();
+
+  await db
+    .insert(InboxMessageOperationsTable)
+    .values(
+      messageIds.map((messageId) => ({
+        inboxMessageId: messageId,
+        operation: "ARCHIVED" as const,
+      }))
+    )
+    .execute();
+
+  revalidatePath(`/admin/inboxes/${inboxId}`);
+  revalidatePath("/admin/inboxes");
+}
 export async function mergeContact(
   currentContactId: string,
   targetContactId: string

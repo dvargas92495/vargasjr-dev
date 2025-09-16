@@ -7,8 +7,7 @@ import {
 } from "@/db/schema";
 import { desc, eq, inArray, max, sql } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
-import MessageCard from "@/components/message-card";
-import PaginationControls from "@/components/pagination-controls";
+import RecentMessagesSection from "@/components/recent-messages-section";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
@@ -182,41 +181,12 @@ export default async function InboxesPage({
         </table>
       </div>
 
-      {/* Recent Messages Section */}
-      <div className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Recent Messages</h2>
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            baseUrl="/admin/inboxes"
-          />
-        </div>
-        {recentMessages.length > 0 ? (
-          <div className="space-y-3">
-            {recentMessages.map((message) => (
-              <MessageCard
-                key={message.id}
-                message={{
-                  ...message,
-                  source:
-                    message.displayName ||
-                    message.fullName ||
-                    message.email ||
-                    "Unknown",
-                }}
-                status={statuses[message.id] || "Unread"}
-                inboxId={message.inboxId}
-                inboxName={message.inboxName}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-gray-500 text-center py-8">
-            No recent messages found.
-          </div>
-        )}
-      </div>
+      <RecentMessagesSection
+        recentMessages={recentMessages}
+        statuses={statuses}
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
 
       <div className="mt-4 flex gap-4">
         <Link
