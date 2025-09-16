@@ -388,11 +388,43 @@ class VargasJRAgentCreator {
     securityGroupId: string,
     iamInstanceProfile?: string
   ): Promise<string> {
+    const userData = `#!/bin/bash
+cd /home/ubuntu
+
+# Create systemd service for automatic agent startup
+cat > /etc/systemd/system/vargasjr-agent.service << 'EOF'
+[Unit]
+Description=VargasJR Agent Service
+After=network.target cloud-final.service
+Wants=network.target
+
+[Service]
+Type=forking
+User=ubuntu
+WorkingDirectory=/home/ubuntu
+ExecStart=/home/ubuntu/run_agent.sh
+Restart=on-failure
+RestartSec=10
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start the service
+systemctl enable vargasjr-agent.service
+systemctl start vargasjr-agent.service
+
+# Log the service creation
+echo "VargasJR agent service created and started" >> /var/log/vargasjr-startup.log
+`;
+
     const result = await this.ec2.runInstances({
       ImageId: imageId,
       InstanceType: "t3.micro",
       KeyName: this.keyPairName,
       SecurityGroupIds: [securityGroupId],
+      UserData: Buffer.from(userData).toString('base64'),
       ...(iamInstanceProfile && {
         IamInstanceProfile: {
           Name: iamInstanceProfile,
@@ -568,8 +600,8 @@ AGENT_ENVIRONMENT=production`;
           command: "chmod +x /home/ubuntu/run_agent.sh",
         },
         {
-          tag: "AGENT",
-          command: "cd /home/ubuntu && ./run_agent.sh",
+          tag: "SERVICE_STATUS",
+          command: "sudo systemctl status vargasjr-agent.service --no-pager || echo 'Service not yet active'",
         },
       ];
 
