@@ -124,12 +124,12 @@ ORG:VargasJR Development
 TEL:+18777804236
 URL:https://vargasjr.dev
 END:VCARD`;
-              
-              const blob = new Blob([vCardContent], { type: 'text/vcard' });
+
+              const blob = new Blob([vCardContent], { type: "text/vcard" });
               const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
+              const link = document.createElement("a");
               link.href = url;
-              link.download = 'VargasJR.vcf';
+              link.download = "VargasJR.vcf";
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
@@ -143,7 +143,9 @@ END:VCARD`;
             <div className="text-center">
               <div className="font-semibold text-lg">Vargas JR</div>
               <div className="text-primary font-medium">+1 (877) 780-4236</div>
-              <div className="text-sm text-gray-500 mt-1">Tap to add contact</div>
+              <div className="text-sm text-gray-500 mt-1">
+                Tap to add contact
+              </div>
             </div>
           </button>
         </div>
