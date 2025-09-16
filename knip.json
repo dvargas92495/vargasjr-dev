@@ -31,19 +31,7 @@
     "next.config.ts",
     "tailwind.config.ts",
     "vitest.config.ts",
-    "knip.config.json",
-    "terraform/lambda/lambda-email-processor.js",
-    "scripts/utils.ts",
-    "worker/database.ts",
-    "server/versioning.ts",
-    "server/index.ts",
-    "app/actions.ts",
-    "app/lib/webauthn.ts",
-    "app/lib/pdf-generator.ts",
-    "app/lib/s3-client.ts",
-    "app/lib/vellum-server-utils.ts",
-    "worker/runner.ts",
-    "worker/agent-server.ts"
+    "knip.config.json"
   ],
   "ignoreDependencies": [
     "@stripe/stripe-js",
