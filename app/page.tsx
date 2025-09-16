@@ -121,7 +121,7 @@ export default function Home() {
 VERSION:3.0
 FN:Vargas JR
 ORG:Vargas JR
-TEL:+18777804236
+TEL:+18336597438
 URL:https://vargasjr.dev
 END:VCARD`;
 
@@ -147,7 +147,7 @@ END:VCARD`;
             </div>
             <div className="text-center">
               <div className="font-semibold text-lg">Vargas JR</div>
-              <div className="text-primary font-medium">+1 (877) 780-4236</div>
+              <div className="text-primary font-medium">+1 (833) 659-7438</div>
               <div className="text-sm text-gray-500 mt-1">
                 Tap to add contact
               </div>
