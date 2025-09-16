@@ -35,12 +35,14 @@ if (process.env.CI && !process.env.VERCEL) {
   console.log("Setting up caching for CI environment...");
 
   const cacheKey = createStableCacheKey();
-  const npmCachePath = join(homedir(), ".npm");
-  const playwrightCachePath = join(homedir(), ".cache", "ms-playwright");
+  const fullCacheKey = `deps-${process.platform}-${cacheKey}`;
 
-  console.log(`Cache key: deps-${process.platform}-${cacheKey}`);
-  console.log(`NPM cache path: ${npmCachePath}`);
-  console.log(`Playwright cache path: ${playwrightCachePath}`);
+  if (process.env.GITHUB_OUTPUT) {
+    const fs = require("fs");
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `cache-key=${fullCacheKey}\n`);
+  }
+
+  console.log(`Generated cache key: ${fullCacheKey}`);
 } else {
   if (process.env.VERCEL) {
     console.log("Skipping cache setup (running in Vercel environment)");

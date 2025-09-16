@@ -26,25 +26,7 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Generate cache key
         id: cache-key
-        run: |
-          CACHE_KEY=$(npx tsx -e "
-            import { readFileSync, existsSync } from 'fs';
-            import { createHash } from 'crypto';
-            const packageLockPath = 'package-lock.json';
-            if (!existsSync(packageLockPath)) throw new Error('package-lock.json not found');
-            const packageLock = JSON.parse(readFileSync(packageLockPath, 'utf8'));
-            const stablePackageLock = { ...packageLock };
-            delete stablePackageLock.version;
-            delete stablePackageLock.lockfileVersion;
-            if (stablePackageLock.packages && stablePackageLock.packages['']) {
-              const rootPackage = { ...stablePackageLock.packages[''] };
-              delete rootPackage.version;
-              stablePackageLock.packages[''] = rootPackage;
-            }
-            const stableContent = JSON.stringify(stablePackageLock, null, 2);
-            console.log(createHash('sha256').update(stableContent).digest('hex').substring(0, 16));
-          ")
-          echo "cache-key=deps-${{ runner.os }}-${CACHE_KEY}" >> "$GITHUB_OUTPUT"
+        run: npx tsx scripts/preinstall.ts
       - name: Cache dependencies and browsers
         uses: actions/cache@v4
         with:
