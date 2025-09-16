@@ -424,7 +424,7 @@ echo "VargasJR agent service created and started" >> /var/log/vargasjr-startup.l
       InstanceType: "t3.micro",
       KeyName: this.keyPairName,
       SecurityGroupIds: [securityGroupId],
-      UserData: Buffer.from(userData).toString('base64'),
+      UserData: Buffer.from(userData).toString("base64"),
       ...(iamInstanceProfile && {
         IamInstanceProfile: {
           Name: iamInstanceProfile,
@@ -601,7 +601,8 @@ AGENT_ENVIRONMENT=production`;
         },
         {
           tag: "SERVICE_STATUS",
-          command: "sudo systemctl status vargasjr-agent.service --no-pager || echo 'Service not yet active'",
+          command:
+            "sudo systemctl status vargasjr-agent.service --no-pager || echo 'Service not yet active'",
         },
       ];
 
