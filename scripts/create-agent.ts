@@ -399,24 +399,26 @@ After=network.target cloud-final.service
 Wants=network.target
 
 [Service]
-Type=forking
+Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu
-ExecStart=/home/ubuntu/run_agent.sh
+ExecStartPre=/bin/bash -c 'while [ ! -f /home/ubuntu/run_agent.sh ]; do sleep 2; done'
+ExecStartPre=/bin/bash -c 'while [ ! -f /home/ubuntu/.env ]; do sleep 2; done'
+ExecStart=/bin/bash /home/ubuntu/run_agent.sh
 Restart=on-failure
-RestartSec=10
+RestartSec=30
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/home/ubuntu
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Enable and start the service
+# Enable the service (but don't start it yet - let it start after files are copied)
 systemctl enable vargasjr-agent.service
-systemctl start vargasjr-agent.service
 
 # Log the service creation
-echo "VargasJR agent service created and started" >> /var/log/vargasjr-startup.log
+echo "VargasJR agent service created and enabled" >> /var/log/vargasjr-startup.log
 `;
 
     const result = await this.ec2.runInstances({
@@ -600,9 +602,9 @@ AGENT_ENVIRONMENT=production`;
           command: "chmod +x /home/ubuntu/run_agent.sh",
         },
         {
-          tag: "SERVICE_STATUS",
+          tag: "START_SERVICE",
           command:
-            "sudo systemctl status vargasjr-agent.service --no-pager || echo 'Service not yet active'",
+            "sudo systemctl start vargasjr-agent.service && sleep 5 && sudo systemctl status vargasjr-agent.service --no-pager",
         },
       ];
 
