@@ -402,8 +402,6 @@ Wants=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu
-ExecStartPre=/bin/bash -c 'while [ ! -f /home/ubuntu/run_agent.sh ]; do sleep 2; done'
-ExecStartPre=/bin/bash -c 'while [ ! -f /home/ubuntu/.env ]; do sleep 2; done'
 ExecStart=/bin/bash /home/ubuntu/run_agent.sh
 Restart=on-failure
 RestartSec=30
@@ -604,7 +602,7 @@ AGENT_ENVIRONMENT=production`;
         {
           tag: "START_SERVICE",
           command:
-            "sudo systemctl start vargasjr-agent.service && sleep 5 && sudo systemctl status vargasjr-agent.service --no-pager",
+            "sudo systemctl start vargasjr-agent.service && sleep 3 && sudo systemctl is-active vargasjr-agent.service && sudo systemctl status vargasjr-agent.service --no-pager -l",
         },
       ];
 
