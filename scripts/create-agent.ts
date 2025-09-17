@@ -601,6 +601,14 @@ AGENT_ENVIRONMENT=production`;
           command: "chmod +x /home/ubuntu/run_agent.sh",
         },
         {
+          tag: "VALIDATE_DIST",
+          command: "test -f /home/ubuntu/dist/worker.js || (echo 'ERROR: dist/worker.js not found' && exit 1)",
+        },
+        {
+          tag: "VALIDATE_PLAYWRIGHT",
+          command: "test -d /home/ubuntu/dist/node_modules/playwright-core || (echo 'ERROR: playwright-core not found' && exit 1)",
+        },
+        {
           tag: "START_SERVICE",
           command:
             "sudo systemctl start vargasjr-agent.service && sleep 3 && sudo systemctl is-active vargasjr-agent.service && sudo systemctl status vargasjr-agent.service --no-pager -l",
@@ -877,6 +885,18 @@ AGENT_ENVIRONMENT=production`;
         name: "Check .env exists",
         command: "ls -la /home/ubuntu/.env",
       },
+      {
+        name: "Check dist directory exists",
+        command: "ls -la /home/ubuntu/dist/",
+      },
+      {
+        name: "Check worker.js exists",
+        command: "ls -la /home/ubuntu/dist/worker.js",
+      },
+      {
+        name: "Check playwright-core exists",
+        command: "ls -la /home/ubuntu/dist/node_modules/playwright-core/",
+      },
     ];
 
     for (const diagnostic of diagnosticCommands) {
@@ -940,6 +960,14 @@ AGENT_ENVIRONMENT=production`;
       {
         name: "Systemd Failed Units",
         command: "sudo systemctl --failed --no-pager",
+      },
+      {
+        name: "Build Artifacts Check",
+        command: "find /home/ubuntu -name 'dist' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No dist directories found'",
+      },
+      {
+        name: "Agent Package Contents",
+        command: "find /home/ubuntu -name 'vargasjr_dev_agent-*' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No agent packages found'",
       },
     ];
 

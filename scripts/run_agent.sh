@@ -71,6 +71,15 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
     echo "Cleaning up existing services..."
     screen -X -S agent-preview quit 2>/dev/null || true
     
+    if [ ! -f "dist/worker.js" ]; then
+        echo "Error: dist/worker.js not found. Build artifacts may be missing."
+        echo "Current directory contents:"
+        ls -la
+        echo "Dist directory contents (if exists):"
+        ls -la dist/ 2>/dev/null || echo "dist/ directory does not exist"
+        exit 1
+    fi
+    
     echo "Starting agent service..."
     screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
         
@@ -84,6 +93,15 @@ else
     
     echo "Cleaning up existing services..."
     screen -X -S agent-${VERSION//./-} quit 2>/dev/null || true
+    
+    if [ ! -f "dist/worker.js" ]; then
+        echo "Error: dist/worker.js not found. Build artifacts may be missing."
+        echo "Current directory contents:"
+        ls -la
+        echo "Dist directory contents (if exists):"
+        ls -la dist/ 2>/dev/null || echo "dist/ directory does not exist"
+        exit 1
+    fi
     
     echo "Starting agent service..."
     screen -dmS agent-${VERSION//./-} bash -c 'node dist/worker.js > out.log 2> error.log'
