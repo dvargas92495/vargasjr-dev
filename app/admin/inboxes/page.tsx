@@ -66,6 +66,19 @@ export default async function InboxesPage({
     const totalMessages = totalMessagesResult[0]?.count || 0;
     totalPages = Math.ceil(totalMessages / pageSize);
 
+    const latestOperations = db
+      .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {
+        inboxMessageId: InboxMessageOperationsTable.inboxMessageId,
+        operation: InboxMessageOperationsTable.operation,
+        createdAt: InboxMessageOperationsTable.createdAt,
+      })
+      .from(InboxMessageOperationsTable)
+      .orderBy(
+        InboxMessageOperationsTable.inboxMessageId,
+        desc(InboxMessageOperationsTable.createdAt)
+      )
+      .as("latestOperations");
+
     const allRecentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
         id: InboxMessagesTable.id,
@@ -85,13 +98,13 @@ export default async function InboxesPage({
       )
       .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
       .leftJoin(
-        InboxMessageOperationsTable,
-        eq(InboxMessagesTable.id, InboxMessageOperationsTable.inboxMessageId)
+        latestOperations,
+        eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
       )
       .where(
         or(
-          isNull(InboxMessageOperationsTable.operation),
-          ne(InboxMessageOperationsTable.operation, "ARCHIVED")
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
         )
       )
       .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
