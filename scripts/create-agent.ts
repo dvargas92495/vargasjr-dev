@@ -602,11 +602,13 @@ AGENT_ENVIRONMENT=production`;
         },
         {
           tag: "VALIDATE_DIST",
-          command: "test -f /home/ubuntu/dist/worker.js || (echo 'ERROR: dist/worker.js not found' && exit 1)",
+          command:
+            "test -f /home/ubuntu/dist/worker.js || (echo 'ERROR: dist/worker.js not found' && exit 1)",
         },
         {
           tag: "VALIDATE_PLAYWRIGHT",
-          command: "test -d /home/ubuntu/dist/node_modules/playwright-core || (echo 'ERROR: playwright-core not found' && exit 1)",
+          command:
+            "test -d /home/ubuntu/dist/node_modules/playwright-core || (echo 'ERROR: playwright-core not found' && exit 1)",
         },
         {
           tag: "START_SERVICE",
@@ -963,11 +965,13 @@ AGENT_ENVIRONMENT=production`;
       },
       {
         name: "Build Artifacts Check",
-        command: "find /home/ubuntu -name 'dist' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No dist directories found'",
+        command:
+          "find /home/ubuntu -name 'dist' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No dist directories found'",
       },
       {
         name: "Agent Package Contents",
-        command: "find /home/ubuntu -name 'vargasjr_dev_agent-*' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No agent packages found'",
+        command:
+          "find /home/ubuntu -name 'vargasjr_dev_agent-*' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No agent packages found'",
       },
     ];
 
