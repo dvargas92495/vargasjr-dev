@@ -186,6 +186,8 @@ class VargasJRSSHConnector {
   }
 }
 
+export { VargasJRSSHConnector };
+
 async function main() {
   dotenv.config();
   const args = process.argv.slice(2);
