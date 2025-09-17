@@ -150,6 +150,7 @@ export default function Home() {
               const vCardContent = `BEGIN:VCARD
 VERSION:4.0
 FN:Vargas JR
+N:JR;Vargas;;;
 ORG:Vargas JR
 TEL:+18336597438
 URL:https://vargasjr.dev
