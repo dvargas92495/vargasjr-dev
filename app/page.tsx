@@ -138,10 +138,14 @@ export default function Home() {
           </div>
           <button
             onClick={async () => {
-              const photoBase64 = await getImageAsBase64("/avatar.webp");
-              const photoField = photoBase64
-                ? `PHOTO;ENCODING=BASE64;TYPE=WEBP:${photoBase64}\n`
-                : "";
+              const photoBase64 = await getImageAsBase64("/avatar.png");
+              
+              if (!photoBase64) {
+                alert("Failed to load contact photo. Please try again later.");
+                return;
+              }
+              
+              const photoField = `PHOTO;ENCODING=BASE64;TYPE=PNG:${photoBase64}\n`;
 
               const vCardContent = `BEGIN:VCARD
 VERSION:4.0
