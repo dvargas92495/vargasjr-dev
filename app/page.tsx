@@ -4,6 +4,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
+async function getImageAsBase64(imagePath: string): Promise<string> {
+  try {
+    const response = await fetch(imagePath);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        resolve(base64.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("Failed to convert image to base64:", error);
+    return "";
+  }
+}
+
 export default function Home() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -113,17 +132,28 @@ export default function Home() {
 
         <div className="w-full max-w-md">
           <div className="text-center mb-4">
-            <p className="text-sm text-gray-600">Add me to your contacts:</p>
+            <p className="text-sm text-gray-600">
+              or text me directly to learn more:
+            </p>
           </div>
           <button
-            onClick={() => {
+            onClick={async () => {
+              const photoBase64 = await getImageAsBase64("/avatar.png");
+
+              if (!photoBase64) {
+                alert("Failed to load contact photo. Please try again later.");
+                return;
+              }
+
+              const photoField = `PHOTO;ENCODING=b;MEDIATYPE=image/png:${photoBase64}\n`;
+
               const vCardContent = `BEGIN:VCARD
-VERSION:3.0
+VERSION:4.0
 FN:Vargas JR
 ORG:Vargas JR
 TEL:+18336597438
 URL:https://vargasjr.dev
-END:VCARD`;
+${photoField}END:VCARD`;
 
               const blob = new Blob([vCardContent], { type: "text/vcard" });
               const url = URL.createObjectURL(blob);
