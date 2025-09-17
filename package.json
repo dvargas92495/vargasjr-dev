@@ -28,7 +28,8 @@
     "agent:dev": "tsx worker/index.ts",
     "agent:start": "node dist/worker.js",
     "agent:publish": "npx tsx scripts/publish-agent.ts",
-    "connect": "npx tsx scripts/ssh-connect.ts"
+    "connect": "npx tsx scripts/ssh-connect.ts",
+    "debug-agent": "npx tsx scripts/debug-agent.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",
