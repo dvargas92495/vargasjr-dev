@@ -139,12 +139,12 @@ export default function Home() {
           <button
             onClick={async () => {
               const photoBase64 = await getImageAsBase64("/avatar.png");
-              
+
               if (!photoBase64) {
                 alert("Failed to load contact photo. Please try again later.");
                 return;
               }
-              
+
               const photoField = `PHOTO;ENCODING=BASE64;TYPE=PNG:${photoBase64}\n`;
 
               const vCardContent = `BEGIN:VCARD
