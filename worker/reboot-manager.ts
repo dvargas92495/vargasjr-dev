@@ -126,11 +126,16 @@ export async function rebootAgent(
 
     rebootLogger.info("Restarting systemd service for new version");
     try {
-      execSync("sudo systemctl restart vargasjr-agent.service", { stdio: "inherit" });
+      execSync("sudo systemctl restart vargasjr-agent.service", {
+        stdio: "inherit",
+      });
       rebootLogger.info("Systemd service restarted successfully");
     } catch (error) {
       rebootLogger.error(`Failed to restart systemd service: ${error}`);
-      return { success: false, error: `Failed to restart systemd service: ${error}` };
+      return {
+        success: false,
+        error: `Failed to restart systemd service: ${error}`,
+      };
     }
 
     return { success: true };
