@@ -12,14 +12,14 @@ async function getImageAsBase64(imagePath: string): Promise<string> {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64 = reader.result as string;
-        resolve(base64.split(',')[1]);
+        resolve(base64.split(",")[1]);
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error('Failed to convert image to base64:', error);
-    return '';
+    console.error("Failed to convert image to base64:", error);
+    return "";
   }
 }
 
@@ -132,13 +132,17 @@ export default function Home() {
 
         <div className="w-full max-w-md">
           <div className="text-center mb-4">
-            <p className="text-sm text-gray-600">or text me directly to learn more:</p>
+            <p className="text-sm text-gray-600">
+              or text me directly to learn more:
+            </p>
           </div>
           <button
             onClick={async () => {
-              const photoBase64 = await getImageAsBase64('/avatar.webp');
-              const photoField = photoBase64 ? `PHOTO;ENCODING=BASE64;TYPE=WEBP:${photoBase64}\n` : '';
-              
+              const photoBase64 = await getImageAsBase64("/avatar.webp");
+              const photoField = photoBase64
+                ? `PHOTO;ENCODING=BASE64;TYPE=WEBP:${photoBase64}\n`
+                : "";
+
               const vCardContent = `BEGIN:VCARD
 VERSION:4.0
 FN:Vargas JR
