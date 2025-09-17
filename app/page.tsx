@@ -145,7 +145,7 @@ export default function Home() {
                 return;
               }
 
-              const photoField = `PHOTO;ENCODING=BASE64;TYPE=PNG:${photoBase64}\n`;
+              const photoField = `PHOTO;MEDIATYPE=image/png:data:image/png;base64,${photoBase64}\n`;
 
               const vCardContent = `BEGIN:VCARD
 VERSION:4.0
