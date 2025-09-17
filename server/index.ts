@@ -125,62 +125,6 @@ export const postSlackMessage = async ({
   return response.json();
 };
 
-export const upsertPhoneContact = async (
-  phoneNumber: string
-): Promise<string> => {
-  const db = getDb();
-  
-  if (!phoneNumber) {
-    throw new Error(`Invalid phone number: ${phoneNumber}`);
-  }
-
-  let contact = await db
-    .select({ id: ContactsTable.id })
-    .from(ContactsTable)
-    .where(eq(ContactsTable.phoneNumber, phoneNumber))
-    .limit(1)
-    .execute();
-
-  if (contact.length) {
-    return contact[0].id;
-  }
-
-  const supportsImessage = await detectImessageSupport(phoneNumber);
-
-  const contactData = {
-    phoneNumber,
-    supportsImessage,
-  };
-
-  const newContact = await createContactWithValidation(contactData);
-  return newContact.id;
-};
-
-const detectImessageSupport = async (phoneNumber: string): Promise<boolean> => {
-  try {
-    const response = await fetch('https://api.sendblue.co/api/evaluate-service', {
-      method: 'POST',
-      headers: {
-        'sb-api-key-id': process.env.SENDBLUE_API_KEY || '',
-        'sb-api-secret-key': process.env.SENDBLUE_API_SECRET || '',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ number: phoneNumber }),
-    });
-
-    if (!response.ok) {
-      console.warn(`SendBlue API error for ${phoneNumber}: ${response.statusText}`);
-      return false;
-    }
-
-    const data = await response.json();
-    return data.service === 'iMessage';
-  } catch (error) {
-    console.warn(`Failed to detect iMessage support for ${phoneNumber}:`, error);
-    return false;
-  }
-};
-
 export const upsertSlackContact = async (userId: string): Promise<string> => {
   const db = getDb();
 
@@ -270,7 +214,6 @@ export const createContactWithValidation = async (contactData: {
   fullName?: string | null;
   slackDisplayName?: string | null;
   slackId?: string | null;
-  supportsImessage?: boolean | null;
 }) => {
   if (!shouldCreateContact(contactData)) {
     throw new InvalidContactDataError();

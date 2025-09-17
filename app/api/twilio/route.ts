@@ -3,7 +3,7 @@ import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import { getDb } from "@/db/connection";
-import { addInboxMessage, upsertPhoneContact } from "@/server";
+import { addInboxMessage, upsertEmailContact } from "@/server";
 
 const bodySchema = z.object({
   ToCountry: z.string(),
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Inbox not found" }, { status: 404 });
     }
 
-    const contactId = await upsertPhoneContact(From);
+    const contactId = await upsertEmailContact(From);
 
     await addInboxMessage({
       body: Body,
