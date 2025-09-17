@@ -3,9 +3,8 @@ import {
   InboxesTable,
   ContactsTable,
   InboxMessagesTable,
-  InboxMessageOperationsTable,
 } from "@/db/schema";
-import { eq, and, isNull, ne, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import ChatInput from "@/components/ChatInput";
@@ -50,19 +49,7 @@ export default async function ChatSessionPage({
     })
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
-    .leftJoin(
-      InboxMessageOperationsTable,
-      eq(InboxMessagesTable.id, InboxMessageOperationsTable.inboxMessageId)
-    )
-    .where(
-      and(
-        eq(InboxMessagesTable.inboxId, session.inboxId),
-        or(
-          isNull(InboxMessageOperationsTable.operation),
-          ne(InboxMessageOperationsTable.operation, "ARCHIVED")
-        )
-      )
-    )
+    .where(eq(InboxMessagesTable.inboxId, session.inboxId))
     .orderBy(InboxMessagesTable.createdAt, InboxMessagesTable.id);
 
   return (

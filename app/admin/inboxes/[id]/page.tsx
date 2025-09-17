@@ -4,7 +4,7 @@ import {
   InboxesTable,
   ContactsTable,
 } from "@/db/schema";
-import { desc, eq, inArray, and, isNull, ne, or } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -41,19 +41,7 @@ export default async function InboxPage({
     })
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
-    .leftJoin(
-      InboxMessageOperationsTable,
-      eq(InboxMessagesTable.id, InboxMessageOperationsTable.inboxMessageId)
-    )
-    .where(
-      and(
-        eq(InboxMessagesTable.inboxId, inbox[0].id),
-        or(
-          isNull(InboxMessageOperationsTable.operation),
-          ne(InboxMessageOperationsTable.operation, "ARCHIVED")
-        )
-      )
-    )
+    .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
     .limit(25);
 
