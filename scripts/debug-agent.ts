@@ -20,14 +20,16 @@ class VargasJRAgentDebugger {
     if (branchName === "main" || branchName === "refs/heads/main") {
       return undefined;
     }
-    
+
     const prMatch = branchName.match(/(?:pr-(\d+)|\/(\d+)-)/);
-    return prMatch ? (prMatch[1] || prMatch[2]) : undefined;
+    return prMatch ? prMatch[1] || prMatch[2] : undefined;
   }
 
   async debug(): Promise<void> {
-    console.log(`🔍 Starting agent diagnostics for branch: ${this.config.branchName}`);
-    
+    console.log(
+      `🔍 Starting agent diagnostics for branch: ${this.config.branchName}`
+    );
+
     const instanceType = this.prNumber ? `PR ${this.prNumber}` : "production";
     console.log(`🎯 Target: ${instanceType} agent instance`);
 
@@ -42,7 +44,11 @@ class VargasJRAgentDebugger {
 
   private async runComprehensiveDiagnostics(): Promise<void> {
     console.log(`🚨 RUNNING COMPREHENSIVE AGENT DIAGNOSTICS`);
-    console.log(`Instance Type: ${this.prNumber ? `Preview (PR ${this.prNumber})` : 'Production'}`);
+    console.log(
+      `Instance Type: ${
+        this.prNumber ? `Preview (PR ${this.prNumber})` : "Production"
+      }`
+    );
 
     const serviceDiagnostics = [
       {
@@ -51,14 +57,15 @@ class VargasJRAgentDebugger {
       },
       {
         name: "Service Logs",
-        command: "sudo journalctl -u vargasjr-agent.service --no-pager -l --since '5 minutes ago'",
+        command:
+          "sudo journalctl -u vargasjr-agent.service --no-pager -l --since '5 minutes ago'",
       },
       {
         name: "Service Is-Active",
         command: "sudo systemctl is-active vargasjr-agent.service",
       },
       {
-        name: "Service Is-Enabled", 
+        name: "Service Is-Enabled",
         command: "sudo systemctl is-enabled vargasjr-agent.service",
       },
       {
@@ -74,14 +81,15 @@ class VargasJRAgentDebugger {
     const comprehensiveDiagnostics = [
       {
         name: "System Logs",
-        command: "sudo journalctl --since '10 minutes ago' --no-pager -l | tail -50",
+        command:
+          "sudo journalctl --since '10 minutes ago' --no-pager -l | tail -50",
       },
       {
         name: "Disk Space",
         command: "df -h",
       },
       {
-        name: "Memory Usage", 
+        name: "Memory Usage",
         command: "free -h",
       },
       {
@@ -109,30 +117,35 @@ class VargasJRAgentDebugger {
     const healthDiagnostics = [
       {
         name: "Agent Health Check",
-        command: "curl -s http://localhost:3001/health || echo 'Health endpoint not accessible'",
+        command:
+          "curl -s http://localhost:3001/health || echo 'Health endpoint not accessible'",
       },
       {
         name: "Recent Error Logs",
-        command: "tail -50 /home/ubuntu/error.log 2>/dev/null || echo 'No error.log found'",
+        command:
+          "tail -50 /home/ubuntu/error.log 2>/dev/null || echo 'No error.log found'",
       },
       {
-        name: "Recent Browser Error Logs", 
-        command: "tail -20 /home/ubuntu/browser-error.log 2>/dev/null || echo 'No browser-error.log found'",
+        name: "Recent Browser Error Logs",
+        command:
+          "tail -20 /home/ubuntu/browser-error.log 2>/dev/null || echo 'No browser-error.log found'",
       },
       {
         name: "Recent Agent Logs",
-        command: "tail -20 /home/ubuntu/agent.log 2>/dev/null || echo 'No agent.log found'",
+        command:
+          "tail -20 /home/ubuntu/agent.log 2>/dev/null || echo 'No agent.log found'",
       },
       {
         name: "Recent Output Logs",
-        command: "tail -20 /home/ubuntu/out.log 2>/dev/null || echo 'No out.log found'",
+        command:
+          "tail -20 /home/ubuntu/out.log 2>/dev/null || echo 'No out.log found'",
       },
     ];
 
     const allDiagnostics = [
       ...serviceDiagnostics,
-      ...comprehensiveDiagnostics, 
-      ...healthDiagnostics
+      ...comprehensiveDiagnostics,
+      ...healthDiagnostics,
     ];
 
     console.log(`📋 Running ${allDiagnostics.length} diagnostic checks...`);
@@ -140,12 +153,12 @@ class VargasJRAgentDebugger {
     for (const diagnostic of allDiagnostics) {
       try {
         console.log(`🔍 Running: ${diagnostic.name}`);
-        
+
         const diagnosticConnector = new VargasJRSSHConnector({
           prNumber: this.prNumber,
-          command: diagnostic.command
+          command: diagnostic.command,
         });
-        
+
         await diagnosticConnector.connect();
         console.log(`✅ Completed: ${diagnostic.name}`);
       } catch (error) {
@@ -153,7 +166,9 @@ class VargasJRAgentDebugger {
       }
     }
 
-    console.log(`🚨 DIAGNOSTIC COMPLETE - All available diagnostic information has been collected`);
+    console.log(
+      `🚨 DIAGNOSTIC COMPLETE - All available diagnostic information has been collected`
+    );
   }
 }
 
