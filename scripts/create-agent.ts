@@ -601,16 +601,6 @@ AGENT_ENVIRONMENT=production`;
           command: "chmod +x /home/ubuntu/run_agent.sh",
         },
         {
-          tag: "VALIDATE_DIST",
-          command:
-            "test -f /home/ubuntu/dist/worker.js || (echo 'ERROR: dist/worker.js not found' && exit 1)",
-        },
-        {
-          tag: "VALIDATE_PLAYWRIGHT",
-          command:
-            "test -d /home/ubuntu/dist/node_modules/playwright-core || (echo 'ERROR: playwright-core not found' && exit 1)",
-        },
-        {
           tag: "START_SERVICE",
           command:
             "sudo systemctl start vargasjr-agent.service && sleep 3 && sudo systemctl is-active vargasjr-agent.service && sudo systemctl status vargasjr-agent.service --no-pager -l",
