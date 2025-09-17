@@ -4,7 +4,7 @@ import {
   InboxMessageOperationsTable,
   InboxesTable,
 } from "@/db/schema";
-import { eq, desc, inArray, sql } from "drizzle-orm";
+import { eq, desc, inArray, sql, and, isNull, ne, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -54,6 +54,19 @@ export default async function ContactPage({
   const totalMessages = totalMessagesResult[0]?.count || 0;
   const totalPages = Math.ceil(totalMessages / pageSize);
 
+  const latestOperations = db
+    .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {
+      inboxMessageId: InboxMessageOperationsTable.inboxMessageId,
+      operation: InboxMessageOperationsTable.operation,
+      createdAt: InboxMessageOperationsTable.createdAt,
+    })
+    .from(InboxMessageOperationsTable)
+    .orderBy(
+      InboxMessageOperationsTable.inboxMessageId,
+      desc(InboxMessageOperationsTable.createdAt)
+    )
+    .as("latestOperations");
+
   const allRecentMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
@@ -68,7 +81,19 @@ export default async function ContactPage({
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
     .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
-    .where(eq(InboxMessagesTable.contactId, contactData.id))
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
+    .where(
+      and(
+        eq(InboxMessagesTable.contactId, contactData.id),
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      )
+    )
     .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
     .limit(pageSize * 2)
     .offset(offset);
@@ -83,15 +108,7 @@ export default async function ContactPage({
       )
     );
 
-  const archivedMessageIds = new Set(
-    messageOperations
-      .filter((op) => op.operation === "ARCHIVED")
-      .map((op) => op.inboxMessageId)
-  );
-
-  const recentMessages = allRecentMessages
-    .filter((message) => !archivedMessageIds.has(message.id))
-    .slice(0, pageSize);
+  const recentMessages = allRecentMessages.slice(0, pageSize);
 
   const messageStatuses = Object.fromEntries(
     messageOperations.map(({ inboxMessageId, operation }) => [
