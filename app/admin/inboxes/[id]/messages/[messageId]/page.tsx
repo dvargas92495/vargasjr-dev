@@ -139,7 +139,7 @@ export default async function InboxMessage({
 
         <div>
           <div className="text-sm text-gray-300">Message Body</div>
-          <div className="mt-2 p-4 bg-gray-700 rounded whitespace-pre-wrap">
+          <div className="mt-2 p-4 bg-gray-700 rounded whitespace-pre-wrap overflow-x-auto w-full">
             {message.body}
           </div>
         </div>
@@ -177,7 +177,7 @@ export default async function InboxMessage({
 
                 <div className="px-6 py-4 border-t border-gray-700">
                   <div className="text-sm text-gray-300">Response</div>
-                  <div className="mt-2 p-4 bg-gray-700 rounded whitespace-pre-wrap text-white">
+                  <div className="mt-2 p-4 bg-gray-700 rounded whitespace-pre-wrap text-white overflow-x-auto w-full">
                     {response.body.substring(0, 50)}
                   </div>
                 </div>
