@@ -61,8 +61,11 @@ export default async function ContactPage({
       createdAt: InboxMessageOperationsTable.createdAt,
     })
     .from(InboxMessageOperationsTable)
-    .orderBy(InboxMessageOperationsTable.inboxMessageId, desc(InboxMessageOperationsTable.createdAt))
-    .as('latestOperations');
+    .orderBy(
+      InboxMessageOperationsTable.inboxMessageId,
+      desc(InboxMessageOperationsTable.createdAt)
+    )
+    .as("latestOperations");
 
   const allRecentMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
