@@ -54,7 +54,8 @@ export default async function InboxMessage({
   const messageOperations = await db
     .select()
     .from(InboxMessageOperationsTable)
-    .where(eq(InboxMessageOperationsTable.inboxMessageId, message.id));
+    .where(eq(InboxMessageOperationsTable.inboxMessageId, message.id))
+    .orderBy(desc(InboxMessageOperationsTable.createdAt));
 
   const statuses = Object.fromEntries(
     messageOperations.map(({ inboxMessageId, operation }) => [
