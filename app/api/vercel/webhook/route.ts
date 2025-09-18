@@ -95,18 +95,22 @@ export async function POST(request: Request) {
 
 async function handleDeploymentError(payload: VercelWebhookPayload) {
   try {
-    let prNumber: string | null = extractPRNumber(payload.payload.deployment.meta);
+    let prNumber: string | null = extractPRNumber(
+      payload.payload.deployment.meta
+    );
 
     if (!prNumber) {
       console.log(
         "No PR number found in deployment metadata, attempting fallback detection..."
       );
-      
+
       try {
         const fallbackPRNumber = await getPRNumber();
         if (fallbackPRNumber && fallbackPRNumber !== "local-dev") {
           prNumber = fallbackPRNumber;
-          console.log(`✅ Successfully detected PR number via fallback: ${prNumber}`);
+          console.log(
+            `✅ Successfully detected PR number via fallback: ${prNumber}`
+          );
         } else {
           console.log(
             "Fallback PR detection returned local-dev or null, skipping PR comment"
