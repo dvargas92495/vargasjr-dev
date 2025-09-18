@@ -68,17 +68,8 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
     cd "$AGENT_DIR"
     cp ../.env .
     
-    if [ ! -f "dist/worker.js" ]; then
-        echo "Error: dist/worker.js not found. Build artifacts may be missing."
-        echo "Current directory contents:"
-        ls -la
-        echo "Dist directory contents (if exists):"
-        ls -la dist/ 2>/dev/null || echo "dist/ directory does not exist"
-        exit 1
-    fi
-    
     echo "Starting agent service..."
-    exec npm run agent:start
+    npm run agent:start
         
 else
     echo "Detected production environment"
@@ -88,17 +79,8 @@ else
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
     
-    if [ ! -f "dist/worker.js" ]; then
-        echo "Error: dist/worker.js not found. Build artifacts may be missing."
-        echo "Current directory contents:"
-        ls -la
-        echo "Dist directory contents (if exists):"
-        ls -la dist/ 2>/dev/null || echo "dist/ directory does not exist"
-        exit 1
-    fi
-    
     echo "Starting agent service..."
-    exec node dist/worker.js
+    node dist/worker.js
 fi
 
 # # Useful tools
