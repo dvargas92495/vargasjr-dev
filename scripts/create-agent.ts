@@ -102,7 +102,11 @@ class VargasJRAgentCreator {
       timingResults.push(...setupTimingResults);
 
       startTime = Date.now();
-      await this.waitForInstanceReady(instanceId);
+      await this.waitForInstanceReady(
+        instanceId,
+        `/tmp/${this.keyPairName}.pem`,
+        instanceDetails.publicDns
+      );
       timingResults.push({
         method: "waitForInstanceReady",
         duration: Date.now() - startTime,
@@ -673,7 +677,11 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async waitForInstanceReady(instanceId: string): Promise<void> {
+  private async waitForInstanceReady(
+    instanceId: string,
+    keyPath: string,
+    publicDns: string
+  ): Promise<void> {
     const maxAttempts = 8;
     let attempts = 0;
 
@@ -703,6 +711,17 @@ AGENT_ENVIRONMENT=production`;
         console.log(`Health check error: ${this.formatError(error)}`);
         await new Promise((resolve) => setTimeout(resolve, waitTime * 1000));
       }
+    }
+
+    console.log(
+      `🔍 Health check failed after ${maxAttempts} attempts - gathering diagnostic information...`
+    );
+    try {
+      await this.gatherServiceDiagnostics(keyPath, publicDns);
+    } catch (diagnosticError) {
+      console.error(
+        `⚠️ Failed to gather diagnostics: ${this.formatError(diagnosticError)}`
+      );
     }
 
     throw new Error("Instance failed to become healthy within timeout.");
