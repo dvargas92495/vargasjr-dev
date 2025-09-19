@@ -33,7 +33,7 @@ export const upsertEmailContact = async (
   senderString: string
 ): Promise<string> => {
   console.log("upsertEmailContact called with:", senderString);
-  
+
   const db = getDb();
   const { email, fullName } = parseEmailAddress(senderString);
   console.log("Parsed email data:", { email, fullName });
@@ -86,13 +86,13 @@ export const addInboxMessage = async ({
   metadata?: Record<string, string>;
   contactId: string;
 }) => {
-  console.log("addInboxMessage called with:", { 
-    bodyLength: body.length, 
-    inboxName, 
-    threadId, 
-    externalId, 
+  console.log("addInboxMessage called with:", {
+    bodyLength: body.length,
+    inboxName,
+    threadId,
+    externalId,
     contactId,
-    hasMetadata: !!metadata 
+    hasMetadata: !!metadata,
   });
 
   const db = getDb();

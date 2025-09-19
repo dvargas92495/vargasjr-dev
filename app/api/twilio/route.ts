@@ -30,13 +30,18 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   console.log("Twilio webhook received");
-  
+
   try {
     const body = await request.json();
     console.log("Twilio request body:", JSON.stringify(body, null, 2));
-    
+
     const { NumMedia, To, From, Body } = bodySchema.parse(body);
-    console.log("Parsed Twilio data:", { NumMedia, To, From, Body: Body.substring(0, 100) + (Body.length > 100 ? '...' : '') });
+    console.log("Parsed Twilio data:", {
+      NumMedia,
+      To,
+      From,
+      Body: Body.substring(0, 100) + (Body.length > 100 ? "..." : ""),
+    });
 
     const numMedia = parseInt(NumMedia);
     if (numMedia > 0) {
@@ -87,11 +92,14 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Twilio webhook error:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace"
+    );
     console.error("Error details:", {
-      name: error instanceof Error ? error.name : 'Unknown',
+      name: error instanceof Error ? error.name : "Unknown",
       message: error instanceof Error ? error.message : String(error),
-      cause: error instanceof Error ? error.cause : undefined
+      cause: error instanceof Error ? error.cause : undefined,
     });
 
     if (error instanceof ZodError) {
