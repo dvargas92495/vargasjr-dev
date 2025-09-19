@@ -47,13 +47,6 @@ export default async function ContactPage({
   const pageSize = 10;
   const offset = (currentPage - 1) * pageSize;
 
-  const totalMessagesResult = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(InboxMessagesTable)
-    .where(eq(InboxMessagesTable.contactId, contactData.id));
-  const totalMessages = totalMessagesResult[0]?.count || 0;
-  const totalPages = Math.ceil(totalMessages / pageSize);
-
   const latestOperations = db
     .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {
       inboxMessageId: InboxMessageOperationsTable.inboxMessageId,
@@ -66,6 +59,25 @@ export default async function ContactPage({
       desc(InboxMessageOperationsTable.createdAt)
     )
     .as("latestOperations");
+
+  const totalMessagesResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(InboxMessagesTable)
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
+    .where(
+      and(
+        eq(InboxMessagesTable.contactId, contactData.id),
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      )
+    );
+  const totalMessages = totalMessagesResult[0]?.count || 0;
+  const totalPages = Math.ceil(totalMessages / pageSize);
 
   const allRecentMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
