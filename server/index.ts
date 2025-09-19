@@ -32,13 +32,18 @@ function parseEmailAddress(emailString: string): {
 export const upsertEmailContact = async (
   senderString: string
 ): Promise<string> => {
+  console.log("upsertEmailContact called with:", senderString);
+  
   const db = getDb();
   const { email, fullName } = parseEmailAddress(senderString);
+  console.log("Parsed email data:", { email, fullName });
 
   if (!email) {
+    console.error("Invalid email format:", senderString);
     throw new Error(`Invalid email format: ${senderString}`);
   }
 
+  console.log("Looking up existing contact with email:", email);
   let contact = await db
     .select({ id: ContactsTable.id })
     .from(ContactsTable)
@@ -46,7 +51,10 @@ export const upsertEmailContact = async (
     .limit(1)
     .execute();
 
+  console.log("Existing contact lookup result:", contact);
+
   if (contact.length) {
+    console.log("Found existing contact:", contact[0].id);
     return contact[0].id;
   }
 
@@ -55,7 +63,9 @@ export const upsertEmailContact = async (
     fullName,
   };
 
+  console.log("Creating new contact with data:", contactData);
   const newContact = await createContactWithValidation(contactData);
+  console.log("New contact created:", newContact.id);
   return newContact.id;
 };
 
@@ -76,7 +86,17 @@ export const addInboxMessage = async ({
   metadata?: Record<string, string>;
   contactId: string;
 }) => {
+  console.log("addInboxMessage called with:", { 
+    bodyLength: body.length, 
+    inboxName, 
+    threadId, 
+    externalId, 
+    contactId,
+    hasMetadata: !!metadata 
+  });
+
   const db = getDb();
+  console.log("Looking up inbox:", inboxName);
   const inbox = await db
     .select({ id: InboxesTable.id })
     .from(InboxesTable)
@@ -84,10 +104,14 @@ export const addInboxMessage = async ({
     .limit(1)
     .execute();
 
+  console.log("Inbox lookup result:", inbox);
+
   if (!inbox.length) {
+    console.error("Inbox not found:", inboxName);
     throw new NotFoundError("Inbox not found");
   }
 
+  console.log("Inserting message into inbox:", inbox[0].id);
   await db.insert(InboxMessagesTable).values({
     body: body,
     inboxId: inbox[0].id,
@@ -97,6 +121,7 @@ export const addInboxMessage = async ({
     metadata,
     contactId,
   });
+  console.log("Message inserted successfully");
 };
 
 export const postSlackMessage = async ({
