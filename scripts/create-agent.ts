@@ -402,6 +402,7 @@ Wants=network.target
 Type=forking
 RemainAfterExit=yes
 User=ubuntu
+WorkingDirectory=/home/ubuntu
 ExecStart=/bin/bash /home/ubuntu/run_agent.sh
 Restart=on-failure
 RestartSec=30
