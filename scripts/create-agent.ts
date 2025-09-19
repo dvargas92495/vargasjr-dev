@@ -876,18 +876,6 @@ AGENT_ENVIRONMENT=production`;
         name: "Check .env exists",
         command: "ls -la /home/ubuntu/.env",
       },
-      {
-        name: "Check dist directory exists",
-        command: "ls -la /home/ubuntu/dist/",
-      },
-      {
-        name: "Check worker.js exists",
-        command: "ls -la /home/ubuntu/dist/worker.js",
-      },
-      {
-        name: "Check playwright-core exists",
-        command: "ls -la /home/ubuntu/dist/node_modules/playwright-core/",
-      },
     ];
 
     for (const diagnostic of diagnosticCommands) {
