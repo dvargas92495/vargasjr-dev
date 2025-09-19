@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
 import { getGitHubAuthHeaders } from "../../../lib/github-auth";
+import { getPRNumber } from "../../constants";
 
 const VERCEL_TEAM_ID = "team_36iZPJkU2LLMsHZqJZXMZppe";
 
@@ -94,13 +95,35 @@ export async function POST(request: Request) {
 
 async function handleDeploymentError(payload: VercelWebhookPayload) {
   try {
-    const prNumber = extractPRNumber(payload.payload.deployment.meta);
+    let prNumber: string | null = extractPRNumber(
+      payload.payload.deployment.meta
+    );
 
     if (!prNumber) {
       console.log(
-        "No PR number found in deployment metadata, skipping PR comment"
+        "No PR number found in deployment metadata, attempting fallback detection..."
       );
-      return;
+
+      try {
+        const fallbackPRNumber = await getPRNumber();
+        if (fallbackPRNumber && fallbackPRNumber !== "local-dev") {
+          prNumber = fallbackPRNumber;
+          console.log(
+            `✅ Successfully detected PR number via fallback: ${prNumber}`
+          );
+        } else {
+          console.log(
+            "Fallback PR detection returned local-dev or null, skipping PR comment"
+          );
+          return;
+        }
+      } catch (error) {
+        console.log(`❌ Fallback PR detection failed: ${error}`);
+        console.log("Skipping PR comment due to failed PR number detection");
+        return;
+      }
+    } else {
+      console.log(`✅ PR number found in deployment metadata: ${prNumber}`);
     }
 
     const buildLogs = await fetchVercelBuildLogs(payload.payload.deployment.id);
