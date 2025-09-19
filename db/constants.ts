@@ -6,7 +6,7 @@ export const InboxTypes = [
   "CHAT_SESSION",
   "NONE",
 ] as const;
-export const InboxMessageOperationTypes = ["READ", "ARCHIVED"] as const;
+export const InboxMessageOperationTypes = ["READ", "ARCHIVED", "UNREAD"] as const;
 
 export const AppTypes = [
   "TWITTER",
