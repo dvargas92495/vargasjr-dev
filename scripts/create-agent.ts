@@ -399,8 +399,7 @@ After=network.target cloud-final.service
 Wants=network.target
 
 [Service]
-Type=forking
-RemainAfterExit=yes
+Type=exec
 User=ubuntu
 WorkingDirectory=/home/ubuntu
 ExecStart=/bin/bash /home/ubuntu/run_agent.sh
