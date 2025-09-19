@@ -30,7 +30,7 @@ const bodySchema = z.object({
 
 export const POST = withApiWrapper(async (body: unknown) => {
   console.log("Twilio webhook received");
-  
+
   const { NumMedia, To, From, Body } = bodySchema.parse(body);
 
   const numMedia = parseInt(NumMedia);
