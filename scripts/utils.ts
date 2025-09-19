@@ -146,10 +146,18 @@ export async function findOrCreateSecurityGroup(
             { CidrIp: "0.0.0.0/0", Description: "SSH access from anywhere" },
           ],
         },
+        {
+          IpProtocol: "tcp",
+          FromPort: 3001,
+          ToPort: 3001,
+          IpRanges: [
+            { CidrIp: "0.0.0.0/0", Description: "HTTP access for health checks" },
+          ],
+        },
       ],
     });
 
-    console.log(`✅ Added SSH rule to security group: ${groupId}`);
+    console.log(`✅ Added SSH and HTTP rules to security group: ${groupId}`);
     return groupId;
   } catch (error: any) {
     console.error(`Failed to create/find security group: ${error}`);
