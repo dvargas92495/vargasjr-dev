@@ -123,16 +123,19 @@ export async function findOrCreateSecurityGroup(
     if (result.SecurityGroups && result.SecurityGroups.length > 0) {
       const groupId = result.SecurityGroups[0].GroupId;
       console.log(`✅ Found existing security group: ${groupId}`);
-      
+
       const existingGroup = result.SecurityGroups[0];
-      const hasPort3001 = existingGroup.IpPermissions?.some(permission => 
-        permission.IpProtocol === 'tcp' && 
-        permission.FromPort === 3001 && 
-        permission.ToPort === 3001
+      const hasPort3001 = existingGroup.IpPermissions?.some(
+        (permission) =>
+          permission.IpProtocol === "tcp" &&
+          permission.FromPort === 3001 &&
+          permission.ToPort === 3001
       );
-      
+
       if (!hasPort3001) {
-        console.log(`Adding missing port 3001 rule to existing security group: ${groupId}`);
+        console.log(
+          `Adding missing port 3001 rule to existing security group: ${groupId}`
+        );
         try {
           await ec2.authorizeSecurityGroupIngress({
             GroupId: groupId,
@@ -142,22 +145,31 @@ export async function findOrCreateSecurityGroup(
                 FromPort: 3001,
                 ToPort: 3001,
                 IpRanges: [
-                  { CidrIp: "0.0.0.0/0", Description: "HTTP access for health checks" },
+                  {
+                    CidrIp: "0.0.0.0/0",
+                    Description: "HTTP access for health checks",
+                  },
                 ],
               },
             ],
           });
-          console.log(`✅ Added port 3001 rule to existing security group: ${groupId}`);
+          console.log(
+            `✅ Added port 3001 rule to existing security group: ${groupId}`
+          );
         } catch (error: any) {
-          if (error.code !== 'InvalidPermission.Duplicate') {
+          if (error.code !== "InvalidPermission.Duplicate") {
             throw error;
           }
-          console.log(`Port 3001 rule already exists in security group: ${groupId}`);
+          console.log(
+            `Port 3001 rule already exists in security group: ${groupId}`
+          );
         }
       } else {
-        console.log(`Port 3001 rule already exists in security group: ${groupId}`);
+        console.log(
+          `Port 3001 rule already exists in security group: ${groupId}`
+        );
       }
-      
+
       return groupId!;
     }
 
@@ -186,7 +198,10 @@ export async function findOrCreateSecurityGroup(
           FromPort: 3001,
           ToPort: 3001,
           IpRanges: [
-            { CidrIp: "0.0.0.0/0", Description: "HTTP access for health checks" },
+            {
+              CidrIp: "0.0.0.0/0",
+              Description: "HTTP access for health checks",
+            },
           ],
         },
       ],
