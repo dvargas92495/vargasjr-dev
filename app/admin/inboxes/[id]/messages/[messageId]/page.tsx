@@ -4,7 +4,7 @@ import {
   OutboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import MarkAsUnreadButton from "@/components/mark-as-unread-button";
