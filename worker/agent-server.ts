@@ -258,12 +258,20 @@ export class AgentServer {
     );
 
     this.app.get("/health", async (req, res) => {
+      const requestId = req.headers['x-vargasjr-request-id'] as string || 'unknown';
       try {
-        this.logger.info("Health check endpoint called");
+        this.logger.info(`Health check endpoint called - Request ID: ${requestId}`);
+        this.logger.info(`Request ID ${requestId}: Starting getHealthCheckData()`);
+        
         const healthResult = await getHealthCheckData();
+        
+        this.logger.info(`Request ID ${requestId}: getHealthCheckData() completed successfully`);
+        this.logger.info(`Request ID ${requestId}: Health status: ${healthResult.status}`);
+        this.logger.info(`Request ID ${requestId}: Sending response`);
+        
         res.json(healthResult);
       } catch (error) {
-        this.logger.error(`Health check failed: ${error}`);
+        this.logger.error(`Request ID ${requestId}: Health check failed: ${error}`);
         res.status(500).json({
           status: "error",
           message: "Health check failed",
