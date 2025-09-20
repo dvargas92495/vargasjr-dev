@@ -17,6 +17,7 @@ class InboxType(str, Enum):
 class InboxMessageOperationType(str, Enum):
     READ = "READ"
     ARCHIVED = "ARCHIVED"
+    UNREAD = "UNREAD"
 
 
 class Sport(str, Enum):

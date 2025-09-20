@@ -316,8 +316,11 @@ export async function markMessageAsUnread(messageId: string, inboxId: string) {
   const db = getDb();
 
   await db
-    .delete(InboxMessageOperationsTable)
-    .where(eq(InboxMessageOperationsTable.inboxMessageId, messageId))
+    .insert(InboxMessageOperationsTable)
+    .values({
+      inboxMessageId: messageId,
+      operation: "UNREAD",
+    })
     .execute();
 
   revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
