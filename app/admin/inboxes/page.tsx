@@ -60,12 +60,6 @@ export default async function InboxesPage({
       .groupBy(InboxesTable.id)
       .orderBy(desc(max(InboxMessagesTable.createdAt)));
 
-    const totalMessagesResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(InboxMessagesTable);
-    const totalMessages = totalMessagesResult[0]?.count || 0;
-    totalPages = Math.ceil(totalMessages / pageSize);
-
     const latestOperations = db
       .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {
         inboxMessageId: InboxMessageOperationsTable.inboxMessageId,
@@ -78,6 +72,22 @@ export default async function InboxesPage({
         desc(InboxMessageOperationsTable.createdAt)
       )
       .as("latestOperations");
+
+    const totalMessagesResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(InboxMessagesTable)
+      .leftJoin(
+        latestOperations,
+        eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+      )
+      .where(
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      );
+    const totalMessages = totalMessagesResult[0]?.count || 0;
+    totalPages = Math.ceil(totalMessages / pageSize);
 
     const allRecentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
