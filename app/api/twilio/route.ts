@@ -39,7 +39,7 @@ export const POST = withApiWrapper(async (body: unknown) => {
   }
 
   const db = getDb();
-  const inbox = await db
+  let inbox = await db
     .select({ id: InboxesTable.id })
     .from(InboxesTable)
     .where(eq(InboxesTable.name, `twilio-phone-${To}`))
@@ -47,8 +47,15 @@ export const POST = withApiWrapper(async (body: unknown) => {
     .execute();
 
   if (!inbox.length) {
-    console.error("Inbox not found for phone number:", To);
-    throw new Error("Inbox not found");
+    const newInbox = await db
+      .insert(InboxesTable)
+      .values({
+        name: `twilio-phone-${To}`,
+        type: "SMS",
+        config: {},
+      })
+      .returning({ id: InboxesTable.id });
+    inbox = newInbox;
   }
 
   const contactId = await upsertEmailContact(From);
