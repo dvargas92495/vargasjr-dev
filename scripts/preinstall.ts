@@ -56,6 +56,9 @@ async function handleCaching(): Promise<void> {
   console.log(`Generated cache key: ${fullCacheKey}`);
   console.log(`Cache paths: ${cachePaths.join(", ")}`);
 
+  process.env.CACHE_KEY = fullCacheKey;
+  process.env.CACHE_PATHS = cachePaths.join(",");
+
   try {
     console.log("Attempting to restore cache...");
     const restoredKey = await cache.restoreCache(
@@ -69,9 +72,6 @@ async function handleCaching(): Promise<void> {
     } else {
       console.log("No cache found, will create new cache after install");
     }
-
-    process.env.CACHE_KEY = fullCacheKey;
-    process.env.CACHE_PATHS = cachePaths.join(",");
   } catch (error) {
     console.warn("Cache restore failed:", error);
     console.log("Continuing without cache...");
