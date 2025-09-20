@@ -102,7 +102,11 @@ class VargasJRAgentCreator {
       timingResults.push(...setupTimingResults);
 
       startTime = Date.now();
-      await this.waitForInstanceReady(instanceId);
+      await this.waitForInstanceReady(
+        instanceId,
+        `/tmp/${this.keyPairName}.pem`,
+        instanceDetails.publicDns
+      );
       timingResults.push({
         method: "waitForInstanceReady",
         duration: Date.now() - startTime,
@@ -399,8 +403,7 @@ After=network.target cloud-final.service
 Wants=network.target
 
 [Service]
-Type=forking
-RemainAfterExit=yes
+Type=exec
 User=ubuntu
 WorkingDirectory=/home/ubuntu
 ExecStart=/bin/bash /home/ubuntu/run_agent.sh
@@ -674,7 +677,11 @@ AGENT_ENVIRONMENT=production`;
     }
   }
 
-  private async waitForInstanceReady(instanceId: string): Promise<void> {
+  private async waitForInstanceReady(
+    instanceId: string,
+    keyPath: string,
+    publicDns: string
+  ): Promise<void> {
     const maxAttempts = 8;
     let attempts = 0;
 
@@ -704,6 +711,17 @@ AGENT_ENVIRONMENT=production`;
         console.log(`Health check error: ${this.formatError(error)}`);
         await new Promise((resolve) => setTimeout(resolve, waitTime * 1000));
       }
+    }
+
+    console.log(
+      `🔍 Health check failed after ${maxAttempts} attempts - gathering diagnostic information...`
+    );
+    try {
+      await this.gatherServiceDiagnostics(keyPath, publicDns);
+    } catch (diagnosticError) {
+      console.error(
+        `⚠️ Failed to gather diagnostics: ${this.formatError(diagnosticError)}`
+      );
     }
 
     throw new Error("Instance failed to become healthy within timeout.");
@@ -940,6 +958,16 @@ AGENT_ENVIRONMENT=production`;
       {
         name: "Systemd Failed Units",
         command: "sudo systemctl --failed --no-pager",
+      },
+      {
+        name: "Build Artifacts Check",
+        command:
+          "find /home/ubuntu -name 'dist' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No dist directories found'",
+      },
+      {
+        name: "Agent Package Contents",
+        command:
+          "find /home/ubuntu -name 'vargasjr_dev_agent-*' -type d -exec ls -la {} \\; 2>/dev/null || echo 'No agent packages found'",
       },
     ];
 
