@@ -73,26 +73,6 @@ class ReadMessageNode(BaseNode):
 
                 inbox_message, inbox_type, inbox_name = result
                 
-                message_exists = session.exec(
-                    select(InboxMessage.id).where(InboxMessage.id == inbox_message.id)
-                ).first()
-                
-                if not message_exists:
-                    return self.Outputs(
-                        message=SlimMessage(
-                            message_id=uuid4(),
-                            body="No messages found",
-                            contact_email=None,
-                            contact_id=uuid4(),
-                            contact_full_name=None,
-                            contact_slack_display_name=None,
-                            channel=InboxType.NONE,
-                            inbox_name="",
-                            inbox_id=uuid4(),
-                            thread_id=None,
-                        )
-                    )
-                
                 execution_id = self._context.execution_context.parent_context.span_id
                 
                 session.add(
