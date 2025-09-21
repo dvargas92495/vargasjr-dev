@@ -29,6 +29,19 @@ function parseEmailAddress(emailString: string): {
   return { email: "", fullName: trimmed || null };
 }
 
+function parsePhoneNumber(phoneString: string): {
+  phoneNumber: string;
+  fullName: string | null;
+} {
+  const trimmed = phoneString.trim();
+
+  if (trimmed.startsWith('+') && /^\+\d+$/.test(trimmed)) {
+    return { phoneNumber: trimmed, fullName: null };
+  }
+
+  return { phoneNumber: "", fullName: null };
+}
+
 export const upsertEmailContact = async (
   senderString: string
 ): Promise<string> => {
@@ -52,6 +65,36 @@ export const upsertEmailContact = async (
 
   const contactData = {
     email,
+    fullName,
+  };
+
+  const newContact = await createContactWithValidation(contactData);
+  return newContact.id;
+};
+
+export const upsertPhoneContact = async (
+  senderString: string
+): Promise<string> => {
+  const db = getDb();
+  const { phoneNumber, fullName } = parsePhoneNumber(senderString);
+
+  if (!phoneNumber) {
+    throw new Error(`Invalid phone number format: ${senderString}`);
+  }
+
+  let contact = await db
+    .select({ id: ContactsTable.id })
+    .from(ContactsTable)
+    .where(eq(ContactsTable.phoneNumber, phoneNumber))
+    .limit(1)
+    .execute();
+
+  if (contact.length) {
+    return contact[0].id;
+  }
+
+  const contactData = {
+    phoneNumber,
     fullName,
   };
 
