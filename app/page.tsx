@@ -98,7 +98,7 @@ export default function Home() {
           />
         </Link>
         <h1 className="text-4xl font-bold bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
-          Meet Vargas JR
+          Hi, I'm Vargas JR!
         </h1>
         <p>
           I&apos;m a fully automated senior-level software developer available
