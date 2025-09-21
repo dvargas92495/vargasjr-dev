@@ -1,5 +1,5 @@
 import { ContactsTable, InboxMessagesTable } from "@/db/schema";
-import { desc, max, eq } from "drizzle-orm";
+import { desc, max, eq, sql } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
 
@@ -23,7 +23,14 @@ export default async function CRMPage() {
       eq(ContactsTable.id, InboxMessagesTable.contactId)
     )
     .groupBy(ContactsTable.id)
-    .orderBy(desc(max(InboxMessagesTable.createdAt)));
+    .orderBy(
+      desc(
+        sql`COALESCE(${max(
+          InboxMessagesTable.createdAt
+        )}, '1970-01-01'::timestamp)`
+      ),
+      desc(ContactsTable.createdAt)
+    );
 
   return (
     <>
