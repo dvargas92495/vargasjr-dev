@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import formatZodError from "@/components/format-zod-error";
-import { NotFoundError, InvalidContactDataError, InvalidContactFormatError } from "@/server/errors";
+import {
+  NotFoundError,
+  InvalidContactDataError,
+  InvalidContactFormatError,
+} from "@/server/errors";
 
 type ApiHandler<T = unknown> = (
   body: unknown,

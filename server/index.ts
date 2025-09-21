@@ -1,5 +1,9 @@
 import { InboxesTable, InboxMessagesTable, ContactsTable } from "@/db/schema";
-import { NotFoundError, InvalidContactDataError, InvalidContactFormatError } from "./errors";
+import {
+  NotFoundError,
+  InvalidContactDataError,
+  InvalidContactFormatError,
+} from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
@@ -38,7 +42,9 @@ function parsePhoneNumber(phoneString: string): {
     return { phoneNumber: trimmed };
   }
 
-  throw new InvalidContactFormatError(`Invalid phone number format: ${phoneString}`);
+  throw new InvalidContactFormatError(
+    `Invalid phone number format: ${phoneString}`
+  );
 }
 
 export const upsertEmailContact = async (
