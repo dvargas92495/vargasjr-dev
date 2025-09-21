@@ -35,69 +35,44 @@ class VellumWorkflowPusher {
     const vercelToken = process.env.VERCEL_TOKEN;
 
     if (!vercelToken) {
-      console.log(
-        "⚠️  VERCEL_TOKEN not found, falling back to VELLUM_API_KEY environment variable"
-      );
-      const fallbackKey = process.env.VELLUM_API_KEY;
-      if (!fallbackKey) {
-        throw new Error(
-          "Neither VERCEL_TOKEN nor VELLUM_API_KEY environment variables are set"
-        );
-      }
-      return fallbackKey;
+      throw new Error("VERCEL_TOKEN environment variable is required");
     }
 
-    try {
-      const environment = this.isPreviewMode ? "preview" : "production";
-      const url = new URL(
-        "https://api.vercel.com/v10/projects/vargasjr-dev/env"
+    const environment = this.isPreviewMode ? "preview" : "production";
+    const url = new URL("https://api.vercel.com/v10/projects/vargasjr-dev/env");
+    url.searchParams.set("teamId", "team_36iZPJkU2LLMsHZqJZXMZppe");
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${vercelToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Vercel API error: ${response.status} ${response.statusText}`
       );
-      url.searchParams.set("teamId", "team_36iZPJkU2LLMsHZqJZXMZppe");
-
-      const response = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${vercelToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Vercel API error: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      const vellumApiKeyEnv = data.envs?.find(
-        (env: any) =>
-          env.key === "VELLUM_API_KEY" &&
-          (env.target?.includes(environment) ||
-            (environment === "production" &&
-              env.target?.includes("production")))
-      );
-
-      if (!vellumApiKeyEnv?.value) {
-        throw new Error(
-          `VELLUM_API_KEY not found in Vercel environment variables for ${environment}`
-        );
-      }
-
-      console.log(
-        `✅ Successfully fetched VELLUM_API_KEY from Vercel for ${environment} environment`
-      );
-      return vellumApiKeyEnv.value;
-    } catch (error) {
-      console.log(
-        `⚠️  Failed to fetch from Vercel API: ${error}, falling back to environment variable`
-      );
-      const fallbackKey = process.env.VELLUM_API_KEY;
-      if (!fallbackKey) {
-        throw new Error(
-          "Failed to fetch VELLUM_API_KEY from Vercel and no fallback environment variable available"
-        );
-      }
-      return fallbackKey;
     }
+
+    const data = await response.json();
+    const vellumApiKeyEnv = data.envs?.find(
+      (env: any) =>
+        env.key === "VELLUM_API_KEY" &&
+        (env.target?.includes(environment) ||
+          (environment === "production" && env.target?.includes("production")))
+    );
+
+    if (!vellumApiKeyEnv?.value) {
+      throw new Error(
+        `VELLUM_API_KEY not found in Vercel environment variables for ${environment}`
+      );
+    }
+
+    console.log(
+      `✅ Successfully fetched VELLUM_API_KEY from Vercel for ${environment} environment`
+    );
+    return vellumApiKeyEnv.value;
   }
 
   async pushWorkflows(): Promise<void> {
@@ -635,8 +610,7 @@ class VellumWorkflowPusher {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  const isPreviewMode = args.includes("--preview");
+  const isPreviewMode = process.env.GITHUB_EVENT_NAME === "pull_request";
 
   const pusher = new VellumWorkflowPusher(isPreviewMode);
   await pusher.pushWorkflows();
