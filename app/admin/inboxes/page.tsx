@@ -169,7 +169,7 @@ export default async function InboxesPage({
           </Link>
         </div>
 
-        <div className="flex-1">
+        <div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
             <div className="flex">
               <div className="ml-3">
@@ -200,7 +200,7 @@ export default async function InboxesPage({
         </Link>
       </div>
 
-      <div className="flex-1">
+      <div>
         <table className="min-w-full border border-gray-300">
           <thead>
             <tr className="bg-gray-500 text-white">
