@@ -101,7 +101,7 @@ export default function Home() {
           Meet Vargas JR
         </h1>
         <p>
-          A fully automated senior-level software developer available for hire
+          I&apos;m a fully automated senior-level software developer available for hire
           at a fraction of the cost of a full-time employee.
         </p>
         <form

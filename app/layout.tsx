@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vargas JR",
   description:
-    "A fully automated senior-level software developer available for hire at a fraction of the cost of a full-time employee.",
+    "I'm a fully automated senior-level software developer available for hire at a fraction of the cost of a full-time employee.",
 };
 
 export default function RootLayout({
