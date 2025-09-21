@@ -12,6 +12,7 @@ import { join } from "path";
 import { postGitHubComment } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 import { getAddedFilesInPR, findPRByBranch } from "./utils";
+import { getPRNumber } from "../app/api/constants";
 
 const toTitleCase = (str: string) => {
   return str
@@ -28,6 +29,56 @@ class VellumWorkflowPusher {
   constructor(isPreviewMode: boolean = false) {
     this.agentDir = join(process.cwd(), "vellum");
     this.isPreviewMode = isPreviewMode;
+  }
+
+  private async fetchVellumApiKey(): Promise<string> {
+    const vercelToken = process.env.VERCEL_TOKEN;
+    
+    if (!vercelToken) {
+      console.log("⚠️  VERCEL_TOKEN not found, falling back to VELLUM_API_KEY environment variable");
+      const fallbackKey = process.env.VELLUM_API_KEY;
+      if (!fallbackKey) {
+        throw new Error("Neither VERCEL_TOKEN nor VELLUM_API_KEY environment variables are set");
+      }
+      return fallbackKey;
+    }
+
+    try {
+      const environment = this.isPreviewMode ? "preview" : "production";
+      const url = new URL("https://api.vercel.com/v10/projects/vargasjr-dev/env");
+      url.searchParams.set("teamId", "team_36iZPJkU2LLMsHZqJZXMZppe");
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${vercelToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Vercel API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const vellumApiKeyEnv = data.envs?.find((env: any) => 
+        env.key === "VELLUM_API_KEY" && 
+        (env.target?.includes(environment) || (environment === "production" && env.target?.includes("production")))
+      );
+
+      if (!vellumApiKeyEnv?.value) {
+        throw new Error(`VELLUM_API_KEY not found in Vercel environment variables for ${environment}`);
+      }
+
+      console.log(`✅ Successfully fetched VELLUM_API_KEY from Vercel for ${environment} environment`);
+      return vellumApiKeyEnv.value;
+    } catch (error) {
+      console.log(`⚠️  Failed to fetch from Vercel API: ${error}, falling back to environment variable`);
+      const fallbackKey = process.env.VELLUM_API_KEY;
+      if (!fallbackKey) {
+        throw new Error("Failed to fetch VELLUM_API_KEY from Vercel and no fallback environment variable available");
+      }
+      return fallbackKey;
+    }
   }
 
   async pushWorkflows(): Promise<void> {
@@ -93,30 +144,29 @@ class VellumWorkflowPusher {
       }
 
       if (this.isPreviewMode) {
-        console.log("✅ All workflows previewed successfully!");
+        console.log("✅ All workflows deployed successfully!");
 
-        let commentContent = "# Vellum Workflow Preview\n\n";
-        commentContent += `Found ${
+        let commentContent = "# Vellum Workflow Preview Deployment\n\n";
+        commentContent += `Deployed ${
           workflowDirs.length
         } workflow(s): ${workflowDirs.join(", ")}\n\n`;
 
         if (outputs.length > 0) {
-          commentContent += "## Dry-run Results\n\n";
+          commentContent += "## Deployment Results\n\n";
           commentContent += "```\n";
           commentContent += outputs.join("\n");
           commentContent += "```\n\n";
         }
 
-        commentContent +=
-          "⚠️  **NOTE**: These workflows were NOT pushed to Vellum\n";
-        commentContent +=
-          "This is a preview-only run for pull request review\n";
-        commentContent += "✅ Workflow preview completed successfully!";
+        const prNumber = await getPRNumber();
+        const releaseTag = prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
+        commentContent += `🚀 **Workflows deployed to Vellum with release tag: \`${releaseTag}\`**\n`;
+        commentContent += "✅ Preview deployment completed successfully!";
 
         await postGitHubComment(
           commentContent,
           "vargasjr-dev-vellum-script",
-          "Posted Vellum workflow preview comment to PR"
+          "Posted Vellum workflow preview deployment comment to PR"
         );
       } else {
         console.log("✅ All workflows pushed successfully!");
@@ -146,16 +196,26 @@ class VellumWorkflowPusher {
   private async pushWorkflow(
     workflowName: string
   ): Promise<{ success: boolean; error?: string; output?: string }> {
-    const action = this.isPreviewMode ? "Previewing" : "Pushing";
+    const action = this.isPreviewMode ? "Deploying" : "Pushing";
     console.log(`📤 ${action} workflow: ${workflowName}`);
 
     try {
-      const deployFlag = this.isPreviewMode
-        ? " --dry-run"
-        : ` --deploy --deployment-name ${workflowName.replaceAll(
-            "_",
-            "-"
-          )} --deployment-label "${toTitleCase(workflowName)}"`;
+      const vellumApiKey = await this.fetchVellumApiKey();
+      
+      let deployFlag = "";
+      if (this.isPreviewMode) {
+        const prNumber = await getPRNumber();
+        const releaseTag = prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
+        deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
+          "_",
+          "-"
+        )} --deployment-label "${toTitleCase(workflowName)}" --release-tag ${releaseTag}`;
+      } else {
+        deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
+          "_",
+          "-"
+        )} --deployment-label "${toTitleCase(workflowName)}"`;
+      }
 
       const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
 
@@ -165,12 +225,12 @@ class VellumWorkflowPusher {
         encoding: "utf8",
         env: {
           ...process.env,
-          VELLUM_API_KEY: process.env.VELLUM_API_KEY,
+          VELLUM_API_KEY: vellumApiKey,
         },
       });
 
       const successMessage = `✅ Successfully ${
-        this.isPreviewMode ? "previewed" : "pushed"
+        this.isPreviewMode ? "deployed" : "pushed"
       }: ${workflowName}`;
       console.log(successMessage);
       return { success: true, output: this.isPreviewMode ? result : undefined };
@@ -337,12 +397,13 @@ class VellumWorkflowPusher {
       const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
       const pushImageCommand = `poetry run vellum images push vargasjr:${tagToUse} --source ${dockerfilePath}`;
 
+      const vellumApiKey = await this.fetchVellumApiKey();
       execSync(pushImageCommand, {
         cwd: this.agentDir,
         stdio: "pipe",
         env: {
           ...process.env,
-          VELLUM_API_KEY: process.env.VELLUM_API_KEY,
+          VELLUM_API_KEY: vellumApiKey,
         },
       });
 
@@ -457,12 +518,13 @@ class VellumWorkflowPusher {
         const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
         const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
 
+        const vellumApiKey = await this.fetchVellumApiKey();
         execSync(pushImageCommand, {
           cwd: this.agentDir,
           stdio: "pipe",
           env: {
             ...process.env,
-            VELLUM_API_KEY: process.env.VELLUM_API_KEY,
+            VELLUM_API_KEY: vellumApiKey,
           },
         });
 
