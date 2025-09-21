@@ -17,7 +17,7 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
         body = null;
       } else {
         const contentType = request.headers.get("content-type") || "";
-        
+
         if (contentType.includes("application/x-www-form-urlencoded")) {
           try {
             const formData = await request.formData();
