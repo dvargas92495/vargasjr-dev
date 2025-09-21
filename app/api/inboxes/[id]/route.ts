@@ -12,17 +12,13 @@ const updateInboxSchema = z.object({
   config: z.record(z.any()).optional().default({}),
 });
 
-async function getInboxHandler(
-  body: unknown,
-  request: Request,
-  context?: unknown
-) {
-  const params = await (context as { params: Promise<{ id: string }> }).params;
+async function getInboxHandler(body: unknown) {
+  const { id } = z.object({ id: z.string() }).parse(body || {});
   const db = getDb();
   const [inbox] = await db
     .select()
     .from(InboxesTable)
-    .where(eq(InboxesTable.id, params.id))
+    .where(eq(InboxesTable.id, id))
     .limit(1);
 
   if (!inbox) {
@@ -32,13 +28,9 @@ async function getInboxHandler(
   return inbox;
 }
 
-async function updateInboxHandler(
-  body: unknown,
-  request: Request,
-  context?: unknown
-) {
-  const params = await (context as { params: Promise<{ id: string }> }).params;
-  const { name, displayLabel, type, config } = updateInboxSchema.parse(body);
+async function updateInboxHandler(body: unknown) {
+  const parsedBody = updateInboxSchema.extend({ id: z.string() }).parse(body);
+  const { id, name, displayLabel, type, config } = parsedBody;
 
   const db = getDb();
   const [updatedInbox] = await db
@@ -49,7 +41,7 @@ async function updateInboxHandler(
       type,
       config,
     })
-    .where(eq(InboxesTable.id, params.id))
+    .where(eq(InboxesTable.id, id))
     .returning();
 
   if (!updatedInbox) {

@@ -3,11 +3,7 @@ import { ZodError } from "zod";
 import formatZodError from "@/components/format-zod-error";
 import { NotFoundError, InvalidContactDataError } from "@/server/errors";
 
-type ApiHandler<T = unknown> = (
-  body: unknown,
-  request: Request,
-  context?: unknown
-) => Promise<T>;
+type ApiHandler<T = unknown> = (body: unknown) => Promise<T>;
 
 export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
   return async (request: Request, context?: any) => {
@@ -44,7 +40,12 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
         }
       }
 
-      const result = await handler(body, request, context);
+      if (context && context.params) {
+        const params = await context.params;
+        body = { ...body, ...params };
+      }
+
+      const result = await handler(body);
       return NextResponse.json(result);
     } catch (error) {
       if (error instanceof ZodError) {
