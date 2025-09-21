@@ -165,7 +165,18 @@ export default async function InboxesPage({
   if (error) {
     return (
       <>
-        <div className="flex-1">
+        {/* Page Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Inboxes</h1>
+          <Link
+            href="/admin/inboxes/new"
+            className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            New Inbox
+          </Link>
+        </div>
+
+        <div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
             <div className="flex">
               <div className="ml-3">
@@ -179,21 +190,24 @@ export default async function InboxesPage({
             </div>
           </div>
         </div>
-        <div className="mt-4 flex gap-4">
-          <Link
-            href="/admin/inboxes/new"
-            className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            New Inbox
-          </Link>
-        </div>
       </>
     );
   }
 
   return (
     <>
-      <div className="flex-1">
+      {/* Page Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Inboxes</h1>
+        <Link
+          href="/admin/inboxes/new"
+          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          New Inbox
+        </Link>
+      </div>
+
+      <div>
         <table className="min-w-full border border-gray-300">
           <thead>
             <tr className="bg-gray-500 text-white">
@@ -219,15 +233,6 @@ export default async function InboxesPage({
         currentPage={currentPage}
         totalPages={totalPages}
       />
-
-      <div className="mt-4 flex gap-4">
-        <Link
-          href="/admin/inboxes/new"
-          className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          New Inbox
-        </Link>
-      </div>
     </>
   );
 }
