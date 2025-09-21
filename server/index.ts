@@ -35,7 +35,7 @@ function parsePhoneNumber(phoneString: string): {
 } {
   const trimmed = phoneString.trim();
 
-  if (trimmed.startsWith('+') && /^\+\d+$/.test(trimmed)) {
+  if (trimmed.startsWith("+") && /^\+\d+$/.test(trimmed)) {
     return { phoneNumber: trimmed, fullName: null };
   }
 
