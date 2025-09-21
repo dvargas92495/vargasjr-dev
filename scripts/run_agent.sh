@@ -80,7 +80,7 @@ else
     cp ../.env .
     
     echo "Starting agent service..."
-    node dist/worker.js
+    npm run agent:start
 fi
 
 # # Useful tools

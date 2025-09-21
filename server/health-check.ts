@@ -20,7 +20,7 @@ export interface HealthCheckData {
   processes: {
     agentProcesses: string[];
     hasAgentSession: boolean;
-    screenOutput: string;
+    systemdServiceStatus: string;
   };
   systemResources: {
     memory: string;
@@ -87,13 +87,13 @@ export async function getHealthCheckData(): Promise<HealthCheckData> {
     detailedReport += `Failed to get process information: ${error}\n`;
   }
 
-  let screenOutput = "";
+  let systemdServiceStatus = "";
   try {
-    screenOutput = execSync("screen -ls 2>/dev/null", { encoding: "utf8" });
-    hasAgentSession =
-      screenOutput.includes("agent-") || screenOutput.includes("\tagent\t");
+    systemdServiceStatus = execSync("sudo systemctl is-active vargasjr-agent.service 2>/dev/null", { encoding: "utf8" }).trim();
+    hasAgentSession = systemdServiceStatus === "active";
   } catch (error) {
-    screenOutput = `No screen sessions found or screen command failed: ${error}`;
+    systemdServiceStatus = `Service check failed: ${error}`;
+    hasAgentSession = false;
   }
 
   detailedReport += "--- System Resources ---\n";
@@ -304,7 +304,7 @@ export async function getHealthCheckData(): Promise<HealthCheckData> {
     processes: {
       agentProcesses,
       hasAgentSession,
-      screenOutput,
+      systemdServiceStatus,
     },
     systemResources: {
       memory: memInfo,

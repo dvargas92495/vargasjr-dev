@@ -124,53 +124,6 @@ export async function findOrCreateSecurityGroup(
     if (result.SecurityGroups && result.SecurityGroups.length > 0) {
       const groupId = result.SecurityGroups[0].GroupId;
       console.log(`✅ Found existing security group: ${groupId}`);
-
-      const existingGroup = result.SecurityGroups[0];
-      const hasPort3001 = existingGroup.IpPermissions?.some(
-        (permission) =>
-          permission.IpProtocol === "tcp" &&
-          permission.FromPort === 3001 &&
-          permission.ToPort === 3001
-      );
-
-      if (!hasPort3001) {
-        console.log(
-          `Adding missing port 3001 rule to existing security group: ${groupId}`
-        );
-        try {
-          await ec2.authorizeSecurityGroupIngress({
-            GroupId: groupId,
-            IpPermissions: [
-              {
-                IpProtocol: "tcp",
-                FromPort: 3001,
-                ToPort: 3001,
-                IpRanges: [
-                  {
-                    CidrIp: "0.0.0.0/0",
-                    Description: "HTTP access for health checks",
-                  },
-                ],
-              },
-            ],
-          });
-          console.log(
-            `✅ Added port 3001 rule to existing security group: ${groupId}`
-          );
-        } catch (error: any) {
-          if (error.code !== "InvalidPermission.Duplicate") {
-            throw error;
-          }
-          console.log(
-            `Port 3001 rule already exists in security group: ${groupId}`
-          );
-        }
-      } else {
-        console.log(
-          `Port 3001 rule already exists in security group: ${groupId}`
-        );
-      }
-
       return groupId!;
     }
 
@@ -194,21 +147,10 @@ export async function findOrCreateSecurityGroup(
             { CidrIp: "0.0.0.0/0", Description: "SSH access from anywhere" },
           ],
         },
-        {
-          IpProtocol: "tcp",
-          FromPort: 3001,
-          ToPort: 3001,
-          IpRanges: [
-            {
-              CidrIp: "0.0.0.0/0",
-              Description: "HTTP access for health checks",
-            },
-          ],
-        },
       ],
     });
 
-    console.log(`✅ Added SSH and HTTP rules to security group: ${groupId}`);
+    console.log(`✅ Added SSH rule to security group: ${groupId}`);
     return groupId;
   } catch (error: any) {
     console.error(`Failed to create/find security group: ${error}`);
@@ -542,9 +484,7 @@ export async function checkInstanceHealth(
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.log(
-          `[Health Check] Request ID ${requestId}: HTTP ${response.status}: ${response.statusText}`
-        );
+        console.log(`[Health Check] Request ID ${requestId}: HTTP ${response.status}: ${response.statusText}`);
         return {
           instanceId,
           status: "offline",
@@ -553,9 +493,7 @@ export async function checkInstanceHealth(
       }
 
       const healthData = await response.json();
-      console.log(
-        `[Health Check] Request ID ${requestId}: Health check completed successfully`
-      );
+      console.log(`[Health Check] Request ID ${requestId}: Health check completed successfully`);
 
       return {
         instanceId,
@@ -569,9 +507,7 @@ export async function checkInstanceHealth(
       clearTimeout(timeoutId);
 
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
-        console.log(
-          `[Health Check] Request ID ${requestId}: Health check request timed out after 10 seconds`
-        );
+        console.log(`[Health Check] Request ID ${requestId}: Health check request timed out after 10 seconds`);
         return {
           instanceId,
           status: "offline",
@@ -579,11 +515,7 @@ export async function checkInstanceHealth(
         };
       }
 
-      console.log(
-        `[Health Check] Request ID ${requestId}: HTTP request failed: ${
-          fetchError instanceof Error ? fetchError.message : String(fetchError)
-        }`
-      );
+      console.log(`[Health Check] Request ID ${requestId}: HTTP request failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
       return {
         instanceId,
         status: "offline",
