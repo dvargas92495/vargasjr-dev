@@ -18,9 +18,11 @@ interface VercelEnvVar {
 
 async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
   const vercelToken = process.env.VERCEL_TOKEN;
-  
+
   if (!vercelToken) {
-    console.log("⚠️ VERCEL_TOKEN not found, skipping environment variable fetch");
+    console.log(
+      "⚠️ VERCEL_TOKEN not found, skipping environment variable fetch"
+    );
     return {};
   }
 
@@ -36,16 +38,20 @@ async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
     );
 
     if (!response.ok) {
-      throw new Error(`Vercel API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Vercel API error: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
     const envVars: Record<string, string> = {};
 
     data.envs?.forEach((envVar: VercelEnvVar) => {
-      if (envVar.target.includes("preview") && 
-          !envVar.key.startsWith("VERCEL_") && 
-          !envVar.key.startsWith("NEXT_")) {
+      if (
+        envVar.target.includes("preview") &&
+        !envVar.key.startsWith("VERCEL_") &&
+        !envVar.key.startsWith("NEXT_")
+      ) {
         envVars[envVar.key] = envVar.value;
       }
     });
@@ -90,10 +96,14 @@ async function handlePostInstall(): Promise<void> {
   if (process.env.CI && process.env.VERCEL_ENV === "preview") {
     console.log("🔧 Fetching Vercel PREVIEW environment variables...");
     const envVars = await fetchVercelPreviewEnvVars();
-    
+
     if (Object.keys(envVars).length > 0) {
       writeEnvFile(envVars);
-      console.log(`✅ Added ${Object.keys(envVars).length} environment variables to .env file`);
+      console.log(
+        `✅ Added ${
+          Object.keys(envVars).length
+        } environment variables to .env file`
+      );
     } else {
       console.log("ℹ️ No preview environment variables found or fetched");
     }
