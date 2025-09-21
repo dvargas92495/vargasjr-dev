@@ -16,13 +16,31 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
       if (request.method === "GET") {
         body = null;
       } else {
-        try {
-          body = await request.json();
-        } catch (jsonError) {
-          return NextResponse.json(
-            { error: "Invalid JSON in request body" },
-            { status: 400 }
-          );
+        const contentType = request.headers.get("content-type") || "";
+
+        if (contentType.includes("application/x-www-form-urlencoded")) {
+          try {
+            const formData = await request.formData();
+            const formObject: Record<string, string> = {};
+            for (const [key, value] of formData.entries()) {
+              formObject[key] = value.toString();
+            }
+            body = formObject;
+          } catch (formError) {
+            return NextResponse.json(
+              { error: "Invalid form data in request body" },
+              { status: 400 }
+            );
+          }
+        } else {
+          try {
+            body = await request.json();
+          } catch (jsonError) {
+            return NextResponse.json(
+              { error: "Invalid JSON in request body" },
+              { status: 400 }
+            );
+          }
         }
       }
 
