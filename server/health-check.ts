@@ -89,7 +89,10 @@ export async function getHealthCheckData(): Promise<HealthCheckData> {
 
   let systemdServiceStatus = "";
   try {
-    systemdServiceStatus = execSync("sudo systemctl is-active vargasjr-agent.service 2>/dev/null", { encoding: "utf8" }).trim();
+    systemdServiceStatus = execSync(
+      "sudo systemctl is-active vargasjr-agent.service 2>/dev/null",
+      { encoding: "utf8" }
+    ).trim();
     hasAgentSession = systemdServiceStatus === "active";
   } catch (error) {
     systemdServiceStatus = `Service check failed: ${error}`;

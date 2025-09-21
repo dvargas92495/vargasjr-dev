@@ -484,7 +484,9 @@ export async function checkInstanceHealth(
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.log(`[Health Check] Request ID ${requestId}: HTTP ${response.status}: ${response.statusText}`);
+        console.log(
+          `[Health Check] Request ID ${requestId}: HTTP ${response.status}: ${response.statusText}`
+        );
         return {
           instanceId,
           status: "offline",
@@ -493,7 +495,9 @@ export async function checkInstanceHealth(
       }
 
       const healthData = await response.json();
-      console.log(`[Health Check] Request ID ${requestId}: Health check completed successfully`);
+      console.log(
+        `[Health Check] Request ID ${requestId}: Health check completed successfully`
+      );
 
       return {
         instanceId,
@@ -507,7 +511,9 @@ export async function checkInstanceHealth(
       clearTimeout(timeoutId);
 
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
-        console.log(`[Health Check] Request ID ${requestId}: Health check request timed out after 10 seconds`);
+        console.log(
+          `[Health Check] Request ID ${requestId}: Health check request timed out after 10 seconds`
+        );
         return {
           instanceId,
           status: "offline",
@@ -515,7 +521,11 @@ export async function checkInstanceHealth(
         };
       }
 
-      console.log(`[Health Check] Request ID ${requestId}: HTTP request failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+      console.log(
+        `[Health Check] Request ID ${requestId}: HTTP request failed: ${
+          fetchError instanceof Error ? fetchError.message : String(fetchError)
+        }`
+      );
       return {
         instanceId,
         status: "offline",
