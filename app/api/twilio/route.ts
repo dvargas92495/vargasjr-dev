@@ -30,13 +30,13 @@ const bodySchema = z.object({
 
 export async function POST(request: Request) {
   const requestId = `twilio-webhook-${Date.now()}`;
-  
+
   try {
     console.log("Twilio webhook received");
 
     const formData = await request.formData();
     const formObject: Record<string, string> = {};
-    
+
     for (const [key, value] of formData.entries()) {
       formObject[key] = value.toString();
     }
@@ -76,13 +76,16 @@ export async function POST(request: Request) {
     });
 
     console.log("Twilio webhook processed successfully");
-    return NextResponse.json({
-      Response: {},
-    }, {
-      headers: {
-        "Content-Type": "text/xml",
+    return NextResponse.json(
+      {
+        Response: {},
       },
-    });
+      {
+        headers: {
+          "Content-Type": "text/xml",
+        },
+      }
+    );
   } catch (error) {
     console.error(`[${requestId}] Error processing Twilio webhook:`, error);
     return NextResponse.json(
