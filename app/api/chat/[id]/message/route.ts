@@ -13,7 +13,7 @@ async function chatMessageHandler(
 ) {
   const params = await (context as { params: Promise<{ id: string }> }).params;
   const { id } = params;
-  
+
   const { message } = z
     .object({
       message: z.string().min(1, "Message cannot be empty"),
@@ -28,10 +28,7 @@ async function chatMessageHandler(
       contactId: ChatSessionsTable.contactId,
     })
     .from(ChatSessionsTable)
-    .innerJoin(
-      ContactsTable,
-      eq(ChatSessionsTable.contactId, ContactsTable.id)
-    )
+    .innerJoin(ContactsTable, eq(ChatSessionsTable.contactId, ContactsTable.id))
     .where(eq(ChatSessionsTable.id, id))
     .limit(1);
 
