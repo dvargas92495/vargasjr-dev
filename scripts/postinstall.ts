@@ -64,6 +64,11 @@ async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
 }
 
 function writeEnvFile(envVars: Record<string, string>): void {
+  if (Object.keys(envVars).length === 0) {
+    console.log("ℹ️ No preview environment variables found or fetched");
+    return;
+  }
+
   const envFilePath = join(process.cwd(), ".env");
   let envContent = "";
 
@@ -90,26 +95,17 @@ function writeEnvFile(envVars: Record<string, string>): void {
   });
 
   writeFileSync(envFilePath, envContent);
+  console.log(
+    `✅ Added ${Object.keys(envVars).length} environment variables to .env file`
+  );
 }
 
 async function handlePostInstall(): Promise<void> {
-  if (process.env.CI && process.env.VERCEL_ENV === "preview") {
+  if (process.env.CI && !process.env.VERCEL) {
     console.log("🔧 Fetching Vercel PREVIEW environment variables...");
     const envVars = await fetchVercelPreviewEnvVars();
+    writeEnvFile(envVars);
 
-    if (Object.keys(envVars).length > 0) {
-      writeEnvFile(envVars);
-      console.log(
-        `✅ Added ${
-          Object.keys(envVars).length
-        } environment variables to .env file`
-      );
-    } else {
-      console.log("ℹ️ No preview environment variables found or fetched");
-    }
-  }
-
-  if (process.env.CI && !process.env.VERCEL) {
     const playwrightCachePath = join(homedir(), ".cache", "ms-playwright");
 
     if (existsSync(playwrightCachePath)) {
