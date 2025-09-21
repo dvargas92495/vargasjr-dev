@@ -87,9 +87,9 @@ async function checkInstanceHealthHTTP(
         }
 
         const healthData = await response.json();
-        
+
         const agentVersion = healthData?.environment?.agentVersion;
-        
+
         return {
           instanceId,
           status: healthData.status === "healthy" ? "healthy" : "unhealthy",
@@ -100,7 +100,7 @@ async function checkInstanceHealthHTTP(
             ...(agentVersion && {
               ssm: {
                 agentVersion: agentVersion,
-              }
+              },
             }),
           },
         };
@@ -242,10 +242,13 @@ async function checkInstanceHealthHTTP(
       const hd = (healthData ?? {}) as Record<string, unknown>;
       const statusStr = typeof hd.status === "string" ? hd.status : undefined;
       const errorStr = typeof hd.error === "string" ? hd.error : undefined;
-      
+
       const environment = hd.environment as Record<string, unknown> | undefined;
-      const agentVersion = typeof environment?.agentVersion === "string" ? environment.agentVersion : undefined;
-      
+      const agentVersion =
+        typeof environment?.agentVersion === "string"
+          ? environment.agentVersion
+          : undefined;
+
       return {
         instanceId,
         status: statusStr === "healthy" ? "healthy" : "unhealthy",
@@ -256,7 +259,7 @@ async function checkInstanceHealthHTTP(
           ...(agentVersion && {
             ssm: {
               agentVersion: agentVersion,
-            }
+            },
           }),
         },
       };
