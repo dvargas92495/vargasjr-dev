@@ -48,7 +48,7 @@ async function runHealthcheck(): Promise<void> {
 
     console.log("--- Screen Sessions ---");
     console.log("Screen sessions:");
-    console.log(healthData.processes.screenOutput);
+    console.log(healthData.processes.systemdServiceStatus);
     console.log(
       `Agent screen session detected: ${
         healthData.processes.hasAgentSession ? "✓ Yes" : "✗ No"

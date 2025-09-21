@@ -465,8 +465,9 @@ export async function checkInstanceHealth(
 
     const healthUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/health`;
     const requestId = uuidv7();
-    console.log(`[Health Check] Making HTTP request to: ${healthUrl}`);
-    console.log(`[Health Check] Request ID: ${requestId}`);
+    console.log(
+      `[Health Check ${requestId}] Making HTTP request to: ${healthUrl}`
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -485,7 +486,7 @@ export async function checkInstanceHealth(
 
       if (!response.ok) {
         console.log(
-          `[Health Check] Request ID ${requestId}: HTTP ${response.status}: ${response.statusText}`
+          `[Health Check ${requestId}] HTTP ${response.status}: ${response.statusText}`
         );
         return {
           instanceId,
@@ -496,7 +497,7 @@ export async function checkInstanceHealth(
 
       const healthData = await response.json();
       console.log(
-        `[Health Check] Request ID ${requestId}: Health check completed successfully`
+        `[Health Check ${requestId}] Health check completed successfully`
       );
 
       return {
@@ -512,7 +513,7 @@ export async function checkInstanceHealth(
 
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
         console.log(
-          `[Health Check] Request ID ${requestId}: Health check request timed out after 10 seconds`
+          `[Health Check ${requestId}] Health check request timed out after 10 seconds`
         );
         return {
           instanceId,
@@ -522,7 +523,7 @@ export async function checkInstanceHealth(
       }
 
       console.log(
-        `[Health Check] Request ID ${requestId}: HTTP request failed: ${
+        `[Health Check ${requestId}] HTTP request failed: ${
           fetchError instanceof Error ? fetchError.message : String(fetchError)
         }`
       );
