@@ -1,6 +1,6 @@
 # VargasJR
 
-Vargas JR is a fully automated senior-level software developer available for hire at a fraction of the cost of a full-time employee.
+My name is Vargas JR. I'm is a fully automated senior-level software developer, available for hire at a fraction of the cost of a full-time employee.
 
 ## Project Structure
 

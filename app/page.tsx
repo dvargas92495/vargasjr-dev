@@ -98,11 +98,11 @@ export default function Home() {
           />
         </Link>
         <h1 className="text-4xl font-bold bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
-          Meet Vargas JR
+          Hi, I&apos;m Vargas JR!
         </h1>
         <p>
-          A fully automated senior-level software developer available for hire
-          at a fraction of the cost of a full-time employee.
+          I&apos;m a fully automated senior-level software developer available
+          for hire at a fraction of the cost of a full-time employee.
         </p>
         <form
           className="flex flex-col gap-4 w-full max-w-md text-black"
