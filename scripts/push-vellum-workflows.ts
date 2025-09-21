@@ -33,19 +33,25 @@ class VellumWorkflowPusher {
 
   private async fetchVellumApiKey(): Promise<string> {
     const vercelToken = process.env.VERCEL_TOKEN;
-    
+
     if (!vercelToken) {
-      console.log("⚠️  VERCEL_TOKEN not found, falling back to VELLUM_API_KEY environment variable");
+      console.log(
+        "⚠️  VERCEL_TOKEN not found, falling back to VELLUM_API_KEY environment variable"
+      );
       const fallbackKey = process.env.VELLUM_API_KEY;
       if (!fallbackKey) {
-        throw new Error("Neither VERCEL_TOKEN nor VELLUM_API_KEY environment variables are set");
+        throw new Error(
+          "Neither VERCEL_TOKEN nor VELLUM_API_KEY environment variables are set"
+        );
       }
       return fallbackKey;
     }
 
     try {
       const environment = this.isPreviewMode ? "preview" : "production";
-      const url = new URL("https://api.vercel.com/v10/projects/vargasjr-dev/env");
+      const url = new URL(
+        "https://api.vercel.com/v10/projects/vargasjr-dev/env"
+      );
       url.searchParams.set("teamId", "team_36iZPJkU2LLMsHZqJZXMZppe");
 
       const response = await fetch(url.toString(), {
@@ -56,26 +62,39 @@ class VellumWorkflowPusher {
       });
 
       if (!response.ok) {
-        throw new Error(`Vercel API error: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Vercel API error: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      const vellumApiKeyEnv = data.envs?.find((env: any) => 
-        env.key === "VELLUM_API_KEY" && 
-        (env.target?.includes(environment) || (environment === "production" && env.target?.includes("production")))
+      const vellumApiKeyEnv = data.envs?.find(
+        (env: any) =>
+          env.key === "VELLUM_API_KEY" &&
+          (env.target?.includes(environment) ||
+            (environment === "production" &&
+              env.target?.includes("production")))
       );
 
       if (!vellumApiKeyEnv?.value) {
-        throw new Error(`VELLUM_API_KEY not found in Vercel environment variables for ${environment}`);
+        throw new Error(
+          `VELLUM_API_KEY not found in Vercel environment variables for ${environment}`
+        );
       }
 
-      console.log(`✅ Successfully fetched VELLUM_API_KEY from Vercel for ${environment} environment`);
+      console.log(
+        `✅ Successfully fetched VELLUM_API_KEY from Vercel for ${environment} environment`
+      );
       return vellumApiKeyEnv.value;
     } catch (error) {
-      console.log(`⚠️  Failed to fetch from Vercel API: ${error}, falling back to environment variable`);
+      console.log(
+        `⚠️  Failed to fetch from Vercel API: ${error}, falling back to environment variable`
+      );
       const fallbackKey = process.env.VELLUM_API_KEY;
       if (!fallbackKey) {
-        throw new Error("Failed to fetch VELLUM_API_KEY from Vercel and no fallback environment variable available");
+        throw new Error(
+          "Failed to fetch VELLUM_API_KEY from Vercel and no fallback environment variable available"
+        );
       }
       return fallbackKey;
     }
@@ -159,7 +178,8 @@ class VellumWorkflowPusher {
         }
 
         const prNumber = await getPRNumber();
-        const releaseTag = prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
+        const releaseTag =
+          prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
         commentContent += `🚀 **Workflows deployed to Vellum with release tag: \`${releaseTag}\`**\n`;
         commentContent += "✅ Preview deployment completed successfully!";
 
@@ -201,15 +221,18 @@ class VellumWorkflowPusher {
 
     try {
       const vellumApiKey = await this.fetchVellumApiKey();
-      
+
       let deployFlag = "";
       if (this.isPreviewMode) {
         const prNumber = await getPRNumber();
-        const releaseTag = prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
+        const releaseTag =
+          prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
         deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
           "_",
           "-"
-        )} --deployment-label "${toTitleCase(workflowName)}" --release-tag ${releaseTag}`;
+        )} --deployment-label "${toTitleCase(
+          workflowName
+        )}" --release-tag ${releaseTag}`;
       } else {
         deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
           "_",
