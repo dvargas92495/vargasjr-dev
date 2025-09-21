@@ -51,6 +51,9 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.number }}
   push-workflows:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

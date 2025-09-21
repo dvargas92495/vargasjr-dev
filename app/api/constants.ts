@@ -20,6 +20,10 @@ export function getEnvironmentPrefix(): string {
 }
 
 export async function getPRNumber(): Promise<string> {
+  if (process.env.PR_NUMBER) {
+    return process.env.PR_NUMBER;
+  }
+
   if (
     process.env.VERCEL_GIT_PULL_REQUEST_ID &&
     process.env.VERCEL_GIT_PULL_REQUEST_ID !== "null"
