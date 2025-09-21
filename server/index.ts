@@ -1,5 +1,5 @@
 import { InboxesTable, InboxMessagesTable, ContactsTable } from "@/db/schema";
-import { NotFoundError, InvalidContactDataError } from "./errors";
+import { NotFoundError, InvalidContactDataError, InvalidContactFormatError } from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
@@ -26,20 +26,19 @@ function parseEmailAddress(emailString: string): {
     return { email: trimmed, fullName: null };
   }
 
-  return { email: "", fullName: trimmed || null };
+  throw new InvalidContactFormatError(`Invalid email format: ${emailString}`);
 }
 
 function parsePhoneNumber(phoneString: string): {
   phoneNumber: string;
-  fullName: string | null;
 } {
   const trimmed = phoneString.trim();
 
   if (trimmed.startsWith("+") && /^\+\d+$/.test(trimmed)) {
-    return { phoneNumber: trimmed, fullName: null };
+    return { phoneNumber: trimmed };
   }
 
-  return { phoneNumber: "", fullName: null };
+  throw new InvalidContactFormatError(`Invalid phone number format: ${phoneString}`);
 }
 
 export const upsertEmailContact = async (
@@ -47,10 +46,6 @@ export const upsertEmailContact = async (
 ): Promise<string> => {
   const db = getDb();
   const { email, fullName } = parseEmailAddress(senderString);
-
-  if (!email) {
-    throw new Error(`Invalid email format: ${senderString}`);
-  }
 
   let contact = await db
     .select({ id: ContactsTable.id })
@@ -76,11 +71,7 @@ export const upsertPhoneContact = async (
   senderString: string
 ): Promise<string> => {
   const db = getDb();
-  const { phoneNumber, fullName } = parsePhoneNumber(senderString);
-
-  if (!phoneNumber) {
-    throw new Error(`Invalid phone number format: ${senderString}`);
-  }
+  const { phoneNumber } = parsePhoneNumber(senderString);
 
   let contact = await db
     .select({ id: ContactsTable.id })
@@ -95,7 +86,6 @@ export const upsertPhoneContact = async (
 
   const contactData = {
     phoneNumber,
-    fullName,
   };
 
   const newContact = await createContactWithValidation(contactData);
