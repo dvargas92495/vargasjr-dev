@@ -54,7 +54,7 @@ async function validateGitHubSignature(request: Request): Promise<string> {
 
 async function githubWebhookHandler(body: unknown) {
   const payload = body as GitHubWebhookPayload;
-  
+
   console.log("Received GitHub webhook event");
 
   switch (payload.action) {
@@ -72,7 +72,7 @@ async function githubWebhookHandler(body: unknown) {
 }
 
 export const POST = withApiWrapper(githubWebhookHandler, {
-  getBody: validateGitHubSignature
+  getBody: validateGitHubSignature,
 });
 
 async function handleIssueOpened(payload: GitHubWebhookPayload) {
