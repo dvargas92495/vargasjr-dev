@@ -38,7 +38,7 @@ class VellumWorkflowPusher {
       throw new Error("VERCEL_TOKEN environment variable is required");
     }
 
-    const environment = this.isPreviewMode ? "preview" : "production";
+    const environment = this.isPreviewMode ? "Preview" : "Production";
     const url = new URL("https://api.vercel.com/v10/projects/vargasjr-dev/env");
     url.searchParams.set("teamId", "team_36iZPJkU2LLMsHZqJZXMZppe");
 
@@ -60,7 +60,7 @@ class VellumWorkflowPusher {
       (env: any) =>
         env.key === "VELLUM_API_KEY" &&
         (env.target?.includes(environment) ||
-          (environment === "production" && env.target?.includes("production")))
+          (environment === "Production" && env.target?.includes("Production")))
     );
 
     if (!vellumApiKeyEnv?.value) {
