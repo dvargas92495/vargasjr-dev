@@ -6,16 +6,10 @@ import { ChatSessionsTable, ContactsTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
-async function chatMessageHandler(
-  body: unknown,
-  request: Request,
-  context?: unknown
-) {
-  const params = await (context as { params: Promise<{ id: string }> }).params;
-  const { id } = params;
-
-  const { message } = z
+async function chatMessageHandler(body: unknown) {
+  const { id, message } = z
     .object({
+      id: z.string(),
       message: z.string().min(1, "Message cannot be empty"),
     })
     .parse(body);
