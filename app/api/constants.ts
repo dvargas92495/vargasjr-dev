@@ -27,7 +27,8 @@ export async function getPRNumber(): Promise<string> {
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
 
-  const commitRef = process.env.GITHUB_REF_NAME || process.env.VERCEL_GIT_COMMIT_REF;
+  const commitRef =
+    process.env.GITHUB_REF_NAME || process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
     const branchName = commitRef.replace("refs/heads/", "");
     const githubRepo = "dvargas92495/vargasjr-dev";
