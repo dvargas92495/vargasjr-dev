@@ -87,8 +87,10 @@ def sqlite_session():
 
 def create_inbox_message(
     inbox_name: str,
-    source: str,
+    contact_id: str,
     body: str,
+    thread_id: Optional[str] = None,
+    external_id: Optional[str] = None,
 ) -> None:
     with postgres_session() as session:
         statement = select(Inbox.id).where(Inbox.name == inbox_name)
@@ -96,8 +98,10 @@ def create_inbox_message(
 
         inbox_message = InboxMessage(
             inbox_id=inbox_id,
-            source=source,
+            contact_id=contact_id,
             body=body,
+            thread_id=thread_id,
+            external_id=external_id,
         )
         session.add(inbox_message)
         session.commit()
