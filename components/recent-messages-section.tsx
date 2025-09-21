@@ -106,7 +106,7 @@ const RecentMessagesSection = ({
           ))}
         </div>
       ) : (
-        <div className="text-gray-500 text-center py-8">
+        <div className="text-gray-500 text-left py-4">
           No recent messages found.
         </div>
       )}
