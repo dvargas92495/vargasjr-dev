@@ -68,11 +68,8 @@ if [ "$AGENT_ENVIRONMENT" = "preview" ] && [ -n "$PR_NUMBER" ]; then
     cd "$AGENT_DIR"
     cp ../.env .
     
-    echo "Cleaning up existing services..."
-    screen -X -S agent-preview quit 2>/dev/null || true
-    
     echo "Starting agent service..."
-    screen -dmS agent-preview bash -c 'npm run agent:start > out.log 2> error.log'
+    npm run agent:start
         
 else
     echo "Detected production environment"
@@ -82,11 +79,8 @@ else
     cd vargasjr_dev_agent-$VERSION
     cp ../.env .
     
-    echo "Cleaning up existing services..."
-    screen -X -S agent-${VERSION//./-} quit 2>/dev/null || true
-    
     echo "Starting agent service..."
-    screen -dmS agent-${VERSION//./-} bash -c 'node dist/worker.js > out.log 2> error.log'
+    npm run agent:start
 fi
 
 # # Useful tools

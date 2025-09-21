@@ -5,6 +5,7 @@ import {
   RestoreSecretCommand,
 } from "@aws-sdk/client-secrets-manager";
 import { readFileSync } from "fs";
+import { v7 as uuidv7 } from "uuid";
 import { getGitHubAuthHeaders } from "@/app/lib/github-auth";
 import {
   AGENT_SERVER_PORT,
@@ -463,7 +464,10 @@ export async function checkInstanceHealth(
     }
 
     const healthUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/health`;
-    console.log(`[Health Check] Making HTTP request to: ${healthUrl}`);
+    const requestId = uuidv7();
+    console.log(
+      `[Health Check ${requestId}] Making HTTP request to: ${healthUrl}`
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -474,12 +478,16 @@ export async function checkInstanceHealth(
         signal: controller.signal,
         headers: {
           Accept: "application/json",
+          "X-VargasJR-Request-Id": requestId,
         },
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        console.log(
+          `[Health Check ${requestId}] HTTP ${response.status}: ${response.statusText}`
+        );
         return {
           instanceId,
           status: "offline",
@@ -488,6 +496,9 @@ export async function checkInstanceHealth(
       }
 
       const healthData = await response.json();
+      console.log(
+        `[Health Check ${requestId}] Health check completed successfully`
+      );
 
       return {
         instanceId,
@@ -501,6 +512,9 @@ export async function checkInstanceHealth(
       clearTimeout(timeoutId);
 
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        console.log(
+          `[Health Check ${requestId}] Health check request timed out after 10 seconds`
+        );
         return {
           instanceId,
           status: "offline",
@@ -508,6 +522,11 @@ export async function checkInstanceHealth(
         };
       }
 
+      console.log(
+        `[Health Check ${requestId}] HTTP request failed: ${
+          fetchError instanceof Error ? fetchError.message : String(fetchError)
+        }`
+      );
       return {
         instanceId,
         status: "offline",

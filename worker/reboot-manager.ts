@@ -124,16 +124,19 @@ export async function rebootAgent(
       return { success: false, error: "Failed to copy .env file" };
     }
 
-    const screenName = `agent-${targetVersion.replace(/\./g, "-")}`;
-    spawn(
-      "screen",
-      ["-dmS", screenName, "bash", "-c", "npm run agent:start 2> error.log"],
-      {
-        detached: true,
-        stdio: "ignore",
-      }
-    );
-    rebootLogger.info(`Started new agent in screen session: ${screenName}`);
+    rebootLogger.info("Restarting systemd service for new version");
+    try {
+      execSync("sudo systemctl restart vargasjr-agent.service", {
+        stdio: "inherit",
+      });
+      rebootLogger.info("Systemd service restarted successfully");
+    } catch (error) {
+      rebootLogger.error(`Failed to restart systemd service: ${error}`);
+      return {
+        success: false,
+        error: `Failed to restart systemd service: ${error}`,
+      };
+    }
 
     return { success: true };
   } catch (error) {
