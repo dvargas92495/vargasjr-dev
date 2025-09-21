@@ -8,13 +8,27 @@ import {
 } from "@/server/errors";
 
 type ApiHandler<T = unknown> = (body: unknown) => Promise<T>;
+type GetBodyFunction = (request: Request) => Promise<string>;
 
-export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
+export function withApiWrapper<T = unknown>(
+  handler: ApiHandler<T>,
+  options?: { getBody?: GetBodyFunction }
+) {
   return async (request: Request, context?: any) => {
     try {
       let body;
       if (request.method === "GET") {
         body = null;
+      } else if (options?.getBody) {
+        const rawBody = await options.getBody(request);
+        try {
+          body = JSON.parse(rawBody);
+        } catch (jsonError) {
+          return NextResponse.json(
+            { error: "Invalid JSON in request body" },
+            { status: 400 }
+          );
+        }
       } else {
         const contentType = request.headers.get("content-type") || "";
 
