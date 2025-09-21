@@ -23,7 +23,14 @@ export default async function CRMPage() {
       eq(ContactsTable.id, InboxMessagesTable.contactId)
     )
     .groupBy(ContactsTable.id)
-    .orderBy(desc(sql`COALESCE(${max(InboxMessagesTable.createdAt)}, '1970-01-01'::timestamp)`), desc(ContactsTable.createdAt));
+    .orderBy(
+      desc(
+        sql`COALESCE(${max(
+          InboxMessagesTable.createdAt
+        )}, '1970-01-01'::timestamp)`
+      ),
+      desc(ContactsTable.createdAt)
+    );
 
   return (
     <>

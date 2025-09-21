@@ -58,7 +58,14 @@ export default async function InboxesPage({
         eq(InboxesTable.id, InboxMessagesTable.inboxId)
       )
       .groupBy(InboxesTable.id)
-      .orderBy(desc(sql`COALESCE(${max(InboxMessagesTable.createdAt)}, '1970-01-01'::timestamp)`), desc(InboxesTable.createdAt));
+      .orderBy(
+        desc(
+          sql`COALESCE(${max(
+            InboxMessagesTable.createdAt
+          )}, '1970-01-01'::timestamp)`
+        ),
+        desc(InboxesTable.createdAt)
+      );
 
     const latestOperations = db
       .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {
