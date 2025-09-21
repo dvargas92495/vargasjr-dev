@@ -20,10 +20,6 @@ export function getEnvironmentPrefix(): string {
 }
 
 export async function getPRNumber(): Promise<string> {
-  if (process.env.PR_NUMBER) {
-    return process.env.PR_NUMBER;
-  }
-
   if (
     process.env.VERCEL_GIT_PULL_REQUEST_ID &&
     process.env.VERCEL_GIT_PULL_REQUEST_ID !== "null"
@@ -31,14 +27,14 @@ export async function getPRNumber(): Promise<string> {
     return process.env.VERCEL_GIT_PULL_REQUEST_ID;
   }
 
-  const commitRef = process.env.VERCEL_GIT_COMMIT_REF;
+  const commitRef = process.env.GITHUB_REF_NAME || process.env.VERCEL_GIT_COMMIT_REF;
   if (commitRef) {
     const branchName = commitRef.replace("refs/heads/", "");
     const githubRepo = "dvargas92495/vargasjr-dev";
 
     if (!branchName) {
       console.log(
-        "⚠️ Branch name could not be determined from VERCEL_GIT_COMMIT_REF, using fallback"
+        "⚠️ Branch name could not be determined from commit ref, using fallback"
       );
       return "local-dev";
     }
