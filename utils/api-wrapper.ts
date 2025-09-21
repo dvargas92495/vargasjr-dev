@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import formatZodError from "@/components/format-zod-error";
-import { NotFoundError, InvalidContactDataError } from "@/server/errors";
+import {
+  NotFoundError,
+  InvalidContactDataError,
+  InvalidContactFormatError,
+} from "@/server/errors";
 
 type ApiHandler<T = unknown> = (body: unknown) => Promise<T>;
 
@@ -60,6 +64,10 @@ export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
       }
 
       if (error instanceof InvalidContactDataError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      if (error instanceof InvalidContactFormatError) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
 

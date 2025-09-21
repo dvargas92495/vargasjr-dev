@@ -2,7 +2,7 @@ import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db/connection";
-import { addInboxMessage, upsertEmailContact } from "@/server";
+import { addInboxMessage, upsertPhoneContact } from "@/server";
 import { withApiWrapper } from "@/utils/api-wrapper";
 
 const bodySchema = z.object({
@@ -58,7 +58,7 @@ export const POST = withApiWrapper(async (body: unknown) => {
     inbox = newInbox;
   }
 
-  const contactId = await upsertEmailContact(From);
+  const contactId = await upsertPhoneContact(From);
   await addInboxMessage({
     body: Body,
     inboxName: `twilio-phone-${To}`,

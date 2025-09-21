@@ -1,5 +1,9 @@
 import { InboxesTable, InboxMessagesTable, ContactsTable } from "@/db/schema";
-import { NotFoundError, InvalidContactDataError } from "./errors";
+import {
+  NotFoundError,
+  InvalidContactDataError,
+  InvalidContactFormatError,
+} from "./errors";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 
@@ -26,7 +30,21 @@ function parseEmailAddress(emailString: string): {
     return { email: trimmed, fullName: null };
   }
 
-  return { email: "", fullName: trimmed || null };
+  throw new InvalidContactFormatError(`Invalid email format: ${emailString}`);
+}
+
+function parsePhoneNumber(phoneString: string): {
+  phoneNumber: string;
+} {
+  const trimmed = phoneString.trim();
+
+  if (trimmed.startsWith("+") && /^\+\d+$/.test(trimmed)) {
+    return { phoneNumber: trimmed };
+  }
+
+  throw new InvalidContactFormatError(
+    `Invalid phone number format: ${phoneString}`
+  );
 }
 
 export const upsertEmailContact = async (
@@ -34,10 +52,6 @@ export const upsertEmailContact = async (
 ): Promise<string> => {
   const db = getDb();
   const { email, fullName } = parseEmailAddress(senderString);
-
-  if (!email) {
-    throw new Error(`Invalid email format: ${senderString}`);
-  }
 
   let contact = await db
     .select({ id: ContactsTable.id })
@@ -53,6 +67,31 @@ export const upsertEmailContact = async (
   const contactData = {
     email,
     fullName,
+  };
+
+  const newContact = await createContactWithValidation(contactData);
+  return newContact.id;
+};
+
+export const upsertPhoneContact = async (
+  senderString: string
+): Promise<string> => {
+  const db = getDb();
+  const { phoneNumber } = parsePhoneNumber(senderString);
+
+  let contact = await db
+    .select({ id: ContactsTable.id })
+    .from(ContactsTable)
+    .where(eq(ContactsTable.phoneNumber, phoneNumber))
+    .limit(1)
+    .execute();
+
+  if (contact.length) {
+    return contact[0].id;
+  }
+
+  const contactData = {
+    phoneNumber,
   };
 
   const newContact = await createContactWithValidation(contactData);

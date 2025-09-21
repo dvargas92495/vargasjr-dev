@@ -13,3 +13,10 @@ export class InvalidContactDataError extends Error {
     this.name = "InvalidContactDataError";
   }
 }
+
+export class InvalidContactFormatError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidContactFormatError";
+  }
+}
