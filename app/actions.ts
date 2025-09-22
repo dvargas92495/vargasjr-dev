@@ -313,36 +313,56 @@ export async function deleteMessage(messageId: string, inboxId: string) {
 }
 
 export async function markMessageAsUnread(messageId: string, inboxId: string) {
-  const db = getDb();
+  try {
+    const response = await fetch(`/api/messages/${messageId}/operations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "UNREAD",
+      }),
+    });
 
-  await db
-    .insert(InboxMessageOperationsTable)
-    .values({
-      inboxMessageId: messageId,
-      operation: "UNREAD",
-    })
-    .execute();
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to mark message as unread");
+    }
 
-  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
-  revalidatePath(`/admin/inboxes/${inboxId}`);
+    revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+    revalidatePath(`/admin/inboxes/${inboxId}`);
+  } catch (error) {
+    console.error("Failed to mark message as unread:", error);
+    throw error;
+  }
 }
 
 export async function markMessageAsArchived(
   messageId: string,
   inboxId: string
 ) {
-  const db = getDb();
+  try {
+    const response = await fetch(`/api/messages/${messageId}/operations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "ARCHIVED",
+      }),
+    });
 
-  await db
-    .insert(InboxMessageOperationsTable)
-    .values({
-      inboxMessageId: messageId,
-      operation: "ARCHIVED",
-    })
-    .execute();
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to mark message as archived");
+    }
 
-  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
-  revalidatePath(`/admin/inboxes/${inboxId}`);
+    revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+    revalidatePath(`/admin/inboxes/${inboxId}`);
+  } catch (error) {
+    console.error("Failed to mark message as archived:", error);
+    throw error;
+  }
 }
 
 export async function deleteInbox(inboxId: string) {
@@ -431,20 +451,34 @@ export async function bulkArchiveMessages(
   messageIds: string[],
   inboxId: string
 ) {
-  const db = getDb();
+  try {
+    const promises = messageIds.map(async (messageId) => {
+      const response = await fetch(`/api/messages/${messageId}/operations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          operation: "ARCHIVED",
+        }),
+      });
 
-  await db
-    .insert(InboxMessageOperationsTable)
-    .values(
-      messageIds.map((messageId) => ({
-        inboxMessageId: messageId,
-        operation: "ARCHIVED" as const,
-      }))
-    )
-    .execute();
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `Failed to archive message ${messageId}`);
+      }
 
-  revalidatePath(`/admin/inboxes/${inboxId}`);
-  revalidatePath("/admin/inboxes");
+      return response.json();
+    });
+
+    await Promise.all(promises);
+
+    revalidatePath(`/admin/inboxes/${inboxId}`);
+    revalidatePath("/admin/inboxes");
+  } catch (error) {
+    console.error("Failed to bulk archive messages:", error);
+    throw error;
+  }
 }
 export async function mergeContact(
   currentContactId: string,
