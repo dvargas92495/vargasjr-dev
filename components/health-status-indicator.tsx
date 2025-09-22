@@ -6,13 +6,13 @@ interface HealthStatus {
   status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
   error?: string;
   diagnostics?: {
+    agentVersion?: string;
     ssm?: {
       registered?: boolean;
       pingStatus?: string;
       lastPingDateTime?: Date;
       timeSinceLastPing?: string;
       platformType?: string;
-      agentVersion?: string;
       associationStatus?: string;
       lastAssociationExecutionDate?: Date;
     };
@@ -264,7 +264,7 @@ const HealthStatusIndicator = ({
                   <div>
                     Agent:{" "}
                     <span className="font-mono">
-                      {healthStatus.diagnostics.ssm.agentVersion || "Unknown"}
+                      {healthStatus.diagnostics?.agentVersion || "Unknown"}
                     </span>
                   </div>
                   <div>
