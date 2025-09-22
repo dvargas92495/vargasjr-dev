@@ -465,7 +465,9 @@ export async function bulkArchiveMessages(
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || `Failed to archive message ${messageId}`);
+        throw new Error(
+          error.error || `Failed to archive message ${messageId}`
+        );
       }
 
       return response.json();
