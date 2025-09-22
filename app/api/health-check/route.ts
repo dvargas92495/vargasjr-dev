@@ -97,7 +97,7 @@ async function checkInstanceHealthHTTP(
           timestamp: new Date().toISOString(),
           diagnostics: {
             healthcheck: healthData,
-            ...(agentVersion && { agentVersion }),
+            agentVersion,
           },
         };
       } catch (fetchError) {
@@ -252,7 +252,7 @@ async function checkInstanceHealthHTTP(
         timestamp: new Date().toISOString(),
         diagnostics: {
           ...hd,
-          ...(agentVersion && { agentVersion }),
+          agentVersion,
         },
       };
     } catch (fetchError) {
