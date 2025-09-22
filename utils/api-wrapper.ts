@@ -8,13 +8,19 @@ import {
 } from "@/server/errors";
 
 type ApiHandler<T = unknown> = (body: unknown) => Promise<T>;
+type GetBodyFunction = (request: Request) => Promise<unknown>;
 
-export function withApiWrapper<T = unknown>(handler: ApiHandler<T>) {
+export function withApiWrapper<T = unknown>(
+  handler: ApiHandler<T>,
+  options?: { getBody?: GetBodyFunction }
+) {
   return async (request: Request, context?: any) => {
     try {
       let body;
       if (request.method === "GET") {
         body = null;
+      } else if (options?.getBody) {
+        body = await options.getBody(request);
       } else {
         const contentType = request.headers.get("content-type") || "";
 
