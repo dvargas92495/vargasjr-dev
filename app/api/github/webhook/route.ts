@@ -1,30 +1,33 @@
 import { createHmac } from "node:crypto";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { z } from "zod";
 
-interface GitHubIssue {
-  number: number;
-  title: string;
-  user: {
-    login: string;
-  };
-}
+const githubIssueSchema = z.object({
+  number: z.number(),
+  title: z.string(),
+  user: z.object({
+    login: z.string(),
+  }),
+});
 
-interface GitHubRepository {
-  full_name: string;
-}
+const githubRepositorySchema = z.object({
+  full_name: z.string(),
+});
 
-interface GitHubSender {
-  login: string;
-}
+const githubSenderSchema = z.object({
+  login: z.string(),
+});
 
-interface GitHubWebhookPayload {
-  action: string;
-  issue: GitHubIssue;
-  repository: GitHubRepository;
-  sender: GitHubSender;
-}
+const githubWebhookPayloadSchema = z.object({
+  action: z.string(),
+  issue: githubIssueSchema,
+  repository: githubRepositorySchema,
+  sender: githubSenderSchema,
+});
 
-async function validateGitHubSignature(request: Request): Promise<string> {
+type GitHubWebhookPayload = z.infer<typeof githubWebhookPayloadSchema>;
+
+async function validateGitHubSignature(request: Request): Promise<unknown> {
   const body = await request.text();
   const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 
@@ -49,11 +52,11 @@ async function validateGitHubSignature(request: Request): Promise<string> {
     throw new Error("Webhook signature verification failed");
   }
 
-  return body;
+  return JSON.parse(body);
 }
 
 async function githubWebhookHandler(body: unknown) {
-  const payload = body as GitHubWebhookPayload;
+  const payload = githubWebhookPayloadSchema.parse(body);
 
   console.log("Received GitHub webhook event");
 
