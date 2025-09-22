@@ -16,19 +16,19 @@ interface VercelEnvVar {
   configurationId?: string;
 }
 
-async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
+async function fetchVercelEnvVars(target: 'production' | 'preview'): Promise<Record<string, string>> {
   const vercelToken = process.env.VERCEL_TOKEN;
 
   if (!vercelToken) {
     console.log(
-      "⚠️ VERCEL_TOKEN not found, skipping environment variable fetch"
+      `⚠️ VERCEL_TOKEN not found, skipping ${target} environment variable fetch`
     );
     return {};
   }
 
   try {
     const response = await fetch(
-      `https://api.vercel.com/v10/projects/vargasjr-dev/env?target=preview`,
+      `https://api.vercel.com/v10/projects/vargasjr-dev/env?target=${target}`,
       {
         headers: {
           Authorization: `Bearer ${vercelToken}`,
@@ -48,7 +48,7 @@ async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
 
     data.envs?.forEach((envVar: VercelEnvVar) => {
       if (
-        envVar.target.includes("preview") &&
+        envVar.target.includes(target) &&
         !envVar.key.startsWith("VERCEL_") &&
         !envVar.key.startsWith("NEXT_")
       ) {
@@ -59,14 +59,14 @@ async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
 
     return envVars;
   } catch (error) {
-    console.warn("Failed to fetch Vercel environment variables:", error);
+    console.warn(`Failed to fetch Vercel ${target} environment variables:`, error);
     return {};
   }
 }
 
 function writeEnvFile(envVars: Record<string, string>): void {
   if (Object.keys(envVars).length === 0) {
-    console.log("ℹ️ No preview environment variables found or fetched");
+    console.log("ℹ️ No environment variables found or fetched");
     return;
   }
 
@@ -103,8 +103,11 @@ function writeEnvFile(envVars: Record<string, string>): void {
 
 async function handlePostInstall(): Promise<void> {
   if (process.env.CI && !process.env.VERCEL) {
-    console.log("🔧 Fetching Vercel PREVIEW environment variables...");
-    const envVars = await fetchVercelPreviewEnvVars();
+    const isMainBranch = process.env.GITHUB_REF === 'refs/heads/main';
+    const target = isMainBranch ? 'production' : 'preview';
+    
+    console.log(`🔧 Fetching Vercel ${target.toUpperCase()} environment variables...`);
+    const envVars = await fetchVercelEnvVars(target);
     writeEnvFile(envVars);
 
     const playwrightCachePath = join(homedir(), ".cache", "ms-playwright");
