@@ -16,7 +16,9 @@ interface VercelEnvVar {
   configurationId?: string;
 }
 
-async function fetchVercelEnvVars(target: 'production' | 'preview'): Promise<Record<string, string>> {
+async function fetchVercelEnvVars(
+  target: "production" | "preview"
+): Promise<Record<string, string>> {
   const vercelToken = process.env.VERCEL_TOKEN;
 
   if (!vercelToken) {
@@ -59,7 +61,10 @@ async function fetchVercelEnvVars(target: 'production' | 'preview'): Promise<Rec
 
     return envVars;
   } catch (error) {
-    console.warn(`Failed to fetch Vercel ${target} environment variables:`, error);
+    console.warn(
+      `Failed to fetch Vercel ${target} environment variables:`,
+      error
+    );
     return {};
   }
 }
@@ -103,10 +108,12 @@ function writeEnvFile(envVars: Record<string, string>): void {
 
 async function handlePostInstall(): Promise<void> {
   if (process.env.CI && !process.env.VERCEL) {
-    const isMainBranch = process.env.GITHUB_REF === 'refs/heads/main';
-    const target = isMainBranch ? 'production' : 'preview';
-    
-    console.log(`🔧 Fetching Vercel ${target.toUpperCase()} environment variables...`);
+    const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
+    const target = isMainBranch ? "production" : "preview";
+
+    console.log(
+      `🔧 Fetching Vercel ${target.toUpperCase()} environment variables...`
+    );
     const envVars = await fetchVercelEnvVars(target);
     writeEnvFile(envVars);
 
