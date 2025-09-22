@@ -53,6 +53,7 @@ async function fetchVercelPreviewEnvVars(): Promise<Record<string, string>> {
         !envVar.key.startsWith("NEXT_")
       ) {
         envVars[envVar.key] = envVar.value;
+        console.log("Pulled Env Var", envVar.key);
       }
     });
 
