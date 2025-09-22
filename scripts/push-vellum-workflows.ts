@@ -34,7 +34,6 @@ class VellumWorkflowPusher {
     this.isPreviewMode = isPreviewMode;
   }
 
-
   async pushWorkflows(): Promise<void> {
     if (this.isPreviewMode) {
       console.log("🔍 Previewing Vellum workflows...");
