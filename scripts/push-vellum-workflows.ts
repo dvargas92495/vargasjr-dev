@@ -1,5 +1,6 @@
 #!/usr/bin/env npx tsx
 
+import * as dotenv from "dotenv";
 import { execSync } from "child_process";
 import {
   readdirSync,
@@ -13,6 +14,8 @@ import { postGitHubComment } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 import { getAddedFilesInPR, findPRByBranch } from "./utils";
 import { getPRNumber } from "../app/api/constants";
+
+dotenv.config();
 
 const toTitleCase = (str: string) => {
   return str
@@ -31,49 +34,6 @@ class VellumWorkflowPusher {
     this.isPreviewMode = isPreviewMode;
   }
 
-  private async fetchVellumApiKey(): Promise<string> {
-    const vercelToken = process.env.VERCEL_TOKEN;
-
-    if (!vercelToken) {
-      throw new Error("VERCEL_TOKEN environment variable is required");
-    }
-
-    const environment = this.isPreviewMode ? "Preview" : "Production";
-    const url = new URL("https://api.vercel.com/v10/projects/vargasjr-dev/env");
-    url.searchParams.set("teamId", "team_36iZPJkU2LLMsHZqJZXMZppe");
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${vercelToken}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Vercel API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    const vellumApiKeyEnv = data.envs?.find(
-      (env: any) =>
-        env.key === "VELLUM_API_KEY" &&
-        (env.target?.includes(environment) ||
-          (environment === "Production" && env.target?.includes("Production")))
-    );
-
-    if (!vellumApiKeyEnv?.value) {
-      throw new Error(
-        `VELLUM_API_KEY not found in Vercel environment variables for ${environment}`
-      );
-    }
-
-    console.log(
-      `✅ Successfully fetched VELLUM_API_KEY from Vercel for ${environment} environment`
-    );
-    return vellumApiKeyEnv.value;
-  }
 
   async pushWorkflows(): Promise<void> {
     if (this.isPreviewMode) {
@@ -195,7 +155,11 @@ class VellumWorkflowPusher {
     console.log(`📤 ${action} workflow: ${workflowName}`);
 
     try {
-      const vellumApiKey = await this.fetchVellumApiKey();
+      const vellumApiKey = process.env.VELLUM_API_KEY;
+
+      if (!vellumApiKey) {
+        throw new Error("VELLUM_API_KEY environment variable is required");
+      }
 
       let deployFlag = "";
       if (this.isPreviewMode) {
@@ -395,7 +359,11 @@ class VellumWorkflowPusher {
       const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
       const pushImageCommand = `poetry run vellum images push vargasjr:${tagToUse} --source ${dockerfilePath}`;
 
-      const vellumApiKey = await this.fetchVellumApiKey();
+      const vellumApiKey = process.env.VELLUM_API_KEY;
+
+      if (!vellumApiKey) {
+        throw new Error("VELLUM_API_KEY environment variable is required");
+      }
       execSync(pushImageCommand, {
         cwd: this.agentDir,
         stdio: "pipe",
@@ -516,7 +484,11 @@ class VellumWorkflowPusher {
         const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
         const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
 
-        const vellumApiKey = await this.fetchVellumApiKey();
+        const vellumApiKey = process.env.VELLUM_API_KEY;
+
+        if (!vellumApiKey) {
+          throw new Error("VELLUM_API_KEY environment variable is required");
+        }
         execSync(pushImageCommand, {
           cwd: this.agentDir,
           stdio: "pipe",
