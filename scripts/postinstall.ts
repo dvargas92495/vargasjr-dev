@@ -102,7 +102,7 @@ async function handlePostInstall(): Promise<void> {
   console.log("🔍 DEBUG: CI =", process.env.CI);
   console.log("🔍 DEBUG: VERCEL =", process.env.VERCEL);
   console.log("🔍 DEBUG: NODE_ENV =", process.env.NODE_ENV);
-  
+
   if (process.env.CI && !process.env.VERCEL) {
     const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
     const target = isMainBranch ? "production" : "preview";
