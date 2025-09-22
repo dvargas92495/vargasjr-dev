@@ -1,9 +1,7 @@
 interface AgentVersionDisplayProps {
   healthData?: {
     diagnostics?: {
-      ssm?: {
-        agentVersion?: string;
-      };
+      agentVersion?: string;
     };
   } | null;
   instanceState: string;
@@ -22,7 +20,7 @@ const AgentVersionDisplay = ({
       return "Loading...";
     }
 
-    const agentVersion = healthData.diagnostics?.ssm?.agentVersion;
+    const agentVersion = healthData.diagnostics?.agentVersion;
     return agentVersion || "Unknown";
   };
 
