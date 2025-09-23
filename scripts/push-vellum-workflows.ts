@@ -15,14 +15,7 @@ import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 import { getAddedFilesInPR, findPRByBranch } from "./utils";
 import { getPRNumber } from "../app/api/constants";
 
-dotenv.config({ path: join(process.cwd(), ".env") });
-
-console.log(
-  "🔍 DEBUG: VELLUM_API_KEY loaded:",
-  process.env.VELLUM_API_KEY ? "YES" : "NO"
-);
-console.log("🔍 DEBUG: Working directory:", process.cwd());
-console.log("🔍 DEBUG: .env file path:", join(process.cwd(), ".env"));
+dotenv.config();
 
 const toTitleCase = (str: string) => {
   return str
@@ -191,10 +184,7 @@ class VellumWorkflowPusher {
         cwd: this.agentDir,
         stdio: "pipe",
         encoding: "utf8",
-        env: {
-          ...process.env,
-          VELLUM_API_KEY: vellumApiKey,
-        },
+        env: process.env,
       });
 
       const successMessage = `✅ Successfully ${
@@ -373,10 +363,7 @@ class VellumWorkflowPusher {
       execSync(pushImageCommand, {
         cwd: this.agentDir,
         stdio: "pipe",
-        env: {
-          ...process.env,
-          VELLUM_API_KEY: vellumApiKey,
-        },
+        env: process.env,
       });
 
       this.hasDockerImageBeenPushed = true;
@@ -498,10 +485,7 @@ class VellumWorkflowPusher {
         execSync(pushImageCommand, {
           cwd: this.agentDir,
           stdio: "pipe",
-          env: {
-            ...process.env,
-            VELLUM_API_KEY: vellumApiKey,
-          },
+          env: process.env,
         });
 
         this.hasDockerImageBeenPushed = true;

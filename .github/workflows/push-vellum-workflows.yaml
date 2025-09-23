@@ -24,7 +24,6 @@ jobs:
     if: github.event_name == 'pull_request'
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -56,7 +55,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
