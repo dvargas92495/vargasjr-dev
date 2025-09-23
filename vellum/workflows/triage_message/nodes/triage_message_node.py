@@ -109,6 +109,16 @@ def job_opportunity_response(
     pass
 
 
+def who_are_you(
+    phone_number: str,
+):
+    """
+    Respond to identity questions like "who are you" by introducing VargasJR.
+    Use this when someone asks about your identity, what you do, or who you are.
+    """
+    pass
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -145,6 +155,7 @@ give the recipient confidence that you will be tending to their request and that
         text_reply,
         slack_reply,
         job_opportunity_response,
+        who_are_you,
     ]
     parameters = PromptParameters(
         max_tokens=1000,

@@ -11,6 +11,7 @@ from .nodes import (
     TextReplyNode,
     SlackReplyNode,
     JobOpportunityResponseNode,
+    WhoAreYouNode,
     StoreOutboxMessageNode,
 )
 
@@ -29,6 +30,7 @@ class TriageMessageWorkflow(BaseWorkflow):
                 ParseFunctionCallNode.Ports.text_reply >> TextReplyNode,
                 ParseFunctionCallNode.Ports.slack_reply >> SlackReplyNode,
                 ParseFunctionCallNode.Ports.job_opportunity_response >> JobOpportunityResponseNode,
+                ParseFunctionCallNode.Ports.who_are_you >> WhoAreYouNode,
             }
             >> StoreOutboxMessageNode,
         },
