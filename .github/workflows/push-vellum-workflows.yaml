@@ -22,6 +22,8 @@ jobs:
   preview-workflows:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -47,13 +49,12 @@ jobs:
         working-directory: vellum
 
       - name: Preview workflows
-        run: npm run push-vellum-workflows -- --preview
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
+        run: npm run push-vellum-workflows
   push-workflows:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -80,6 +81,3 @@ jobs:
 
       - name: Push workflows to Vellum
         run: npm run push-vellum-workflows
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-          GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
