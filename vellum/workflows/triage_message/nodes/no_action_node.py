@@ -5,12 +5,10 @@ from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
 from models.types import InboxMessageOperationType
 from sqlmodel import select
-from ..inputs import Inputs
 
 
 class NoActionNode(BaseNode):
     message = ReadMessageNode.Outputs.message
-    operation = Inputs.operation
 
     class Outputs(BaseNode.Outputs):
         summary = "Message archived - no action needed."
@@ -20,7 +18,7 @@ class NoActionNode(BaseNode):
         message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
         
         # If this is a manual operation, the operation was already created in ReadMessageNode
-        if self.operation:
+        if hasattr(self, 'operation') and self.operation:
             summary = f"Successfully marked message as {self.operation.lower()}"
             return self.Outputs(summary=summary, message_url=message_url)
         
@@ -32,7 +30,7 @@ class NoActionNode(BaseNode):
             if not message_exists:
                 return self.Outputs(summary="Message no longer exists - archived.", message_url=message_url)
             
-            execution_id = self._context.execution_context.parent_context.span_id
+            execution_id = self.state.meta.span_id
             
             session.add(
                 InboxMessageOperation(

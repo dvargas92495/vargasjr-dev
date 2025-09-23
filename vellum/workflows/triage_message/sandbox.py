@@ -1,8 +1,8 @@
 from models.types import USER
 from services import create_inbox_message
 from .workflow import TriageMessageWorkflow
-from .inputs import Inputs
 from vellum.workflows.sandbox import WorkflowSandboxRunner
+from vellum.workflows.inputs import BaseInputs
 
 
 if __name__ == "__main__":
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     runner = WorkflowSandboxRunner(
         workflow=TriageMessageWorkflow(),
         inputs=[
-            Inputs(),
+            BaseInputs(),
         ],
     )
     runner.run()

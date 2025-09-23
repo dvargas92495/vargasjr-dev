@@ -1,6 +1,4 @@
 from vellum.workflows import BaseWorkflow
-from vellum.workflows.state import BaseState
-from .inputs import Inputs
 from .nodes import (
     ReadMessageNode,
     UpdateCRMNode,
@@ -17,7 +15,7 @@ from .nodes import (
 )
 
 
-class TriageMessageWorkflow(BaseWorkflow[Inputs, BaseState]):
+class TriageMessageWorkflow(BaseWorkflow):
     graph = {
         ReadMessageNode.Ports.no_action >> NoActionNode,
         ReadMessageNode.Ports.triage
