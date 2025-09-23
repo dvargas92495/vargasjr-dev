@@ -9,6 +9,7 @@ from .email_initiate_node import EmailInitiateNode
 from .text_reply_node import TextReplyNode
 from .slack_reply_node import SlackReplyNode
 from .job_opportunity_response_node import JobOpportunityResponseNode
+from .who_are_you_node import WhoAreYouNode
 from .store_outbox_message_node import StoreOutboxMessageNode
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "TextReplyNode",
     "SlackReplyNode",
     "JobOpportunityResponseNode",
+    "WhoAreYouNode",
     "StoreOutboxMessageNode",
 ]
