@@ -18,6 +18,7 @@ import { convertPriorityToLabel } from "@/server";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { AWS_S3_BUCKETS } from "@/app/lib/constants";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
+import { VellumClient } from "vellum-ai";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
@@ -314,19 +315,31 @@ export async function deleteMessage(messageId: string, inboxId: string) {
 
 export async function markMessageAsUnread(messageId: string, inboxId: string) {
   try {
-    const response = await fetch(`/api/messages/${messageId}/operations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        operation: "UNREAD",
-      }),
+    const apiKey = process.env.VELLUM_API_KEY;
+    if (!apiKey) {
+      throw new Error("VELLUM_API_KEY environment variable is required");
+    }
+
+    const vellumClient = new VellumClient({ apiKey });
+    
+    const response = await vellumClient.executeWorkflow({
+      workflowDeploymentName: "triage-message",
+      inputs: [
+        {
+          name: "message_id",
+          value: messageId,
+          type: "STRING",
+        },
+        {
+          name: "operation",
+          value: "UNREAD",
+          type: "STRING",
+        },
+      ],
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to mark message as unread");
+    if (response.data.state !== "FULFILLED") {
+      throw new Error("Workflow execution failed");
     }
 
     revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
@@ -342,19 +355,31 @@ export async function markMessageAsArchived(
   inboxId: string
 ) {
   try {
-    const response = await fetch(`/api/messages/${messageId}/operations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        operation: "ARCHIVED",
-      }),
+    const apiKey = process.env.VELLUM_API_KEY;
+    if (!apiKey) {
+      throw new Error("VELLUM_API_KEY environment variable is required");
+    }
+
+    const vellumClient = new VellumClient({ apiKey });
+    
+    const response = await vellumClient.executeWorkflow({
+      workflowDeploymentName: "triage-message",
+      inputs: [
+        {
+          name: "message_id",
+          value: messageId,
+          type: "STRING",
+        },
+        {
+          name: "operation",
+          value: "ARCHIVED",
+          type: "STRING",
+        },
+      ],
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to mark message as archived");
+    if (response.data.state !== "FULFILLED") {
+      throw new Error("Workflow execution failed");
     }
 
     revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
@@ -452,25 +477,35 @@ export async function bulkArchiveMessages(
   inboxId: string
 ) {
   try {
+    const apiKey = process.env.VELLUM_API_KEY;
+    if (!apiKey) {
+      throw new Error("VELLUM_API_KEY environment variable is required");
+    }
+
+    const vellumClient = new VellumClient({ apiKey });
+
     const promises = messageIds.map(async (messageId) => {
-      const response = await fetch(`/api/messages/${messageId}/operations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          operation: "ARCHIVED",
-        }),
+      const response = await vellumClient.executeWorkflow({
+        workflowDeploymentName: "triage-message",
+        inputs: [
+          {
+            name: "message_id",
+            value: messageId,
+            type: "STRING",
+          },
+          {
+            name: "operation",
+            value: "ARCHIVED",
+            type: "STRING",
+          },
+        ],
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.error || `Failed to archive message ${messageId}`
-        );
+      if (response.data.state !== "FULFILLED") {
+        throw new Error(`Failed to archive message ${messageId}`);
       }
 
-      return response.json();
+      return response;
     });
 
     await Promise.all(promises);
