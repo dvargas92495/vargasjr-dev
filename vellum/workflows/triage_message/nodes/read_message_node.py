@@ -13,6 +13,7 @@ from models.types import InboxMessageOperationType, InboxType
 from models.inbox import Inbox
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
+from ..inputs import Inputs
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,9 @@ class SlimMessage(UniversalBaseModel):
 
 
 class ReadMessageNode(BaseNode):
+    message_id = Inputs.message_id
+    operation = Inputs.operation
+
     class Ports(BaseNode.Ports):
         no_action = Port.on_if(
             LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
@@ -43,6 +47,54 @@ class ReadMessageNode(BaseNode):
     def run(self) -> Outputs:
         try:
             with postgres_session() as session:
+                if self.message_id and self.operation:
+                    message_uuid = UUID(self.message_id)
+                    statement = (
+                        select(InboxMessage, Inbox.type, Inbox.name)
+                        .join(Inbox, Inbox.id == InboxMessage.inbox_id)
+                        .where(InboxMessage.id == message_uuid)
+                    )
+                    result = session.exec(statement).first()
+                    
+                    if result:
+                        inbox_message, inbox_type, inbox_name = result
+                        execution_id = self._context.execution_context.parent_context.span_id
+                        
+                        operation_type = InboxMessageOperationType.UNREAD if self.operation == "UNREAD" else InboxMessageOperationType.ARCHIVED
+                        session.add(
+                            InboxMessageOperation(
+                                inbox_message_id=inbox_message.id,
+                                operation=operation_type,
+                                execution_id=execution_id,
+                            )
+                        )
+                        session.commit()
+                        
+                        contact_email = None
+                        contact_full_name = None
+                        contact_slack_display_name = None
+                        contact_id = inbox_message.contact_id
+                        
+                        if hasattr(inbox_message, 'contact') and inbox_message.contact:
+                            contact = inbox_message.contact
+                            contact_email = contact.email
+                            contact_full_name = contact.full_name
+                            contact_slack_display_name = contact.slack_display_name
+                        
+                        message = SlimMessage(
+                            message_id=inbox_message.id,
+                            body=f"Manual operation {self.operation} completed",
+                            contact_email=contact_email,
+                            contact_id=contact_id,
+                            contact_full_name=contact_full_name,
+                            contact_slack_display_name=contact_slack_display_name,
+                            channel=InboxType.NONE,  # This will trigger no_action port
+                            inbox_name=inbox_name,
+                            inbox_id=inbox_message.inbox_id,
+                            thread_id=inbox_message.thread_id,
+                        )
+                        return self.Outputs(message=message)
+                
                 statement = (
                     select(InboxMessage, Inbox.type, Inbox.name)
                     .join(

@@ -18,7 +18,6 @@ import { convertPriorityToLabel } from "@/server";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { AWS_S3_BUCKETS } from "@/app/lib/constants";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
-import { VellumClient } from "vellum-ai";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
@@ -314,80 +313,36 @@ export async function deleteMessage(messageId: string, inboxId: string) {
 }
 
 export async function markMessageAsUnread(messageId: string, inboxId: string) {
-  try {
-    const apiKey = process.env.VELLUM_API_KEY;
-    if (!apiKey) {
-      throw new Error("VELLUM_API_KEY environment variable is required");
-    }
+  const db = getDb();
 
-    const vellumClient = new VellumClient({ apiKey });
-    
-    const response = await vellumClient.executeWorkflow({
-      workflowDeploymentName: "triage-message",
-      inputs: [
-        {
-          name: "message_id",
-          value: messageId,
-          type: "STRING",
-        },
-        {
-          name: "operation",
-          value: "UNREAD",
-          type: "STRING",
-        },
-      ],
-    });
+  await db
+    .insert(InboxMessageOperationsTable)
+    .values({
+      inboxMessageId: messageId,
+      operation: "UNREAD",
+    })
+    .execute();
 
-    if (response.data.state !== "FULFILLED") {
-      throw new Error("Workflow execution failed");
-    }
-
-    revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
-    revalidatePath(`/admin/inboxes/${inboxId}`);
-  } catch (error) {
-    console.error("Failed to mark message as unread:", error);
-    throw error;
-  }
+  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+  revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
 export async function markMessageAsArchived(
   messageId: string,
   inboxId: string
 ) {
-  try {
-    const apiKey = process.env.VELLUM_API_KEY;
-    if (!apiKey) {
-      throw new Error("VELLUM_API_KEY environment variable is required");
-    }
+  const db = getDb();
 
-    const vellumClient = new VellumClient({ apiKey });
-    
-    const response = await vellumClient.executeWorkflow({
-      workflowDeploymentName: "triage-message",
-      inputs: [
-        {
-          name: "message_id",
-          value: messageId,
-          type: "STRING",
-        },
-        {
-          name: "operation",
-          value: "ARCHIVED",
-          type: "STRING",
-        },
-      ],
-    });
+  await db
+    .insert(InboxMessageOperationsTable)
+    .values({
+      inboxMessageId: messageId,
+      operation: "ARCHIVED",
+    })
+    .execute();
 
-    if (response.data.state !== "FULFILLED") {
-      throw new Error("Workflow execution failed");
-    }
-
-    revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
-    revalidatePath(`/admin/inboxes/${inboxId}`);
-  } catch (error) {
-    console.error("Failed to mark message as archived:", error);
-    throw error;
-  }
+  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+  revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
 export async function deleteInbox(inboxId: string) {
@@ -476,46 +431,20 @@ export async function bulkArchiveMessages(
   messageIds: string[],
   inboxId: string
 ) {
-  try {
-    const apiKey = process.env.VELLUM_API_KEY;
-    if (!apiKey) {
-      throw new Error("VELLUM_API_KEY environment variable is required");
-    }
+  const db = getDb();
 
-    const vellumClient = new VellumClient({ apiKey });
+  await db
+    .insert(InboxMessageOperationsTable)
+    .values(
+      messageIds.map((messageId) => ({
+        inboxMessageId: messageId,
+        operation: "ARCHIVED" as const,
+      }))
+    )
+    .execute();
 
-    const promises = messageIds.map(async (messageId) => {
-      const response = await vellumClient.executeWorkflow({
-        workflowDeploymentName: "triage-message",
-        inputs: [
-          {
-            name: "message_id",
-            value: messageId,
-            type: "STRING",
-          },
-          {
-            name: "operation",
-            value: "ARCHIVED",
-            type: "STRING",
-          },
-        ],
-      });
-
-      if (response.data.state !== "FULFILLED") {
-        throw new Error(`Failed to archive message ${messageId}`);
-      }
-
-      return response;
-    });
-
-    await Promise.all(promises);
-
-    revalidatePath(`/admin/inboxes/${inboxId}`);
-    revalidatePath("/admin/inboxes");
-  } catch (error) {
-    console.error("Failed to bulk archive messages:", error);
-    throw error;
-  }
+  revalidatePath(`/admin/inboxes/${inboxId}`);
+  revalidatePath("/admin/inboxes");
 }
 export async function mergeContact(
   currentContactId: string,

@@ -5,10 +5,12 @@ from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
 from models.types import InboxMessageOperationType
 from sqlmodel import select
+from ..inputs import Inputs
 
 
 class NoActionNode(BaseNode):
     message = ReadMessageNode.Outputs.message
+    operation = Inputs.operation
 
     class Outputs(BaseNode.Outputs):
         summary = "Message archived - no action needed."
@@ -16,6 +18,11 @@ class NoActionNode(BaseNode):
 
     def run(self) -> BaseNode.Outputs:
         message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
+        
+        # If this is a manual operation, the operation was already created in ReadMessageNode
+        if self.operation:
+            summary = f"Successfully marked message as {self.operation.lower()}"
+            return self.Outputs(summary=summary, message_url=message_url)
         
         with postgres_session() as session:
             message_exists = session.exec(
