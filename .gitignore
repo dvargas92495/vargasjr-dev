@@ -63,3 +63,4 @@ cdktf.out/
 *.tfstate
 *.tfstate.*
 *.tfplan
+.env*.local

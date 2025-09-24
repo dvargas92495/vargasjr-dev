@@ -6,16 +6,6 @@ import { join } from "path";
 import { homedir } from "os";
 import * as cache from "@actions/cache";
 
-interface VercelEnvVar {
-  type: string;
-  id: string;
-  key: string;
-  value: string;
-  target: string[];
-  gitBranch?: string;
-  configurationId?: string;
-}
-
 async function fetchVercelEnvVars(
   target: "production" | "preview"
 ): Promise<Record<string, string>> {
@@ -30,7 +20,7 @@ async function fetchVercelEnvVars(
 
   try {
     const response = await fetch(
-      `https://api.vercel.com/v10/projects/vargasjr-dev/env?target=${target}`,
+      `https://api.vercel.com/v3/env/pull/vargasjr-dev/preview`,
       {
         headers: {
           Authorization: `Bearer ${vercelToken}`,
@@ -47,15 +37,16 @@ async function fetchVercelEnvVars(
 
     const data = await response.json();
     const envVars: Record<string, string> = {};
+    console.log(Object.keys(data));
 
-    data.envs?.forEach((envVar: VercelEnvVar) => {
+    Object.entries(data.env).forEach(([key, value]) => {
       if (
-        envVar.target.includes(target) &&
-        !envVar.key.startsWith("VERCEL_") &&
-        !envVar.key.startsWith("NEXT_")
+        !key.startsWith("VERCEL_") &&
+        !key.startsWith("NEXT_") &&
+        typeof value === "string"
       ) {
-        envVars[envVar.key] = envVar.value;
-        console.log("Pulled Env Var", envVar.key);
+        envVars[key] = value;
+        console.log("Pulled Env Var", key);
       }
     });
 
