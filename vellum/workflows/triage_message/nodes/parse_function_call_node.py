@@ -16,7 +16,6 @@ class ParseFunctionCallNode(BaseNode):
         job_opportunity_response = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_response"))
         )
-        who_are_you = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("who_are_you")))
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]

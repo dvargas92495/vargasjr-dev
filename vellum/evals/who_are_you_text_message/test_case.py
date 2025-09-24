@@ -140,37 +140,37 @@ class WhoAreYouTextMessageEval:
                 {
                     "message": "who are you",
                     "type": "direct_question",
-                    "expected_trigger": "who_are_you",
+                    "expected_trigger": "text_reply",
                     "case_sensitive": False
                 },
                 {
                     "message": "Who are you?",
                     "type": "direct_question_capitalized",
-                    "expected_trigger": "who_are_you",
+                    "expected_trigger": "text_reply",
                     "case_sensitive": False
                 },
                 {
                     "message": "what do you do",
                     "type": "service_inquiry",
-                    "expected_trigger": "who_are_you",
+                    "expected_trigger": "text_reply",
                     "case_sensitive": False
                 },
                 {
                     "message": "tell me about yourself",
                     "type": "introduction_request",
-                    "expected_trigger": "who_are_you",
+                    "expected_trigger": "text_reply",
                     "case_sensitive": False
                 },
                 {
                     "message": "who am I talking to",
                     "type": "contact_identification",
-                    "expected_trigger": "who_are_you",
+                    "expected_trigger": "text_reply",
                     "case_sensitive": False
                 },
                 {
                     "message": "what service is this",
                     "type": "service_identification",
-                    "expected_trigger": "who_are_you",
+                    "expected_trigger": "text_reply",
                     "case_sensitive": False
                 }
             ],
@@ -188,9 +188,9 @@ class WhoAreYouTextMessageEval:
             ],
             "workflow_validation_points": [
                 "triage_message_function_selection",
-                "who_are_you_function_call",
+                "text_reply_function_call",
                 "parse_function_call_routing",
-                "who_are_you_node_execution",
+                "text_reply_node_execution",
                 "outbox_message_creation",
                 "sms_response_delivery"
             ]
