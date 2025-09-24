@@ -17,11 +17,6 @@ class NoActionNode(BaseNode):
     def run(self) -> BaseNode.Outputs:
         message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
         
-        # If this is a manual operation, the operation was already created in ReadMessageNode
-        if hasattr(self, 'operation') and self.operation:
-            summary = f"Successfully marked message as {self.operation.lower()}"
-            return self.Outputs(summary=summary, message_url=message_url)
-        
         with postgres_session() as session:
             message_exists = session.exec(
                 select(InboxMessage.id).where(InboxMessage.id == self.message.message_id)
