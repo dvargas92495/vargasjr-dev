@@ -48,16 +48,38 @@ async function fetchVercelEnvVars(
     const data = await response.json();
     const envVars: Record<string, string> = {};
 
-    data.envs?.forEach((envVar: VercelEnvVar) => {
+    for (const envVar of data.envs || []) {
       if (
         envVar.target.includes(target) &&
         !envVar.key.startsWith("VERCEL_") &&
         !envVar.key.startsWith("NEXT_")
       ) {
-        envVars[envVar.key] = envVar.value;
-        console.log("Pulled Env Var", envVar.key);
+        try {
+          const decryptResponse = await fetch(
+            `https://api.vercel.com/v1/projects/vargasjr-dev/env/${envVar.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${vercelToken}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!decryptResponse.ok) {
+            console.warn(
+              `Failed to decrypt env var ${envVar.key}: ${decryptResponse.status} ${decryptResponse.statusText}`
+            );
+            continue;
+          }
+
+          const decryptedData = await decryptResponse.json();
+          envVars[envVar.key] = decryptedData.value;
+          console.log("Pulled Env Var", envVar.key);
+        } catch (error) {
+          console.warn(`Failed to decrypt env var ${envVar.key}:`, error);
+        }
       }
-    });
+    }
 
     return envVars;
   } catch (error) {
