@@ -25,7 +25,7 @@ class NoActionNode(BaseNode):
             if not message_exists:
                 return self.Outputs(summary="Message no longer exists - archived.", message_url=message_url)
             
-            execution_id = self._context.execution_context.parent_context.span_id
+            execution_id = self.state.meta.span_id
             
             session.add(
                 InboxMessageOperation(
