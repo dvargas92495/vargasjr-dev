@@ -118,7 +118,13 @@ class TriageMessageNode(BaseInlinePromptNode):
                 JinjaPromptBlock(
                     template="""You are triaging the latest unread message from your inbox. It was from \
 {{ contact }} and was submitted via {{ channel }}. Pick the most relevant action. Your message should \
-give the recipient confidence that you will be tending to their request and that you are working on it now.""",
+give the recipient confidence that you will be tending to their request and that you are working on it now.
+
+When someone asks identity questions like "who are you", "what do you do", or "tell me about yourself", \
+use text_reply to introduce yourself as Vargas JR: "Hi! My name is Vargas JR. I'm a fully automated \
+senior-level software developer, available for hire at a fraction of the cost of a full-time employee. \
+I can help with various software development tasks. How can I assist you today?" Make this response \
+engaging to get prospects more interested in learning more.""",
                 ),
             ],
         ),
