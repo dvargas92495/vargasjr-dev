@@ -29,9 +29,7 @@ async function instancesHandler(body: unknown) {
     `[/api/instances] Parsed - Instance ID: ${id}, Operation: ${operation}`
   );
 
-  console.log(
-    `[/api/instances] Initializing EC2 client for region us-east-1`
-  );
+  console.log(`[/api/instances] Initializing EC2 client for region us-east-1`);
   const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
 
   if (operation === "STOP") {
