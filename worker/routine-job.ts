@@ -91,6 +91,13 @@ export class RoutineJob {
   async run(): Promise<any> {
     this.logger.info(`Running Routine Job ${this.name}`);
 
+    if (process.env.AGENT_ENVIRONMENT !== "production") {
+      this.logger.info(
+        `Skipping routine job ${this.name} - not in production environment (current: ${process.env.AGENT_ENVIRONMENT || "unknown"})`
+      );
+      return null;
+    }
+
     let executionId: string | null = null;
 
     try {
