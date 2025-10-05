@@ -131,17 +131,17 @@ async function handlePostInstall(): Promise<void> {
       } catch (error) {
         console.warn("Cache save failed:", error);
       }
-    }
-  } else {
-    if (process.env.VERCEL) {
-      console.log(
-        "Skipping Playwright browser installation (running in Vercel environment)"
-      );
     } else {
-      console.log(
-        "Skipping Playwright browser installation (not in CI environment)"
-      );
+      console.log("Cache keys not found, skipping cache save...");
     }
+  } else if (process.env.VERCEL) {
+    console.log(
+      "Skipping Playwright browser installation (running in Vercel environment)"
+    );
+  } else {
+    console.log(
+      "Skipping Playwright browser installation (not in CI environment)"
+    );
   }
 }
 
