@@ -74,7 +74,11 @@ export async function GET(
     const executions =
       await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
         deployment.id,
-        { limit: pageSize, offset: offset, filter: filterParam }
+        {
+          limit: pageSize,
+          offset: offset,
+          ...(filterParam && { filters: JSON.stringify(filterParam) }),
+        }
       );
 
     const transformedExecutions =
