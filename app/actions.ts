@@ -315,6 +315,16 @@ export async function deleteMessage(messageId: string, inboxId: string) {
 export async function markMessageAsUnread(messageId: string, inboxId: string) {
   const db = getDb();
 
+  const message = await db
+    .select()
+    .from(InboxMessagesTable)
+    .where(eq(InboxMessagesTable.id, messageId))
+    .limit(1);
+
+  if (!message.length) {
+    throw new Error("Message not found");
+  }
+
   await db
     .insert(InboxMessageOperationsTable)
     .values({
