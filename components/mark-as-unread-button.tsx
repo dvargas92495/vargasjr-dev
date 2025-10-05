@@ -23,7 +23,9 @@ const MarkAsUnreadButton = ({
     } catch (error) {
       console.error("Failed to mark message as unread:", error);
       alert(
-        error instanceof Error ? error.message : "Failed to mark message as unread"
+        error instanceof Error
+          ? error.message
+          : "Failed to mark message as unread"
       );
     } finally {
       setIsLoading(false);
