@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 import { cookies } from "next/headers";
+import { withApiWrapper } from "@/utils/api-wrapper";
 import {
   EC2,
   GetConsoleOutputCommand,
@@ -357,109 +357,73 @@ function instancePublicIp(
   return instance?.PublicIpAddress;
 }
 
-export async function POST(request: Request) {
+async function healthCheckHandler(body: unknown) {
   const requestStartTime = Date.now();
   console.log(`[Health Check] Request started at ${new Date().toISOString()}`);
 
+  const cookieStore = await cookies();
+  const token = cookieStore.get("admin-token");
+
+  if (token?.value !== process.env.ADMIN_TOKEN) {
+    console.log(`[Health Check] Authentication failed - invalid admin token`);
+    throw new Error("Unauthorized");
+  }
+
+  console.log(`[Health Check] Request body:`, JSON.stringify(body, null, 2));
+
+  const validationStartTime = Date.now();
+  const { instanceId } = healthCheckSchema.parse(body);
+  const validationDuration = Date.now() - validationStartTime;
+  console.log(
+    `[Health Check] Request validation completed in ${validationDuration}ms for instanceId: ${instanceId}`
+  );
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin-token");
-
-    if (token?.value !== process.env.ADMIN_TOKEN) {
-      console.log(`[Health Check] Authentication failed - invalid admin token`);
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    console.log(`[Health Check] Request body:`, JSON.stringify(body, null, 2));
-
-    const validationStartTime = Date.now();
-    const { instanceId } = healthCheckSchema.parse(body);
-    const validationDuration = Date.now() - validationStartTime;
     console.log(
-      `[Health Check] Request validation completed in ${validationDuration}ms for instanceId: ${instanceId}`
+      `[Health Check] Starting health check for instance: ${instanceId}`
+    );
+    const healthCheckStartTime = Date.now();
+    const healthResult = await checkInstanceHealthHTTP(instanceId);
+    const healthCheckDuration = Date.now() - healthCheckStartTime;
+
+    console.log(
+      `[Health Check] Health check completed in ${healthCheckDuration}ms`
+    );
+    console.log(
+      `[Health Check] Result:`,
+      JSON.stringify(healthResult, null, 2)
     );
 
-    try {
-      console.log(
-        `[Health Check] Starting health check for instance: ${instanceId}`
-      );
-      const healthCheckStartTime = Date.now();
-      const healthResult = await checkInstanceHealthHTTP(instanceId);
-      const healthCheckDuration = Date.now() - healthCheckStartTime;
-
-      console.log(
-        `[Health Check] Health check completed in ${healthCheckDuration}ms`
-      );
-      console.log(
-        `[Health Check] Result:`,
-        JSON.stringify(healthResult, null, 2)
-      );
-
-      const totalDuration = Date.now() - requestStartTime;
-      console.log(`[Health Check] Total request duration: ${totalDuration}ms`);
-
-      return NextResponse.json(healthResult);
-    } catch (error) {
-      const healthCheckDuration = Date.now() - requestStartTime;
-      const errorMessage =
-        error instanceof Error ? error.message : "Health check failed";
-      const errorStack = error instanceof Error ? error.stack : undefined;
-
-      console.error(
-        `[Health Check] Health check failed after ${healthCheckDuration}ms`
-      );
-      console.error(`[Health Check] Error message: ${errorMessage}`);
-      if (errorStack) {
-        console.error(`[Health Check] Error stack:`, errorStack);
-      }
-      console.error(`[Health Check] Error object:`, error);
-
-      return NextResponse.json({
-        instanceId,
-        status: "offline",
-        error: errorMessage,
-        duration: healthCheckDuration,
-        timestamp: new Date().toISOString(),
-      });
-    }
-  } catch (error) {
     const totalDuration = Date.now() - requestStartTime;
-    console.error(`[Health Check] Request failed after ${totalDuration}ms`);
+    console.log(`[Health Check] Total request duration: ${totalDuration}ms`);
 
-    if (error instanceof ZodError) {
-      console.error(`[Health Check] Validation error:`, error.errors);
-      return NextResponse.json(
-        {
-          error: "Invalid request body",
-          validationErrors: error.errors,
-          duration: totalDuration,
-          timestamp: new Date().toISOString(),
-        },
-        { status: 400 }
-      );
-    }
-
+    return healthResult;
+  } catch (error) {
+    const healthCheckDuration = Date.now() - requestStartTime;
     const errorMessage =
       error instanceof Error ? error.message : "Health check failed";
     const errorStack = error instanceof Error ? error.stack : undefined;
 
-    console.error(`[Health Check] Unexpected error: ${errorMessage}`);
+    console.error(
+      `[Health Check] Health check failed after ${healthCheckDuration}ms`
+    );
+    console.error(`[Health Check] Error message: ${errorMessage}`);
     if (errorStack) {
       console.error(`[Health Check] Error stack:`, errorStack);
     }
+    console.error(`[Health Check] Error object:`, error);
 
-    return NextResponse.json(
-      {
-        error: "Health check failed",
-        details: errorMessage,
-        duration: totalDuration,
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    return {
+      instanceId,
+      status: "offline" as const,
+      error: errorMessage,
+      duration: healthCheckDuration,
+      timestamp: new Date().toISOString(),
+    };
   }
 }
+
+export const POST = withApiWrapper(healthCheckHandler);
 export async function HEAD() {
   return new Response(null, { status: 200 });
 }
