@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import PaginationControls from "@/components/pagination-controls";
 
@@ -34,8 +34,14 @@ export default function ExecutionHistory({
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const selectedEnv = searchParams.get("env") || "";
+  const [inputValue, setInputValue] = useState(selectedEnv);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageSize = 10;
   const totalPages = Math.ceil(totalCount / pageSize);
+
+  useEffect(() => {
+    setInputValue(selectedEnv);
+  }, [selectedEnv]);
 
   useEffect(() => {
     const fetchExecutions = async () => {
@@ -115,16 +121,25 @@ export default function ExecutionHistory({
         <input
           type="text"
           id="env-filter"
-          value={selectedEnv}
+          value={inputValue}
           onChange={(e) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (e.target.value) {
-              params.set("env", e.target.value);
-            } else {
-              params.delete("env");
+            const newValue = e.target.value;
+            setInputValue(newValue);
+
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
             }
-            params.delete("page");
-            window.location.href = `/admin/jobs/routine/${routineJobId}?${params.toString()}`;
+
+            debounceTimerRef.current = setTimeout(() => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (newValue) {
+                params.set("env", newValue);
+              } else {
+                params.delete("env");
+              }
+              params.delete("page");
+              window.location.href = `/admin/jobs/routine/${routineJobId}?${params.toString()}`;
+            }, 500);
           }}
           placeholder="e.g., preview-535, production"
           className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

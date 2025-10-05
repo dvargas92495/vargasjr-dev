@@ -55,49 +55,26 @@ export async function GET(
       );
     }
 
-    if (envFilter) {
-      const allExecutions =
-        await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
-          deployment.id,
-          { limit: 1000 }
-        );
-
-      const allTransformedExecutions =
-        allExecutions.results?.map((execution) => ({
-          id: execution.spanId,
-          executionId: execution.spanId,
-          createdAt: execution.start,
-          outputs: execution.outputs,
-          error: execution.error,
-          environment:
-            execution.parentContext?.type === "WORKFLOW_RELEASE_TAG"
-              ? execution.parentContext.metadata?.environment
-              : "unknown",
-          location:
-            execution.parentContext?.type === "WORKFLOW_RELEASE_TAG"
-              ? execution.parentContext.metadata?.location
-              : "unknown",
-        })) || [];
-
-      const filteredExecutions = allTransformedExecutions.filter(
-        (e) => e.environment === envFilter
-      );
-
-      const paginatedExecutions = filteredExecutions.slice(
-        offset,
-        offset + pageSize
-      );
-
-      return NextResponse.json({
-        executions: paginatedExecutions,
-        totalCount: filteredExecutions.length,
-      });
-    }
+    const filterParam = envFilter
+      ? {
+          type: "LOGICAL_CONDITION_GROUP" as const,
+          conditions: [
+            {
+              type: "LOGICAL_CONDITION" as const,
+              lhs_variable: { type: "STRING" as const, value: "metadata" },
+              operator: "contains" as const,
+              rhs_variable: { type: "STRING" as const, value: envFilter },
+            },
+          ],
+          combinator: "AND" as const,
+          negated: false,
+        }
+      : undefined;
 
     const executions =
       await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
         deployment.id,
-        { limit: pageSize, offset: offset }
+        { limit: pageSize, offset: offset, filter: filterParam }
       );
 
     const transformedExecutions =
