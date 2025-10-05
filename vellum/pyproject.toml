@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vargasjr-dev-agent"
-version = "0.1.4"
+version = "0.1.5"
 description = "Vargas Jr Dev Agent"
 authors = []
 keywords = []
@@ -34,6 +34,10 @@ ipdb = "^0.13.13"
 types-requests = "^2.32.0.20241016"
 google-api-python-client-stubs = "^1.28.0"
 requests-mock = "^1.12.1"
+
+[tool.poetry.scripts]
+eval-runner = "evals.runner:main"
+
 
 [tool.mypy]
 plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy", "sqlalchemy.ext.mypy.plugin"]
