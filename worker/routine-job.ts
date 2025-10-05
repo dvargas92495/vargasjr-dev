@@ -93,7 +93,11 @@ export class RoutineJob {
 
     if (process.env.AGENT_ENVIRONMENT !== "production") {
       this.logger.info(
-        `Skipping routine job ${this.name} - not in production environment (current: ${process.env.AGENT_ENVIRONMENT || "unknown"})`
+        `Skipping routine job ${
+          this.name
+        } - not in production environment (current: ${
+          process.env.AGENT_ENVIRONMENT || "unknown"
+        })`
       );
       return null;
     }
