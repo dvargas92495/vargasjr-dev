@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { cookies } from "next/headers";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { UnauthorizedError } from "@/server/errors";
 import {
   EC2,
   GetConsoleOutputCommand,
@@ -366,7 +367,7 @@ async function healthCheckHandler(body: unknown) {
 
   if (token?.value !== process.env.ADMIN_TOKEN) {
     console.log(`[Health Check] Authentication failed - invalid admin token`);
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   console.log(`[Health Check] Request body:`, JSON.stringify(body, null, 2));

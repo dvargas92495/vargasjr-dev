@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getGitHubAuthHeaders } from "../../lib/github-auth";
 import { getEnvironmentPrefix, getPRNumber } from "../constants";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { UnauthorizedError } from "@/server/errors";
 
 const PRODUCTION_AGENT_NAME = "vargas-jr";
 
@@ -10,7 +11,7 @@ async function createAgentHandler() {
   const token = cookieStore.get("admin-token");
 
   if (token?.value !== process.env.ADMIN_TOKEN) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   const environmentPrefix = getEnvironmentPrefix();

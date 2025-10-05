@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getGitHubAuthHeaders } from "../../../lib/github-auth";
 import { z } from "zod";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { UnauthorizedError } from "@/server/errors";
 
 const approvePrSchema = z.object({
   prNumber: z.coerce.number(),
@@ -12,7 +13,7 @@ async function approvePrHandler(body: unknown) {
   const token = cookieStore.get("admin-token");
 
   if (token?.value !== process.env.ADMIN_TOKEN) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   const { prNumber } = approvePrSchema.parse(body);

@@ -5,6 +5,7 @@ import {
   NotFoundError,
   InvalidContactDataError,
   InvalidContactFormatError,
+  UnauthorizedError,
 } from "@/server/errors";
 
 type ApiHandler<T = unknown> = (body: unknown) => Promise<T>;
@@ -63,6 +64,10 @@ export function withApiWrapper<T = unknown>(
           { error: `Invalid request body: ${formatZodError(error)}` },
           { status: 400 }
         );
+      }
+
+      if (error instanceof UnauthorizedError) {
+        return NextResponse.json({ error: error.message }, { status: 401 });
       }
 
       if (error instanceof NotFoundError) {

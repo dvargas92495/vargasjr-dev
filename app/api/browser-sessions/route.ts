@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { EC2 } from "@aws-sdk/client-ec2";
 import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION } from "@/server/constants";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { UnauthorizedError } from "@/server/errors";
 
 const browserSessionsSchema = z.object({
   instanceId: z.string(),
@@ -140,7 +141,7 @@ async function browserSessionsHandler(body: unknown) {
   const token = cookieStore.get("admin-token");
 
   if (token?.value !== process.env.ADMIN_TOKEN) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   const { instanceId } = browserSessionsSchema.parse(body);

@@ -5,6 +5,7 @@ import { AWS_DEFAULT_REGION } from "@/server/constants";
 import { getGitHubAuthHeaders } from "../../lib/github-auth";
 import { z } from "zod";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { UnauthorizedError } from "@/server/errors";
 
 async function checkWorkflowFailure(creationStartTime: number) {
   try {
@@ -48,7 +49,7 @@ async function checkAgentStatusHandler(body: unknown) {
   const token = cookieStore.get("admin-token");
 
   if (token?.value !== process.env.ADMIN_TOKEN) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   const { creationStartTime } = agentStatusSchema.parse(body);
