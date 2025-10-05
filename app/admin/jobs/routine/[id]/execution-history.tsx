@@ -21,7 +21,6 @@ interface ExecutionHistoryProps {
 interface ExecutionHistoryResponse {
   executions: RoutineJobExecution[];
   totalCount: number;
-  availableEnvs: string[];
 }
 
 export default function ExecutionHistory({
@@ -29,7 +28,6 @@ export default function ExecutionHistory({
 }: ExecutionHistoryProps) {
   const [executions, setExecutions] = useState<RoutineJobExecution[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [availableEnvs, setAvailableEnvs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +58,6 @@ export default function ExecutionHistory({
         const data: ExecutionHistoryResponse = await response.json();
         setExecutions(data.executions);
         setTotalCount(data.totalCount);
-        setAvailableEnvs(data.availableEnvs);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -108,38 +105,31 @@ export default function ExecutionHistory({
         )}
       </div>
 
-      {availableEnvs.length > 0 && (
-        <div className="mb-4">
-          <label
-            htmlFor="env-filter"
-            className="block mb-2 text-sm font-medium text-gray-700"
-          >
-            Filter by Environment:
-          </label>
-          <select
-            id="env-filter"
-            value={selectedEnv}
-            onChange={(e) => {
-              const params = new URLSearchParams(searchParams.toString());
-              if (e.target.value) {
-                params.set("env", e.target.value);
-              } else {
-                params.delete("env");
-              }
-              params.delete("page");
-              window.location.href = `/admin/jobs/routine/${routineJobId}?${params.toString()}`;
-            }}
-            className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Environments</option>
-            {availableEnvs.map((env) => (
-              <option key={env} value={env}>
-                {env}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div className="mb-4">
+        <label
+          htmlFor="env-filter"
+          className="block mb-2 text-sm font-medium text-gray-700"
+        >
+          Filter by Environment:
+        </label>
+        <input
+          type="text"
+          id="env-filter"
+          value={selectedEnv}
+          onChange={(e) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (e.target.value) {
+              params.set("env", e.target.value);
+            } else {
+              params.delete("env");
+            }
+            params.delete("page");
+            window.location.href = `/admin/jobs/routine/${routineJobId}?${params.toString()}`;
+          }}
+          placeholder="e.g., preview-535, production"
+          className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
       {executions.length === 0 ? (
         <p className="text-gray-700">

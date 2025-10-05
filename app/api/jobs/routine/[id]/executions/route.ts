@@ -55,14 +55,53 @@ export async function GET(
       );
     }
 
-    const allExecutions =
-      await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
-        deployment.id,
-        { limit: 1000 }
+    if (envFilter) {
+      const allExecutions =
+        await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
+          deployment.id,
+          { limit: 1000 }
+        );
+
+      const allTransformedExecutions =
+        allExecutions.results?.map((execution) => ({
+          id: execution.spanId,
+          executionId: execution.spanId,
+          createdAt: execution.start,
+          outputs: execution.outputs,
+          error: execution.error,
+          environment:
+            execution.parentContext?.type === "WORKFLOW_RELEASE_TAG"
+              ? execution.parentContext.metadata?.environment
+              : "unknown",
+          location:
+            execution.parentContext?.type === "WORKFLOW_RELEASE_TAG"
+              ? execution.parentContext.metadata?.location
+              : "unknown",
+        })) || [];
+
+      const filteredExecutions = allTransformedExecutions.filter(
+        (e) => e.environment === envFilter
       );
 
-    const allTransformedExecutions =
-      allExecutions.results?.map((execution) => ({
+      const paginatedExecutions = filteredExecutions.slice(
+        offset,
+        offset + pageSize
+      );
+
+      return NextResponse.json({
+        executions: paginatedExecutions,
+        totalCount: filteredExecutions.length,
+      });
+    }
+
+    const executions =
+      await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
+        deployment.id,
+        { limit: pageSize, offset: offset }
+      );
+
+    const transformedExecutions =
+      executions.results?.map((execution) => ({
         id: execution.spanId,
         executionId: execution.spanId,
         createdAt: execution.start,
@@ -78,25 +117,11 @@ export async function GET(
             : "unknown",
       })) || [];
 
-    const uniqueEnvs = Array.from(
-      new Set(allTransformedExecutions.map((e) => e.environment))
-    ).sort();
-
-    const filteredExecutions = envFilter
-      ? allTransformedExecutions.filter((e) => e.environment === envFilter)
-      : allTransformedExecutions;
-
-    const paginatedExecutions = filteredExecutions.slice(
-      offset,
-      offset + pageSize
-    );
-
-    const totalCount = filteredExecutions.length;
+    const totalCount = executions.count ?? transformedExecutions.length;
 
     return NextResponse.json({
-      executions: paginatedExecutions,
+      executions: transformedExecutions,
       totalCount: totalCount,
-      availableEnvs: uniqueEnvs,
     });
   } catch (error) {
     console.error("Error fetching routine job executions:", error);
