@@ -74,35 +74,13 @@ export default function ExecutionHistory({
     fetchExecutions();
   }, [routineJobId, currentPage, selectedEnv]);
 
-  if (loading) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Execution History
-        </h3>
-        <p className="text-gray-700">Loading execution history...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Execution History
-        </h3>
-        <p className="text-red-600">Error: {error}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
           Execution History
         </h3>
-        {totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -114,7 +92,7 @@ export default function ExecutionHistory({
       <div className="mb-4">
         <label
           htmlFor="env-filter"
-          className="block mb-2 text-sm font-medium text-gray-700"
+          className="block mb-2 text-sm font-medium text-gray-900"
         >
           Filter by Environment:
         </label>
@@ -142,11 +120,15 @@ export default function ExecutionHistory({
             }, 500);
           }}
           placeholder="e.g., preview-535, production"
-          className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-64 px-3 py-2 border border-gray-400 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
-      {executions.length === 0 ? (
+      {loading ? (
+        <p className="text-gray-700">Loading execution history...</p>
+      ) : error ? (
+        <p className="text-red-600">Error: {error}</p>
+      ) : executions.length === 0 ? (
         <p className="text-gray-700">
           No executions found for this routine job.
         </p>

@@ -98,7 +98,7 @@ export async function GET(
             : "unknown",
       })) || [];
 
-    const totalCount = executions.count ?? transformedExecutions.length;
+    const totalCount = executions.count;
 
     return NextResponse.json({
       executions: transformedExecutions,
