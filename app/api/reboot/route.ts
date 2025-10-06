@@ -58,9 +58,9 @@ export const POST = withApiWrapper(async (body: unknown) => {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorText = await response.text();
       throw new Error(
-        errorData.message || `Agent Server returned HTTP ${response.status}`
+        `Agent Server returned HTTP ${response.status}: ${errorText}`
       );
     }
 
