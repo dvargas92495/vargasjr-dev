@@ -174,7 +174,7 @@ const HealthStatusIndicator = ({
 
   useEffect(() => {
     checkHealth();
-    const interval = setInterval(checkHealth, 3000);
+    const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);
   }, [checkHealth]);
 
