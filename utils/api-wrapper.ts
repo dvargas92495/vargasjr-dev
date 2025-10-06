@@ -86,7 +86,9 @@ export function withApiWrapper<T = unknown>(
       return NextResponse.json(
         {
           error:
-            error instanceof Error ? error.message : "Internal server error",
+            error instanceof Error
+              ? `Internal Server Error: ${error.message}`
+              : "Internal Server Error",
         },
         { status: 500 }
       );

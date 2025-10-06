@@ -301,7 +301,9 @@ export class AgentServer {
           this.logger.error(`Reboot failed: ${error}`);
           res.status(500).json({
             status: "error",
-            message: error instanceof Error ? error.message : String(error),
+            message: `Reboot failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
             timestamp: new Date().toISOString(),
           });
         }
