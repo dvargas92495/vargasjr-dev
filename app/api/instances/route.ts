@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { terminateInstances, deleteKeyPair } from "@/scripts/utils";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 import { withApiWrapper } from "@/utils/api-wrapper";
-import { UnauthorizedError } from "@/server/errors";
+import { UnauthorizedError, NotFoundError } from "@/server/errors";
 
 const instanceSchema = z.object({
   id: z.string(),
@@ -77,7 +77,7 @@ async function instancesHandler(body: unknown) {
   }
 
   console.log(`[/api/instances] Invalid operation: ${operation}`);
-  throw new Error("Invalid operation");
+  throw new NotFoundError("Invalid operation");
 }
 
 export const POST = withApiWrapper(instancesHandler);
