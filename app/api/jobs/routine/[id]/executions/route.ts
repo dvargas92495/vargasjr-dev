@@ -14,6 +14,7 @@ export async function GET(
 
     const currentPage = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = 10;
+    const envFilter = searchParams.get("env") || null;
     const offset = (currentPage - 1) * pageSize;
 
     const db = getDb();
@@ -54,16 +55,31 @@ export async function GET(
       );
     }
 
-    const [executions, totalExecutions] = await Promise.all([
-      vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
+    const filterParam = envFilter
+      ? {
+          type: "LOGICAL_CONDITION_GROUP" as const,
+          conditions: [
+            {
+              type: "LOGICAL_CONDITION" as const,
+              lhs_variable: { type: "STRING" as const, value: "metadata" },
+              operator: "contains" as const,
+              rhs_variable: { type: "STRING" as const, value: envFilter },
+            },
+          ],
+          combinator: "AND" as const,
+          negated: false,
+        }
+      : undefined;
+
+    const executions =
+      await vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
         deployment.id,
-        { limit: pageSize, offset: offset }
-      ),
-      vellumClient.workflowDeployments.listWorkflowDeploymentEventExecutions(
-        deployment.id,
-        { limit: 1000 }
-      ),
-    ]);
+        {
+          limit: pageSize,
+          offset: offset,
+          ...(filterParam && { filters: JSON.stringify(filterParam) }),
+        }
+      );
 
     const transformedExecutions =
       executions.results?.map((execution) => ({
@@ -82,7 +98,7 @@ export async function GET(
             : "unknown",
       })) || [];
 
-    const totalCount = totalExecutions.results?.length || 0;
+    const totalCount = executions.count;
 
     return NextResponse.json({
       executions: transformedExecutions,

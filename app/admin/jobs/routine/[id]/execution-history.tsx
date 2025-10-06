@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import PaginationControls from "@/components/pagination-controls";
 
@@ -33,8 +33,15 @@ export default function ExecutionHistory({
 
   const searchParams = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const selectedEnv = searchParams.get("env") || "";
+  const [inputValue, setInputValue] = useState(selectedEnv);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pageSize = 10;
   const totalPages = Math.ceil(totalCount / pageSize);
+
+  useEffect(() => {
+    setInputValue(selectedEnv);
+  }, [selectedEnv]);
 
   useEffect(() => {
     const fetchExecutions = async () => {
@@ -45,6 +52,9 @@ export default function ExecutionHistory({
         );
         if (currentPage > 1) {
           url.searchParams.set("page", currentPage.toString());
+        }
+        if (selectedEnv) {
+          url.searchParams.set("env", selectedEnv);
         }
 
         const response = await fetch(url.toString());
@@ -62,29 +72,7 @@ export default function ExecutionHistory({
     };
 
     fetchExecutions();
-  }, [routineJobId, currentPage]);
-
-  if (loading) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Execution History
-        </h3>
-        <p className="text-gray-700">Loading execution history...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Execution History
-        </h3>
-        <p className="text-red-600">Error: {error}</p>
-      </div>
-    );
-  }
+  }, [routineJobId, currentPage, selectedEnv]);
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -92,7 +80,7 @@ export default function ExecutionHistory({
         <h3 className="text-lg font-semibold text-gray-900">
           Execution History
         </h3>
-        {totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -101,7 +89,46 @@ export default function ExecutionHistory({
         )}
       </div>
 
-      {executions.length === 0 ? (
+      <div className="mb-4">
+        <label
+          htmlFor="env-filter"
+          className="block mb-2 text-sm font-medium text-gray-900"
+        >
+          Filter by Environment:
+        </label>
+        <input
+          type="text"
+          id="env-filter"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setInputValue(newValue);
+
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
+            }
+
+            debounceTimerRef.current = setTimeout(() => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (newValue) {
+                params.set("env", newValue);
+              } else {
+                params.delete("env");
+              }
+              params.delete("page");
+              window.location.href = `/admin/jobs/routine/${routineJobId}?${params.toString()}`;
+            }, 500);
+          }}
+          placeholder="e.g., preview-535, production"
+          className="w-64 px-3 py-2 border border-gray-400 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+
+      {loading ? (
+        <p className="text-gray-700">Loading execution history...</p>
+      ) : error ? (
+        <p className="text-red-600">Error: {error}</p>
+      ) : executions.length === 0 ? (
         <p className="text-gray-700">
           No executions found for this routine job.
         </p>
