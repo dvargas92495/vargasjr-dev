@@ -18,7 +18,11 @@ const MarkAsUnreadButton = ({
   const onClick = useCallback(async () => {
     setIsLoading(true);
     try {
-      await markMessageAsUnread(messageId, inboxId);
+      const res = await markMessageAsUnread(messageId, inboxId);
+      if (!res?.success) {
+        alert(res?.error ?? "Failed to mark message as unread");
+        return;
+      }
       router.refresh();
     } catch (error) {
       console.error("Failed to mark message as unread:", error);

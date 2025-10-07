@@ -312,29 +312,38 @@ export async function deleteMessage(messageId: string, inboxId: string) {
   return deletedMessage[0];
 }
 
-export async function markMessageAsUnread(messageId: string, inboxId: string) {
+export async function markMessageAsUnread(
+  messageId: string,
+  inboxId: string
+): Promise<{ success: true } | { success: false; error: string }> {
   const db = getDb();
 
-  const message = await db
-    .select()
-    .from(InboxMessagesTable)
-    .where(eq(InboxMessagesTable.id, messageId))
-    .limit(1);
+  try {
+    const message = await db
+      .select()
+      .from(InboxMessagesTable)
+      .where(eq(InboxMessagesTable.id, messageId))
+      .limit(1);
 
-  if (!message.length) {
-    throw new Error("Message not found");
+    if (!message.length) {
+      return { success: false, error: "Message not found" };
+    }
+
+    await db
+      .insert(InboxMessageOperationsTable)
+      .values({
+        inboxMessageId: messageId,
+        operation: "UNREAD",
+      })
+      .execute();
+
+    revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+    revalidatePath(`/admin/inboxes/${inboxId}`);
+    return { success: true };
+  } catch (e) {
+    const err = e instanceof Error ? e.message : String(e);
+    return { success: false, error: err };
   }
-
-  await db
-    .insert(InboxMessageOperationsTable)
-    .values({
-      inboxMessageId: messageId,
-      operation: "UNREAD",
-    })
-    .execute();
-
-  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
-  revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
 export async function markMessageAsArchived(
