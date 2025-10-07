@@ -84,7 +84,12 @@ export function withApiWrapper<T = unknown>(
 
       console.error("API handler error:", error);
       return NextResponse.json(
-        { error: "Internal server error" },
+        {
+          error:
+            error instanceof Error
+              ? `Internal Server Error: ${error.message}`
+              : "Internal Server Error",
+        },
         { status: 500 }
       );
     }
