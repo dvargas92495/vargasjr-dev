@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import HealthStatusIndicator from "@/components/health-status-indicator";
 import TransitionalStateRefresh from "@/components/transitional-state-refresh";
 import Link from "next/link";
@@ -31,6 +31,8 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
   const prNumber = instance.Tags?.find(
     (tag: { Key?: string; Value?: string }) => tag.Key === "PRNumber"
   )?.Value;
+
+  const handleHealthStatusChange = useCallback(() => {}, []);
 
   return (
     <div className="border p-4 rounded-lg w-full max-w-2xl">
@@ -68,7 +70,7 @@ const InstanceCard = ({ instance }: InstanceCardProps) => {
               publicDns={instance.PublicDnsName || ""}
               keyName={instance.KeyName || ""}
               instanceState={instanceState || ""}
-              onHealthStatusChange={() => {}}
+              onHealthStatusChange={handleHealthStatusChange}
             />
           ) : (
             <span className="text-gray-500">N/A</span>
