@@ -47,6 +47,7 @@ export const InboxMessageOperationTypesEnum = pgEnum(
   InboxMessageOperationTypes
 );
 
+
 export const InboxMessageOperationsTable = pgTable("inbox_message_operations", {
   id: uuid("id").primaryKey().defaultRandom(),
   inboxMessageId: uuid("inbox_message_id")
