@@ -5,6 +5,7 @@ import { existsSync, writeFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import * as cache from "@actions/cache";
+import { getFullCacheKey, getCachePaths } from "./cache-utils";
 
 async function fetchVercelEnvVars(
   target: "production" | "preview"
@@ -119,20 +120,14 @@ async function handlePostInstall(): Promise<void> {
       execSync("npx playwright install --with-deps", { stdio: "inherit" });
     }
 
-    if (process.env.CACHE_KEY && process.env.CACHE_PATHS) {
-      try {
-        console.log("Saving cache...");
-        const cachePaths = process.env.CACHE_PATHS.split(",");
-        const cacheId = await cache.saveCache(
-          cachePaths,
-          process.env.CACHE_KEY
-        );
-        console.log(`Cache saved with ID: ${cacheId}`);
-      } catch (error) {
-        console.warn("Cache save failed:", error);
-      }
-    } else {
-      console.log("Cache keys not found, skipping cache save...");
+    try {
+      console.log("Saving cache...");
+      const fullCacheKey = getFullCacheKey();
+      const cachePaths = getCachePaths();
+      const cacheId = await cache.saveCache(cachePaths, fullCacheKey);
+      console.log(`Cache saved with ID: ${cacheId}`);
+    } catch (error) {
+      console.warn("Cache save failed:", error);
     }
   } else if (process.env.VERCEL) {
     console.log(

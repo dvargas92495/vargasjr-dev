@@ -1,36 +1,11 @@
 #!/usr/bin/env tsx
 
-import { execSync } from "child_process";
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
-import { createHash } from "crypto";
 import * as cache from "@actions/cache";
-
-function createStableCacheKey(): string {
-  const packageLockPath = join(process.cwd(), "package-lock.json");
-  if (!existsSync(packageLockPath)) {
-    throw new Error("package-lock.json not found");
-  }
-
-  const packageLock = JSON.parse(readFileSync(packageLockPath, "utf8"));
-
-  const stablePackageLock = { ...packageLock };
-  delete stablePackageLock.version;
-  delete stablePackageLock.lockfileVersion;
-
-  if (stablePackageLock.packages && stablePackageLock.packages[""]) {
-    const rootPackage = { ...stablePackageLock.packages[""] };
-    delete rootPackage.version;
-    stablePackageLock.packages[""] = rootPackage;
-  }
-
-  const stableContent = JSON.stringify(stablePackageLock, null, 2);
-  return createHash("sha256")
-    .update(stableContent)
-    .digest("hex")
-    .substring(0, 16);
-}
+import {
+  getFullCacheKey,
+  getCachePaths,
+  getRestoreKeys,
+} from "./cache-utils";
 
 async function handleCaching(): Promise<void> {
   if (!process.env.CI || process.env.VERCEL) {
@@ -44,20 +19,12 @@ async function handleCaching(): Promise<void> {
 
   console.log("Setting up caching for CI environment...");
 
-  const cacheKey = createStableCacheKey();
-  const fullCacheKey = `deps-${process.platform}-${cacheKey}`;
-  const restoreKeys = [`deps-${process.platform}-`];
-
-  const cachePaths = [
-    join(homedir(), ".npm"),
-    join(homedir(), ".cache", "ms-playwright"),
-  ];
+  const fullCacheKey = getFullCacheKey();
+  const cachePaths = getCachePaths();
+  const restoreKeys = getRestoreKeys();
 
   console.log(`Generated cache key: ${fullCacheKey}`);
   console.log(`Cache paths: ${cachePaths.join(", ")}`);
-
-  process.env.CACHE_KEY = fullCacheKey;
-  process.env.CACHE_PATHS = cachePaths.join(",");
 
   try {
     console.log("Attempting to restore cache...");
