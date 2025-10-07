@@ -1,11 +1,7 @@
 #!/usr/bin/env tsx
 
 import * as cache from "@actions/cache";
-import {
-  getFullCacheKey,
-  getCachePaths,
-  getRestoreKeys,
-} from "./cache-utils";
+import { getFullCacheKey, getCachePaths, getRestoreKeys } from "./cache-utils";
 
 async function handleCaching(): Promise<void> {
   if (!process.env.CI || process.env.VERCEL) {
