@@ -4,10 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       eval_name:
-        description: "Eval to run"
-        required: true
+        description: "Eval to run (leave empty to run all)"
+        required: false
         type: choice
         options:
+          - ""
           - who_are_you_text_message
           - recruiter_email_happy_path
           - slack_channel_message_happy_path
@@ -32,7 +33,12 @@ jobs:
         working-directory: vellum
 
       - name: Run eval
-        run: poetry run eval-runner ${{ inputs.eval_name }}
+        run: |
+          if [ -n "${{ inputs.eval_name }}" ]; then
+            poetry run eval-runner ${{ inputs.eval_name }}
+          else
+            poetry run eval-runner
+          fi
         working-directory: vellum
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}

@@ -158,31 +158,73 @@ class EvalRunner:
 
 def main():
     """Main function for running evals from command line"""
-    if len(sys.argv) != 2:
-        print("Usage: python runner.py <eval_name>")
-        print("Example: python runner.py who_are_you_text_message")
-        sys.exit(1)
-    
-    eval_name = sys.argv[1]
     runner = EvalRunner()
     
-    print(f"Running evaluation: {eval_name}")
-    print("=" * 50)
-    
-    result = runner.run_eval(eval_name)
-    
-    print(f"Eval: {result['eval_name']}")
-    print(f"Score: {result['score']:.2f}")
-    
-    if result.get('error'):
-        print(f"Error: {result['error']}")
+    if len(sys.argv) == 1:
+        all_evals = [
+            'who_are_you_text_message',
+            'recruiter_email_happy_path',
+            'slack_channel_message_happy_path'
+        ]
+        
+        print("Running all evaluations")
+        print("=" * 50)
+        
+        all_results = []
+        total_score = 0.0
+        
+        for eval_name in all_evals:
+            print(f"\nRunning evaluation: {eval_name}")
+            print("-" * 50)
+            
+            result = runner.run_eval(eval_name)
+            all_results.append(result)
+            
+            print(f"Eval: {result['eval_name']}")
+            print(f"Score: {result['score']:.2f}")
+            
+            if result.get('error'):
+                print(f"Error: {result['error']}")
+            else:
+                print(f"Test Results: {len(result['results'])} test cases")
+                for i, test_result in enumerate(result['results'], 1):
+                    status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
+                    print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status}")
+            
+            total_score += result['score']
+        
+        print("\n" + "=" * 50)
+        print(f"OVERALL RESULTS: {len(all_evals)} evaluations")
+        print(f"Average Score: {total_score / len(all_evals):.2f}")
+        print("=" * 50)
+        
+    elif len(sys.argv) == 2:
+        eval_name = sys.argv[1]
+        
+        print(f"Running evaluation: {eval_name}")
+        print("=" * 50)
+        
+        result = runner.run_eval(eval_name)
+        
+        print(f"Eval: {result['eval_name']}")
+        print(f"Score: {result['score']:.2f}")
+        
+        if result.get('error'):
+            print(f"Error: {result['error']}")
+        else:
+            print(f"Test Results: {len(result['results'])} test cases")
+            for i, test_result in enumerate(result['results'], 1):
+                status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
+                print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status}")
+        
+        print("=" * 50)
+        
     else:
-        print(f"Test Results: {len(result['results'])} test cases")
-        for i, test_result in enumerate(result['results'], 1):
-            status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
-            print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status}")
-    
-    print("=" * 50)
+        print("Usage: python runner.py [eval_name]")
+        print("Examples:")
+        print("  python runner.py                          # Run all evals")
+        print("  python runner.py who_are_you_text_message # Run specific eval")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
