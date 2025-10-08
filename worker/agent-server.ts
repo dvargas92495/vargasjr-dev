@@ -140,7 +140,8 @@ export class AgentServer {
                   logs[name] = {
                     exists: true,
                     totalLines: lines.length,
-                    lines: lines.length > maxLines ? lines.slice(-maxLines) : lines,
+                    lines:
+                      lines.length > maxLines ? lines.slice(-maxLines) : lines,
                   };
                 } else {
                   logs[name] = { exists: true, empty: true };

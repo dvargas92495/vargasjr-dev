@@ -147,11 +147,15 @@ const AgentLogsIndicator = ({
                   {logFile.empty && " (empty)"}
                   {logFile.error && " (error reading file)"}
                   {logFile.totalLines &&
-                    ` (${logFile.totalLines} lines, showing last ${logFile.lines?.length || 0})`}
+                    ` (${logFile.totalLines} lines, showing last ${
+                      logFile.lines?.length || 0
+                    })`}
                 </summary>
                 <div className="mt-2 p-2 bg-gray-50 border rounded">
                   {logFile.empty && (
-                    <div className="text-xs text-gray-600">Log file is empty</div>
+                    <div className="text-xs text-gray-600">
+                      Log file is empty
+                    </div>
                   )}
                   {logFile.error && (
                     <div className="text-xs text-red-600">

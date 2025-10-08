@@ -307,9 +307,7 @@ export default function InstanceDetailPage({
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">
-          Agent Logs
-        </h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">Agent Logs</h3>
         {instanceId ? (
           <AgentLogsIndicator
             instanceId={instanceId}
