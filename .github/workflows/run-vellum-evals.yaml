@@ -1,0 +1,38 @@
+name: Run Vellum Evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      eval_name:
+        description: "Eval to run"
+        required: true
+        type: choice
+        options:
+          - who_are_you_text_message
+          - recruiter_email_happy_path
+          - slack_channel_message_happy_path
+
+jobs:
+  run-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Bootstrap poetry
+        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: vellum
+
+      - name: Run eval
+        run: poetry run eval-runner ${{ inputs.eval_name }}
+        working-directory: vellum
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
