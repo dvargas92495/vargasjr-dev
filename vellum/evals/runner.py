@@ -4,12 +4,14 @@ import sys
 import asyncio
 import importlib
 from pathlib import Path
+import inspect
 from typing import Dict, Any, List
 from vellum.workflows.sandbox import WorkflowSandboxRunner
 from vellum.workflows.inputs import BaseInputs
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from models.types import USER
 from services import create_inbox_message
+from vellum.evals.base import BaseEval
 
 
 class EvalRunner:
@@ -32,8 +34,7 @@ class EvalRunner:
         """
         try:
             eval_module = importlib.import_module(f"vellum.evals.{eval_name}.test_case")
-            eval_class_name = self._get_eval_class_name(eval_name)
-            eval_class = getattr(eval_module, eval_class_name)
+            eval_class = self._get_eval_class(eval_module)
             
             eval_instance = eval_class()
             test_data = eval_instance.get_test_data()
@@ -57,10 +58,14 @@ class EvalRunner:
                 "results": None
             }
     
-    def _get_eval_class_name(self, eval_name: str) -> str:
-        """Convert eval name to class name (e.g., 'who_are_you_text_message' -> 'WhoAreYouTextMessageEval')"""
-        parts = eval_name.split('_')
-        return ''.join(word.capitalize() for word in parts) + 'Eval'
+    def _get_eval_class(self, eval_module) -> type:
+        """Find and return the BaseEval subclass from the eval module"""
+        for name, obj in inspect.getmembers(eval_module):
+            if (inspect.isclass(obj) and 
+                issubclass(obj, BaseEval) and 
+                obj is not BaseEval):
+                return obj
+        raise ValueError(f"No BaseEval subclass found in module {eval_module}")
     
     def _execute_eval(self, eval_instance, test_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Execute the evaluation test cases"""

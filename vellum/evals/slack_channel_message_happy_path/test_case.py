@@ -2,9 +2,10 @@
 
 import asyncio
 from typing import List, Dict, Any
+from vellum.evals.base import BaseEval
 
 
-class SlackChannelMessageHappyPathEval:
+class SlackChannelMessageHappyPathEval(BaseEval):
     """
     Evaluation setup for testing Slack channel message workflows in happy path scenarios.
     This class outlines the steps needed to set up comprehensive evaluations

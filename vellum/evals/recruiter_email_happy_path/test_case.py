@@ -2,9 +2,10 @@
 
 import asyncio
 from typing import List, Dict, Any
+from vellum.evals.base import BaseEval
 
 
-class RecruiterEmailHappyPathEval:
+class RecruiterEmailHappyPathEval(BaseEval):
     """
     Evaluation setup for testing recruiter email workflows in happy path scenarios.
     This class outlines the steps needed to set up comprehensive evaluations
