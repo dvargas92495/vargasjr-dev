@@ -42,6 +42,7 @@ export const InboxMessagesTable = pgTable("inbox_messages", {
 
 export type InboxMessageOperationType =
   (typeof InboxMessageOperationTypes)[number];
+/** Enum for inbox message operation types - includes READ, ARCHIVED, and UNREAD */
 export const InboxMessageOperationTypesEnum = pgEnum(
   "inbox_message_operation_type",
   InboxMessageOperationTypes
