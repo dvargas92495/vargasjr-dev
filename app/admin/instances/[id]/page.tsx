@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import StopInstanceButton from "@/components/stop-instance-button";
@@ -109,9 +109,9 @@ export default function InstanceDetailPage({
     fetchInstance();
   }, [id]);
 
-  const handleHealthStatusChange = (status: HealthStatus) => {
+  const handleHealthStatusChange = useCallback((status: HealthStatus) => {
     setHealthData(status);
-  };
+  }, []);
 
   if (errorMessage) {
     return (
