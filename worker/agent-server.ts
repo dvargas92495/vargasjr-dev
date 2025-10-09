@@ -163,7 +163,7 @@ export class AgentServer {
               "sudo journalctl -u vargasjr-agent.service --no-pager -n 100",
               { encoding: "utf8", timeout: 5000 }
             ).trim();
-            
+
             if (journalOutput.length > 0) {
               const lines = journalOutput.split("\n");
               logs["systemd.log"] = {
