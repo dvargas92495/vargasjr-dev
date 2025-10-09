@@ -1,0 +1,40 @@
+name: Run Vellum Evals
+
+on:
+  workflow_dispatch:
+    inputs:
+      eval_name:
+        description: "Eval to run (leave empty to run all)"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  run-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Bootstrap poetry
+        run: curl -sSL https://install.python-poetry.org | python - -y --version 1.8.3
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: vellum
+
+      - name: Run eval
+        run: |
+          if [ -n "${{ inputs.eval_name }}" ]; then
+            poetry run eval-runner ${{ inputs.eval_name }}
+          else
+            poetry run eval-runner
+          fi
+        working-directory: vellum
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
