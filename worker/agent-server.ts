@@ -1,5 +1,6 @@
 import express from "express";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
+import { existsSync, readFileSync } from "fs";
 import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
 import { rebootAgent } from "./reboot-manager";
@@ -112,6 +113,61 @@ export class AgentServer {
           res.json({ success: true });
         } catch (error) {
           res.status(500).json({ error: (error as Error).message });
+        }
+      }
+    );
+
+    this.app.get(
+      "/api/logs",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const logFiles = [
+            { name: "error.log", maxLines: 100 },
+            { name: "browser-error.log", maxLines: 100 },
+            { name: "agent.log", maxLines: 100 },
+            { name: "out.log", maxLines: 100 },
+          ];
+
+          const logs: Record<string, any> = {};
+
+          for (const { name, maxLines } of logFiles) {
+            if (existsSync(name)) {
+              try {
+                const content = readFileSync(name, "utf8").trim();
+                if (content.length > 0) {
+                  const lines = content.split("\n");
+                  logs[name] = {
+                    exists: true,
+                    totalLines: lines.length,
+                    lines:
+                      lines.length > maxLines ? lines.slice(-maxLines) : lines,
+                  };
+                } else {
+                  logs[name] = { exists: true, empty: true };
+                }
+              } catch (error) {
+                logs[name] = {
+                  exists: true,
+                  error: error instanceof Error ? error.message : String(error),
+                };
+              }
+            } else {
+              logs[name] = { exists: false };
+            }
+          }
+
+          res.json({
+            status: "success",
+            logs,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          res.status(500).json({
+            status: "error",
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
         }
       }
     );
