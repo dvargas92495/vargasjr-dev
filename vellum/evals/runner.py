@@ -3,6 +3,7 @@
 import sys
 import asyncio
 import importlib
+from pathlib import Path
 from typing import Dict, Any, List
 from vellum.workflows.sandbox import WorkflowSandboxRunner
 from vellum.workflows.inputs import BaseInputs
@@ -161,11 +162,12 @@ def main():
     runner = EvalRunner()
     
     if len(sys.argv) == 1:
+        evals_dir = Path(__file__).parent
         all_evals = [
-            'who_are_you_text_message',
-            'recruiter_email_happy_path',
-            'slack_channel_message_happy_path'
+            d.name for d in evals_dir.iterdir()
+            if d.is_dir() and not d.name.startswith('_') and (d / 'test_case.py').exists()
         ]
+        all_evals.sort()
         
         print("Running all evaluations")
         print("=" * 50)

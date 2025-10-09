@@ -6,12 +6,8 @@ on:
       eval_name:
         description: "Eval to run (leave empty to run all)"
         required: false
-        type: choice
-        options:
-          - ""
-          - who_are_you_text_message
-          - recruiter_email_happy_path
-          - slack_channel_message_happy_path
+        type: string
+        default: ""
 
 jobs:
   run-eval:
