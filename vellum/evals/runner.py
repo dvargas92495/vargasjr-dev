@@ -33,7 +33,7 @@ class EvalRunner:
             Dict containing eval results and score
         """
         try:
-            eval_module = importlib.import_module(f"vellum.evals.{eval_name}.test_case")
+            eval_module = importlib.import_module(f"evals.{eval_name}.test_case")
             eval_class = self._get_eval_class(eval_module)
             
             eval_instance = eval_class()
@@ -205,6 +205,17 @@ def main():
         print(f"Average Score: {total_score / len(all_evals):.2f}")
         print("=" * 50)
         
+        failed_evals = []
+        for result in all_results:
+            if result.get('error') or result['score'] < 0.5:
+                failed_evals.append(result['eval_name'])
+        
+        if failed_evals:
+            print(f"\n❌ FAILED: {len(failed_evals)} eval(s) failed or scored below 0.5:")
+            for eval_name in failed_evals:
+                print(f"  - {eval_name}")
+            sys.exit(1)
+        
     elif len(sys.argv) == 2:
         eval_name = sys.argv[1]
         
@@ -225,6 +236,14 @@ def main():
                 print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status}")
         
         print("=" * 50)
+        
+        if result.get('error'):
+            print(f"\n❌ FAILED: Eval encountered an error")
+            sys.exit(1)
+        
+        if result['score'] < 0.5:
+            print(f"\n❌ FAILED: Score {result['score']:.2f} is below threshold of 0.5")
+            sys.exit(1)
         
     else:
         print("Usage: python runner.py [eval_name]")
