@@ -1,6 +1,7 @@
 import express from "express";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import { existsSync, readFileSync } from "fs";
+import { execSync } from "child_process";
 import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
 import { rebootAgent } from "./reboot-manager";
@@ -155,6 +156,29 @@ export class AgentServer {
             } else {
               logs[name] = { exists: false };
             }
+          }
+
+          try {
+            const journalOutput = execSync(
+              "sudo journalctl -u vargasjr-agent.service --no-pager -n 100",
+              { encoding: "utf8", timeout: 5000 }
+            ).trim();
+
+            if (journalOutput.length > 0) {
+              const lines = journalOutput.split("\n");
+              logs["systemd.log"] = {
+                exists: true,
+                totalLines: lines.length,
+                lines: lines,
+              };
+            } else {
+              logs["systemd.log"] = { exists: true, empty: true };
+            }
+          } catch (error) {
+            logs["systemd.log"] = {
+              exists: true,
+              error: error instanceof Error ? error.message : String(error),
+            };
           }
 
           res.json({
