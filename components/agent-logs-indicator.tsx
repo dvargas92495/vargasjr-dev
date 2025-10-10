@@ -120,7 +120,9 @@ const AgentLogsIndicator = ({
   return (
     <div className="text-sm">
       <div className="flex items-center gap-2">
-        <span className="text-gray-900 text-base font-semibold">Agent Logs:</span>
+        <span className="text-gray-900 text-base font-semibold">
+          Agent Logs:
+        </span>
         <span className="font-medium">
           {availableLogs.length} log file{availableLogs.length !== 1 ? "s" : ""}{" "}
           available
