@@ -2,9 +2,10 @@
 
 import asyncio
 from typing import List, Dict, Any
+from vellum.evals.base import BaseEval
 
 
-class WhoAreYouTextMessageEval:
+class WhoAreYouTextMessageEval(BaseEval):
     """
     Evaluation setup for testing "who are you" text message workflows.
     This class outlines the steps needed to set up comprehensive evaluations
