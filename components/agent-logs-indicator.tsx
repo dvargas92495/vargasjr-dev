@@ -115,8 +115,8 @@ const AgentLogsIndicator = ({
   }
 
   const logs = logsStatus.logs || {};
-  const logFiles = ["error.log", "browser-error.log", "agent.log", "out.log"];
-  const availableLogs = logFiles.filter((file) => logs[file]?.exists);
+  const logFiles = Object.keys(logs).filter((file) => logs[file]?.exists);
+  const availableLogs = logFiles;
 
   return (
     <div className="text-sm">
