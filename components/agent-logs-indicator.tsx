@@ -115,13 +115,12 @@ const AgentLogsIndicator = ({
   }
 
   const logs = logsStatus.logs || {};
-  const logFiles = Object.keys(logs).filter((file) => logs[file]?.exists);
-  const availableLogs = logFiles;
+  const availableLogs = Object.keys(logs).filter((file) => logs[file]?.exists);
 
   return (
     <div className="text-sm">
       <div className="flex items-center gap-2">
-        <span className="text-gray-600">Agent Logs:</span>
+        <span className="text-gray-900 text-base font-semibold">Agent Logs:</span>
         <span className="font-medium">
           {availableLogs.length} log file{availableLogs.length !== 1 ? "s" : ""}{" "}
           available
@@ -135,8 +134,8 @@ const AgentLogsIndicator = ({
         </button>
       </div>
       {availableLogs.length > 0 && (
-        <div className="mt-2 ml-4 space-y-2">
-          {logFiles.map((fileName) => {
+        <div className="mt-2 space-y-2">
+          {availableLogs.map((fileName) => {
             const logFile = logs[fileName];
             if (!logFile?.exists) return null;
 
@@ -163,9 +162,18 @@ const AgentLogsIndicator = ({
                     </div>
                   )}
                   {logFile.lines && logFile.lines.length > 0 && (
-                    <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto text-gray-800">
-                      {logFile.lines.join("\n")}
-                    </pre>
+                    <div className="text-xs font-mono text-gray-800">
+                      {logFile.lines.map((line, idx) => (
+                        <div key={idx} className="flex">
+                          <span className="text-gray-400 select-none text-right w-12 flex-shrink-0 mr-2">
+                            {idx + 1}
+                          </span>
+                          <span className="whitespace-pre-wrap overflow-x-auto flex-1">
+                            {line}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </details>
