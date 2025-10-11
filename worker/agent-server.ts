@@ -123,6 +123,10 @@ export class AgentServer {
       authMiddleware,
       async (req: express.Request, res: express.Response) => {
         try {
+          const removeIpAddresses = (line: string): string => {
+            return line.replace(/ip-\d+-\d+-\d+-\d+\s+/g, '');
+          };
+
           const logFiles = [
             { name: "error.log", maxLines: 100 },
             { name: "browser-error.log", maxLines: 100 },
@@ -142,7 +146,9 @@ export class AgentServer {
                     exists: true,
                     totalLines: lines.length,
                     lines:
-                      lines.length > maxLines ? lines.slice(-maxLines) : lines,
+                      lines.length > maxLines 
+                        ? lines.slice(-maxLines).map(removeIpAddresses) 
+                        : lines.map(removeIpAddresses),
                   };
                 } else {
                   logs[name] = { exists: true, empty: true };
@@ -169,7 +175,7 @@ export class AgentServer {
               logs["systemd.log"] = {
                 exists: true,
                 totalLines: lines.length,
-                lines: lines,
+                lines: lines.map(removeIpAddresses),
               };
             } else {
               logs["systemd.log"] = { exists: true, empty: true };
