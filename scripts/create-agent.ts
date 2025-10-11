@@ -549,6 +549,12 @@ echo "VargasJR agent service created and enabled" >> /var/log/vargasjr-startup.l
         postgresUrl = process.env.NEON_URL || process.env.POSTGRES_URL || "";
       }
 
+      if (!postgresUrl) {
+        throw new Error(
+          "Database URL is required. Please set NEON_URL or POSTGRES_URL environment variable."
+        );
+      }
+
       let envContent = `POSTGRES_URL=${postgresUrl}
 LOG_LEVEL=INFO
 VELLUM_API_KEY=${envVars.VELLUM_API_KEY}
