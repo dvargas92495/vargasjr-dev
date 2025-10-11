@@ -114,10 +114,10 @@ export async function rebootAgent(
       return { success: false, error: "Failed to extract new agent" };
     }
 
-    process.chdir(`vargasjr_dev_agent-${targetVersion}`);
-
     try {
-      execSync("cp ../.env .", { stdio: "inherit" });
+      execSync(`cp .env vargasjr_dev_agent-${targetVersion}/`, {
+        stdio: "inherit",
+      });
       rebootLogger.info("Copied .env file");
     } catch (error) {
       rebootLogger.error("Failed to copy .env file");
@@ -126,15 +126,15 @@ export async function rebootAgent(
 
     rebootLogger.info("Restarting systemd service for new version");
     try {
-      execSync("sudo systemctl restart vargasjr-agent.service", {
-        stdio: "inherit",
-      });
+      execSync("sudo systemctl restart vargasjr-agent.service");
       rebootLogger.info("Systemd service restarted successfully");
     } catch (error) {
-      rebootLogger.error(`Failed to restart systemd service: ${error}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      rebootLogger.error(`Failed to restart systemd service: ${errorMessage}`);
       return {
         success: false,
-        error: `Failed to restart systemd service: ${error}`,
+        error: `Failed to restart systemd service: ${errorMessage}`,
       };
     }
 
