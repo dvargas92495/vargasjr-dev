@@ -11,7 +11,7 @@ from vellum.workflows.inputs import BaseInputs
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from models.types import USER
 from services import create_inbox_message
-from vellum.evals.base import BaseEval
+from evals.base import BaseEval
 
 
 class EvalRunner:
