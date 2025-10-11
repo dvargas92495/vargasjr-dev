@@ -138,8 +138,6 @@ export async function rebootAgent(
       };
     }
 
-    process.chdir(`vargasjr_dev_agent-${targetVersion}`);
-
     return { success: true };
   } catch (error) {
     rebootLogger.error(
