@@ -2,7 +2,7 @@
 
 import asyncio
 from typing import List, Dict, Any
-from vellum.evals.base import BaseEval
+from evals.base import BaseEval
 
 
 class SlackChannelMessageHappyPathEval(BaseEval):
