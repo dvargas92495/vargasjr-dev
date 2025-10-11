@@ -124,7 +124,7 @@ export class AgentServer {
       async (req: express.Request, res: express.Response) => {
         try {
           const removeIpAddresses = (line: string): string => {
-            return line.replace(/ip-\d+-\d+-\d+-\d+\s+/g, '');
+            return line.replace(/ip-\d+-\d+-\d+-\d+\s+/g, "");
           };
 
           const logFiles = [
@@ -146,8 +146,8 @@ export class AgentServer {
                     exists: true,
                     totalLines: lines.length,
                     lines:
-                      lines.length > maxLines 
-                        ? lines.slice(-maxLines).map(removeIpAddresses) 
+                      lines.length > maxLines
+                        ? lines.slice(-maxLines).map(removeIpAddresses)
                         : lines.map(removeIpAddresses),
                   };
                 } else {
