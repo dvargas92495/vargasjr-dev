@@ -98,7 +98,7 @@ const AgentLogsIndicator = ({
   if (logsStatus.status === "loading") {
     return (
       <div className="text-sm text-gray-700">
-        Agent Logs: <span className="text-gray-600">Loading...</span>
+        <span className="text-gray-600">Loading...</span>
       </div>
     );
   }
@@ -106,8 +106,7 @@ const AgentLogsIndicator = ({
   if (logsStatus.status === "offline" || logsStatus.status === "error") {
     return (
       <div className="text-sm text-gray-700">
-        Agent Logs:
-        <span className="text-red-600 ml-1">
+        <span className="text-red-600">
           {logsStatus.error || "Unavailable"}
         </span>
       </div>
@@ -120,9 +119,6 @@ const AgentLogsIndicator = ({
   return (
     <div className="text-sm">
       <div className="flex items-center gap-2">
-        <span className="text-gray-900 text-base font-semibold">
-          Agent Logs:
-        </span>
         <span className="font-medium">
           {availableLogs.length} log file{availableLogs.length !== 1 ? "s" : ""}{" "}
           available
@@ -167,7 +163,7 @@ const AgentLogsIndicator = ({
                     <div className="text-xs font-mono text-gray-800">
                       {logFile.lines.map((line, idx) => (
                         <div key={idx} className="flex">
-                          <span className="text-gray-400 select-none text-right w-12 flex-shrink-0 mr-2">
+                          <span className="text-gray-400 select-none text-right w-12 flex-shrink-0">
                             {idx + 1}
                           </span>
                           <span className="whitespace-pre-wrap overflow-x-auto flex-1">
