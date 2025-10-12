@@ -20,42 +20,126 @@ class WhoAreYouTextMessageEval(BaseEval):
             "message": "who are you",
             "type": "direct_question",
             "expected_trigger": "text_reply",
-            "case_sensitive": False
+            "case_sensitive": False,
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent text message to .+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "capitalized-who-are-you",
             "message": "Who are you?",
             "type": "direct_question_capitalized",
             "expected_trigger": "text_reply",
-            "case_sensitive": False
+            "case_sensitive": False,
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent text message to .+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "what-do-you-do",
             "message": "what do you do",
             "type": "service_inquiry",
             "expected_trigger": "text_reply",
-            "case_sensitive": False
+            "case_sensitive": False,
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent text message to .+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "tell-me-about-yourself",
             "message": "tell me about yourself",
             "type": "introduction_request",
             "expected_trigger": "text_reply",
-            "case_sensitive": False
+            "case_sensitive": False,
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent text message to .+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "who-am-i-talking-to",
             "message": "who am I talking to",
             "type": "contact_identification",
             "expected_trigger": "text_reply",
-            "case_sensitive": False
+            "case_sensitive": False,
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent text message to .+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "what-service-is-this",
             "message": "what service is this",
             "type": "service_identification",
             "expected_trigger": "text_reply",
-            "case_sensitive": False
+            "case_sensitive": False,
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent text message to .+\\.$",
+                    "weight": 3
+                }
+            ]
         }
     ]
     
@@ -174,38 +258,3 @@ class WhoAreYouTextMessageEval(BaseEval):
                 "expected_outcome": "Edge case and error scenario testing ready"
             }
         ]
-
-
-async def main():
-    """
-    Main function to demonstrate the "who are you" text message evaluation setup.
-    """
-    eval_setup = WhoAreYouTextMessageEval()
-    
-    print(f"=== {eval_setup.description.upper()} ===\n")
-    
-    setup_steps = eval_setup.get_setup_steps()
-    
-    print("EVALUATION SETUP STEPS:")
-    print("=" * 50)
-    
-    for step in setup_steps:
-        print(f"\nStep {step['step']}: {step['action'].upper()}")
-        print(f"Description: {step['description']}")
-        print("Details:")
-        for detail in step['details']:
-            print(f"  • {detail}")
-        print(f"Expected Outcome: {step['expected_outcome']}")
-        print("-" * 50)
-    
-    test_data = eval_setup.get_test_data()
-    print(f"\nSAMPLE TEST DATA:")
-    print("=" * 50)
-    print(f"Identity question variations: {len(test_data['identity_questions'])}")
-    print(f"Test phone numbers: {len(test_data['test_phone_numbers'])}")
-    print(f"Expected response elements: {len(test_data['expected_response_elements'])}")
-    print(f"Workflow validation points: {len(test_data['workflow_validation_points'])}")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

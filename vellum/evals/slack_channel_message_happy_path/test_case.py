@@ -19,25 +19,81 @@ class SlackChannelMessageHappyPathEval(BaseEval):
             "id": "simple-text-message",
             "type": "simple_text",
             "description": "Plain text message",
-            "example": "Daily standup reminder: Please share your updates!"
+            "example": "Daily standup reminder: Please share your updates!",
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "rich-formatting-blocks",
             "type": "rich_formatting",
             "description": "Message with formatting and blocks",
-            "example": "System alert with severity level and action buttons"
+            "example": "System alert with severity level and action buttons",
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "interactive-buttons",
             "type": "interactive",
             "description": "Message with buttons and user interactions",
-            "example": "Deployment approval request with approve/reject buttons"
+            "example": "Deployment approval request with approve/reject buttons",
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "threaded-conversation",
             "type": "threaded",
             "description": "Message that starts or continues a thread",
-            "example": "Follow-up message in existing conversation thread"
+            "example": "Follow-up message in existing conversation thread",
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
+                    "weight": 3
+                }
+            ]
         }
     ]
     
@@ -170,38 +226,3 @@ class SlackChannelMessageHappyPathEval(BaseEval):
                 "expected_outcome": "User interaction testing framework ready"
             }
         ]
-
-
-async def main():
-    """
-    Main function to demonstrate the Slack channel message happy path evaluation setup.
-    """
-    eval_setup = SlackChannelMessageHappyPathEval()
-    
-    print(f"=== {eval_setup.description.upper()} ===\n")
-    
-    setup_steps = eval_setup.get_setup_steps()
-    
-    print("EVALUATION SETUP STEPS:")
-    print("=" * 50)
-    
-    for step in setup_steps:
-        print(f"\nStep {step['step']}: {step['action'].upper()}")
-        print(f"Description: {step['description']}")
-        print("Details:")
-        for detail in step['details']:
-            print(f"  • {detail}")
-        print(f"Expected Outcome: {step['expected_outcome']}")
-        print("-" * 50)
-    
-    test_data = eval_setup.get_test_data()
-    print(f"\nSAMPLE TEST DATA:")
-    print("=" * 50)
-    print(f"Test channels configured: {len(test_data['test_channels'])}")
-    print(f"Message type variations: {len(test_data['message_types'])}")
-    print(f"Trigger event types: {len(test_data['trigger_events'])}")
-    print(f"Expected outcome scenarios: {len(test_data['expected_outcomes'])}")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

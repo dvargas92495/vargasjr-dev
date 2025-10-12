@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import sys
 import time
 import asyncio
@@ -63,6 +64,41 @@ class EvalRunner:
                 return obj
         raise ValueError(f"No BaseEval subclass found in module {eval_module}")
     
+    def _evaluate_metric(self, metric: Dict[str, Any], outputs: Dict[str, Any]) -> bool:
+        """
+        Evaluate a single metric against workflow outputs.
+        
+        Args:
+            metric: Metric definition with type, output_name, expected_value/target_expression, weight
+            outputs: Dictionary of workflow outputs
+        
+        Returns:
+            True if metric is satisfied, False otherwise
+        """
+        metric_type = metric.get('type')
+        output_name = metric.get('output_name')
+        
+        if output_name not in outputs:
+            return False
+        
+        actual_value = outputs[output_name]
+        
+        if metric_type == 'exact_match':
+            expected_value = metric.get('expected_value')
+            return actual_value == expected_value
+        elif metric_type == 'regex_match':
+            target_expression = metric.get('target_expression')
+            if not isinstance(actual_value, str):
+                return False
+            if not isinstance(target_expression, str):
+                return False
+            try:
+                return bool(re.search(target_expression, actual_value))
+            except re.error:
+                return False
+        
+        return False
+    
     async def _execute_eval(self, eval_instance: BaseEval) -> List[Dict[str, Any]]:
         """Execute the evaluation test cases"""
         results = []
@@ -83,9 +119,25 @@ class EvalRunner:
                 }
                 
                 if success:
-                    result["workflow_result"] = {k: v for k, v in workflow_result.outputs}
+                    outputs = {k: v for k, v in workflow_result.outputs}
+                    result["workflow_result"] = outputs
+                    
+                    metrics = test_case.get('metrics', [])
+                    if metrics:
+                        total_weight = sum(m.get('weight', 0) for m in metrics)
+                        actual_score = sum(
+                            m.get('weight', 0) 
+                            for m in metrics 
+                            if self._evaluate_metric(m, outputs)
+                        )
+                        score = round(actual_score / total_weight, 2) if total_weight > 0 else 0.0
+                    else:
+                        score = 1.0
+                    
+                    result["score"] = score
                 else:
                     result["workflow_result"] = {"error": workflow_result.error.model_dump()}
+                    result["score"] = 0.0
                 
                 if 'expected_trigger' in test_case:
                     result["expected_trigger"] = test_case['expected_trigger']
@@ -97,20 +149,20 @@ class EvalRunner:
                     "test_case": test_case_id,
                     "success": False,
                     "error": str(e),
-                    "latency": 0.0
+                    "latency": 0.0,
+                    "score": 0.0
                 })
         
         return results
     
     def _calculate_score(self, results: List[Dict[str, Any]]) -> float:
-        """Calculate 0-1 score based on test results"""
+        """Calculate average score across all test cases"""
         if not results:
             return 0.0
         
-        successful_tests = sum(1 for result in results if result.get('success', False))
-        total_tests = len(results)
+        total_score = sum(result.get('score', 0.0) for result in results)
         
-        return successful_tests / total_tests if total_tests > 0 else 0.0
+        return round(total_score / len(results), 2) if results else 0.0
     
     def _summarize_test_cases(self, test_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Create summary of test cases for reporting"""
