@@ -169,6 +169,7 @@ class EmailSummary(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
+        logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         summary = f"""\
 Hey there! I just generated a new video for you.
 
@@ -180,14 +181,17 @@ Video URL: {self.video_url}
 """
         try:
             to_email = os.getenv("BRAINROT_EMAIL")
+            if to_email is None:
+                logger.warning("BRAINROT_EMAIL environment variable not set")
+                return self.Outputs(summary=summary)
+            
             send_email(
-                to=to_email,  # type: ignore
+                to=to_email,
                 body=summary,
                 subject=f"New Video: {self.selected_video.title}",
             )
             return self.Outputs(summary=f"Sent video to {to_email}.")
         except Exception:
-            logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
             logger.exception("Failed to send email")
 
         return self.Outputs(summary=summary)

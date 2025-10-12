@@ -4,7 +4,8 @@ from logging import Logger
 import logging
 from math import floor
 import os
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict
 import requests
 from sqlalchemy.orm import aliased
 from sqlmodel import or_, select
@@ -434,12 +435,21 @@ class PredictOutcomes(BaseNode):
         ]
 
 
+class WagersDict(TypedDict):
+    rows: list[list[str | float | None]]
+    balance: float
+    ran_out_of_money: bool
+    picks: list[Tuple[str, float, float, str, int]]
+    report_md_file: Path
+    date: str
+
+
 class SubmitBets(BaseNode):
     outcomes = PredictOutcomes.Outputs.outcomes
     initial_balance = RecordYesterdaysGames.Outputs.initial_balance
 
     class Outputs(BaseNode.Outputs):
-        wagers: Dict[str, Any]
+        wagers: WagersDict
 
     def run(self) -> Outputs:
         rows: list[list[str | float | None]] = []
@@ -506,11 +516,11 @@ class SendSummary(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
-        num_games = len(self.wagers['rows'])  # type: ignore
-        balance = self.wagers['balance']  # type: ignore
-        ran_out = self.wagers['ran_out_of_money']  # type: ignore
-        picks_summary = "\n".join([f"- Bet ${wager:.2f} ({odds}) to {spread} {pick}. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])  # type: ignore
-        report_file = self.wagers['report_md_file']  # type: ignore
+        num_games = len(self.wagers['rows'])
+        balance = self.wagers['balance']
+        ran_out = self.wagers['ran_out_of_money']
+        picks_summary = "\n".join([f"- Bet ${wager:.2f} ({odds}) to {spread} {pick}. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])
+        report_file = self.wagers['report_md_file']
         
         summary = f"""\
 Yesterday's Recap:
@@ -530,7 +540,7 @@ Report: {report_file}
             send_email(
                 to=to_email,
                 body=summary,
-                subject="Submitted Bets for " + self.wagers['date'],  # type: ignore
+                subject="Submitted Bets for " + self.wagers['date'],
             )
             return self.Outputs(summary=f"Sent bets to {to_email}.")
         except Exception:
