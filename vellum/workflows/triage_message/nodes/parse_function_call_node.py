@@ -6,17 +6,17 @@ from .triage_message_node import TriageMessageNode
 
 class ParseFunctionCallNode(BaseNode):
     class Ports(BaseNode.Ports):
-        no_action = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("no_action")))
-        email_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_reply")))
+        no_action = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("no_action")))  # type: ignore
+        email_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_reply")))  # type: ignore
         email_initiate = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))  # type: ignore
         )
-        text_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("text_reply")))
-        slack_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("slack_reply")))
+        text_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("text_reply")))  # type: ignore
+        slack_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("slack_reply")))  # type: ignore
         job_opportunity_response = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_response"))
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_response"))  # type: ignore
         )
 
     class Outputs(BaseNode.Outputs):
-        action = TriageMessageNode.Outputs.results[0]["value"]["name"]
-        parameters = TriageMessageNode.Outputs.results[0]["value"]["arguments"]
+        action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore
+        parameters = TriageMessageNode.Outputs.results[0]["value"]["arguments"]  # type: ignore

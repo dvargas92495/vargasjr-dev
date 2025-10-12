@@ -61,7 +61,7 @@ class SelectVideo(BaseNode):
     def run(self) -> Outputs:
         selected_video = VideoPrompt.model_validate(random.choice(self.raw_videos))
         print(f"Selected video: {selected_video}")
-        return self.Outputs(selected_video=selected_video)
+        return self.Outputs(selected_video=selected_video)  # type: ignore
 
 
 class GenerateImage(BaseNode):
@@ -181,7 +181,7 @@ Video URL: {self.video_url}
         try:
             to_email = os.getenv("BRAINROT_EMAIL")
             send_email(
-                to=to_email,
+                to=to_email,  # type: ignore
                 body=summary,
                 subject=f"New Video: {self.selected_video.title}",
             )

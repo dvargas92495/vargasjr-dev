@@ -1,7 +1,7 @@
 import os
 from logging import Logger
 import logging
-import tweepy
+import tweepy  # type: ignore
 from vellum.workflows.nodes import BaseNode
 from vellum.workflows.exceptions import NodeException
 from vellum.workflows.errors.types import WorkflowErrorCode

@@ -2,7 +2,7 @@
 
 import asyncio
 from vellum import Vellum as VellumClient
-from workflow import NewsletterDigestWorkflow
+from workflow import NewsletterDigestWorkflow  # type: ignore
 
 
 async def main():

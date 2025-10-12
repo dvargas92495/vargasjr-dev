@@ -20,7 +20,7 @@ class NotionMealPlanAgent(ToolCallingNode):
     prompt_inputs = {
         "meal_plan": MealPlanner.Outputs.text,
     }
-    tools = []
+    tools: list = []
     max_tool_iterations = 20
     blocks = [
         ChatMessagePromptBlock(

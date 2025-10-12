@@ -30,18 +30,18 @@ class PublishToNotionNode(BaseNode):
                 logger.error(error_msg)
                 return self.Outputs(summary=error_msg)
 
-            if not notion_app.access_token:
+            if not notion_app.access_token:  # type: ignore
                 error_msg = "Notion access token not configured"
                 logger.error(error_msg)
                 return self.Outputs(summary=error_msg)
 
-            if not notion_app.workspace_id:
+            if not notion_app.workspace_id:  # type: ignore
                 error_msg = "Notion page ID not configured in workspace_id field"
                 logger.error(error_msg)
                 return self.Outputs(summary=error_msg)
 
-            page_id = notion_app.workspace_id
-            access_token = notion_app.access_token
+            page_id = notion_app.workspace_id  # type: ignore
+            access_token = notion_app.access_token  # type: ignore
 
             blocks = []
             for item in DAILY_ROUTINE_ITEMS:

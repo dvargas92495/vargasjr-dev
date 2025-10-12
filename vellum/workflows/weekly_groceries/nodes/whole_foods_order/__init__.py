@@ -19,7 +19,7 @@ class WholeFoodsOrder(ToolCallingNode):
     prompt_inputs = {
         "shopping_list": IngredientExtractor.Outputs.text,
     }
-    tools = []
+    tools: list = []
     max_tool_iterations = 20
     blocks = [
         ChatMessagePromptBlock(
