@@ -12,9 +12,52 @@ class WhoAreYouTextMessageEval(BaseEval):
     for identity question handling in the triage message workflow.
     """
     
-    def __init__(self):
-        self.eval_name = "who_are_you_text_message"
-        self.description = "Evaluation for 'who are you' text message handling"
+    name = "who_are_you_text_message"
+    description = "Evaluation for 'who are you' text message handling"
+    test_cases = [
+        {
+            "id": "direct-who-are-you",
+            "message": "who are you",
+            "type": "direct_question",
+            "expected_trigger": "text_reply",
+            "case_sensitive": False
+        },
+        {
+            "id": "capitalized-who-are-you",
+            "message": "Who are you?",
+            "type": "direct_question_capitalized",
+            "expected_trigger": "text_reply",
+            "case_sensitive": False
+        },
+        {
+            "id": "what-do-you-do",
+            "message": "what do you do",
+            "type": "service_inquiry",
+            "expected_trigger": "text_reply",
+            "case_sensitive": False
+        },
+        {
+            "id": "tell-me-about-yourself",
+            "message": "tell me about yourself",
+            "type": "introduction_request",
+            "expected_trigger": "text_reply",
+            "case_sensitive": False
+        },
+        {
+            "id": "who-am-i-talking-to",
+            "message": "who am I talking to",
+            "type": "contact_identification",
+            "expected_trigger": "text_reply",
+            "case_sensitive": False
+        },
+        {
+            "id": "what-service-is-this",
+            "message": "what service is this",
+            "type": "service_identification",
+            "expected_trigger": "text_reply",
+            "case_sensitive": False
+        }
+    ]
     
     def get_setup_steps(self) -> List[Dict[str, Any]]:
         """
@@ -131,71 +174,6 @@ class WhoAreYouTextMessageEval(BaseEval):
                 "expected_outcome": "Edge case and error scenario testing ready"
             }
         ]
-    
-    def get_test_data(self) -> Dict[str, Any]:
-        """
-        Returns sample test data for "who are you" text message evaluation.
-        """
-        return {
-            "identity_questions": [
-                {
-                    "message": "who are you",
-                    "type": "direct_question",
-                    "expected_trigger": "text_reply",
-                    "case_sensitive": False
-                },
-                {
-                    "message": "Who are you?",
-                    "type": "direct_question_capitalized",
-                    "expected_trigger": "text_reply",
-                    "case_sensitive": False
-                },
-                {
-                    "message": "what do you do",
-                    "type": "service_inquiry",
-                    "expected_trigger": "text_reply",
-                    "case_sensitive": False
-                },
-                {
-                    "message": "tell me about yourself",
-                    "type": "introduction_request",
-                    "expected_trigger": "text_reply",
-                    "case_sensitive": False
-                },
-                {
-                    "message": "who am I talking to",
-                    "type": "contact_identification",
-                    "expected_trigger": "text_reply",
-                    "case_sensitive": False
-                },
-                {
-                    "message": "what service is this",
-                    "type": "service_identification",
-                    "expected_trigger": "text_reply",
-                    "case_sensitive": False
-                }
-            ],
-            "test_phone_numbers": [
-                "+15551234567",
-                "+15559876543",
-                "+15555555555"
-            ],
-            "expected_response_elements": [
-                "Vargas JR",
-                "automated senior-level software developer",
-                "available for hire",
-                "fraction of the cost",
-                "How can I assist you"
-            ],
-            "workflow_validation_points": [
-                "triage_message_function_selection",
-                "text_reply_function_call",
-                "parse_function_call_routing",
-                "text_reply_node_execution",
-                "outbox_message_creation",
-                "sms_response_delivery"
-            ]
-        }
 
 
 async def main():
