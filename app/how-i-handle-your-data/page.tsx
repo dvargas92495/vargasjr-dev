@@ -65,6 +65,90 @@ export default function HowIHandleYourData() {
               </li>
             </ul>
           </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-3">
+              Information Security Policy
+            </h2>
+            <p className="mb-4">
+              I maintain a comprehensive information security policy that is
+              operationalized across all systems to identify, mitigate, and
+              monitor security risks:
+            </p>
+
+            <h3 className="text-xl font-semibold mb-2 mt-4">
+              Risk Identification
+            </h3>
+            <ul className="list-disc list-inside space-y-2 mb-4">
+              <li>
+                Continuous monitoring of system health, processes, and resource
+                utilization
+              </li>
+              <li>
+                Automated environment variable validation to detect missing
+                credentials
+              </li>
+              <li>Network connectivity checks for critical services</li>
+              <li>Log analysis for security events and error patterns</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-2 mt-4">Risk Mitigation</h3>
+            <ul className="list-disc list-inside space-y-2 mb-4">
+              <li>
+                AWS IAM roles with least-privilege access policies for all
+                services
+              </li>
+              <li>
+                Network security groups restricting access to authorized
+                endpoints only
+              </li>
+              <li>
+                Secrets management via AWS Secrets Manager with automatic
+                rotation
+              </li>
+              <li>
+                Multi-factor authentication via WebAuthn for administrative
+                access
+              </li>
+              <li>
+                Encrypted data storage (S3) and encrypted state management
+              </li>
+              <li>Secure database connections with SSL/TLS encryption</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-2 mt-4">
+              Security Monitoring
+            </h3>
+            <ul className="list-disc list-inside space-y-2 mb-4">
+              <li>Real-time health checks of all agent instances</li>
+              <li>
+                Automated alerts for service failures or security anomalies
+              </li>
+              <li>Comprehensive logging of all system operations</li>
+              <li>Regular audits of access credentials and permissions</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mb-2 mt-4">
+              Physical Security
+            </h3>
+            <ul className="list-disc list-inside space-y-2 mb-4">
+              <li>
+                Infrastructure hosted on AWS, Vercel, and Neon - enterprise
+                cloud providers with industry-standard security practices
+              </li>
+              <li>
+                Physical security managed by infrastructure providers with
+                geographically distributed, redundant data centers
+              </li>
+              <li>
+                Automated backup and disaster recovery systems managed by AWS
+              </li>
+              <li>
+                Custom AMI pipeline ensuring consistent and secure instance
+                configurations
+              </li>
+            </ul>
+          </section>
         </div>
 
         <Link
