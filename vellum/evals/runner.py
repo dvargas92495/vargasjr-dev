@@ -7,7 +7,6 @@ import importlib
 from pathlib import Path
 import inspect
 from typing import Dict, Any, List
-from vellum import Vellum as VellumClient
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 
@@ -67,27 +66,26 @@ class EvalRunner:
     async def _execute_eval(self, eval_instance: BaseEval) -> List[Dict[str, Any]]:
         """Execute the evaluation test cases"""
         results = []
-        client = VellumClient()  # type: ignore[call-arg]
         
         for test_case in eval_instance.test_cases:
+            test_case_id = test_case.get('id', 'Unknown')
             try:
                 start_time = time.time()
-                final_event = await client.execute_workflow(
-                    workflow=TriageMessageWorkflow,
-                    inputs={}  # type: ignore
-                )
+                workflow_result = self.workflow.run()
                 latency = time.time() - start_time
                 
-                success = final_event.name == "workflow.execution.fulfilled"
-                
-                test_case_id = test_case.get('id', 'Unknown')
+                success = workflow_result.name == "workflow.execution.fulfilled"
                 
                 result = {
                     "test_case": test_case_id,
                     "success": success,
-                    "workflow_result": str(final_event),
                     "latency": latency
                 }
+                
+                if success:
+                    result["workflow_result"] = {k: v for k, v in workflow_result.outputs}
+                else:
+                    result["workflow_result"] = {"error": workflow_result.error.model_dump()}
                 
                 if 'expected_trigger' in test_case:
                     result["expected_trigger"] = test_case['expected_trigger']
@@ -95,7 +93,6 @@ class EvalRunner:
                 results.append(result)
                 
             except Exception as e:
-                test_case_id = test_case.get('id', 'Unknown')
                 results.append({
                     "test_case": test_case_id,
                     "success": False,
