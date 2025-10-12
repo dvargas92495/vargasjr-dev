@@ -2,13 +2,12 @@
 
 import asyncio
 from .workflow import NewsletterDigestWorkflow
-from vellum.workflows.inputs import BaseInputs
 
 
 async def main():
     workflow = NewsletterDigestWorkflow()
     
-    result = await workflow.run(inputs=BaseInputs())
+    result = await workflow.run()
     
     print("Newsletter Digest Workflow Results:")
     print(f"Summary: {result.outputs.summary}")

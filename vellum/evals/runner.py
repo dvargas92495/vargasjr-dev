@@ -7,7 +7,6 @@ import importlib
 from pathlib import Path
 import inspect
 from typing import Dict, Any, List
-from workflows.inputs import BaseInputs
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 
@@ -72,7 +71,7 @@ class EvalRunner:
             test_case_id = test_case.get('id', 'Unknown')
             try:
                 start_time = time.time()
-                workflow_result = self.workflow.run(inputs=BaseInputs())
+                workflow_result = self.workflow.run()
                 latency = time.time() - start_time
                 
                 success = workflow_result.name == "workflow.execution.fulfilled"
@@ -84,9 +83,9 @@ class EvalRunner:
                 }
                 
                 if success:
-                    result["workflow_result"] = {k: v for k, v in workflow_result.outputs.__dict__.items() if not k.startswith('_')}
+                    result["workflow_result"] = {k: v for k, v in workflow_result.outputs}
                 else:
-                    result["workflow_result"] = {"error": str(workflow_result)}
+                    result["workflow_result"] = {"error": workflow_result.error.model_dump()}
                 
                 if 'expected_trigger' in test_case:
                     result["expected_trigger"] = test_case['expected_trigger']
