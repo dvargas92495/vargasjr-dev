@@ -278,7 +278,7 @@ export async function deleteMessage(messageId: string, inboxId: string) {
       });
 
       const deleteCommand = new DeleteObjectCommand({
-        Bucket: AWS_S3_BUCKETS.INBOX,
+        Bucket: AWS_S3_BUCKETS.MEMORY,
         Key: message[0].externalId,
       });
 
@@ -387,7 +387,7 @@ export async function deleteInbox(inboxId: string) {
         });
 
         const deleteCommand = new DeleteObjectCommand({
-          Bucket: AWS_S3_BUCKETS.INBOX,
+          Bucket: AWS_S3_BUCKETS.MEMORY,
           Key: message.externalId,
         });
 

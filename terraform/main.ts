@@ -78,7 +78,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     });
 
     const inboxBucket = new S3Bucket(this, "InboxBucket", {
-      bucket: AWS_S3_BUCKETS.INBOX,
+      bucket: "vargas-jr-inbox",
     });
 
     new S3BucketVersioningA(this, "InboxBucketVersioning", {
@@ -217,7 +217,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
       enabled: true,
       s3Action: [
         {
-          bucketName: AWS_S3_BUCKETS.INBOX,
+          bucketName: AWS_S3_BUCKETS.MEMORY,
           objectKeyPrefix: "emails/",
           position: 1,
         },

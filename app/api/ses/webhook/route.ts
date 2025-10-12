@@ -117,7 +117,7 @@ export async function POST(request: Request) {
       });
 
       const getObjectCommand = new GetObjectCommand({
-        Bucket: AWS_S3_BUCKETS.INBOX,
+        Bucket: AWS_S3_BUCKETS.MEMORY,
         Key: s3Key,
       });
 
