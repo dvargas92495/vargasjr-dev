@@ -6,7 +6,7 @@ from vellum.workflows.nodes import BaseNode
 from vellum.workflows.exceptions import NodeException
 from vellum.workflows.errors.types import WorkflowErrorCode
 from .select_tweet import SelectTweet
-from services import get_twitter_application_by_name
+from services import get_application_with_workspace_by_name
 
 
 class PostToTwitter(BaseNode):
@@ -19,7 +19,7 @@ class PostToTwitter(BaseNode):
     def run(self) -> Outputs:
         logger: Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         
-        twitter_app = get_twitter_application_by_name("Twitter")
+        twitter_app = get_application_with_workspace_by_name("Twitter")
         if not twitter_app:
             raise NodeException("Twitter application not found in database", WorkflowErrorCode.INVALID_INPUTS)
         
