@@ -125,7 +125,7 @@ async function handlePostInstall(): Promise<void> {
       const fullCacheKey = getFullCacheKey();
       const cachePaths = getCachePaths();
       const cacheId = await cache.saveCache(cachePaths, fullCacheKey);
-      
+
       if (cacheId === -1) {
         console.error(`Cache save failed with ID: -1 for key: ${fullCacheKey}`);
       } else {
