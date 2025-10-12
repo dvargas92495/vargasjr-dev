@@ -4,8 +4,7 @@ import { execSync } from "child_process";
 import { existsSync, writeFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import * as cache from "@actions/cache";
-import { getFullCacheKey, getCachePaths } from "./cache-utils";
+import { getFullCacheKey, uploadCacheToS3 } from "./cache-utils";
 
 async function fetchVercelEnvVars(
   target: "production" | "preview"
@@ -120,15 +119,9 @@ async function handlePostInstall(): Promise<void> {
       execSync("npx playwright install --with-deps", { stdio: "inherit" });
     }
 
-    try {
-      console.log("Saving cache...");
-      const fullCacheKey = getFullCacheKey();
-      const cachePaths = getCachePaths();
-      const cacheId = await cache.saveCache(cachePaths, fullCacheKey);
-      console.log(`Cache saved with ID: ${cacheId}`);
-    } catch (error) {
-      console.warn("Cache save failed:", error);
-    }
+    console.log("Saving cache to S3...");
+    const fullCacheKey = getFullCacheKey();
+    await uploadCacheToS3(fullCacheKey);
   } else if (process.env.VERCEL) {
     console.log(
       "Skipping Playwright browser installation (running in Vercel environment)"
