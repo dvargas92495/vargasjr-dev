@@ -48,7 +48,11 @@ export function getFullCacheKey(): string {
 }
 
 export function getCachePaths(): string[] {
-  return [join(homedir(), ".npm"), join(homedir(), ".cache", "ms-playwright")];
+  return [
+    join(homedir(), ".npm"),
+    join(homedir(), ".cache", "ms-playwright"),
+    join(process.cwd(), "node_modules"),
+  ];
 }
 
 export function getRestoreKeys(): string[] {

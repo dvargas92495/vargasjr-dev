@@ -1,8 +1,11 @@
 #!/usr/bin/env tsx
 
 import { getFullCacheKey, downloadCacheFromS3 } from "./cache-utils";
+import { writeFileSync } from "fs";
 
 async function handleCaching(): Promise<void> {
+  const startTime = Date.now();
+
   if (!process.env.CI || process.env.VERCEL) {
     if (process.env.VERCEL) {
       console.log("Skipping cache setup (running in Vercel environment)");
@@ -17,7 +20,17 @@ async function handleCaching(): Promise<void> {
   const fullCacheKey = getFullCacheKey();
   console.log(`Generated cache key: ${fullCacheKey}`);
 
-  await downloadCacheFromS3(fullCacheKey);
+  const cacheHit = await downloadCacheFromS3(fullCacheKey);
+
+  writeFileSync(
+    "/tmp/cache-status.json",
+    JSON.stringify({ cacheHit, cacheKey: fullCacheKey })
+  );
+
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(
+    `Preinstall completed in ${duration}s (cache ${cacheHit ? "hit" : "miss"})`
+  );
 }
 
 handleCaching().catch((error) => {
