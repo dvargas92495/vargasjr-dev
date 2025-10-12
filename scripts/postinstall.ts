@@ -120,20 +120,30 @@ async function handlePostInstall(): Promise<void> {
       execSync("npx playwright install --with-deps", { stdio: "inherit" });
     }
 
-    try {
-      console.log("Saving cache...");
-      const fullCacheKey = getFullCacheKey();
-      const cachePaths = getCachePaths();
-      const cacheId = await cache.saveCache(cachePaths, fullCacheKey);
+    if (!process.env.ACTIONS_CACHE_URL) {
+      console.log(
+        "GitHub Actions cache service not configured, skipping cache save"
+      );
+    } else {
+      try {
+        console.log("Saving cache...");
+        const fullCacheKey = getFullCacheKey();
+        const cachePaths = getCachePaths();
+        const cacheId = await cache.saveCache(cachePaths, fullCacheKey);
 
-      if (cacheId === -1) {
-        console.error(`Cache save failed with ID: -1 for key: ${fullCacheKey}`);
-      } else {
-        console.log(`Cache saved with ID: ${cacheId} for key: ${fullCacheKey}`);
+        if (cacheId === -1) {
+          console.error(
+            `Cache save failed with ID: -1 for key: ${fullCacheKey}`
+          );
+        } else {
+          console.log(
+            `Cache saved with ID: ${cacheId} for key: ${fullCacheKey}`
+          );
+        }
+      } catch (error) {
+        const fullCacheKey = getFullCacheKey();
+        console.error(`Cache save failed for key: ${fullCacheKey}`, error);
       }
-    } catch (error) {
-      const fullCacheKey = getFullCacheKey();
-      console.error(`Cache save failed for key: ${fullCacheKey}`, error);
     }
   } else if (process.env.VERCEL) {
     console.log(
