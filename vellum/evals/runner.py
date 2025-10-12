@@ -90,6 +90,8 @@ class EvalRunner:
             target_expression = metric.get('target_expression')
             if not isinstance(actual_value, str):
                 return False
+            if not isinstance(target_expression, str):
+                return False
             try:
                 return bool(re.search(target_expression, actual_value))
             except re.error:
