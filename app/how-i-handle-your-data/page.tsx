@@ -133,12 +133,12 @@ export default function HowIHandleYourData() {
             </h3>
             <ul className="list-disc list-inside space-y-2 mb-4">
               <li>
-                Infrastructure hosted on AWS with SOC 2, ISO 27001, and other
-                compliance certifications
+                Infrastructure hosted on AWS, Vercel, and Neon - enterprise
+                cloud providers with industry-standard security practices
               </li>
               <li>
-                Redundant data centers with physical access controls and
-                surveillance
+                Physical security managed by infrastructure providers with
+                geographically distributed, redundant data centers
               </li>
               <li>
                 Automated backup and disaster recovery systems managed by AWS
