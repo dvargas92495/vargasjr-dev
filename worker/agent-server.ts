@@ -175,7 +175,6 @@ export class AgentServer {
 
               const filterUnwantedLogs = (line: string) => {
                 if (line.includes("pam_unix(sudo:session):")) return false;
-                if (line.includes("Running main Agent Loop")) return false;
                 return true;
               };
 
@@ -189,7 +188,9 @@ export class AgentServer {
               } else {
                 const first25 = filteredLines.slice(0, 25);
                 const last100 = filteredLines.slice(-100);
-                displayLines = [...first25, ...last100];
+                const omittedCount = filteredLines.length - 125;
+                const separator = `--- Showing first 25 and last 100 lines (${omittedCount} lines omitted) ---`;
+                displayLines = [...first25, separator, ...last100];
               }
 
               logs["systemd.log"] = {
