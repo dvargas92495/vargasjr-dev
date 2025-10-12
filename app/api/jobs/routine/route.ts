@@ -4,15 +4,14 @@ import { getDb } from "@/db/connection";
 import { VellumClient } from "vellum-ai";
 import { getEnvironmentMetadata } from "../../constants";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { BadRequestError } from "@/server/errors";
 
 const createRoutineJobSchema = z.object({
   name: z.string().min(1),
   scheduleDescription: z.string().min(1),
 });
 
-async function getRoutineJobsHandler(
-  _body: unknown // eslint-disable-line @typescript-eslint/no-unused-vars
-) {
+async function getRoutineJobsHandler() {
   const db = getDb();
   const routineJobs = await db.select().from(RoutineJobsTable);
   return routineJobs;
@@ -87,7 +86,7 @@ async function createRoutineJobHandler(body: unknown) {
       error.message.includes("Failed to generate cron expression")
         ? 'Unable to understand the schedule description. Please try a clearer format like "every Monday at 5pm" or "daily at 9am"'
         : "Failed to convert schedule description to cron expression";
-    throw new Error(userMessage);
+    throw new BadRequestError(userMessage);
   }
 
   const db = getDb();
@@ -109,7 +108,7 @@ async function createRoutineJobHandler(body: unknown) {
       error instanceof Error && error.message.includes("duplicate key")
         ? "A routine job with this name already exists. Please choose a different name."
         : "Failed to create routine job";
-    throw new Error(userMessage);
+    throw new BadRequestError(userMessage);
   }
 }
 

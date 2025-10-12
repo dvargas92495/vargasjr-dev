@@ -6,15 +6,17 @@ import {
   InvalidContactDataError,
   InvalidContactFormatError,
   UnauthorizedError,
+  BadRequestError,
 } from "@/server/errors";
 
 type ApiHandler<T = unknown> = (body: unknown) => Promise<T>;
+type ApiHandlerNoBody<T = unknown> = () => Promise<T>;
 type GetBodyFunction = (request: Request) => Promise<unknown>;
 
 export function withApiWrapper<T = unknown>(
-  handler: ApiHandler<T>,
+  handler: ApiHandler<T> | ApiHandlerNoBody<T>,
   options?: { getBody?: GetBodyFunction }
-) {
+){
   return async (request: Request, context?: any) => {
     try {
       let body;
@@ -56,7 +58,9 @@ export function withApiWrapper<T = unknown>(
         body = { ...body, ...params };
       }
 
-      const result = await handler(body);
+      const result = handler.length === 0 
+        ? await (handler as ApiHandlerNoBody<T>)()
+        : await (handler as ApiHandler<T>)(body);
       return NextResponse.json(result);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -79,6 +83,10 @@ export function withApiWrapper<T = unknown>(
       }
 
       if (error instanceof InvalidContactFormatError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      if (error instanceof BadRequestError) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
 
