@@ -7,7 +7,7 @@ import importlib
 from pathlib import Path
 import inspect
 from typing import Dict, Any, List
-from vellum import VellumClient
+from vellum import Vellum as VellumClient
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 
