@@ -1,5 +1,5 @@
 from datetime import datetime
-import boto3
+import boto3  # type: ignore
 from logging import Logger
 from services import MEMORY_DIR
 from email.utils import formataddr

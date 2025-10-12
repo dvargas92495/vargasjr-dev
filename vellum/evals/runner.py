@@ -67,14 +67,14 @@ class EvalRunner:
     async def _execute_eval(self, eval_instance: BaseEval) -> List[Dict[str, Any]]:
         """Execute the evaluation test cases"""
         results = []
-        client = VellumClient()
+        client = VellumClient()  # type: ignore[call-arg]
         
         for test_case in eval_instance.test_cases:
             try:
                 start_time = time.time()
                 final_event = await client.execute_workflow(
                     workflow=TriageMessageWorkflow,
-                    inputs={}
+                    inputs={}  # type: ignore
                 )
                 latency = time.time() - start_time
                 

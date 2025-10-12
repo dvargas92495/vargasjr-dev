@@ -8,11 +8,11 @@ from services import sqlite_session
 
 if __name__ == "__main__":
     # Import the pkm models module
-    dry_run = "--dry-run" in sys.argv
+    dry_run = "--dry-run" in sys.argv  # type: ignore
     pkm_module = importlib.import_module("models.pkm")
 
     pkm_models: list[type[SQLModel]] = []
-    for _, name, _ in pkgutil.iter_modules(pkm_module.__path__):
+    for _, name, _ in pkgutil.iter_modules(pkm_module.__path__):  # type: ignore
         pkm_model_module = importlib.import_module(f"{pkm_module.__name__}.{name}")
         sql_model = next(
             (

@@ -53,8 +53,8 @@ Emails to classify:
         newsletters: List[Dict[str, Any]]
         newsletters_count: int
 
-    def run(self) -> Outputs:
-        classification_result = super().run().text
+    def run(self) -> Outputs:  # type: ignore[override]
+        classification_result = super().run().text  # type: ignore
         
         try:
             classifications = json.loads(classification_result)
@@ -68,7 +68,7 @@ Emails to classify:
                     newsletters.append(email)
                     break
         
-        return self.Outputs(
+        return self.Outputs(  # type: ignore
             text=classification_result,
             newsletters=newsletters,
             newsletters_count=len(newsletters)

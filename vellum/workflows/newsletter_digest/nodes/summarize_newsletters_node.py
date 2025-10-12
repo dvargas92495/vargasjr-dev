@@ -43,10 +43,10 @@ Newsletters to summarize:
     class Outputs(InlinePromptNode.Outputs):
         digest_content: str
 
-    def run(self) -> Outputs:
-        digest_content = super().run().text
+    def run(self) -> Outputs:  # type: ignore[override]
+        digest_content = super().run().text  # type: ignore
         
-        return self.Outputs(
+        return self.Outputs(  # type: ignore
             text=digest_content,
             digest_content=digest_content
         )

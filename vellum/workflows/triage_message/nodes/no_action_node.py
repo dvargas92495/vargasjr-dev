@@ -23,7 +23,7 @@ class NoActionNode(BaseNode):
             ).first()
             
             if not message_exists:
-                return self.Outputs(summary="Message no longer exists - archived.", message_url=message_url)
+                return self.Outputs(summary="Message no longer exists - archived.", message_url=message_url)  # type: ignore
             
             execution_id = self.state.meta.span_id
             
@@ -36,4 +36,4 @@ class NoActionNode(BaseNode):
             )
             session.commit()
         
-        return self.Outputs(summary="Message archived - no action needed.", message_url=message_url)
+        return self.Outputs(summary="Message archived - no action needed.", message_url=message_url)  # type: ignore

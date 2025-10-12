@@ -28,7 +28,7 @@ class ReadJobNode(BaseNode):
             with postgres_session() as session:
                 statement = (
                     select(Job)
-                    .order_by(Job.priority.desc())
+                    .order_by(Job.priority.desc())  # type: ignore
                     .limit(1)
                 )
                 

@@ -48,6 +48,10 @@ jobs:
         run: poetry install
         working-directory: vellum
 
+      - name: Run mypy type checking
+        run: poetry run mypy .
+        working-directory: vellum
+
       - name: Preview workflows
         run: npm run push-vellum-workflows
   push-workflows:
@@ -77,6 +81,10 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+        working-directory: vellum
+
+      - name: Run mypy type checking
+        run: poetry run mypy .
         working-directory: vellum
 
       - name: Push workflows to Vellum

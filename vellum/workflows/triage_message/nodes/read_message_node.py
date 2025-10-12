@@ -46,11 +46,11 @@ class ReadMessageNode(BaseNode):
                 statement = (
                     select(InboxMessage, Inbox.type, Inbox.name)
                     .join(
-                        InboxMessageOperation, InboxMessageOperation.inbox_message_id == InboxMessage.id, isouter=True
+                        InboxMessageOperation, InboxMessageOperation.inbox_message_id == InboxMessage.id, isouter=True  # type: ignore
                     )
-                    .join(Inbox, Inbox.id == InboxMessage.inbox_id)
-                    .where(InboxMessageOperation.operation.is_(None))
-                    .order_by(InboxMessage.created_at.desc())
+                    .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore
+                    .where(InboxMessageOperation.operation.is_(None))  # type: ignore
+                    .order_by(InboxMessage.created_at.desc())  # type: ignore
                 )
 
                 result = session.exec(statement).first()

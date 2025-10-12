@@ -9,7 +9,7 @@ from models.contact import Contact
 from models.inbox import Inbox
 from models.application import Application
 from models.application_workspace import ApplicationWorkspace
-import boto3
+import boto3  # type: ignore
 
 import os
 from sqlalchemy import create_engine
@@ -301,7 +301,7 @@ def get_all_transaction_rules() -> list[TransactionRule]:
 def add_transaction_rule(description: str, category: PersonalTransactionCategory) -> None:
     with sqlite_session() as session:
         session.add(
-            TransactionRule(
+            TransactionRule(  # type: ignore
                 category=category,
                 operation="EQUALS",
                 target=description,

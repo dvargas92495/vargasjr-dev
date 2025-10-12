@@ -40,7 +40,7 @@ class JobOpportunityResponseNode(BaseNode):
             
         except Exception:
             logger.exception("Failed to send job opportunity emails")
-            return self.Outputs(summary="Failed to send job opportunity emails.")
+            return self.Outputs(summary="Failed to send job opportunity emails.")  # type: ignore
 
         return self.Outputs(
             summary=f"Sent job opportunity response to {self.original_recruiter_email} and confirmation to {self.forwarder_email}.",

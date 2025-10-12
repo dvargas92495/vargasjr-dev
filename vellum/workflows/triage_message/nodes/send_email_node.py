@@ -29,7 +29,7 @@ class SendEmailNode(BaseNode):
             )
         except Exception:
             logger.exception("Failed to send email to %s", self.to)
-            return self.Outputs(summary=f"Failed to send email to {self.to}.")
+            return self.Outputs(summary=f"Failed to send email to {self.to}.")  # type: ignore
 
         return self.Outputs(
             summary=f"Sent email to {self.to}.",

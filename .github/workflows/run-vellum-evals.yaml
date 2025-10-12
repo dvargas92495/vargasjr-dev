@@ -28,6 +28,10 @@ jobs:
         run: poetry install
         working-directory: vellum
 
+      - name: Run mypy type checking
+        run: poetry run mypy .
+        working-directory: vellum
+
       - name: Run eval
         run: |
           if [ -n "${{ inputs.eval_name }}" ]; then

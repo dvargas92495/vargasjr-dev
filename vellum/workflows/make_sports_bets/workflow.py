@@ -64,22 +64,22 @@ class RecordYesterdaysGames(BaseNode):
             statement = select(  # type: ignore
                 SportGame.away_team_score,
                 SportGame.home_team_score,
-                AwayTeam.location.label("away_team_location"),
-                AwayTeam.name.label("away_team_name"),
-                HomeTeam.location.label("home_team_location"), 
-                HomeTeam.name.label("home_team_name"),
+                AwayTeam.location.label("away_team_location"),  # type: ignore
+                AwayTeam.name.label("away_team_name"),  # type: ignore
+                HomeTeam.location.label("home_team_location"),  # type: ignore
+                HomeTeam.name.label("home_team_name"),  # type: ignore
                 HomeTeam.sport,
             ).join(
                 AwayTeam, 
-                SportGame.away_team_id == AwayTeam.id,
+                SportGame.away_team_id == AwayTeam.id,  # type: ignore
                 isouter=True
             ).join(
                 HomeTeam,
-                SportGame.home_team_id == HomeTeam.id,
+                SportGame.home_team_id == HomeTeam.id,  # type: ignore
                 isouter=True
             ).where(
-                SportGame.start_time >= yesterday - timedelta(days=1),
-            ).order_by(SportGame.start_time.desc())
+                SportGame.start_time >= yesterday - timedelta(days=1),  # type: ignore
+            ).order_by(SportGame.start_time.desc())  # type: ignore
             games = session.exec(statement).all()
 
         winnings = []
@@ -422,7 +422,7 @@ class PredictOutcomes(BaseNode):
         with sqlite_session() as session:
             statement = select(SportGame).where(
                 or_(SportGame.home_team_id == team.id, SportGame.away_team_id == team.id),
-            ).order_by(SportGame.start_time.desc()).limit(5)
+            ).order_by(SportGame.start_time.desc()).limit(5)  # type: ignore
             sport_games = session.exec(statement).all()
         
         return [
@@ -506,17 +506,23 @@ class SendSummary(BaseNode):
         summary: str
 
     def run(self) -> Outputs:
+        num_games = len(self.wagers['rows'])  # type: ignore
+        balance = self.wagers['balance']  # type: ignore
+        ran_out = self.wagers['ran_out_of_money']  # type: ignore
+        picks_summary = "\n".join([f"- Bet ${wager:.2f} ({odds}) to {spread} {pick}. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])  # type: ignore
+        report_file = self.wagers['report_md_file']  # type: ignore
+        
         summary = f"""\
 Yesterday's Recap:
 
 {self.recap}
 ---
 
-Bets submitted for {len(self.wagers['rows'])} games. Remaining balance: ${self.wagers['balance']}{" (ran out of money)" if self.wagers['ran_out_of_money'] else ""}
+Bets submitted for {num_games} games. Remaining balance: ${balance}{" (ran out of money)" if ran_out else ""}
 ---
-{"\n".join([f"- Bet ${wager:.2f} ({odds}) to {spread} {pick}. Confidence {confidence:.4f}" for pick, confidence, wager, spread, odds in self.wagers['picks']])}
+{picks_summary}
 ---
-Report: {self.wagers['report_md_file']}
+Report: {report_file}
 """
 
         try:
@@ -524,7 +530,7 @@ Report: {self.wagers['report_md_file']}
             send_email(
                 to=to_email,
                 body=summary,
-                subject="Submitted Bets for " + self.wagers['date'],
+                subject="Submitted Bets for " + self.wagers['date'],  # type: ignore
             )
             return self.Outputs(summary=f"Sent bets to {to_email}.")
         except Exception:
