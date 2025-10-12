@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
-from vellum import VellumClient
+from vellum import Vellum as VellumClient
 from workflow import NewsletterDigestWorkflow
 
 
