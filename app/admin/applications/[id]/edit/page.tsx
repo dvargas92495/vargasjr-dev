@@ -186,11 +186,7 @@ export default function EditApplicationPage({
               case "TWITTER":
                 return <TwitterForm />;
               case "CAPITAL_ONE":
-                return (
-                  <CapitalOneForm
-                    applicationId={application.id}
-                  />
-                );
+                return <CapitalOneForm applicationId={application.id} />;
               case "MERCURY":
                 return <MercuryForm />;
               case "SLACK":

@@ -7,9 +7,7 @@ interface CapitalOneFormProps {
   applicationId?: string;
 }
 
-export default function CapitalOneForm({
-  applicationId,
-}: CapitalOneFormProps) {
+export default function CapitalOneForm({ applicationId }: CapitalOneFormProps) {
   return (
     <>
       <div>
@@ -44,9 +42,7 @@ export default function CapitalOneForm({
             Connect your Capital One account to enable automatic transaction
             syncing.
           </p>
-          <PlaidLinkButton
-            applicationId={applicationId}
-          />
+          <PlaidLinkButton applicationId={applicationId} />
         </div>
       )}
     </>
