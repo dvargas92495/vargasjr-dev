@@ -44,7 +44,7 @@ export function createStableCacheKey(): string {
 
 export function getFullCacheKey(): string {
   const cacheKey = createStableCacheKey();
-  return `deps-${process.platform}-${cacheKey}`;
+  return `v1-deps-${process.platform}-${cacheKey}`;
 }
 
 export function getCachePaths(): string[] {
