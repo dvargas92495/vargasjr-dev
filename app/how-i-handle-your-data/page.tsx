@@ -92,9 +92,7 @@ export default function HowIHandleYourData() {
               <li>Log analysis for security events and error patterns</li>
             </ul>
 
-            <h3 className="text-xl font-semibold mb-2 mt-4">
-              Risk Mitigation
-            </h3>
+            <h3 className="text-xl font-semibold mb-2 mt-4">Risk Mitigation</h3>
             <ul className="list-disc list-inside space-y-2 mb-4">
               <li>
                 AWS IAM roles with least-privilege access policies for all
@@ -112,7 +110,9 @@ export default function HowIHandleYourData() {
                 Multi-factor authentication via WebAuthn for administrative
                 access
               </li>
-              <li>Encrypted data storage (S3) and encrypted state management</li>
+              <li>
+                Encrypted data storage (S3) and encrypted state management
+              </li>
               <li>Secure database connections with SSL/TLS encryption</li>
             </ul>
 
@@ -149,7 +149,6 @@ export default function HowIHandleYourData() {
               </li>
             </ul>
           </section>
-
         </div>
 
         <Link
