@@ -17,21 +17,21 @@ class GetCapitalOneTransactions(BaseNode):
         if not capital_one_app:
             raise ValueError("Family Capital One Account application not found in database")
         
-        if not capital_one_app['client_id'] or not capital_one_app['client_secret']:
+        if not capital_one_app.client_id or not capital_one_app.client_secret:
             raise ValueError("Capital One client credentials not configured in database")
 
         headers = {
-            "PLAID-CLIENT-ID": capital_one_app['client_id'],
-            "PLAID-SECRET": capital_one_app['client_secret'],
+            "PLAID-CLIENT-ID": capital_one_app.client_id,
+            "PLAID-SECRET": capital_one_app.client_secret,
             "Content-Type": "application/json"
         }
         base_url = "https://production.plaid.com"
         
-        if not capital_one_app['access_token']:
+        if not capital_one_app.access_token:
             raise ValueError("Plaid access token not configured. Please complete Plaid Link flow first.")
         
         accounts_payload = {
-            "access_token": capital_one_app['access_token']
+            "access_token": capital_one_app.access_token
         }
         accounts_response = requests.post(f"{base_url}/accounts/get", json=accounts_payload, headers=headers)
         accounts_response.raise_for_status()
@@ -52,7 +52,7 @@ class GetCapitalOneTransactions(BaseNode):
         account_balance = checking_account["balances"]["current"] or 0.0
 
         transactions_payload = {
-            "access_token": capital_one_app['access_token'],
+            "access_token": capital_one_app.access_token,
             "cursor": None,
             "count": 500
         }

@@ -23,10 +23,10 @@ class PostToTwitter(BaseNode):
         if not twitter_app:
             raise NodeException("Twitter application not found in database", WorkflowErrorCode.INVALID_INPUTS)
         
-        if not twitter_app['client_id'] or not twitter_app['client_secret']:
+        if not twitter_app.client_id or not twitter_app.client_secret:
             raise NodeException("Twitter API consumer key and secret not configured", WorkflowErrorCode.PROVIDER_CREDENTIALS_UNAVAILABLE)
         
-        if not twitter_app['access_token'] or not twitter_app['refresh_token']:
+        if not twitter_app.access_token or not twitter_app.refresh_token:
             raise NodeException("Twitter access token and secret not configured", WorkflowErrorCode.PROVIDER_CREDENTIALS_UNAVAILABLE)
         
         tweet_text = self.selected_tweet.text
@@ -37,10 +37,10 @@ class PostToTwitter(BaseNode):
         
         try:
             client = tweepy.Client(
-                consumer_key=twitter_app['client_id'],
-                consumer_secret=twitter_app['client_secret'],
-                access_token=twitter_app['access_token'],
-                access_token_secret=twitter_app['refresh_token']
+                consumer_key=twitter_app.client_id,
+                consumer_secret=twitter_app.client_secret,
+                access_token=twitter_app.access_token,
+                access_token_secret=twitter_app.refresh_token
             )
             
             response = client.create_tweet(text=tweet_text)

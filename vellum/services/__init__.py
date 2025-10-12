@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 import requests
+from pydantic import BaseModel
 from models.contact import Contact
 from models.inbox import Inbox
 from models.application import Application
@@ -310,6 +311,15 @@ def add_transaction_rule(description: str, category: PersonalTransactionCategory
         session.commit()
 
 
+class ApplicationCredentials(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    workspace_id: Optional[str] = None
+
+
+
 def get_application_by_name(name: str) -> Optional[Application]:
     """Get application credentials by name from the database"""
     with postgres_session() as session:
@@ -317,7 +327,7 @@ def get_application_by_name(name: str) -> Optional[Application]:
         return session.exec(statement).one_or_none()
 
 
-def get_application_with_workspace_by_name(name: str) -> Optional[dict]:
+def get_application_with_workspace_by_name(name: str) -> Optional[ApplicationCredentials]:
     """Get application credentials including workspace tokens from the database"""
     with postgres_session() as session:
         statement = select(Application).where(Application.name == name)
@@ -332,18 +342,18 @@ def get_application_with_workspace_by_name(name: str) -> Optional[dict]:
         workspace = session.exec(workspace_statement).first()
         
         if not workspace:
-            return {
-                'client_id': application.client_id,
-                'client_secret': application.client_secret,
-                'access_token': None,
-                'refresh_token': None,
-                'workspace_id': None
-            }
+            return ApplicationCredentials(
+                client_id=application.client_id,
+                client_secret=application.client_secret,
+                access_token=None,
+                refresh_token=None,
+                workspace_id=None
+            )
             
-        return {
-            'client_id': workspace.client_id or application.client_id,
-            'client_secret': workspace.client_secret or application.client_secret,
-            'access_token': workspace.access_token,
-            'refresh_token': workspace.refresh_token,
-            'workspace_id': workspace.workspace_id
-        }
+        return ApplicationCredentials(
+            client_id=workspace.client_id or application.client_id,
+            client_secret=workspace.client_secret or application.client_secret,
+            access_token=workspace.access_token,
+            refresh_token=workspace.refresh_token,
+            workspace_id=workspace.workspace_id
+        )
