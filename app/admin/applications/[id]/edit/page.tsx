@@ -5,13 +5,7 @@ import { useCallback, useState, useEffect } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { AppType } from "@/db/constants";
-import TwitterForm from "@/components/TwitterForm";
-import CapitalOneForm from "@/components/CapitalOneForm";
-import MercuryForm from "@/components/MercuryForm";
-import SlackForm from "@/components/SlackForm";
-import RoamResearchForm from "@/components/RoamResearchForm";
-import GoogleForm from "@/components/GoogleForm";
-import DefaultApplicationForm from "@/components/DefaultApplicationForm";
+import ApplicationFormRenderer from "@/components/ApplicationFormRenderer";
 
 interface Application {
   id: string;
@@ -181,26 +175,10 @@ export default function EditApplicationPage({
             />
           </div>
 
-          {(() => {
-            switch (application.appType) {
-              case "TWITTER":
-                return <TwitterForm />;
-              case "CAPITAL_ONE":
-                return <CapitalOneForm applicationId={application.id} />;
-              case "MERCURY":
-                return <MercuryForm />;
-              case "SLACK":
-                return <SlackForm />;
-              case "ROAM_RESEARCH":
-                return <RoamResearchForm />;
-              case "GOOGLE":
-                return <GoogleForm />;
-              case "NOTION":
-              case "DEVIN":
-              default:
-                return application.appType ? <DefaultApplicationForm /> : null;
-            }
-          })()}
+          <ApplicationFormRenderer
+            appType={application.appType}
+            applicationId={application.id}
+          />
 
           <div className="flex gap-4 mt-6">
             <button
