@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import time
 import asyncio
 import importlib
 from pathlib import Path
@@ -70,10 +71,12 @@ class EvalRunner:
         
         for test_case in eval_instance.test_cases:
             try:
+                start_time = time.time()
                 final_event = await client.execute_workflow(
                     workflow=TriageMessageWorkflow,
                     inputs={}
                 )
+                latency = time.time() - start_time
                 
                 success = final_event.name == "workflow.execution.fulfilled"
                 
@@ -82,7 +85,8 @@ class EvalRunner:
                 result = {
                     "test_case": test_case_id,
                     "success": success,
-                    "workflow_result": str(final_event)
+                    "workflow_result": str(final_event),
+                    "latency": latency
                 }
                 
                 if 'expected_trigger' in test_case:
@@ -95,7 +99,8 @@ class EvalRunner:
                 results.append({
                     "test_case": test_case_id,
                     "success": False,
-                    "error": str(e)
+                    "error": str(e),
+                    "latency": 0.0
                 })
         
         return results
@@ -152,7 +157,8 @@ def main():
                 print(f"Test Results: {len(result['results'])} test cases")
                 for i, test_result in enumerate(result['results'], 1):
                     status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
-                    print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status}")
+                    latency = test_result.get('latency', 0.0)
+                    print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
             
             total_score += result['score']
         
@@ -189,7 +195,8 @@ def main():
             print(f"Test Results: {len(result['results'])} test cases")
             for i, test_result in enumerate(result['results'], 1):
                 status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
-                print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status}")
+                latency = test_result.get('latency', 0.0)
+                print(f"  {i}. {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
         
         print("=" * 50)
         
