@@ -76,17 +76,6 @@ class VargasJRInfrastructureStack extends TerraformStack {
         status: "Disabled",
       },
     });
-
-    const inboxBucket = new S3Bucket(this, "InboxBucket", {
-      bucket: "vargas-jr-inbox",
-    });
-
-    new S3BucketVersioningA(this, "InboxBucketVersioning", {
-      bucket: inboxBucket.id,
-      versioningConfiguration: {
-        status: "Disabled",
-      },
-    });
   }
 
   private createTerraformStateS3Bucket(tags: Record<string, string>) {
