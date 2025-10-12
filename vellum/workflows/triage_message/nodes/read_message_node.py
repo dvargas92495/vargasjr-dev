@@ -5,7 +5,7 @@ import psycopg
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from services import postgres_session
 from vellum.workflows.nodes import BaseNode
-from sqlmodel import select
+from sqlmodel import select, or_
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
@@ -43,13 +43,33 @@ class ReadMessageNode(BaseNode):
     def run(self) -> Outputs:
         try:
             with postgres_session() as session:
+                latest_operations_subquery = (
+                    select(
+                        InboxMessageOperation.inbox_message_id,
+                        InboxMessageOperation.operation,
+                    )
+                    .distinct(InboxMessageOperation.inbox_message_id)
+                    .order_by(
+                        InboxMessageOperation.inbox_message_id,
+                        InboxMessageOperation.created_at.desc()  # type: ignore
+                    )
+                    .subquery()
+                )
+
                 statement = (
                     select(InboxMessage, Inbox.type, Inbox.name)
                     .join(
-                        InboxMessageOperation, InboxMessageOperation.inbox_message_id == InboxMessage.id, isouter=True  # type: ignore
+                        latest_operations_subquery,
+                        latest_operations_subquery.c.inbox_message_id == InboxMessage.id,
+                        isouter=True
                     )
                     .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore
-                    .where(InboxMessageOperation.operation.is_(None))  # type: ignore
+                    .where(
+                        or_(
+                            latest_operations_subquery.c.operation.is_(None),
+                            latest_operations_subquery.c.operation == InboxMessageOperationType.UNREAD
+                        )
+                    )
                     .order_by(InboxMessage.created_at.desc())  # type: ignore
                 )
 
