@@ -16,21 +16,25 @@ class SlackChannelMessageHappyPathEval(BaseEval):
     description = "Happy path evaluation for Slack channel message workflows"
     test_cases = [
         {
+            "id": "simple-text-message",
             "type": "simple_text",
             "description": "Plain text message",
             "example": "Daily standup reminder: Please share your updates!"
         },
         {
+            "id": "rich-formatting-blocks",
             "type": "rich_formatting",
             "description": "Message with formatting and blocks",
             "example": "System alert with severity level and action buttons"
         },
         {
+            "id": "interactive-buttons",
             "type": "interactive",
             "description": "Message with buttons and user interactions",
             "example": "Deployment approval request with approve/reject buttons"
         },
         {
+            "id": "threaded-conversation",
             "type": "threaded",
             "description": "Message that starts or continues a thread",
             "example": "Follow-up message in existing conversation thread"

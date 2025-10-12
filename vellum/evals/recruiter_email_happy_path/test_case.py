@@ -16,26 +16,31 @@ class RecruiterEmailHappyPathEval(BaseEval):
     description = "Happy path evaluation for recruiter email workflows"
     test_cases = [
         {
+            "id": "initial-outreach-software-eng",
             "sender": "bugs.bunny@samepage.network",
             "subject": "Exploring Software Engineering Opportunities",
             "content": "Hi there! I came across your profile and was impressed by your technical background. We have some exciting opportunities that might be a great fit for your skills. Would you be open to a brief chat this week?"
         },
         {
+            "id": "quick-chat-tech-experience",
             "sender": "daffy.duck@samepage.network", 
             "subject": "Your Experience in Technology - Quick Chat?",
             "content": "Hello! I'm reaching out because your experience in software development caught my attention. We're working with some innovative companies that are looking for talented engineers. Are you currently open to new opportunities?"
         },
         {
+            "id": "follow-up-senior-developer",
             "sender": "porky.pig@samepage.network",
             "subject": "Following up on our previous conversation",
             "content": "Hi! I wanted to follow up on our conversation from last week about the senior developer role. The hiring manager is very interested in speaking with you. Do you have availability for a call this week?"
         },
         {
+            "id": "thank-you-next-steps",
             "sender": "tweety.bird@samepage.network",
             "subject": "Thank you for connecting - Next steps",
             "content": "Thank you for taking the time to speak with me yesterday! Based on our conversation, I think you'd be a perfect fit for the lead engineer position we discussed. I'd love to set up an interview with the team. What does your schedule look like next week?"
         },
         {
+            "id": "startup-full-stack-opportunity",
             "sender": "speedy.gonzales@samepage.network",
             "subject": "Exciting Startup Opportunity - Full Stack Developer",
             "content": "¡Hola! I hope this message finds you well. I'm working with a fast-growing startup that's looking for a full stack developer to join their core team. The role offers equity, remote work, and the chance to build something from the ground up. Interested in learning more?"

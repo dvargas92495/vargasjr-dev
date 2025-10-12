@@ -16,36 +16,42 @@ class WhoAreYouTextMessageEval(BaseEval):
     description = "Evaluation for 'who are you' text message handling"
     test_cases = [
         {
+            "id": "direct-who-are-you",
             "message": "who are you",
             "type": "direct_question",
             "expected_trigger": "text_reply",
             "case_sensitive": False
         },
         {
+            "id": "capitalized-who-are-you",
             "message": "Who are you?",
             "type": "direct_question_capitalized",
             "expected_trigger": "text_reply",
             "case_sensitive": False
         },
         {
+            "id": "what-do-you-do",
             "message": "what do you do",
             "type": "service_inquiry",
             "expected_trigger": "text_reply",
             "case_sensitive": False
         },
         {
+            "id": "tell-me-about-yourself",
             "message": "tell me about yourself",
             "type": "introduction_request",
             "expected_trigger": "text_reply",
             "case_sensitive": False
         },
         {
+            "id": "who-am-i-talking-to",
             "message": "who am I talking to",
             "type": "contact_identification",
             "expected_trigger": "text_reply",
             "case_sensitive": False
         },
         {
+            "id": "what-service-is-this",
             "message": "what service is this",
             "type": "service_identification",
             "expected_trigger": "text_reply",

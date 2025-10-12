@@ -77,7 +77,7 @@ class EvalRunner:
                 
                 success = final_event.name == "workflow.execution.fulfilled"
                 
-                test_case_id = test_case.get('message') or test_case.get('subject') or test_case.get('type') or 'Unknown'
+                test_case_id = test_case.get('id', 'Unknown')
                 
                 result = {
                     "test_case": test_case_id,
@@ -91,7 +91,7 @@ class EvalRunner:
                 results.append(result)
                 
             except Exception as e:
-                test_case_id = test_case.get('message') or test_case.get('subject') or test_case.get('type') or 'Unknown'
+                test_case_id = test_case.get('id', 'Unknown')
                 results.append({
                     "test_case": test_case_id,
                     "success": False,
