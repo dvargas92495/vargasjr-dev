@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from typing import List, Dict, Any
+from typing import List, Union
+from evals.metrics import ExactMatchMetric, RegexMatchMetric
 
 
 class BaseEval:
@@ -8,4 +9,5 @@ class BaseEval:
     
     name: str
     description: str
-    test_cases: List[Dict[str, Any]]
+    id: str
+    metrics: List[Union[ExactMatchMetric, RegexMatchMetric]]

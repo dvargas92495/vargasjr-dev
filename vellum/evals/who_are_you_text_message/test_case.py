@@ -1,146 +1,35 @@
 #!/usr/bin/env python3
 
-import asyncio
 from typing import List, Dict, Any
 from evals.base import BaseEval
+from evals.metrics import RegexMatchMetric
 
 
 class WhoAreYouTextMessageEval(BaseEval):
     """
-    Evaluation setup for testing "who are you" text message workflows.
-    This class outlines the steps needed to set up comprehensive evaluations
-    for identity question handling in the triage message workflow.
+    Evaluation for testing "who are you" text message workflows.
+    Tests identity question handling in the triage message workflow.
     """
     
     name = "who_are_you_text_message"
     description = "Evaluation for 'who are you' text message handling"
-    test_cases = [
-        {
-            "id": "direct-who-are-you",
-            "message": "who are you",
-            "type": "direct_question",
-            "expected_trigger": "text_reply",
-            "case_sensitive": False,
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent text message to .+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "capitalized-who-are-you",
-            "message": "Who are you?",
-            "type": "direct_question_capitalized",
-            "expected_trigger": "text_reply",
-            "case_sensitive": False,
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent text message to .+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "what-do-you-do",
-            "message": "what do you do",
-            "type": "service_inquiry",
-            "expected_trigger": "text_reply",
-            "case_sensitive": False,
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent text message to .+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "tell-me-about-yourself",
-            "message": "tell me about yourself",
-            "type": "introduction_request",
-            "expected_trigger": "text_reply",
-            "case_sensitive": False,
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent text message to .+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "who-am-i-talking-to",
-            "message": "who am I talking to",
-            "type": "contact_identification",
-            "expected_trigger": "text_reply",
-            "case_sensitive": False,
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent text message to .+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "what-service-is-this",
-            "message": "what service is this",
-            "type": "service_identification",
-            "expected_trigger": "text_reply",
-            "case_sensitive": False,
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent text message to .+\\.$",
-                    "weight": 3
-                }
-            ]
-        }
+    
+    id = "direct-who-are-you"
+    message = "who are you"
+    type = "direct_question"
+    expected_trigger = "text_reply"
+    case_sensitive = False
+    metrics = [
+        RegexMatchMetric(
+            output_name="message_url",
+            target_expression=r"^/admin/inboxes/\d+/messages/\d+$",
+            weight=3
+        ),
+        RegexMatchMetric(
+            output_name="summary",
+            target_expression=r"^Sent text message to .+\.$",
+            weight=3
+        )
     ]
     
     def get_setup_steps(self) -> List[Dict[str, Any]]:

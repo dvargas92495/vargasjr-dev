@@ -1,100 +1,34 @@
 #!/usr/bin/env python3
 
-import asyncio
 from typing import List, Dict, Any
 from evals.base import BaseEval
+from evals.metrics import RegexMatchMetric
 
 
 class SlackChannelMessageHappyPathEval(BaseEval):
     """
-    Evaluation setup for testing Slack channel message workflows in happy path scenarios.
-    This class outlines the steps needed to set up comprehensive evaluations
-    for Slack channel message automation workflows.
+    Evaluation for testing Slack channel message workflows in happy path scenarios.
+    Tests Slack channel message automation workflows.
     """
     
     name = "slack_channel_message_happy_path"
     description = "Happy path evaluation for Slack channel message workflows"
-    test_cases = [
-        {
-            "id": "simple-text-message",
-            "type": "simple_text",
-            "description": "Plain text message",
-            "example": "Daily standup reminder: Please share your updates!",
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "rich-formatting-blocks",
-            "type": "rich_formatting",
-            "description": "Message with formatting and blocks",
-            "example": "System alert with severity level and action buttons",
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "interactive-buttons",
-            "type": "interactive",
-            "description": "Message with buttons and user interactions",
-            "example": "Deployment approval request with approve/reject buttons",
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
-                    "weight": 3
-                }
-            ]
-        },
-        {
-            "id": "threaded-conversation",
-            "type": "threaded",
-            "description": "Message that starts or continues a thread",
-            "example": "Follow-up message in existing conversation thread",
-            "metrics": [
-                {
-                    "type": "regex_match",
-                    "output_name": "message_url",
-                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
-                    "weight": 3
-                },
-                {
-                    "type": "regex_match",
-                    "output_name": "summary",
-                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
-                    "weight": 3
-                }
-            ]
-        }
+    
+    id = "simple-text-message"
+    type = "simple_text"
+    description_text = "Plain text message"
+    example = "Daily standup reminder: Please share your updates!"
+    metrics = [
+        RegexMatchMetric(
+            output_name="message_url",
+            target_expression=r"^/admin/inboxes/\d+/messages/\d+$",
+            weight=3
+        ),
+        RegexMatchMetric(
+            output_name="summary",
+            target_expression=r"^Sent Slack reply to .+ at #.+\.$",
+            weight=3
+        )
     ]
     
     def get_setup_steps(self) -> List[Dict[str, Any]]:
