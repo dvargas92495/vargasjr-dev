@@ -30,7 +30,7 @@ class SlackChannelMessageHappyPathEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
                     "weight": 3
                 }
             ]
@@ -50,7 +50,7 @@ class SlackChannelMessageHappyPathEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
                     "weight": 3
                 }
             ]
@@ -70,7 +70,7 @@ class SlackChannelMessageHappyPathEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
                     "weight": 3
                 }
             ]
@@ -90,7 +90,7 @@ class SlackChannelMessageHappyPathEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent Slack reply to .+ at #.+\\.$",
                     "weight": 3
                 }
             ]

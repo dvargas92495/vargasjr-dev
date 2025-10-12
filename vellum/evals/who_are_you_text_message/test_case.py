@@ -31,7 +31,7 @@ class WhoAreYouTextMessageEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent text message to .+\\.$",
                     "weight": 3
                 }
             ]
@@ -52,7 +52,7 @@ class WhoAreYouTextMessageEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent text message to .+\\.$",
                     "weight": 3
                 }
             ]
@@ -73,7 +73,7 @@ class WhoAreYouTextMessageEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent text message to .+\\.$",
                     "weight": 3
                 }
             ]
@@ -94,7 +94,7 @@ class WhoAreYouTextMessageEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent text message to .+\\.$",
                     "weight": 3
                 }
             ]
@@ -115,7 +115,7 @@ class WhoAreYouTextMessageEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent text message to .+\\.$",
                     "weight": 3
                 }
             ]
@@ -136,7 +136,7 @@ class WhoAreYouTextMessageEval(BaseEval):
                 {
                     "type": "regex_match",
                     "output_name": "summary",
-                    "target_expression": ".+",
+                    "target_expression": "^Sent text message to .+\\.$",
                     "weight": 3
                 }
             ]
