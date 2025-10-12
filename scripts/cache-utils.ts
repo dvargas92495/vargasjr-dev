@@ -1,7 +1,20 @@
-import { readFileSync, existsSync } from "fs";
+import {
+  readFileSync,
+  existsSync,
+  createWriteStream,
+  createReadStream,
+} from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
+import {
+  S3Client,
+  GetObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
+import { execSync } from "child_process";
 
 export function createStableCacheKey(): string {
   const packageLockPath = join(process.cwd(), "package-lock.json");
@@ -39,4 +52,90 @@ export function getCachePaths(): string[] {
 
 export function getRestoreKeys(): string[] {
   return [`deps-${process.platform}-`];
+}
+
+const AWS_REGION = process.env.AWS_DEFAULT_REGION || "us-east-1";
+const S3_BUCKET = "vargas-jr-memory";
+
+const s3Client = new S3Client({
+  region: AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+export async function downloadCacheFromS3(cacheKey: string): Promise<boolean> {
+  const s3Key = `cache/${cacheKey}.tar.gz`;
+  const tempFile = `/tmp/cache-${Date.now()}.tar.gz`;
+
+  try {
+    console.log(`Checking for cache in S3: ${s3Key}`);
+
+    const command = new GetObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: s3Key,
+    });
+
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      console.log("Cache not found in S3");
+      return false;
+    }
+
+    console.log("Downloading cache from S3...");
+    const bodyStream = response.Body as Readable;
+    const fileStream = createWriteStream(tempFile);
+    await pipeline(bodyStream, fileStream);
+
+    console.log("Extracting cache...");
+    execSync(`tar -xzf ${tempFile} -C ${homedir()}`, { stdio: "inherit" });
+
+    execSync(`rm ${tempFile}`);
+    console.log(`Cache restored from S3: ${cacheKey}`);
+    return true;
+  } catch (error: any) {
+    if (error.name === "NoSuchKey") {
+      console.log("No cache found in S3, will create new cache after install");
+      return false;
+    }
+    console.warn("Failed to download cache from S3:", error.message);
+    return false;
+  }
+}
+
+export async function uploadCacheToS3(cacheKey: string): Promise<boolean> {
+  const s3Key = `cache/${cacheKey}.tar.gz`;
+  const tempFile = `/tmp/cache-${Date.now()}.tar.gz`;
+
+  try {
+    const cachePaths = getCachePaths();
+    console.log(`Creating cache tarball from: ${cachePaths.join(", ")}`);
+
+    const relativePaths = cachePaths.map((p) => p.replace(homedir() + "/", ""));
+    const tarCommand = `tar -czf ${tempFile} -C ${homedir()} ${relativePaths.join(
+      " "
+    )}`;
+    execSync(tarCommand, { stdio: "inherit" });
+
+    console.log("Uploading cache to S3...");
+    const fileStream = createReadStream(tempFile);
+
+    const command = new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: s3Key,
+      Body: fileStream,
+      ContentType: "application/gzip",
+    });
+
+    await s3Client.send(command);
+
+    execSync(`rm ${tempFile}`);
+    console.log(`Cache uploaded to S3: ${cacheKey}`);
+    return true;
+  } catch (error: any) {
+    console.error("Failed to upload cache to S3:", error.message);
+    return false;
+  }
 }

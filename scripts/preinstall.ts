@@ -1,7 +1,6 @@
 #!/usr/bin/env tsx
 
-import * as cache from "@actions/cache";
-import { getFullCacheKey, getCachePaths, getRestoreKeys } from "./cache-utils";
+import { getFullCacheKey, downloadCacheFromS3 } from "./cache-utils";
 
 async function handleCaching(): Promise<void> {
   if (!process.env.CI || process.env.VERCEL) {
@@ -15,43 +14,10 @@ async function handleCaching(): Promise<void> {
 
   console.log("Setting up caching for CI environment...");
 
-  console.log("DEBUG: Environment variables:");
-  console.log(
-    `  ACTIONS_CACHE_URL: ${process.env.ACTIONS_CACHE_URL || "undefined"}`
-  );
-  console.log(
-    `  ACTIONS_RESULTS_URL: ${process.env.ACTIONS_RESULTS_URL || "undefined"}`
-  );
-  console.log(
-    `  ACTIONS_CACHE_SERVICE_V2: ${
-      process.env.ACTIONS_CACHE_SERVICE_V2 || "undefined"
-    }`
-  );
-
   const fullCacheKey = getFullCacheKey();
-  const cachePaths = getCachePaths();
-  const restoreKeys = getRestoreKeys();
-
   console.log(`Generated cache key: ${fullCacheKey}`);
-  console.log(`Cache paths: ${cachePaths.join(", ")}`);
 
-  try {
-    console.log("Attempting to restore cache...");
-    const restoredKey = await cache.restoreCache(
-      cachePaths,
-      fullCacheKey,
-      restoreKeys
-    );
-
-    if (restoredKey) {
-      console.log(`Cache restored with key: ${restoredKey}`);
-    } else {
-      console.log("No cache found, will create new cache after install");
-    }
-  } catch (error) {
-    console.warn("Cache restore failed:", error);
-    console.log("Continuing without cache...");
-  }
+  await downloadCacheFromS3(fullCacheKey);
 }
 
 handleCaching().catch((error) => {
