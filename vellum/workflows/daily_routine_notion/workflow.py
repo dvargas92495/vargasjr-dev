@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 from vellum.workflows import BaseWorkflow
 from vellum.workflows.nodes import BaseNode
-from services import get_application_by_name
+from services import get_application_with_workspace_by_name
 
 DAILY_ROUTINE_ITEMS = [
     "Review today's calendar and priorities",
@@ -24,24 +24,24 @@ class PublishToNotionNode(BaseNode):
         logger: logging.Logger = getattr(self._context, "logger", logging.getLogger(__name__))
         
         try:
-            notion_app = get_application_by_name("Notion")
+            notion_app = get_application_with_workspace_by_name("Notion")
             if not notion_app:
                 error_msg = "Notion application not found in database"
                 logger.error(error_msg)
                 return self.Outputs(summary=error_msg)
 
-            if not notion_app.access_token:  # type: ignore
+            if not notion_app.access_token:
                 error_msg = "Notion access token not configured"
                 logger.error(error_msg)
                 return self.Outputs(summary=error_msg)
 
-            if not notion_app.workspace_id:  # type: ignore
+            if not notion_app.workspace_id:
                 error_msg = "Notion page ID not configured in workspace_id field"
                 logger.error(error_msg)
                 return self.Outputs(summary=error_msg)
 
-            page_id = notion_app.workspace_id  # type: ignore
-            access_token = notion_app.access_token  # type: ignore
+            page_id = notion_app.workspace_id
+            access_token = notion_app.access_token
 
             blocks = []
             for item in DAILY_ROUTINE_ITEMS:
