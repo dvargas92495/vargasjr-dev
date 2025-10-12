@@ -15,6 +15,19 @@ async function handleCaching(): Promise<void> {
 
   console.log("Setting up caching for CI environment...");
 
+  console.log("DEBUG: Environment variables:");
+  console.log(
+    `  ACTIONS_CACHE_URL: ${process.env.ACTIONS_CACHE_URL || "undefined"}`
+  );
+  console.log(
+    `  ACTIONS_RESULTS_URL: ${process.env.ACTIONS_RESULTS_URL || "undefined"}`
+  );
+  console.log(
+    `  ACTIONS_CACHE_SERVICE_V2: ${
+      process.env.ACTIONS_CACHE_SERVICE_V2 || "undefined"
+    }`
+  );
+
   const fullCacheKey = getFullCacheKey();
   const cachePaths = getCachePaths();
   const restoreKeys = getRestoreKeys();
