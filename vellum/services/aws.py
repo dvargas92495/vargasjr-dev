@@ -55,7 +55,7 @@ def list_attachments_since(cutoff_date: datetime) -> list[str]:
     paginator = s3.get_paginator("list_objects_v2")
 
     for page in paginator.paginate(
-        Bucket="vargas-jr-inbox",
+        Bucket="vargas-jr-memory",
         Prefix="attachments/",
     ):
         if "Contents" not in page:
