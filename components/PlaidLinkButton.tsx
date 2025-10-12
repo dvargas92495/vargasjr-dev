@@ -5,12 +5,10 @@ import { usePlaidLink } from "react-plaid-link";
 
 interface PlaidLinkButtonProps {
   applicationId?: string;
-  onSuccess?: () => void;
 }
 
 export default function PlaidLinkButton({
   applicationId,
-  onSuccess,
 }: PlaidLinkButtonProps) {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -53,12 +51,12 @@ export default function PlaidLinkButton({
           body: JSON.stringify({ publicToken, applicationId }),
         });
 
-        onSuccess?.();
+        window.location.reload();
       } catch {
         setError("Failed to save connection");
       }
     },
-    [applicationId, onSuccess]
+    [applicationId]
   );
 
   const { open, ready } = usePlaidLink({

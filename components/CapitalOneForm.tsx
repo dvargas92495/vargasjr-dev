@@ -5,12 +5,10 @@ import PlaidLinkButton from "./PlaidLinkButton";
 
 interface CapitalOneFormProps {
   applicationId?: string;
-  onPlaidSuccess?: () => void;
 }
 
 export default function CapitalOneForm({
   applicationId,
-  onPlaidSuccess,
 }: CapitalOneFormProps) {
   return (
     <>
@@ -48,7 +46,6 @@ export default function CapitalOneForm({
           </p>
           <PlaidLinkButton
             applicationId={applicationId}
-            onSuccess={onPlaidSuccess}
           />
         </div>
       )}

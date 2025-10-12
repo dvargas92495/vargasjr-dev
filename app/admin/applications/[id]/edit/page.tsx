@@ -4,11 +4,19 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import PlaidLinkButton from "@/components/PlaidLinkButton";
+import { AppType } from "@/db/constants";
+import TwitterForm from "@/components/TwitterForm";
+import CapitalOneForm from "@/components/CapitalOneForm";
+import MercuryForm from "@/components/MercuryForm";
+import SlackForm from "@/components/SlackForm";
+import RoamResearchForm from "@/components/RoamResearchForm";
+import GoogleForm from "@/components/GoogleForm";
+import DefaultApplicationForm from "@/components/DefaultApplicationForm";
 
 interface Application {
   id: string;
   name: string;
+  appType: AppType | null;
   clientId: string | null;
   clientSecret: string | null;
   createdAt: string;
@@ -173,21 +181,30 @@ export default function EditApplicationPage({
             />
           </div>
 
-          {application.name.toLowerCase().includes("capital one") && (
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium mb-2">
-                Connect Your Capital One Account
-              </h4>
-              <p className="text-sm text-gray-600 mb-2">
-                Connect your Capital One account to enable automatic transaction
-                syncing.
-              </p>
-              <PlaidLinkButton
-                applicationId={application.id}
-                onSuccess={() => window.location.reload()}
-              />
-            </div>
-          )}
+          {(() => {
+            switch (application.appType) {
+              case "TWITTER":
+                return <TwitterForm />;
+              case "CAPITAL_ONE":
+                return (
+                  <CapitalOneForm
+                    applicationId={application.id}
+                  />
+                );
+              case "MERCURY":
+                return <MercuryForm />;
+              case "SLACK":
+                return <SlackForm />;
+              case "ROAM_RESEARCH":
+                return <RoamResearchForm />;
+              case "GOOGLE":
+                return <GoogleForm />;
+              case "NOTION":
+              case "DEVIN":
+              default:
+                return application.appType ? <DefaultApplicationForm /> : null;
+            }
+          })()}
 
           <div className="flex gap-4 mt-6">
             <button

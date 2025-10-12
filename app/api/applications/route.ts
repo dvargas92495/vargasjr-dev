@@ -2,10 +2,11 @@ import { ApplicationsTable, ApplicationWorkspacesTable } from "@/db/schema";
 import { z } from "zod";
 import { getDb } from "@/db/connection";
 import { withApiWrapper } from "@/utils/api-wrapper";
+import { AppTypes } from "@/db/constants";
 
 const applicationSchema = z.object({
   name: z.string(),
-  appType: z.string(),
+  appType: z.enum(AppTypes),
   clientId: z.string().optional(),
   clientSecret: z.string().optional(),
   accessToken: z.string().optional(),
@@ -20,7 +21,7 @@ async function createApplicationHandler(body: unknown) {
 
   const [application] = await db
     .insert(ApplicationsTable)
-    .values({ name, clientId, clientSecret })
+    .values({ name, appType, clientId, clientSecret })
     .returning({ id: ApplicationsTable.id });
 
   if (appType === "TWITTER" && (accessToken || refreshToken)) {
