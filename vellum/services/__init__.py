@@ -9,7 +9,7 @@ from models.contact import Contact
 from models.inbox import Inbox
 from models.application import Application
 from models.application_workspace import ApplicationWorkspace
-import boto3  # type: ignore
+import boto3
 
 import os
 from sqlalchemy import create_engine
