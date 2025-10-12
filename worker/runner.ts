@@ -49,6 +49,7 @@ export class AgentRunner {
     this.loadRoutineJobs()
       .then((jobs) => {
         this.routineJobs = jobs;
+        this.logger.info(`Initialized ${jobs.length} scheduled job${jobs.length === 1 ? '' : 's'}`);
       })
       .catch((error) => {
         this.logger.error(

@@ -175,6 +175,8 @@ export class AgentServer {
 
               const filterUnwantedLogs = (line: string) => {
                 if (line.includes("pam_unix(sudo:session):")) return false;
+                if (line.includes("USER=root") && line.includes("COMMAND=/usr/bin/systemctl")) return false;
+                if (/\.{10,}/.test(line)) return false;
                 return true;
               };
 
@@ -366,7 +368,7 @@ export class AgentServer {
 
     this.app.get("/health", async (req, res) => {
       const requestId =
-        (req.headers["x-vargasjr-request-id"] as string) || "unknown";
+        (req.headers["x-vargasjr-request-id"] as string) || "system";
       try {
         this.logger.info(`[${requestId}] Health check endpoint called`);
 
