@@ -172,17 +172,17 @@ export class AgentServer {
 
             if (journalOutput.length > 0) {
               const allLines = journalOutput.split("\n");
-              
+
               const filterUnwantedLogs = (line: string) => {
                 if (line.includes("pam_unix(sudo:session):")) return false;
                 if (line.includes("Running main Agent Loop")) return false;
                 return true;
               };
-              
+
               const filteredLines = allLines
                 .filter(filterUnwantedLogs)
                 .map(removeIpAddresses);
-              
+
               let displayLines: string[];
               if (filteredLines.length <= 125) {
                 displayLines = filteredLines;
@@ -191,7 +191,7 @@ export class AgentServer {
                 const last100 = filteredLines.slice(-100);
                 displayLines = [...first25, ...last100];
               }
-              
+
               logs["systemd.log"] = {
                 exists: true,
                 totalLines: filteredLines.length,
