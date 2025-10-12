@@ -12,9 +12,30 @@ class SlackChannelMessageHappyPathEval(BaseEval):
     for Slack channel message automation workflows.
     """
     
-    def __init__(self):
-        self.eval_name = "slack_channel_message_happy_path"
-        self.description = "Happy path evaluation for Slack channel message workflows"
+    name = "slack_channel_message_happy_path"
+    description = "Happy path evaluation for Slack channel message workflows"
+    test_cases = [
+        {
+            "type": "simple_text",
+            "description": "Plain text message",
+            "example": "Daily standup reminder: Please share your updates!"
+        },
+        {
+            "type": "rich_formatting",
+            "description": "Message with formatting and blocks",
+            "example": "System alert with severity level and action buttons"
+        },
+        {
+            "type": "interactive",
+            "description": "Message with buttons and user interactions",
+            "example": "Deployment approval request with approve/reject buttons"
+        },
+        {
+            "type": "threaded",
+            "description": "Message that starts or continues a thread",
+            "example": "Follow-up message in existing conversation thread"
+        }
+    ]
     
     def get_setup_steps(self) -> List[Dict[str, Any]]:
         """
@@ -145,71 +166,6 @@ class SlackChannelMessageHappyPathEval(BaseEval):
                 "expected_outcome": "User interaction testing framework ready"
             }
         ]
-    
-    def get_test_data(self) -> Dict[str, Any]:
-        """
-        Returns sample test data for Slack channel message evaluation.
-        """
-        return {
-            "test_channels": [
-                {
-                    "name": "general",
-                    "type": "public",
-                    "purpose": "General announcements and updates",
-                    "members": 15
-                },
-                {
-                    "name": "dev-alerts",
-                    "type": "public",
-                    "purpose": "Development and deployment notifications",
-                    "members": 8
-                },
-                {
-                    "name": "private-team",
-                    "type": "private",
-                    "purpose": "Sensitive team communications",
-                    "members": 5
-                }
-            ],
-            "message_types": [
-                {
-                    "type": "simple_text",
-                    "description": "Plain text message",
-                    "example": "Daily standup reminder: Please share your updates!"
-                },
-                {
-                    "type": "rich_formatting",
-                    "description": "Message with formatting and blocks",
-                    "example": "System alert with severity level and action buttons"
-                },
-                {
-                    "type": "interactive",
-                    "description": "Message with buttons and user interactions",
-                    "example": "Deployment approval request with approve/reject buttons"
-                },
-                {
-                    "type": "threaded",
-                    "description": "Message that starts or continues a thread",
-                    "example": "Follow-up message in existing conversation thread"
-                }
-            ],
-            "trigger_events": [
-                "scheduled_time",
-                "webhook_received",
-                "user_mention",
-                "channel_join",
-                "file_upload",
-                "external_api_event"
-            ],
-            "expected_outcomes": [
-                "message_delivered",
-                "user_interaction_received",
-                "thread_created",
-                "notification_sent",
-                "error_handled_gracefully",
-                "rate_limit_respected"
-            ]
-        }
 
 
 async def main():

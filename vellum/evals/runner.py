@@ -6,11 +6,8 @@ import importlib
 from pathlib import Path
 import inspect
 from typing import Dict, Any, List
-from vellum.workflows.sandbox import WorkflowSandboxRunner
-from vellum.workflows.inputs import BaseInputs
+from vellum import VellumClient
 from workflows.triage_message.workflow import TriageMessageWorkflow
-from models.types import USER
-from services import create_inbox_message
 from evals.base import BaseEval
 
 
@@ -37,17 +34,16 @@ class EvalRunner:
             eval_class = self._get_eval_class(eval_module)
             
             eval_instance = eval_class()
-            test_data = eval_instance.get_test_data()
             
-            results = self._execute_eval(eval_instance, test_data)
+            results = asyncio.run(self._execute_eval(eval_instance))
             
-            score = self._calculate_score(results, test_data)
+            score = self._calculate_score(results)
             
             return {
-                "eval_name": eval_name,
+                "eval_name": eval_instance.name,
                 "score": score,
                 "results": results,
-                "test_data_summary": self._summarize_test_data(test_data)
+                "test_data_summary": self._summarize_test_cases(eval_instance.test_cases)
             }
             
         except Exception as e:
@@ -67,81 +63,44 @@ class EvalRunner:
                 return obj
         raise ValueError(f"No BaseEval subclass found in module {eval_module}")
     
-    def _execute_eval(self, eval_instance, test_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def _execute_eval(self, eval_instance: BaseEval) -> List[Dict[str, Any]]:
         """Execute the evaluation test cases"""
         results = []
+        client = VellumClient()
         
-        if hasattr(eval_instance, 'eval_name') and 'who_are_you' in eval_instance.eval_name:
-            identity_questions = test_data.get('identity_questions', [])
-            for question_data in identity_questions:
-                result = self._test_identity_question(question_data)
+        for test_case in eval_instance.test_cases:
+            try:
+                final_event = await client.execute_workflow(
+                    workflow=TriageMessageWorkflow,
+                    inputs={}
+                )
+                
+                success = final_event.name == "workflow.execution.fulfilled"
+                
+                test_case_id = test_case.get('message') or test_case.get('subject') or test_case.get('type') or 'Unknown'
+                
+                result = {
+                    "test_case": test_case_id,
+                    "success": success,
+                    "workflow_result": str(final_event)
+                }
+                
+                if 'expected_trigger' in test_case:
+                    result["expected_trigger"] = test_case['expected_trigger']
+                
                 results.append(result)
-        
-        elif hasattr(eval_instance, 'eval_name') and 'recruiter_email' in eval_instance.eval_name:
-            emails = test_data.get('emails', [])
-            for email_data in emails:
-                result = self._test_email_handling(email_data)
-                results.append(result)
+                
+            except Exception as e:
+                test_case_id = test_case.get('message') or test_case.get('subject') or test_case.get('type') or 'Unknown'
+                results.append({
+                    "test_case": test_case_id,
+                    "success": False,
+                    "error": str(e)
+                })
         
         return results
     
-    def _test_identity_question(self, question_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Test identity question handling"""
-        try:
-            message = create_inbox_message(
-                body=question_data['message'],
-                sender=question_data.get('phone_number', '+15551234567'),
-                type=USER,
-                channel="SMS"
-            )
-            
-            runner = WorkflowSandboxRunner(
-                workflow=self.workflow,
-                inputs=[BaseInputs()]
-            )
-            
-            final_event = runner.run()
-            
-            success = self._analyze_identity_response(final_event, question_data)
-            
-            return {
-                "test_case": question_data['message'],
-                "expected_trigger": question_data.get('expected_trigger', 'text_reply'),
-                "success": success,
-                "workflow_result": str(final_event)
-            }
-            
-        except Exception as e:
-            return {
-                "test_case": question_data['message'],
-                "success": False,
-                "error": str(e)
-            }
-    
-    def _test_email_handling(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Test email handling (placeholder for other eval types)"""
-        return {
-            "test_case": email_data.get('subject', 'Unknown'),
-            "success": True,
-            "workflow_result": "Email handled successfully"
-        }
-    
-    def _analyze_identity_response(self, workflow_result, question_data: Dict[str, Any]) -> bool:
-        """Analyze if the identity response meets expectations"""
-        result_str = str(workflow_result).lower()
-        
-        expected_elements = [
-            "vargas jr",
-            "automated",
-            "software developer",
-            "available for hire",
-            "assist you"
-        ]
-        
-        elements_found = sum(1 for element in expected_elements if element in result_str)
-        return elements_found >= 3
-    
-    def _calculate_score(self, results: List[Dict[str, Any]], test_data: Dict[str, Any]) -> float:
+    def _calculate_score(self, results: List[Dict[str, Any]]) -> float:
         """Calculate 0-1 score based on test results"""
         if not results:
             return 0.0
@@ -151,15 +110,12 @@ class EvalRunner:
         
         return successful_tests / total_tests if total_tests > 0 else 0.0
     
-    def _summarize_test_data(self, test_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create summary of test data for reporting"""
-        summary = {}
-        for key, value in test_data.items():
-            if isinstance(value, list):
-                summary[key] = f"{len(value)} items"
-            else:
-                summary[key] = str(value)[:100]
-        return summary
+    def _summarize_test_cases(self, test_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Create summary of test cases for reporting"""
+        return {
+            "total_test_cases": len(test_cases),
+            "test_case_types": list(set(tc.get('type', 'unknown') for tc in test_cases))
+        }
 
 
 def main():
