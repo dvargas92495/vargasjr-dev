@@ -16,7 +16,7 @@ type GetBodyFunction = (request: Request) => Promise<unknown>;
 export function withApiWrapper<T = unknown>(
   handler: ApiHandler<T> | ApiHandlerNoBody<T>,
   options?: { getBody?: GetBodyFunction }
-){
+) {
   return async (request: Request, context?: any) => {
     try {
       let body;
@@ -58,9 +58,10 @@ export function withApiWrapper<T = unknown>(
         body = { ...body, ...params };
       }
 
-      const result = handler.length === 0 
-        ? await (handler as ApiHandlerNoBody<T>)()
-        : await (handler as ApiHandler<T>)(body);
+      const result =
+        handler.length === 0
+          ? await (handler as ApiHandlerNoBody<T>)()
+          : await (handler as ApiHandler<T>)(body);
       return NextResponse.json(result);
     } catch (error) {
       if (error instanceof ZodError) {
