@@ -34,6 +34,9 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -43,16 +46,15 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
       - name: Run ESLint
         run: npm run lint
       - name: Run Prettier check
         run: npm run format:check
   test:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -62,10 +64,6 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
       - name: Run tests
         run: npm test tests/
   publish-agent:
@@ -74,6 +72,9 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: write
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -83,10 +84,6 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
         run: npm install
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
       - name: Get version from package.json
         id: get_version
         run: |
