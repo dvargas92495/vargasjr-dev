@@ -5,7 +5,7 @@ import psycopg
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from services import postgres_session
 from vellum.workflows.nodes import BaseNode
-from sqlmodel import select
+from sqlmodel import select, or_, func
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
@@ -43,13 +43,40 @@ class ReadMessageNode(BaseNode):
     def run(self) -> Outputs:
         try:
             with postgres_session() as session:
+                ranked_operations = (
+                    select(
+                        InboxMessageOperation.inbox_message_id,
+                        InboxMessageOperation.operation,
+                        func.row_number()
+                        .over(
+                            partition_by=[InboxMessageOperation.inbox_message_id],  # type: ignore
+                            order_by=InboxMessageOperation.created_at.desc()  # type: ignore
+                        )
+                        .label("rn"),
+                    )
+                    .subquery()
+                )
+
+                latest_operations_subquery = (
+                    select(ranked_operations.c.inbox_message_id, ranked_operations.c.operation)
+                    .where(ranked_operations.c.rn == 1)
+                    .subquery()
+                )
+
                 statement = (
                     select(InboxMessage, Inbox.type, Inbox.name)
                     .join(
-                        InboxMessageOperation, InboxMessageOperation.inbox_message_id == InboxMessage.id, isouter=True  # type: ignore
+                        latest_operations_subquery,
+                        latest_operations_subquery.c.inbox_message_id == InboxMessage.id,
+                        isouter=True
                     )
                     .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore
-                    .where(InboxMessageOperation.operation.is_(None))  # type: ignore
+                    .where(
+                        or_(
+                            latest_operations_subquery.c.operation.is_(None),
+                            latest_operations_subquery.c.operation == InboxMessageOperationType.UNREAD
+                        )
+                    )
                     .order_by(InboxMessage.created_at.desc())  # type: ignore
                 )
 

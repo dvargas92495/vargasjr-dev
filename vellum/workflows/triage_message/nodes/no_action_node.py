@@ -3,7 +3,7 @@ from .read_message_node import ReadMessageNode
 from services import postgres_session
 from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
-from models.types import InboxMessageOperationType
+from models.types import InboxMessageOperationType, InboxType
 from sqlmodel import select
 
 
@@ -15,6 +15,9 @@ class NoActionNode(BaseNode):
         message_url: str
 
     def run(self) -> BaseNode.Outputs:
+        if self.message.channel == InboxType.NONE:
+            return self.Outputs(message_url="")  # type: ignore
+        
         message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
         
         with postgres_session() as session:

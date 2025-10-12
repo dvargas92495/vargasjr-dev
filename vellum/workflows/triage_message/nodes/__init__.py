@@ -1,5 +1,4 @@
 from .read_message_node import ReadMessageNode
-from .update_crm_node import UpdateCRMNode
 from .triage_message_node import TriageMessageNode
 from .parse_function_call_node import ParseFunctionCallNode
 from .send_email_node import SendEmailNode
@@ -13,7 +12,6 @@ from .store_outbox_message_node import StoreOutboxMessageNode
 
 __all__ = [
     "ReadMessageNode",
-    "UpdateCRMNode",
     "TriageMessageNode",
     "ParseFunctionCallNode",
     "SendEmailNode",
