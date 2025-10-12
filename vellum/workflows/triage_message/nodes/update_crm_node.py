@@ -16,4 +16,6 @@ class UpdateCRMNode(BaseNode):
 
     def run(self) -> BaseNode.Outputs:
         contact = get_contact_by_id(self.contact_id)
+        if not contact:
+            raise ValueError(f"Contact with id {self.contact_id} not found")
         return self.Outputs(contact=contact)

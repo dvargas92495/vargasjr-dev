@@ -16,7 +16,7 @@ class NoActionNode(BaseNode):
 
     def run(self) -> BaseNode.Outputs:
         if self.message.channel == InboxType.NONE:
-            return self.Outputs(summary="No messages to process", message_url="")
+            return self.Outputs(message_url="")  # type: ignore
         
         message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
         
