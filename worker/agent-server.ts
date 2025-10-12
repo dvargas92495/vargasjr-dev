@@ -175,7 +175,11 @@ export class AgentServer {
 
               const filterUnwantedLogs = (line: string) => {
                 if (line.includes("pam_unix(sudo:session):")) return false;
-                if (line.includes("USER=root") && line.includes("COMMAND=/usr/bin/systemctl")) return false;
+                if (
+                  line.includes("USER=root") &&
+                  line.includes("COMMAND=/usr/bin/systemctl")
+                )
+                  return false;
                 if (/\.{10,}/.test(line)) return false;
                 return true;
               };
