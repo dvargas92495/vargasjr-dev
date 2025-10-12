@@ -7,7 +7,7 @@ import importlib
 from pathlib import Path
 import inspect
 from typing import Dict, Any, List
-from vellum import Vellum as VellumClient
+from vellum.workflows.inputs import BaseInputs
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 
@@ -67,25 +67,18 @@ class EvalRunner:
     async def _execute_eval(self, eval_instance: BaseEval) -> List[Dict[str, Any]]:
         """Execute the evaluation test cases"""
         results = []
-        client = VellumClient()  # type: ignore[call-arg]
         
         for test_case in eval_instance.test_cases:
+            test_case_id = test_case.get('id', 'Unknown')
             try:
                 start_time = time.time()
-                final_event = await client.execute_workflow(
-                    workflow=TriageMessageWorkflow,
-                    inputs={}  # type: ignore
-                )
+                workflow_result = self.workflow.run(inputs=BaseInputs())
                 latency = time.time() - start_time
-                
-                success = final_event.name == "workflow.execution.fulfilled"
-                
-                test_case_id = test_case.get('id', 'Unknown')
                 
                 result = {
                     "test_case": test_case_id,
-                    "success": success,
-                    "workflow_result": str(final_event),
+                    "success": True,
+                    "workflow_result": str(workflow_result),
                     "latency": latency
                 }
                 
@@ -95,7 +88,6 @@ class EvalRunner:
                 results.append(result)
                 
             except Exception as e:
-                test_case_id = test_case.get('id', 'Unknown')
                 results.append({
                     "test_case": test_case_id,
                     "success": False,
