@@ -78,7 +78,9 @@ export default async function WorkspaceDetailPage({
               Access Token
             </label>
             <p className="mt-1 text-sm text-gray-900">
-              {workspace.accessToken ? "••••••••" : "N/A"}
+              {workspace.accessToken
+                ? `••••${workspace.accessToken.slice(-4)}`
+                : "N/A"}
             </p>
           </div>
           <div>

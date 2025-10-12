@@ -9,10 +9,12 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { InboxMessageOperationTypes, InboxTypes } from "./constants";
+import { InboxMessageOperationTypes, InboxTypes, AppTypes } from "./constants";
 
 export type InboxType = (typeof InboxTypes)[number];
 export const InboxTypesEnum = pgEnum("inbox_type", InboxTypes);
+
+export const AppTypesEnum = pgEnum("app_type", AppTypes);
 
 export const InboxesTable = pgTable("inboxes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -85,6 +87,7 @@ export const OutboxMessagesTable = pgTable("outbox_messages", {
 export const ApplicationsTable = pgTable("applications", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name").notNull(),
+  appType: AppTypesEnum("app_type"),
   clientId: varchar("client_id"),
   clientSecret: varchar("client_secret"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

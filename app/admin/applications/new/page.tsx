@@ -3,13 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { AppTypes, AppType } from "@/db/constants";
-import TwitterForm from "@/components/TwitterForm";
-import CapitalOneForm from "@/components/CapitalOneForm";
-import MercuryForm from "@/components/MercuryForm";
-import SlackForm from "@/components/SlackForm";
-import RoamResearchForm from "@/components/RoamResearchForm";
-import GoogleForm from "@/components/GoogleForm";
-import DefaultApplicationForm from "@/components/DefaultApplicationForm";
+import ApplicationFormRenderer from "@/components/ApplicationFormRenderer";
 
 export default function NewApplicationPage() {
   const router = useRouter();
@@ -88,26 +82,7 @@ export default function NewApplicationPage() {
           </select>
         </div>
 
-        {(() => {
-          switch (selectedAppType) {
-            case "TWITTER":
-              return <TwitterForm />;
-            case "CAPITAL_ONE":
-              return <CapitalOneForm />;
-            case "MERCURY":
-              return <MercuryForm />;
-            case "SLACK":
-              return <SlackForm />;
-            case "ROAM_RESEARCH":
-              return <RoamResearchForm />;
-            case "GOOGLE":
-              return <GoogleForm />;
-            case "NOTION":
-            case "DEVIN":
-            default:
-              return selectedAppType ? <DefaultApplicationForm /> : null;
-          }
-        })()}
+        <ApplicationFormRenderer appType={selectedAppType} />
 
         <button
           type="submit"

@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import PlaidLinkButton from "@/components/PlaidLinkButton";
+import { AppType } from "@/db/constants";
+import ApplicationFormRenderer from "@/components/ApplicationFormRenderer";
 
 interface Application {
   id: string;
   name: string;
+  appType: AppType | null;
   clientId: string | null;
   clientSecret: string | null;
   createdAt: string;
@@ -173,21 +175,10 @@ export default function EditApplicationPage({
             />
           </div>
 
-          {application.name.toLowerCase().includes("capital one") && (
-            <div className="border-t pt-4 mt-4">
-              <h4 className="font-medium mb-2">
-                Connect Your Capital One Account
-              </h4>
-              <p className="text-sm text-gray-600 mb-2">
-                Connect your Capital One account to enable automatic transaction
-                syncing.
-              </p>
-              <PlaidLinkButton
-                applicationId={application.id}
-                onSuccess={() => window.location.reload()}
-              />
-            </div>
-          )}
+          <ApplicationFormRenderer
+            appType={application.appType}
+            applicationId={application.id}
+          />
 
           <div className="flex gap-4 mt-6">
             <button
