@@ -4,7 +4,6 @@ from logging import Logger
 import logging
 from pathlib import Path
 from typing import Optional
-from uuid import UUID
 import requests
 from models.contact import Contact
 from models.inbox import Inbox
@@ -131,12 +130,6 @@ def get_contact_by_email(email: str) -> Optional[Contact]:
 def get_contact_by_phone_number(phone_number: str) -> Optional[Contact]:
     with postgres_session() as session:
         statement = select(Contact).where(Contact.phone_number == phone_number)
-        return session.exec(statement).one_or_none()
-
-
-def get_contact_by_id(contact_id: UUID) -> Optional[Contact]:
-    with postgres_session() as session:
-        statement = select(Contact).where(Contact.id == contact_id)
         return session.exec(statement).one_or_none()
 
 

@@ -1,7 +1,6 @@
 from vellum.workflows import BaseWorkflow
 from .nodes import (
     ReadMessageNode,
-    UpdateCRMNode,
     TriageMessageNode,
     ParseFunctionCallNode,
     SendEmailNode,
@@ -19,7 +18,6 @@ class TriageMessageWorkflow(BaseWorkflow):
     graph = {
         ReadMessageNode.Ports.no_action >> NoActionNode,
         ReadMessageNode.Ports.triage
-        >> UpdateCRMNode
         >> TriageMessageNode
         >> {
             ParseFunctionCallNode.Ports.no_action >> NoActionNode,

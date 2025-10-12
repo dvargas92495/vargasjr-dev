@@ -7,7 +7,6 @@ from vellum import (
 )
 from vellum.workflows.nodes import BaseInlinePromptNode
 from .read_message_node import ReadMessageNode
-from .update_crm_node import UpdateCRMNode
 
 
 def no_action():
@@ -140,7 +139,9 @@ engaging to get prospects more interested in learning more.""",
         ),
     ]
     prompt_inputs = {
-        "contact": UpdateCRMNode.Outputs.contact["identifier"],
+        "contact": ReadMessageNode.Outputs.message["contact_full_name"]
+        .coalesce(ReadMessageNode.Outputs.message["contact_email"])
+        .coalesce(ReadMessageNode.Outputs.message["contact_slack_display_name"]),
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
     }
