@@ -166,16 +166,37 @@ export class AgentServer {
 
           try {
             const journalOutput = execSync(
-              "sudo journalctl -u vargasjr-agent.service --no-pager -n 100",
+              "sudo journalctl -u vargasjr-agent.service --no-pager -n 200",
               { encoding: "utf8", timeout: 5000 }
             ).trim();
 
             if (journalOutput.length > 0) {
-              const lines = journalOutput.split("\n");
+              const allLines = journalOutput.split("\n");
+
+              const filterUnwantedLogs = (line: string) => {
+                if (line.includes("pam_unix(sudo:session):")) return false;
+                return true;
+              };
+
+              const filteredLines = allLines
+                .filter(filterUnwantedLogs)
+                .map(removeIpAddresses);
+
+              let displayLines: string[];
+              if (filteredLines.length <= 125) {
+                displayLines = filteredLines;
+              } else {
+                const first25 = filteredLines.slice(0, 25);
+                const last100 = filteredLines.slice(-100);
+                const omittedCount = filteredLines.length - 125;
+                const separator = `--- Showing first 25 and last 100 lines (${omittedCount} lines omitted) ---`;
+                displayLines = [...first25, separator, ...last100];
+              }
+
               logs["systemd.log"] = {
                 exists: true,
-                totalLines: lines.length,
-                lines: lines.map(removeIpAddresses),
+                totalLines: filteredLines.length,
+                lines: displayLines,
               };
             } else {
               logs["systemd.log"] = { exists: true, empty: true };

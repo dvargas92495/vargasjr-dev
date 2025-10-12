@@ -88,8 +88,6 @@ export class AgentRunner {
         return;
       }
 
-      this.logger.info("Running main Agent Loop...");
-
       setTimeout(() => {
         loops++;
         if (this.maxLoops && loops >= this.maxLoops) {
