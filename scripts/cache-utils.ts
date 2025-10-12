@@ -44,11 +44,15 @@ export function createStableCacheKey(): string {
 
 export function getFullCacheKey(): string {
   const cacheKey = createStableCacheKey();
-  return `deps-${process.platform}-${cacheKey}`;
+  return `v1-deps-${process.platform}-${cacheKey}`;
 }
 
 export function getCachePaths(): string[] {
-  return [join(homedir(), ".npm"), join(homedir(), ".cache", "ms-playwright")];
+  return [
+    join(homedir(), ".npm"),
+    join(homedir(), ".cache", "ms-playwright"),
+    join(process.cwd(), "node_modules"),
+  ];
 }
 
 export function getRestoreKeys(): string[] {

@@ -98,6 +98,8 @@ function writeEnvFile(envVars: Record<string, string>): void {
 }
 
 async function handlePostInstall(): Promise<void> {
+  const startTime = Date.now();
+
   if (process.env.CI && !process.env.VERCEL) {
     const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
     const target = isMainBranch ? "production" : "preview";
@@ -119,9 +121,30 @@ async function handlePostInstall(): Promise<void> {
       execSync("npx playwright install --with-deps", { stdio: "inherit" });
     }
 
-    console.log("Saving cache to S3...");
-    const fullCacheKey = getFullCacheKey();
-    await uploadCacheToS3(fullCacheKey);
+    let shouldSaveCache = true;
+    try {
+      const cacheStatusPath = "/tmp/cache-status.json";
+      if (existsSync(cacheStatusPath)) {
+        const cacheStatus = JSON.parse(readFileSync(cacheStatusPath, "utf8"));
+        if (cacheStatus.cacheHit) {
+          console.log(
+            `Skipping cache save (successful cache hit: ${cacheStatus.cacheKey})`
+          );
+          shouldSaveCache = false;
+        }
+      }
+    } catch (error) {
+      console.warn("Could not read cache status, will save cache:", error);
+    }
+
+    if (shouldSaveCache) {
+      console.log("Saving cache to S3...");
+      const fullCacheKey = getFullCacheKey();
+      await uploadCacheToS3(fullCacheKey);
+    }
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`Postinstall completed in ${duration}s`);
   } else if (process.env.VERCEL) {
     console.log(
       "Skipping Playwright browser installation (running in Vercel environment)"
