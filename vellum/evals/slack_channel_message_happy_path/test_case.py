@@ -20,28 +20,80 @@ class SlackChannelMessageHappyPathEval(BaseEval):
             "type": "simple_text",
             "description": "Plain text message",
             "example": "Daily standup reminder: Please share your updates!",
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "rich-formatting-blocks",
             "type": "rich_formatting",
             "description": "Message with formatting and blocks",
             "example": "System alert with severity level and action buttons",
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "interactive-buttons",
             "type": "interactive",
             "description": "Message with buttons and user interactions",
             "example": "Deployment approval request with approve/reject buttons",
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "threaded-conversation",
             "type": "threaded",
             "description": "Message that starts or continues a thread",
             "example": "Follow-up message in existing conversation thread",
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         }
     ]
     

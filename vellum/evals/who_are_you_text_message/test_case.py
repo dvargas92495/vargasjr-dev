@@ -21,7 +21,20 @@ class WhoAreYouTextMessageEval(BaseEval):
             "type": "direct_question",
             "expected_trigger": "text_reply",
             "case_sensitive": False,
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "capitalized-who-are-you",
@@ -29,7 +42,20 @@ class WhoAreYouTextMessageEval(BaseEval):
             "type": "direct_question_capitalized",
             "expected_trigger": "text_reply",
             "case_sensitive": False,
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "what-do-you-do",
@@ -37,7 +63,20 @@ class WhoAreYouTextMessageEval(BaseEval):
             "type": "service_inquiry",
             "expected_trigger": "text_reply",
             "case_sensitive": False,
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "tell-me-about-yourself",
@@ -45,7 +84,20 @@ class WhoAreYouTextMessageEval(BaseEval):
             "type": "introduction_request",
             "expected_trigger": "text_reply",
             "case_sensitive": False,
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "who-am-i-talking-to",
@@ -53,7 +105,20 @@ class WhoAreYouTextMessageEval(BaseEval):
             "type": "contact_identification",
             "expected_trigger": "text_reply",
             "case_sensitive": False,
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         },
         {
             "id": "what-service-is-this",
@@ -61,7 +126,20 @@ class WhoAreYouTextMessageEval(BaseEval):
             "type": "service_identification",
             "expected_trigger": "text_reply",
             "case_sensitive": False,
-            "metrics": []
+            "metrics": [
+                {
+                    "type": "regex_match",
+                    "output_name": "message_url",
+                    "target_expression": "^/admin/inboxes/\\d+/messages/\\d+$",
+                    "weight": 3
+                },
+                {
+                    "type": "regex_match",
+                    "output_name": "summary",
+                    "target_expression": ".+",
+                    "weight": 3
+                }
+            ]
         }
     ]
     
