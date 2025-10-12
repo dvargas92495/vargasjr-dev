@@ -22,13 +22,6 @@ async function handleCaching(): Promise<void> {
   console.log(`Generated cache key: ${fullCacheKey}`);
   console.log(`Cache paths: ${cachePaths.join(", ")}`);
 
-  if (!process.env.ACTIONS_CACHE_URL) {
-    console.log(
-      "GitHub Actions cache service not configured, skipping cache restore"
-    );
-    return;
-  }
-
   try {
     console.log("Attempting to restore cache...");
     const restoredKey = await cache.restoreCache(
