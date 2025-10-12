@@ -7,7 +7,7 @@ import importlib
 from pathlib import Path
 import inspect
 from typing import Dict, Any, List
-from vellum.workflows.inputs import BaseInputs
+from workflows.inputs import BaseInputs
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 
@@ -75,12 +75,18 @@ class EvalRunner:
                 workflow_result = self.workflow.run(inputs=BaseInputs())
                 latency = time.time() - start_time
                 
+                success = workflow_result.name == "workflow.execution.fulfilled"
+                
                 result = {
                     "test_case": test_case_id,
-                    "success": True,
-                    "workflow_result": str(workflow_result),
+                    "success": success,
                     "latency": latency
                 }
+                
+                if success:
+                    result["workflow_result"] = {k: v for k, v in workflow_result.outputs.__dict__.items() if not k.startswith('_')}
+                else:
+                    result["workflow_result"] = {"error": str(workflow_result)}
                 
                 if 'expected_trigger' in test_case:
                     result["expected_trigger"] = test_case['expected_trigger']
