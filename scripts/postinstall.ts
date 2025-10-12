@@ -125,9 +125,15 @@ async function handlePostInstall(): Promise<void> {
       const fullCacheKey = getFullCacheKey();
       const cachePaths = getCachePaths();
       const cacheId = await cache.saveCache(cachePaths, fullCacheKey);
-      console.log(`Cache saved with ID: ${cacheId}`);
+      
+      if (cacheId === -1) {
+        console.error(`Cache save failed with ID: -1 for key: ${fullCacheKey}`);
+      } else {
+        console.log(`Cache saved with ID: ${cacheId} for key: ${fullCacheKey}`);
+      }
     } catch (error) {
-      console.warn("Cache save failed:", error);
+      const fullCacheKey = getFullCacheKey();
+      console.error(`Cache save failed for key: ${fullCacheKey}`, error);
     }
   } else if (process.env.VERCEL) {
     console.log(
