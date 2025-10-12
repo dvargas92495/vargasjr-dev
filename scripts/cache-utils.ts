@@ -15,6 +15,7 @@ import {
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { execSync } from "child_process";
+import { AWS_DEFAULT_REGION } from "@/server/constants";
 
 export function createStableCacheKey(): string {
   const packageLockPath = join(process.cwd(), "package-lock.json");
@@ -54,11 +55,10 @@ export function getRestoreKeys(): string[] {
   return [`deps-${process.platform}-`];
 }
 
-const AWS_REGION = process.env.AWS_DEFAULT_REGION || "us-east-1";
 const S3_BUCKET = "vargas-jr-memory";
 
 const s3Client = new S3Client({
-  region: AWS_REGION,
+  region: AWS_DEFAULT_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
