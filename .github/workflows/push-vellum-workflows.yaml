@@ -14,6 +14,11 @@ on:
       - ".github/workflows/push-vellum-workflows.yaml"
       - "scripts/push-vellum-workflows.ts"
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
 permissions:
   contents: write
   pull-requests: write
