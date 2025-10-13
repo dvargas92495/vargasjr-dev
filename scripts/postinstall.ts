@@ -100,6 +100,19 @@ function writeEnvFile(envVars: Record<string, string>): void {
 async function handlePostInstall(): Promise<void> {
   const startTime = Date.now();
 
+  try {
+    const cacheStatusPath = "/tmp/cache-status.json";
+    if (existsSync(cacheStatusPath)) {
+      const cacheStatus = JSON.parse(readFileSync(cacheStatusPath, "utf8"));
+      if (cacheStatus.preinstallEndTime) {
+        const latency = ((startTime - cacheStatus.preinstallEndTime) / 1000).toFixed(2);
+        console.log(`Latency between preinstall end and postinstall start: ${latency}s`);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not measure preinstall-postinstall latency:", error);
+  }
+
   if (process.env.CI && !process.env.VERCEL) {
     const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
     const target = isMainBranch ? "production" : "preview";
