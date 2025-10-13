@@ -105,8 +105,13 @@ async function handlePostInstall(): Promise<void> {
     if (existsSync(cacheStatusPath)) {
       const cacheStatus = JSON.parse(readFileSync(cacheStatusPath, "utf8"));
       if (cacheStatus.preinstallEndTime) {
-        const latency = ((startTime - cacheStatus.preinstallEndTime) / 1000).toFixed(2);
-        console.log(`Latency between preinstall end and postinstall start: ${latency}s`);
+        const latency = (
+          (startTime - cacheStatus.preinstallEndTime) /
+          1000
+        ).toFixed(2);
+        console.log(
+          `Latency between preinstall end and postinstall start: ${latency}s`
+        );
       }
     }
   } catch (error) {

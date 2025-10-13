@@ -96,7 +96,9 @@ export async function downloadCacheFromS3(cacheKey: string): Promise<boolean> {
     const bodyStream = response.Body as Readable;
     const fileStream = createWriteStream(tempFile);
     await pipeline(bodyStream, fileStream);
-    const downloadDuration = ((Date.now() - downloadStartTime) / 1000).toFixed(2);
+    const downloadDuration = ((Date.now() - downloadStartTime) / 1000).toFixed(
+      2
+    );
     console.log(`Download completed in ${downloadDuration}s`);
 
     console.log("Extracting cache...");
