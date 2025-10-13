@@ -114,12 +114,34 @@ class EvalRunner:
                 metrics = eval_instance.metrics
                 if metrics:
                     total_weight = sum(m.weight for m in metrics)
-                    actual_score = sum(
-                        m.weight 
-                        for m in metrics 
-                        if self._evaluate_metric(m, outputs)
-                    )
+                    failed_metrics = []
+                    actual_score = 0
+                    
+                    for m in metrics:
+                        passed = self._evaluate_metric(m, outputs)
+                        if passed:
+                            actual_score += m.weight
+                        else:
+                            actual_value = outputs.get(m.output_name, "<missing>")
+                            if isinstance(m, ExactMatchMetric):
+                                expected = m.expected_value
+                                metric_type = "exact_match"
+                            elif isinstance(m, RegexMatchMetric):
+                                expected = m.target_expression
+                                metric_type = "regex_match"
+                            else:
+                                expected = "<unknown>"
+                                metric_type = m.type
+                            
+                            failed_metrics.append({
+                                "output_name": m.output_name,
+                                "type": metric_type,
+                                "expected": expected,
+                                "actual": str(actual_value)
+                            })
+                    
                     score = round(actual_score / total_weight, 2) if total_weight > 0 else 0.0
+                    result["failed_metrics"] = failed_metrics
                 else:
                     score = 1.0
                 
@@ -176,12 +198,15 @@ def main():
             if result.get('error'):
                 print(f"Error: {result['error']}")
             else:
-                print(f"Test Results: 1 test case")
                 if result.get('results'):
                     test_result = result['results'][0]
                     status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
                     latency = test_result.get('latency', 0.0)
-                    print(f"  1. {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
+                    print(f"  {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
+                    
+                    if test_result.get('failed_metrics'):
+                        for fm in test_result['failed_metrics']:
+                            print(f"    - {fm['output_name']} ({fm['type']}): expected '{fm['expected']}', got '{fm['actual']}')")
             
             total_score += result['score']
         
@@ -215,12 +240,15 @@ def main():
         if result.get('error'):
             print(f"Error: {result['error']}")
         else:
-            print(f"Test Results: 1 test case")
             if result.get('results'):
                 test_result = result['results'][0]
                 status = "✅ PASS" if test_result.get('success') else "❌ FAIL"
                 latency = test_result.get('latency', 0.0)
-                print(f"  1. {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
+                print(f"  {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
+                
+                if test_result.get('failed_metrics'):
+                    for fm in test_result['failed_metrics']:
+                        print(f"    - {fm['output_name']} ({fm['type']}): expected '{fm['expected']}', got '{fm['actual']}')")
         
         print("=" * 50)
         
