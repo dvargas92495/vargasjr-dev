@@ -17,14 +17,17 @@ async function handleCaching(): Promise<void> {
 
   console.log("Setting up caching for CI environment...");
 
+  const cacheKeyStartTime = Date.now();
   const fullCacheKey = getFullCacheKey();
-  console.log(`Generated cache key: ${fullCacheKey}`);
+  const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(2);
+  console.log(`Generated cache key: ${fullCacheKey} (${cacheKeyDuration}s)`);
 
   const cacheHit = await downloadCacheFromS3(fullCacheKey);
 
+  const preinstallEndTime = Date.now();
   writeFileSync(
     "/tmp/cache-status.json",
-    JSON.stringify({ cacheHit, cacheKey: fullCacheKey })
+    JSON.stringify({ cacheHit, cacheKey: fullCacheKey, preinstallEndTime })
   );
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);

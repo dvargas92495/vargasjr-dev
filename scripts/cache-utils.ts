@@ -75,6 +75,7 @@ export async function downloadCacheFromS3(cacheKey: string): Promise<boolean> {
 
   try {
     console.log(`Checking for cache in S3: ${s3Key}`);
+    const checkStartTime = Date.now();
 
     const command = new GetObjectCommand({
       Bucket: S3_BUCKET,
@@ -82,6 +83,8 @@ export async function downloadCacheFromS3(cacheKey: string): Promise<boolean> {
     });
 
     const response = await s3Client.send(command);
+    const checkDuration = ((Date.now() - checkStartTime) / 1000).toFixed(2);
+    console.log(`S3 check completed in ${checkDuration}s`);
 
     if (!response.Body) {
       console.log("Cache not found in S3");
@@ -89,12 +92,20 @@ export async function downloadCacheFromS3(cacheKey: string): Promise<boolean> {
     }
 
     console.log("Downloading cache from S3...");
+    const downloadStartTime = Date.now();
     const bodyStream = response.Body as Readable;
     const fileStream = createWriteStream(tempFile);
     await pipeline(bodyStream, fileStream);
+    const downloadDuration = ((Date.now() - downloadStartTime) / 1000).toFixed(
+      2
+    );
+    console.log(`Download completed in ${downloadDuration}s`);
 
     console.log("Extracting cache...");
+    const extractStartTime = Date.now();
     execSync(`tar -xzf ${tempFile} -C ${homedir()}`, { stdio: "inherit" });
+    const extractDuration = ((Date.now() - extractStartTime) / 1000).toFixed(2);
+    console.log(`Extraction completed in ${extractDuration}s`);
 
     execSync(`rm ${tempFile}`);
     console.log(`Cache restored from S3: ${cacheKey}`);
