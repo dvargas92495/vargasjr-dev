@@ -28,8 +28,6 @@ jobs:
       - name: Debug agent instance
         run: npm run debug-agent -- ${{ inputs.branch_override || github.ref_name }}
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
           VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
