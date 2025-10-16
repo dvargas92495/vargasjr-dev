@@ -30,7 +30,7 @@ export default function ApplicationFormRenderer({
     case "ROAM_RESEARCH":
       return <RoamResearchForm />;
     case "GOOGLE":
-      return <GoogleForm />;
+      return <GoogleForm applicationId={applicationId} />;
     case "NOTION":
     case "DEVIN":
     default:

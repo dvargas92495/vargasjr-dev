@@ -2,12 +2,13 @@ import json
 import os
 from datetime import datetime, timedelta
 from typing import Any, List, Dict, Optional
-from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 import base64
-from services import get_application_by_name
+from services import get_application_with_workspace_by_name
 from services.aws import send_email as aws_send_email
+import requests
 
 
 SCOPES = [
@@ -16,23 +17,61 @@ SCOPES = [
 ]
 
 
+def refresh_access_token(client_id: str, client_secret: str, refresh_token: str) -> str:
+    """Refresh the OAuth access token using the refresh token"""
+    token_url = "https://oauth2.googleapis.com/token"
+    
+    response = requests.post(
+        token_url,
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token",
+        },
+    )
+    
+    if not response.ok:
+        raise ValueError(f"Failed to refresh access token: {response.text}")
+    
+    token_data = response.json()
+    return token_data["access_token"]
+
+
 def get_gmail_service() -> Any:
-    google_app = get_application_by_name("Google")
-    if not google_app:
+    google_creds = get_application_with_workspace_by_name("Google")
+    if not google_creds:
         raise ValueError("Google application not found in database")
     
-    if not google_app.client_secret:
-        raise ValueError("Google application credentials not properly configured")
+    if not google_creds.access_token:
+        raise ValueError("Google application OAuth tokens not configured. Please connect your Gmail account.")
     
-    google_credentials = Credentials.from_service_account_info(
-        json.loads(google_app.client_secret),
+    # Create OAuth credentials
+    credentials = Credentials(
+        token=google_creds.access_token,
+        refresh_token=google_creds.refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=google_creds.client_id,
+        client_secret=google_creds.client_secret,
         scopes=SCOPES,
     )
     
-    user_email = os.getenv("GMAIL_USER_EMAIL", "dvargas92495@gmail.com")
-    delegated_credentials = google_credentials.with_subject(user_email)
+    if credentials.expired and credentials.refresh_token:
+        new_access_token = refresh_access_token(
+            google_creds.client_id,
+            google_creds.client_secret,
+            google_creds.refresh_token
+        )
+        credentials = Credentials(
+            token=new_access_token,
+            refresh_token=google_creds.refresh_token,
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=google_creds.client_id,
+            client_secret=google_creds.client_secret,
+            scopes=SCOPES,
+        )
     
-    service = build("gmail", "v1", credentials=delegated_credentials)
+    service = build("gmail", "v1", credentials=credentials)
     return service
 
 
