@@ -57,6 +57,9 @@ def get_gmail_service() -> Any:
     )
     
     if credentials.expired and credentials.refresh_token:
+        if not google_creds.client_id or not google_creds.client_secret or not google_creds.refresh_token:
+            raise ValueError("Cannot refresh access token: missing client credentials or refresh token")
+        
         new_access_token = refresh_access_token(
             google_creds.client_id,
             google_creds.client_secret,
