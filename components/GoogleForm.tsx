@@ -13,8 +13,11 @@ export default function GoogleForm({ applicationId }: GoogleFormProps) {
       return;
     }
 
-    const clientId = (document.getElementById("clientId") as HTMLInputElement)?.value;
-    const clientSecret = (document.getElementById("clientSecret") as HTMLInputElement)?.value;
+    const clientId = (document.getElementById("clientId") as HTMLInputElement)
+      ?.value;
+    const clientSecret = (
+      document.getElementById("clientSecret") as HTMLInputElement
+    )?.value;
 
     if (!clientId || !clientSecret) {
       alert("Please enter Client ID and Client Secret first");
@@ -22,9 +25,11 @@ export default function GoogleForm({ applicationId }: GoogleFormProps) {
     }
 
     const redirectUri = `${window.location.origin}/api/google/oauth/callback`;
-    const scope = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
-    
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    const scope =
+      "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send";
+
+    const authUrl =
+      `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${encodeURIComponent(clientId)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +
