@@ -14,6 +14,11 @@ on:
       - ".github/workflows/push-vellum-workflows.yaml"
       - "scripts/push-vellum-workflows.ts"
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
 permissions:
   contents: write
   pull-requests: write
@@ -23,7 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
     steps:
       - name: Checkout repo
@@ -59,7 +63,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
     steps:
       - name: Checkout repo
