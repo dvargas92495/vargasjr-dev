@@ -10,6 +10,8 @@ import {
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
 import { S3Bucket } from "@cdktf/provider-aws/lib/s3-bucket";
 import { S3BucketVersioningA } from "@cdktf/provider-aws/lib/s3-bucket-versioning";
+import { S3BucketPolicy } from "@cdktf/provider-aws/lib/s3-bucket-policy";
+import { DataAwsCallerIdentity } from "@cdktf/provider-aws/lib/data-aws-caller-identity";
 import { SecurityGroup } from "@cdktf/provider-aws/lib/security-group";
 import { SecurityGroupRule } from "@cdktf/provider-aws/lib/security-group-rule";
 import { SesEmailIdentity } from "@cdktf/provider-aws/lib/ses-email-identity";
@@ -57,15 +59,17 @@ class VargasJRInfrastructureStack extends TerraformStack {
       encrypt: true,
     });
 
+    const callerIdentity = new DataAwsCallerIdentity(this, "CallerIdentity", {});
+
     this.createTerraformStateS3Bucket(commonTags);
-    this.createS3Resources(commonTags);
+    this.createS3Resources(commonTags, callerIdentity);
     this.createSecurityGroup(commonTags);
     this.createSESResources(commonTags);
     this.createEmailLambdaResources(commonTags);
     this.createCustomAMI(commonTags);
   }
 
-  private createS3Resources(tags: Record<string, string>) {
+  private createS3Resources(tags: Record<string, string>, callerIdentity: DataAwsCallerIdentity) {
     const memoryBucket = new S3Bucket(this, "MemoryBucket", {
       bucket: AWS_S3_BUCKETS.MEMORY,
     });
@@ -75,6 +79,29 @@ class VargasJRInfrastructureStack extends TerraformStack {
       versioningConfiguration: {
         status: "Disabled",
       },
+    });
+
+    new S3BucketPolicy(this, "MemoryBucketPolicy", {
+      bucket: memoryBucket.id,
+      policy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Sid: "AllowSESPuts",
+            Effect: "Allow",
+            Principal: {
+              Service: "ses.amazonaws.com",
+            },
+            Action: "s3:PutObject",
+            Resource: `arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}/*`,
+            Condition: {
+              StringEquals: {
+                "AWS:SourceAccount": callerIdentity.accountId,
+              },
+            },
+          },
+        ],
+      }),
     });
   }
 
