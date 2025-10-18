@@ -160,44 +160,35 @@ class VellumWorkflowPusher {
         throw new Error("VELLUM_API_KEY environment variable is required");
       }
 
-      let deployFlag = "";
+      const args = [
+        "run",
+        "vellum",
+        "workflows",
+        "push",
+        `workflows.${workflowName}`,
+        "--deploy",
+        "--deployment-name",
+        workflowName.replaceAll("_", "-"),
+        "--deployment-label",
+        toTitleCase(workflowName),
+      ];
+
       if (this.isPreviewMode) {
         const prNumber = await getPRNumber();
         const releaseTag =
           prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
-        deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
-          "_",
-          "-"
-        )} --deployment-label "${toTitleCase(
-          workflowName
-        )}" --release-tag ${releaseTag}`;
-      } else {
-        deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
-          "_",
-          "-"
-        )} --deployment-label "${toTitleCase(workflowName)}"`;
+        args.push("--release-tag", releaseTag);
       }
 
-      const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
+      const command = `poetry ${args.join(" ")}`;
 
       console.log(`📋 Executing command: ${command}`);
 
-      const spawnResult = spawnSync(
-        "poetry",
-        [
-          "run",
-          "vellum",
-          "workflows",
-          "push",
-          `workflows.${workflowName}`,
-          ...deployFlag.trim().split(/\s+/).filter(Boolean),
-        ],
-        {
-          cwd: this.agentDir,
-          encoding: "utf8",
-          env: process.env,
-        }
-      );
+      const spawnResult = spawnSync("poetry", args, {
+        cwd: this.agentDir,
+        encoding: "utf8",
+        env: process.env,
+      });
 
       const result = (spawnResult.stdout || "") + (spawnResult.stderr || "");
 
