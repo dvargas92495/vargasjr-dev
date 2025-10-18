@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import * as dotenv from "dotenv";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import {
   readdirSync,
   statSync,
@@ -160,36 +160,48 @@ class VellumWorkflowPusher {
         throw new Error("VELLUM_API_KEY environment variable is required");
       }
 
-      let deployFlag = "";
+      const args = [
+        "run",
+        "vellum",
+        "workflows",
+        "push",
+        `workflows.${workflowName}`,
+        "--deploy",
+        "--deployment-name",
+        workflowName.replaceAll("_", "-"),
+        "--deployment-label",
+        toTitleCase(workflowName),
+      ];
+
       if (this.isPreviewMode) {
         const prNumber = await getPRNumber();
         const releaseTag =
           prNumber !== "local-dev" ? `pr-${prNumber}` : "preview";
-        deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
-          "_",
-          "-"
-        )} --deployment-label "${toTitleCase(
-          workflowName
-        )}" --release-tag ${releaseTag}`;
-      } else {
-        deployFlag = ` --deploy --deployment-name ${workflowName.replaceAll(
-          "_",
-          "-"
-        )} --deployment-label "${toTitleCase(workflowName)}"`;
+        args.push("--release-tag", releaseTag);
       }
 
-      const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
+      const command = `poetry ${args.join(" ")}`;
 
       console.log(`📋 Executing command: ${command}`);
 
-      const result = execSync(command, {
+      const spawnResult = spawnSync("poetry", args, {
         cwd: this.agentDir,
-        stdio: "pipe",
         encoding: "utf8",
         env: process.env,
       });
 
+      const result = (spawnResult.stdout || "") + (spawnResult.stderr || "");
+
       console.log(`📤 Command output:\n${result}`);
+
+      if (spawnResult.status !== 0) {
+        const error: any = new Error(
+          `Command failed with exit code ${spawnResult.status}`
+        );
+        error.stdout = spawnResult.stdout || "";
+        error.stderr = spawnResult.stderr || "";
+        throw error;
+      }
 
       const successMessage = `✅ Successfully ${
         this.isPreviewMode ? "deployed" : "pushed"
@@ -367,14 +379,37 @@ class VellumWorkflowPusher {
 
       console.log(`📋 Executing command: ${pushImageCommand}`);
 
-      const imageResult = execSync(pushImageCommand, {
-        cwd: this.agentDir,
-        stdio: "pipe",
-        encoding: "utf8",
-        env: process.env,
-      });
+      const imageSpawnResult = spawnSync(
+        "poetry",
+        [
+          "run",
+          "vellum",
+          "images",
+          "push",
+          `vargasjr:${tagToUse}`,
+          "--source",
+          dockerfilePath,
+        ],
+        {
+          cwd: this.agentDir,
+          encoding: "utf8",
+          env: process.env,
+        }
+      );
+
+      const imageResult =
+        (imageSpawnResult.stdout || "") + (imageSpawnResult.stderr || "");
 
       console.log(`📤 Command output:\n${imageResult}`);
+
+      if (imageSpawnResult.status !== 0) {
+        const error: any = new Error(
+          `Image push failed with exit code ${imageSpawnResult.status}`
+        );
+        error.stdout = imageSpawnResult.stdout || "";
+        error.stderr = imageSpawnResult.stderr || "";
+        throw error;
+      }
 
       this.hasDockerImageBeenPushed = true;
       console.log(
@@ -495,14 +530,37 @@ class VellumWorkflowPusher {
 
         console.log(`📋 Executing command: ${pushImageCommand}`);
 
-        const imageResult = execSync(pushImageCommand, {
-          cwd: this.agentDir,
-          stdio: "pipe",
-          encoding: "utf8",
-          env: process.env,
-        });
+        const imageSpawnResult = spawnSync(
+          "poetry",
+          [
+            "run",
+            "vellum",
+            "images",
+            "push",
+            `vargasjr:${newTag}`,
+            "--source",
+            dockerfilePath,
+          ],
+          {
+            cwd: this.agentDir,
+            encoding: "utf8",
+            env: process.env,
+          }
+        );
+
+        const imageResult =
+          (imageSpawnResult.stdout || "") + (imageSpawnResult.stderr || "");
 
         console.log(`📤 Command output:\n${imageResult}`);
+
+        if (imageSpawnResult.status !== 0) {
+          const error: any = new Error(
+            `Image push failed with exit code ${imageSpawnResult.status}`
+          );
+          error.stdout = imageSpawnResult.stdout || "";
+          error.stderr = imageSpawnResult.stderr || "";
+          throw error;
+        }
 
         this.hasDockerImageBeenPushed = true;
         console.log(
