@@ -34,9 +34,7 @@ def postgres_session(expire_on_commit: bool = True):
     url = os.getenv("NEON_URL") or os.getenv("POSTGRES_URL")
     if not url:
         raise ValueError(
-            "Database connection URL not found. Please set one of the following environment variables:\n"
-            "  - NEON_URL (preferred for Neon database)\n"
-            "  - POSTGRES_URL (for PostgreSQL database)\n"
+            "Database connection URL not found. Please set the POSTGRES_URL environment variable.\n"
             "\nExample: export POSTGRES_URL='postgresql://user:password@host:port/database'"
         )
 

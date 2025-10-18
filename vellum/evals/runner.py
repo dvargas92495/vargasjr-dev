@@ -9,6 +9,7 @@ from pathlib import Path
 import inspect
 from typing import Dict, Any, Union, Optional
 from uuid import UUID
+from dotenv import load_dotenv
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 from evals.metrics import BaseMetric, ExactMatchMetric, RegexMatchMetric
@@ -18,6 +19,8 @@ from models.inbox import Inbox
 from models.contact import Contact
 from models.inbox_message import InboxMessage
 from models.types import InboxType
+
+load_dotenv()
 
 
 class EvalRunner:
@@ -324,7 +327,7 @@ def main():
                 print(f"\n❌ SETUP ERROR: {result['error']}")
                 print("\nThis error occurred during eval setup, before the workflow could run.")
                 print("Common causes:")
-                print("  - Missing environment variables (POSTGRES_URL, NEON_URL)")
+                print("  - Missing POSTGRES_URL environment variable")
                 print("  - Database connection issues")
                 print("  - Missing dependencies")
             else:
@@ -385,7 +388,7 @@ def main():
             print(f"\n❌ SETUP ERROR: {result['error']}")
             print("\nThis error occurred during eval setup, before the workflow could run.")
             print("Common causes:")
-            print("  - Missing environment variables (POSTGRES_URL, NEON_URL)")
+            print("  - Missing POSTGRES_URL environment variable")
             print("  - Database connection issues")
             print("  - Missing dependencies")
         else:
