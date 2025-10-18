@@ -6,11 +6,13 @@ on:
       - main
     paths:
       - "vellum/**"
+      - "!vellum/evals/**"
       - ".github/workflows/push-vellum-workflows.yaml"
       - "scripts/push-vellum-workflows.ts"
   pull_request:
     paths:
       - "vellum/**"
+      - "!vellum/evals/**"
       - ".github/workflows/push-vellum-workflows.yaml"
       - "scripts/push-vellum-workflows.ts"
 

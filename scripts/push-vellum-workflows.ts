@@ -180,12 +180,16 @@ class VellumWorkflowPusher {
 
       const command = `poetry run vellum workflows push "workflows.${workflowName}"${deployFlag}`;
 
+      console.log(`📋 Executing command: ${command}`);
+
       const result = execSync(command, {
         cwd: this.agentDir,
         stdio: "pipe",
         encoding: "utf8",
         env: process.env,
       });
+
+      console.log(`📤 Command output:\n${result}`);
 
       const successMessage = `✅ Successfully ${
         this.isPreviewMode ? "deployed" : "pushed"
@@ -360,11 +364,17 @@ class VellumWorkflowPusher {
       if (!vellumApiKey) {
         throw new Error("VELLUM_API_KEY environment variable is required");
       }
-      execSync(pushImageCommand, {
+
+      console.log(`📋 Executing command: ${pushImageCommand}`);
+
+      const imageResult = execSync(pushImageCommand, {
         cwd: this.agentDir,
         stdio: "pipe",
+        encoding: "utf8",
         env: process.env,
       });
+
+      console.log(`📤 Command output:\n${imageResult}`);
 
       this.hasDockerImageBeenPushed = true;
       console.log(
@@ -482,11 +492,17 @@ class VellumWorkflowPusher {
         if (!vellumApiKey) {
           throw new Error("VELLUM_API_KEY environment variable is required");
         }
-        execSync(pushImageCommand, {
+
+        console.log(`📋 Executing command: ${pushImageCommand}`);
+
+        const imageResult = execSync(pushImageCommand, {
           cwd: this.agentDir,
           stdio: "pipe",
+          encoding: "utf8",
           env: process.env,
         });
+
+        console.log(`📤 Command output:\n${imageResult}`);
 
         this.hasDockerImageBeenPushed = true;
         console.log(
