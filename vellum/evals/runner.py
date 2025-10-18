@@ -7,10 +7,17 @@ import asyncio
 import importlib
 from pathlib import Path
 import inspect
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
+from uuid import UUID
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 from evals.metrics import BaseMetric, ExactMatchMetric, RegexMatchMetric
+from services import postgres_session
+from sqlmodel import select
+from models.inbox import Inbox
+from models.contact import Contact
+from models.inbox_message import InboxMessage
+from models.types import InboxType
 
 
 class EvalRunner:
@@ -20,6 +27,7 @@ class EvalRunner:
     
     def __init__(self):
         self.workflow = TriageMessageWorkflow()
+        self._cleanup_records: list[tuple[str, UUID]] = []
     
     def run_eval(self, eval_name: str) -> Dict[str, Any]:
         """
@@ -63,6 +71,116 @@ class EvalRunner:
                 return obj
         raise ValueError(f"No BaseEval subclass found in module {eval_module}")
     
+    def _execute_setup_steps(self, eval_instance: BaseEval) -> None:
+        """Execute declarative setup steps to prepare database for the eval"""
+        if not hasattr(eval_instance, 'get_setup_steps'):
+            return
+        
+        setup_steps = eval_instance.get_setup_steps()
+        with postgres_session() as session:
+            for step in setup_steps:
+                action = step.get("action")
+                params = step.get("params", {})
+                
+                if action == "create_inbox":
+                    inbox_name = params["name"]
+                    inbox_type = InboxType(params["type"])
+                    display_label = params.get("display_label", inbox_name)
+                    
+                    existing = session.exec(select(Inbox).where(Inbox.name == inbox_name)).first()
+                    if not existing:
+                        inbox = Inbox(
+                            name=inbox_name,
+                            type=inbox_type,
+                            display_label=display_label,
+                            config={}
+                        )
+                        session.add(inbox)
+                        session.commit()
+                        session.refresh(inbox)
+                        self._cleanup_records.append(("inbox", inbox.id))
+                
+                elif action == "create_contact":
+                    phone_number = params.get("phone_number")
+                    email = params.get("email")
+                    full_name = params.get("full_name")
+                    
+                    existing = None
+                    if phone_number:
+                        existing = session.exec(
+                            select(Contact).where(Contact.phone_number == phone_number)
+                        ).first()
+                    elif email:
+                        existing = session.exec(
+                            select(Contact).where(Contact.email == email)
+                        ).first()
+                    
+                    if not existing:
+                        contact = Contact(
+                            phone_number=phone_number,
+                            email=email,
+                            full_name=full_name
+                        )
+                        session.add(contact)
+                        session.commit()
+                        session.refresh(contact)
+                        self._cleanup_records.append(("contact", contact.id))
+                
+                elif action == "create_inbox_message":
+                    inbox_name = params["inbox_name"]
+                    body = params["body"]
+                    phone_number = params.get("phone_number")
+                    email = params.get("email")
+                    
+                    inbox = session.exec(select(Inbox).where(Inbox.name == inbox_name)).first()
+                    if not inbox:
+                        raise ValueError(f"Inbox '{inbox_name}' not found")
+                    
+                    contact = None
+                    if phone_number:
+                        contact = session.exec(
+                            select(Contact).where(Contact.phone_number == phone_number)
+                        ).first()
+                    elif email:
+                        contact = session.exec(
+                            select(Contact).where(Contact.email == email)
+                        ).first()
+                    
+                    if not contact:
+                        raise ValueError(f"Contact not found for phone_number={phone_number}, email={email}")
+                    
+                    inbox_message = InboxMessage(
+                        inbox_id=inbox.id,
+                        contact_id=contact.id,
+                        body=body,
+                        thread_id=None,
+                        external_id=None
+                    )
+                    session.add(inbox_message)
+                    session.commit()
+                    session.refresh(inbox_message)
+                    self._cleanup_records.append(("inbox_message", inbox_message.id))
+    
+    def _cleanup_setup_data(self) -> None:
+        """Clean up database records created during setup"""
+        with postgres_session() as session:
+            for record_type, record_id in reversed(self._cleanup_records):
+                if record_type == "inbox_message":
+                    message = session.get(InboxMessage, record_id)
+                    if message:
+                        session.delete(message)
+                elif record_type == "contact":
+                    contact = session.get(Contact, record_id)
+                    if contact:
+                        session.delete(contact)
+                elif record_type == "inbox":
+                    inbox = session.get(Inbox, record_id)
+                    if inbox:
+                        session.delete(inbox)
+            
+            session.commit()
+        self._cleanup_records.clear()
+    
     def _evaluate_metric(self, metric: Union[BaseMetric, ExactMatchMetric, RegexMatchMetric], outputs: Dict[str, Any]) -> bool:
         """
         Evaluate a single metric against workflow outputs.
@@ -96,9 +214,13 @@ class EvalRunner:
     async def _execute_eval(self, eval_instance: BaseEval) -> Dict[str, Any]:
         """Execute the evaluation test case"""
         try:
+            self._execute_setup_steps(eval_instance)
+            
             start_time = time.time()
             workflow_result = self.workflow.run()
             latency = time.time() - start_time
+            
+            self._cleanup_setup_data()
             
             workflow_fulfilled = workflow_result.name == "workflow.execution.fulfilled"
             
@@ -158,6 +280,7 @@ class EvalRunner:
             return result
             
         except Exception as e:
+            self._cleanup_setup_data()
             return {
                 "test_case": eval_instance.id,
                 "success": False,
