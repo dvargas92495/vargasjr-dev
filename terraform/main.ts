@@ -59,7 +59,11 @@ class VargasJRInfrastructureStack extends TerraformStack {
       encrypt: true,
     });
 
-    const callerIdentity = new DataAwsCallerIdentity(this, "CallerIdentity", {});
+    const callerIdentity = new DataAwsCallerIdentity(
+      this,
+      "CallerIdentity",
+      {}
+    );
 
     this.createTerraformStateS3Bucket(commonTags);
     this.createS3Resources(commonTags, callerIdentity);
@@ -69,7 +73,10 @@ class VargasJRInfrastructureStack extends TerraformStack {
     this.createCustomAMI(commonTags);
   }
 
-  private createS3Resources(tags: Record<string, string>, callerIdentity: DataAwsCallerIdentity) {
+  private createS3Resources(
+    tags: Record<string, string>,
+    callerIdentity: DataAwsCallerIdentity
+  ) {
     const memoryBucket = new S3Bucket(this, "MemoryBucket", {
       bucket: AWS_S3_BUCKETS.MEMORY,
     });

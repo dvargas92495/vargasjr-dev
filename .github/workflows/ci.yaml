@@ -46,6 +46,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
+      - name: Enable npm audit for lint job
+        run: npm config set audit true
       - name: Install Node.js dependencies
         run: npm install
       - name: Run ESLint
