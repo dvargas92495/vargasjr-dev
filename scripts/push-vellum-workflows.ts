@@ -182,18 +182,31 @@ class VellumWorkflowPusher {
 
       console.log(`📋 Executing command: ${command}`);
 
-      const spawnResult = spawnSync("poetry", ["run", "vellum", "workflows", "push", `workflows.${workflowName}`, ...deployFlag.trim().split(/\s+/).filter(Boolean)], {
-        cwd: this.agentDir,
-        encoding: "utf8",
-        env: process.env,
-      });
+      const spawnResult = spawnSync(
+        "poetry",
+        [
+          "run",
+          "vellum",
+          "workflows",
+          "push",
+          `workflows.${workflowName}`,
+          ...deployFlag.trim().split(/\s+/).filter(Boolean),
+        ],
+        {
+          cwd: this.agentDir,
+          encoding: "utf8",
+          env: process.env,
+        }
+      );
 
       const result = (spawnResult.stdout || "") + (spawnResult.stderr || "");
 
       console.log(`📤 Command output:\n${result}`);
 
       if (spawnResult.status !== 0) {
-        const error: any = new Error(`Command failed with exit code ${spawnResult.status}`);
+        const error: any = new Error(
+          `Command failed with exit code ${spawnResult.status}`
+        );
         error.stdout = spawnResult.stdout || "";
         error.stderr = spawnResult.stderr || "";
         throw error;
@@ -375,18 +388,33 @@ class VellumWorkflowPusher {
 
       console.log(`📋 Executing command: ${pushImageCommand}`);
 
-      const imageSpawnResult = spawnSync("poetry", ["run", "vellum", "images", "push", `vargasjr:${tagToUse}`, "--source", dockerfilePath], {
-        cwd: this.agentDir,
-        encoding: "utf8",
-        env: process.env,
-      });
+      const imageSpawnResult = spawnSync(
+        "poetry",
+        [
+          "run",
+          "vellum",
+          "images",
+          "push",
+          `vargasjr:${tagToUse}`,
+          "--source",
+          dockerfilePath,
+        ],
+        {
+          cwd: this.agentDir,
+          encoding: "utf8",
+          env: process.env,
+        }
+      );
 
-      const imageResult = (imageSpawnResult.stdout || "") + (imageSpawnResult.stderr || "");
+      const imageResult =
+        (imageSpawnResult.stdout || "") + (imageSpawnResult.stderr || "");
 
       console.log(`📤 Command output:\n${imageResult}`);
 
       if (imageSpawnResult.status !== 0) {
-        const error: any = new Error(`Image push failed with exit code ${imageSpawnResult.status}`);
+        const error: any = new Error(
+          `Image push failed with exit code ${imageSpawnResult.status}`
+        );
         error.stdout = imageSpawnResult.stdout || "";
         error.stderr = imageSpawnResult.stderr || "";
         throw error;
@@ -511,18 +539,33 @@ class VellumWorkflowPusher {
 
         console.log(`📋 Executing command: ${pushImageCommand}`);
 
-        const imageSpawnResult = spawnSync("poetry", ["run", "vellum", "images", "push", `vargasjr:${newTag}`, "--source", dockerfilePath], {
-          cwd: this.agentDir,
-          encoding: "utf8",
-          env: process.env,
-        });
+        const imageSpawnResult = spawnSync(
+          "poetry",
+          [
+            "run",
+            "vellum",
+            "images",
+            "push",
+            `vargasjr:${newTag}`,
+            "--source",
+            dockerfilePath,
+          ],
+          {
+            cwd: this.agentDir,
+            encoding: "utf8",
+            env: process.env,
+          }
+        );
 
-        const imageResult = (imageSpawnResult.stdout || "") + (imageSpawnResult.stderr || "");
+        const imageResult =
+          (imageSpawnResult.stdout || "") + (imageSpawnResult.stderr || "");
 
         console.log(`📤 Command output:\n${imageResult}`);
 
         if (imageSpawnResult.status !== 0) {
-          const error: any = new Error(`Image push failed with exit code ${imageSpawnResult.status}`);
+          const error: any = new Error(
+            `Image push failed with exit code ${imageSpawnResult.status}`
+          );
           error.stdout = imageSpawnResult.stdout || "";
           error.stderr = imageSpawnResult.stderr || "";
           throw error;
