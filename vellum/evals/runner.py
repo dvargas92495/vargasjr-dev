@@ -9,6 +9,7 @@ from pathlib import Path
 import inspect
 from typing import Dict, Any, Union, Optional
 from uuid import UUID
+from dotenv import load_dotenv
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from evals.base import BaseEval
 from evals.metrics import BaseMetric, ExactMatchMetric, RegexMatchMetric
@@ -18,6 +19,8 @@ from models.inbox import Inbox
 from models.contact import Contact
 from models.inbox_message import InboxMessage
 from models.types import InboxType
+
+load_dotenv()
 
 
 class EvalRunner:
@@ -270,7 +273,9 @@ class EvalRunner:
                 result["score"] = score
                 result["success"] = score == 1.0
             else:
-                result["workflow_result"] = {"error": workflow_result.error.model_dump()}
+                error_details = workflow_result.error.model_dump()
+                result["workflow_result"] = {"error": error_details}
+                result["workflow_error"] = error_details
                 result["score"] = 0.0
                 result["success"] = False
             
@@ -319,7 +324,12 @@ def main():
             print(f"Score: {result['score']:.2f}")
             
             if result.get('error'):
-                print(f"Error: {result['error']}")
+                print(f"\n❌ SETUP ERROR: {result['error']}")
+                print("\nThis error occurred during eval setup, before the workflow could run.")
+                print("Common causes:")
+                print("  - Missing POSTGRES_URL environment variable")
+                print("  - Database connection issues")
+                print("  - Missing dependencies")
             else:
                 if result.get('results'):
                     test_result = result['results'][0]
@@ -327,9 +337,23 @@ def main():
                     latency = test_result.get('latency', 0.0)
                     print(f"  {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
                     
+                    if test_result.get('workflow_error'):
+                        print(f"\n❌ WORKFLOW ERROR:")
+                        error = test_result['workflow_error']
+                        print(f"  Message: {error.get('message', 'Unknown error')}")
+                        if error.get('code'):
+                            print(f"  Code: {error['code']}")
+                        if error.get('stack_trace'):
+                            print(f"\n  Stack trace:")
+                            for line in error['stack_trace']:
+                                print(f"    {line}")
+                    
                     if test_result.get('failed_metrics'):
+                        print(f"\n❌ METRIC FAILURES:")
                         for fm in test_result['failed_metrics']:
-                            print(f"    - {fm['output_name']} ({fm['type']}): expected '{fm['expected']}', got '{fm['actual']}')")
+                            print(f"  • {fm['output_name']} ({fm['type']}):")
+                            print(f"      Expected: {fm['expected']}")
+                            print(f"      Got:      {fm['actual']}")
             
             total_score += result['score']
         
@@ -361,7 +385,12 @@ def main():
         print(f"Score: {result['score']:.2f}")
         
         if result.get('error'):
-            print(f"Error: {result['error']}")
+            print(f"\n❌ SETUP ERROR: {result['error']}")
+            print("\nThis error occurred during eval setup, before the workflow could run.")
+            print("Common causes:")
+            print("  - Missing POSTGRES_URL environment variable")
+            print("  - Database connection issues")
+            print("  - Missing dependencies")
         else:
             if result.get('results'):
                 test_result = result['results'][0]
@@ -369,9 +398,23 @@ def main():
                 latency = test_result.get('latency', 0.0)
                 print(f"  {test_result.get('test_case', 'Unknown')}: {status} ({latency:.2f}s)")
                 
+                if test_result.get('workflow_error'):
+                    print(f"\n❌ WORKFLOW ERROR:")
+                    error = test_result['workflow_error']
+                    print(f"  Message: {error.get('message', 'Unknown error')}")
+                    if error.get('code'):
+                        print(f"  Code: {error['code']}")
+                    if error.get('stack_trace'):
+                        print(f"\n  Stack trace:")
+                        for line in error['stack_trace']:
+                            print(f"    {line}")
+                
                 if test_result.get('failed_metrics'):
+                    print(f"\n❌ METRIC FAILURES:")
                     for fm in test_result['failed_metrics']:
-                        print(f"    - {fm['output_name']} ({fm['type']}): expected '{fm['expected']}', got '{fm['actual']}')")
+                        print(f"  • {fm['output_name']} ({fm['type']}):")
+                        print(f"      Expected: {fm['expected']}")
+                        print(f"      Got:      {fm['actual']}")
         
         print("=" * 50)
         
