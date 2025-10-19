@@ -258,7 +258,9 @@ async function setup(): Promise<void> {
       })`
     );
   } else {
-    console.log(`Cache restoration completed (cache ${cacheHit ? "hit" : "miss"})`);
+    console.log(
+      `Cache restoration completed (cache ${cacheHit ? "hit" : "miss"})`
+    );
   }
 
   console.log("\n=== Step 2: Install dependencies ===");
