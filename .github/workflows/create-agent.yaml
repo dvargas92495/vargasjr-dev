@@ -30,6 +30,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
+      - name: Restore cache from S3
+        run: bash scripts/restore-cache.sh
         run: npx tsx scripts/conditional-install.ts
       - name: Create agent
         run: npm run create-agent -- ${{ inputs.agent_name || github.event.inputs.agent_name || '' }}

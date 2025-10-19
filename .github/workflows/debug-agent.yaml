@@ -24,6 +24,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
+      - name: Restore cache from S3
+        run: bash scripts/restore-cache.sh
         run: npx tsx scripts/conditional-install.ts
       - name: Debug agent instance
         run: npm run debug-agent -- ${{ inputs.branch_override || github.ref_name }}

@@ -22,6 +22,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
+      - name: Restore cache from S3
+        run: bash scripts/restore-cache.sh
         run: npx tsx scripts/conditional-install.ts
       - name: Cleanup PR resources
         run: npm run cleanup-pr -- --pr ${{ github.event.number }}
