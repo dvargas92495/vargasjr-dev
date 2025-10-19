@@ -3,6 +3,7 @@ import boto3
 from logging import Logger
 from services import MEMORY_DIR
 from email.utils import formataddr
+from typing import Any, cast
 
 
 def download_memory(logger: Logger):
@@ -34,11 +35,15 @@ def download_memory(logger: Logger):
     del session
 
 
-def send_email(to: str, body: str, subject: str) -> None:
+def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None:
     ses_client = boto3.client("ses")
+    if bcc:
+        destination: Any = {"ToAddresses": [to], "BccAddresses": [bcc]}
+    else:
+        destination = {"ToAddresses": [to]}
     ses_client.send_email(
         Source=formataddr(("Vargas JR", "hello@vargasjr.dev")),
-        Destination={"ToAddresses": [to]},
+        Destination=destination,
         Message={
             "Subject": {"Data": subject},
             "Body": {"Text": {"Data": body}},

@@ -15,7 +15,6 @@ class JobOpportunityResponseNode(BaseNode):
     original_recruiter_email = ParseFunctionCallNode.Outputs.parameters["original_recruiter_email"]
     recruiter_subject = ParseFunctionCallNode.Outputs.parameters["recruiter_subject"]
     recruiter_body = ParseFunctionCallNode.Outputs.parameters["recruiter_body"]
-    forwarder_confirmation_body = ParseFunctionCallNode.Outputs.parameters["forwarder_confirmation_body"]
     inbox_message_id = ReadMessageNode.Outputs.message["message_id"]
     thread_id = ReadMessageNode.Outputs.message["thread_id"]
     forwarder_email = ReadMessageNode.Outputs.message["contact_email"]
@@ -30,12 +29,7 @@ class JobOpportunityResponseNode(BaseNode):
                 to=self.original_recruiter_email,
                 body=self.recruiter_body,
                 subject=self.recruiter_subject,
-            )
-            
-            send_email(
-                to=self.forwarder_email,
-                body=self.forwarder_confirmation_body,
-                subject="Confirmation: Responded to Job Opportunity",
+                bcc=self.forwarder_email,
             )
             
         except Exception:
@@ -43,7 +37,7 @@ class JobOpportunityResponseNode(BaseNode):
             return self.Outputs(summary="Failed to send job opportunity emails.")
 
         return self.Outputs(
-            summary=f"Sent job opportunity response to {self.original_recruiter_email} and confirmation to {self.forwarder_email}.",
+            summary=f"Sent job opportunity response to {self.original_recruiter_email} with BCC to {self.forwarder_email}.",
             outbox_message=OutboxMessage(
                 parent_inbox_message_id=self.inbox_message_id,
                 body=self.recruiter_body,
