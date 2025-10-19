@@ -121,27 +121,145 @@ async function setup(): Promise<void> {
 
   console.log("\n=== Step 1: Restore cache from S3 ===");
 
-  const { getFullCacheKey, downloadCacheFromS3, uploadCacheToS3 } =
-    await import("./cache-utils");
+  const isAnalyze = process.env.ANALYZE === "true";
 
-  const cacheKeyStartTime = Date.now();
+  const {
+    getFullCacheKey,
+    downloadCacheFromS3,
+    uploadCacheToS3,
+    getCachePaths,
+  } = await import("./cache-utils");
+
+  const cacheKeyStartTime = isAnalyze ? Date.now() : 0;
   const fullCacheKey = getFullCacheKey();
-  const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(2);
-  console.log(`Generated cache key: ${fullCacheKey} (${cacheKeyDuration}s)`);
+  if (isAnalyze) {
+    const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(
+      2
+    );
+    console.log(`Generated cache key: ${fullCacheKey} (${cacheKeyDuration}s)`);
+  } else {
+    console.log(`Generated cache key: ${fullCacheKey}`);
+  }
 
   const cacheHit = await downloadCacheFromS3(fullCacheKey);
-  const preinstallEndTime = Date.now();
+
+  if (isAnalyze && cacheHit) {
+    console.log("\nAnalyzing cache directory sizes...");
+    const cachePaths = getCachePaths();
+    const directorySizes: {
+      path: string;
+      size: number;
+      sizeFormatted: string;
+    }[] = [];
+
+    for (const cachePath of cachePaths) {
+      if (existsSync(cachePath)) {
+        try {
+          const topLevelDirs = execSync(
+            `find "${cachePath}" -maxdepth 1 -type d`,
+            {
+              encoding: "utf8",
+            }
+          )
+            .trim()
+            .split("\n")
+            .filter((dir) => dir !== cachePath);
+
+          for (const dir of topLevelDirs) {
+            try {
+              const sizeOutput = execSync(`du -sb "${dir}"`, {
+                encoding: "utf8",
+              }).trim();
+              const size = parseInt(sizeOutput.split("\t")[0], 10);
+              const sizeFormatted = execSync(`du -sh "${dir}"`, {
+                encoding: "utf8",
+              })
+                .trim()
+                .split("\t")[0];
+              directorySizes.push({ path: dir, size, sizeFormatted });
+            } catch (error) {}
+          }
+        } catch (error) {
+          console.warn(`Could not analyze directory: ${cachePath}`);
+        }
+      }
+    }
+
+    const top5 = directorySizes.sort((a, b) => b.size - a.size).slice(0, 5);
+
+    console.log("\nTop 5 largest cache directories:");
+    for (let index = 0; index < top5.length; index++) {
+      const dir = top5[index];
+      console.log(`${index + 1}. ${dir.sizeFormatted}\t${dir.path}`);
+
+      try {
+        const subItems = execSync(
+          `find "${dir.path}" -maxdepth 1 -mindepth 1`,
+          {
+            encoding: "utf8",
+          }
+        )
+          .trim()
+          .split("\n")
+          .filter((item) => item.length > 0);
+
+        const subItemSizes: {
+          path: string;
+          size: number;
+          sizeFormatted: string;
+        }[] = [];
+
+        for (const item of subItems) {
+          try {
+            const sizeOutput = execSync(`du -sb "${item}"`, {
+              encoding: "utf8",
+            }).trim();
+            const size = parseInt(sizeOutput.split("\t")[0], 10);
+            const sizeFormatted = execSync(`du -sh "${item}"`, {
+              encoding: "utf8",
+            })
+              .trim()
+              .split("\t")[0];
+            subItemSizes.push({ path: item, size, sizeFormatted });
+          } catch (error) {}
+        }
+
+        const top5SubItems = subItemSizes
+          .sort((a, b) => b.size - a.size)
+          .slice(0, 5);
+
+        if (top5SubItems.length > 0) {
+          console.log(`   Top 5 items within this directory:`);
+          top5SubItems.forEach((subItem, subIndex) => {
+            console.log(
+              `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${subItem.path}`
+            );
+          });
+        }
+      } catch (error) {
+        console.warn(`   Could not analyze subdirectories of: ${dir.path}`);
+      }
+      console.log("");
+    }
+    console.log("");
+  }
+
+  const preinstallEndTime = isAnalyze ? Date.now() : 0;
   writeFileSync(
     "/tmp/cache-status.json",
     JSON.stringify({ cacheHit, cacheKey: fullCacheKey, preinstallEndTime })
   );
 
-  const cacheDuration = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(
-    `Cache restoration completed in ${cacheDuration}s (cache ${
-      cacheHit ? "hit" : "miss"
-    })`
-  );
+  if (isAnalyze) {
+    const cacheDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(
+      `Cache restoration completed in ${cacheDuration}s (cache ${
+        cacheHit ? "hit" : "miss"
+      })`
+    );
+  } else {
+    console.log(`Cache restoration completed (cache ${cacheHit ? "hit" : "miss"})`);
+  }
 
   console.log("\n=== Step 2: Install dependencies ===");
   if (cacheHit && !needsBootstrap) {
