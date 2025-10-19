@@ -3,7 +3,7 @@ import boto3
 from logging import Logger
 from services import MEMORY_DIR
 from email.utils import formataddr
-from typing import Any, cast
+from typing import Any
 
 
 def download_memory(logger: Logger):
