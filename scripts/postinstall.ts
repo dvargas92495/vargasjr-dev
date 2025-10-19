@@ -20,7 +20,7 @@ async function fetchVercelEnvVars(
 
   try {
     const response = await fetch(
-      `https://api.vercel.com/v3/env/pull/vargasjr-dev/preview`,
+      `https://api.vercel.com/v3/env/pull/vargasjr-dev/${target}`,
       {
         headers: {
           Authorization: `Bearer ${vercelToken}`,
