@@ -56,42 +56,6 @@ jobs:
         run: poetry install
         working-directory: vellum
 
-      - name: Log Vellum API Key (first 4 characters)
-        run: |
-          if [ -n "${{ secrets.VELLUM_API_KEY }}" ]; then
-            echo "Vellum API Key (first 4 chars): ${VELLUM_API_KEY:0:4}****"
-          else
-            echo "Warning: VELLUM_API_KEY is not set"
-          fi
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-
-      - name: Ping Vellum API
-        run: |
-          echo "Pinging Vellum API..."
-          poetry run python -c "
-          from vellum import VellumClient
-          import os
-          import sys
-          
-          api_key = os.environ.get('VELLUM_API_KEY')
-          if not api_key:
-              print('Error: VELLUM_API_KEY not set')
-              sys.exit(1)
-          
-          try:
-              client = VellumClient(api_key=api_key)
-              response = client.workflow_deployments.list()
-              print(f'✅ Vellum API ping successful!')
-              print(f'Found {len(response.results)} workflow deployments')
-          except Exception as e:
-              print(f'❌ Vellum API ping failed: {e}')
-              sys.exit(1)
-          "
-        working-directory: vellum
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-
       - name: Run mypy type checking
         run: poetry run mypy .
         working-directory: vellum
@@ -126,42 +90,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
         working-directory: vellum
-
-      - name: Log Vellum API Key (first 4 characters)
-        run: |
-          if [ -n "${{ secrets.VELLUM_API_KEY }}" ]; then
-            echo "Vellum API Key (first 4 chars): ${VELLUM_API_KEY:0:4}****"
-          else
-            echo "Warning: VELLUM_API_KEY is not set"
-          fi
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
-
-      - name: Ping Vellum API
-        run: |
-          echo "Pinging Vellum API..."
-          poetry run python -c "
-          from vellum import VellumClient
-          import os
-          import sys
-          
-          api_key = os.environ.get('VELLUM_API_KEY')
-          if not api_key:
-              print('Error: VELLUM_API_KEY not set')
-              sys.exit(1)
-          
-          try:
-              client = VellumClient(api_key=api_key)
-              response = client.workflow_deployments.list()
-              print(f'✅ Vellum API ping successful!')
-              print(f'Found {len(response.results)} workflow deployments')
-          except Exception as e:
-              print(f'❌ Vellum API ping failed: {e}')
-              sys.exit(1)
-          "
-        working-directory: vellum
-        env:
-          VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
 
       - name: Run mypy type checking
         run: poetry run mypy .
