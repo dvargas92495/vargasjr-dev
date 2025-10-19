@@ -4,11 +4,6 @@ import { execSync } from "child_process";
 import { existsSync, writeFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import {
-  getFullCacheKey,
-  downloadCacheFromS3,
-  uploadCacheToS3,
-} from "./cache-utils";
 
 async function fetchVercelEnvVars(
   target: "production" | "preview"
@@ -114,7 +109,22 @@ async function setup(): Promise<void> {
     return;
   }
 
-  console.log("=== Step 1: Restore cache from S3 ===");
+  const nodeModulesPath = join(process.cwd(), "node_modules");
+  const needsBootstrap = !existsSync(nodeModulesPath);
+
+  if (needsBootstrap) {
+    console.log(
+      "=== Bootstrap: Installing dependencies for first-time setup ==="
+    );
+    execSync("npm install --ignore-scripts", { stdio: "inherit" });
+  }
+
+  console.log("\n=== Step 1: Restore cache from S3 ===");
+  
+  const { getFullCacheKey, downloadCacheFromS3, uploadCacheToS3 } = await import(
+    "./cache-utils"
+  );
+
   const cacheKeyStartTime = Date.now();
   const fullCacheKey = getFullCacheKey();
   const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(
@@ -135,11 +145,13 @@ async function setup(): Promise<void> {
   );
 
   console.log("\n=== Step 2: Install dependencies ===");
-  if (cacheHit) {
+  if (cacheHit && !needsBootstrap) {
     console.log(
       "✅ Cache hit detected (node_modules restored), skipping npm install"
     );
     console.log("Saving ~1 minute by skipping dependency installation");
+  } else if (needsBootstrap) {
+    console.log("✅ Dependencies already installed during bootstrap");
   } else {
     console.log("Cache miss, running npm install...");
     execSync("npm install --ignore-scripts", { stdio: "inherit" });
