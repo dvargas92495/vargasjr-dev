@@ -42,6 +42,40 @@ class VellumWorkflowPusher {
     }
 
     try {
+      const vellumApiKey = process.env.VELLUM_API_KEY;
+
+      if (!vellumApiKey) {
+        throw new Error("VELLUM_API_KEY environment variable is required");
+      }
+
+      console.log(
+        `🔑 Vellum API Key (first 4 chars): ${vellumApiKey.substring(0, 4)}****`
+      );
+
+      console.log("🏓 Pinging Vellum API...");
+      try {
+        const pingResult = spawnSync("poetry", ["run", "vellum", "ping"], {
+          cwd: this.agentDir,
+          encoding: "utf8",
+          env: process.env,
+        });
+
+        const pingOutput =
+          (pingResult.stdout || "") + (pingResult.stderr || "");
+        console.log(pingOutput);
+
+        if (pingResult.status !== 0) {
+          throw new Error(
+            `Vellum ping failed with exit code ${pingResult.status}`
+          );
+        }
+
+        console.log("✅ Vellum API ping successful!");
+      } catch (error) {
+        console.error(`❌ Vellum API ping failed: ${error}`);
+        throw error;
+      }
+
       if (!existsSync(this.agentDir)) {
         throw new Error(
           "Vellum directory not found. Make sure you're running this from the project root."
