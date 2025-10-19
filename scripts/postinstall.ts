@@ -4,7 +4,6 @@ import { execSync } from "child_process";
 import { existsSync, writeFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import { getFullCacheKey, uploadCacheToS3 } from "./cache-utils";
 
 async function fetchVercelEnvVars(
   target: "production" | "preview"
@@ -139,28 +138,6 @@ async function handlePostInstall(): Promise<void> {
       execSync("npx playwright install chromium --with-deps", {
         stdio: "inherit",
       });
-    }
-
-    let shouldSaveCache = true;
-    try {
-      const cacheStatusPath = "/tmp/cache-status.json";
-      if (existsSync(cacheStatusPath)) {
-        const cacheStatus = JSON.parse(readFileSync(cacheStatusPath, "utf8"));
-        if (cacheStatus.cacheHit) {
-          console.log(
-            `Skipping cache save (successful cache hit: ${cacheStatus.cacheKey})`
-          );
-          shouldSaveCache = false;
-        }
-      }
-    } catch (error) {
-      console.warn("Could not read cache status, will save cache:", error);
-    }
-
-    if (shouldSaveCache) {
-      console.log("Saving cache to S3...");
-      const fullCacheKey = getFullCacheKey();
-      await uploadCacheToS3(fullCacheKey);
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
