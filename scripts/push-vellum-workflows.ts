@@ -516,17 +516,33 @@ class VellumWorkflowPusher {
         return;
       }
 
-      const changedFiles = execSync(
-        "git diff --name-only HEAD~1 HEAD -- vellum/services/",
-        {
-          encoding: "utf8",
-          cwd: process.cwd(),
-        }
-      ).trim();
+      const currentCommitSha = execSync("git rev-parse HEAD", {
+        encoding: "utf8",
+        cwd: process.cwd(),
+      }).trim();
 
-      const servicesFiles = changedFiles
-        .split("\n")
-        .filter((file) => file.length > 0);
+      console.log(`📋 Fetching changed files for commit: ${currentCommitSha}`);
+
+      const headers = await getGitHubAuthHeaders();
+      const response = await fetch(
+        `https://api.github.com/repos/dvargas92495/vargasjr-dev/commits/${currentCommitSha}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(
+          `⚠️  Failed to fetch commit from GitHub API: ${response.status} ${errorText}`
+        );
+        console.log("ℹ️  Skipping services change detection");
+        return;
+      }
+
+      const commitData = await response.json();
+      const allChangedFiles = commitData.files || [];
+      const servicesFiles = allChangedFiles
+        .map((file: any) => file.filename)
+        .filter((filename: string) => filename.startsWith("vellum/services/"));
 
       console.log(
         `📋 Changed files in vellum/services: ${
