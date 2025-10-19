@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import "dotenv/config";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
 
 async function mergePR() {
