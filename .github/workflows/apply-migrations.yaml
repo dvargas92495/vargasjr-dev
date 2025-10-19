@@ -35,10 +35,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
 
       - name: Run migration preview
         run: npm run run-migrations -- --preview
@@ -62,10 +60,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
 
       - name: Generate and apply migrations
         run: npm run db:generate

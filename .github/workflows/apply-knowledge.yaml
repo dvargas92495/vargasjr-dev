@@ -37,10 +37,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
 
       - name: Run knowledge preview
         run: |
@@ -62,10 +60,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
 
       - name: Apply knowledge changes
         run: npm run run-knowledge

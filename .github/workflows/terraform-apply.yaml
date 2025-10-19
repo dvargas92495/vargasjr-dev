@@ -40,10 +40,8 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

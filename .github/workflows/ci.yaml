@@ -50,10 +50,8 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Enable npm audit for lint job
         run: npm config set audit true
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install Node.js dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
       - name: Run ESLint
         run: npm run lint
       - name: Run Prettier check
@@ -67,10 +65,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install Node.js dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
       - name: Run tests
         run: npm test tests/
   publish-agent:
@@ -86,10 +82,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
       - name: Install Node.js dependencies
-        run: npx tsx scripts/conditional-install.ts
+        run: npm install
       - name: Get version from package.json
         id: get_version
         run: |
