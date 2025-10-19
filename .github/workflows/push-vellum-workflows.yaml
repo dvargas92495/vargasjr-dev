@@ -41,9 +41,9 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Install Node.js dependencies
       - name: Restore cache from S3
         run: bash scripts/restore-cache.sh
+      - name: Install Node.js dependencies
         run: npx tsx scripts/conditional-install.ts
 
       - name: Set up python
@@ -78,9 +78,9 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Install Node.js dependencies
       - name: Restore cache from S3
         run: bash scripts/restore-cache.sh
+      - name: Install Node.js dependencies
         run: npx tsx scripts/conditional-install.ts
 
       - name: Set up python

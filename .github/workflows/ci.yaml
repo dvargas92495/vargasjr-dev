@@ -53,8 +53,6 @@ jobs:
       - name: Restore cache from S3
         run: bash scripts/restore-cache.sh
       - name: Install Node.js dependencies
-      - name: Restore cache from S3
-        run: bash scripts/restore-cache.sh
         run: npx tsx scripts/conditional-install.ts
       - name: Run ESLint
         run: npm run lint
@@ -69,9 +67,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Install Node.js dependencies
       - name: Restore cache from S3
         run: bash scripts/restore-cache.sh
+      - name: Install Node.js dependencies
         run: npx tsx scripts/conditional-install.ts
       - name: Run tests
         run: npm test tests/
@@ -88,9 +86,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - name: Install Node.js dependencies
       - name: Restore cache from S3
         run: bash scripts/restore-cache.sh
+      - name: Install Node.js dependencies
         run: npx tsx scripts/conditional-install.ts
       - name: Get version from package.json
         id: get_version
