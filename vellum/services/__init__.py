@@ -29,11 +29,6 @@ def to_dollar_float(value: str) -> float:
     return float(value.replace("$", "").replace(",", ""))
 
 
-def format_currency(value: float) -> str:
-    """Format a float value as a currency string with dollar sign and commas"""
-    return f"${value:,.2f}"
-
-
 def postgres_session(expire_on_commit: bool = True):
     """Get a SQLModel Session using the POSTGRES_URL environment variable"""
     url = os.getenv("NEON_URL") or os.getenv("POSTGRES_URL")
@@ -307,10 +302,11 @@ def get_all_transaction_rules() -> list[TransactionRule]:
 def add_transaction_rule(description: str, category: PersonalTransactionCategory) -> None:
     with sqlite_session() as session:
         session.add(
-            TransactionRule(  # type: ignore
+            TransactionRule(
                 category=category,
                 operation="EQUALS",
                 target=description,
+                description=description,
             )
         )
         session.commit()

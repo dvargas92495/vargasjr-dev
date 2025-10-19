@@ -502,6 +502,7 @@ class VellumWorkflowPusher {
   }
 
   private async handleServicesChanges(): Promise<void> {
+    console.log("🔍 Checking for vellum/services changes...");
     try {
       const currentBranch = execSync("git branch --show-current", {
         encoding: "utf8",
