@@ -22,7 +22,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
       - name: Cleanup PR resources
         run: npm run cleanup-pr -- --pr ${{ github.event.number }}
         env:

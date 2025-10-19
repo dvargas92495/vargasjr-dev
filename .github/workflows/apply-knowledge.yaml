@@ -38,7 +38,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
 
       - name: Run knowledge preview
         run: |
@@ -61,7 +61,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
 
       - name: Apply knowledge changes
         run: npm run run-knowledge

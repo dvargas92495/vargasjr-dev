@@ -24,7 +24,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
       - name: Debug agent instance
         run: npm run debug-agent -- ${{ inputs.branch_override || github.ref_name }}
         env:

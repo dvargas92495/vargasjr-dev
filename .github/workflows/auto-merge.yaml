@@ -27,7 +27,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
 
       - name: Wait for all other checks to succeed
         uses: lewagon/wait-on-check-action@v1.4.0

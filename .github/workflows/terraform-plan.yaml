@@ -30,7 +30,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

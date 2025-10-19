@@ -51,7 +51,7 @@ jobs:
       - name: Enable npm audit for lint job
         run: npm config set audit true
       - name: Install Node.js dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
       - name: Run ESLint
         run: npm run lint
       - name: Run Prettier check
@@ -66,7 +66,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
       - name: Run tests
         run: npm test tests/
   publish-agent:
@@ -83,7 +83,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install Node.js dependencies
-        run: npm install
+        run: npx tsx scripts/conditional-install.ts
       - name: Get version from package.json
         id: get_version
         run: |
