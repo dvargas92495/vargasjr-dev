@@ -120,16 +120,13 @@ async function setup(): Promise<void> {
   }
 
   console.log("\n=== Step 1: Restore cache from S3 ===");
-  
-  const { getFullCacheKey, downloadCacheFromS3, uploadCacheToS3 } = await import(
-    "./cache-utils"
-  );
+
+  const { getFullCacheKey, downloadCacheFromS3, uploadCacheToS3 } =
+    await import("./cache-utils");
 
   const cacheKeyStartTime = Date.now();
   const fullCacheKey = getFullCacheKey();
-  const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(
-    2
-  );
+  const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(2);
   console.log(`Generated cache key: ${fullCacheKey} (${cacheKeyDuration}s)`);
 
   const cacheHit = await downloadCacheFromS3(fullCacheKey);
@@ -141,7 +138,9 @@ async function setup(): Promise<void> {
 
   const cacheDuration = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(
-    `Cache restoration completed in ${cacheDuration}s (cache ${cacheHit ? "hit" : "miss"})`
+    `Cache restoration completed in ${cacheDuration}s (cache ${
+      cacheHit ? "hit" : "miss"
+    })`
   );
 
   console.log("\n=== Step 2: Install dependencies ===");
