@@ -86,7 +86,7 @@ async function handleCaching(): Promise<void> {
     for (let index = 0; index < top5.length; index++) {
       const dir = top5[index];
       console.log(`${index + 1}. ${dir.sizeFormatted}\t${dir.path}`);
-      
+
       try {
         const subItems = execSync(
           `find "${dir.path}" -maxdepth 1 -mindepth 1`,
