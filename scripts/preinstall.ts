@@ -1,6 +1,10 @@
 #!/usr/bin/env tsx
 
-import { getFullCacheKey, downloadCacheFromS3, getCachePaths } from "./cache-utils";
+import {
+  getFullCacheKey,
+  downloadCacheFromS3,
+  getCachePaths,
+} from "./cache-utils";
 import { writeFileSync } from "fs";
 import { execSync } from "child_process";
 import { existsSync } from "fs";
@@ -24,7 +28,9 @@ async function handleCaching(): Promise<void> {
   const cacheKeyStartTime = isAnalyze ? Date.now() : 0;
   const fullCacheKey = getFullCacheKey();
   if (isAnalyze) {
-    const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(2);
+    const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(
+      2
+    );
     console.log(`Generated cache key: ${fullCacheKey} (${cacheKeyDuration}s)`);
   } else {
     console.log(`Generated cache key: ${fullCacheKey}`);
@@ -35,14 +41,21 @@ async function handleCaching(): Promise<void> {
   if (isAnalyze && cacheHit) {
     console.log("\nAnalyzing cache directory sizes...");
     const cachePaths = getCachePaths();
-    const directorySizes: { path: string; size: number; sizeFormatted: string }[] = [];
+    const directorySizes: {
+      path: string;
+      size: number;
+      sizeFormatted: string;
+    }[] = [];
 
     for (const cachePath of cachePaths) {
       if (existsSync(cachePath)) {
         try {
-          const topLevelDirs = execSync(`find "${cachePath}" -maxdepth 1 -type d`, {
-            encoding: "utf8",
-          })
+          const topLevelDirs = execSync(
+            `find "${cachePath}" -maxdepth 1 -type d`,
+            {
+              encoding: "utf8",
+            }
+          )
             .trim()
             .split("\n")
             .filter((dir) => dir !== cachePath); // Exclude the cache path itself
@@ -59,8 +72,7 @@ async function handleCaching(): Promise<void> {
                 .trim()
                 .split("\t")[0];
               directorySizes.push({ path: dir, size, sizeFormatted });
-            } catch (error) {
-            }
+            } catch (error) {}
           }
         } catch (error) {
           console.warn(`Could not analyze directory: ${cachePath}`);
@@ -68,9 +80,7 @@ async function handleCaching(): Promise<void> {
       }
     }
 
-    const top5 = directorySizes
-      .sort((a, b) => b.size - a.size)
-      .slice(0, 5);
+    const top5 = directorySizes.sort((a, b) => b.size - a.size).slice(0, 5);
 
     console.log("\nTop 5 largest cache directories:");
     top5.forEach((dir, index) => {
@@ -88,7 +98,9 @@ async function handleCaching(): Promise<void> {
   if (isAnalyze) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(
-      `Preinstall completed in ${duration}s (cache ${cacheHit ? "hit" : "miss"})`
+      `Preinstall completed in ${duration}s (cache ${
+        cacheHit ? "hit" : "miss"
+      })`
     );
   } else {
     console.log(`Preinstall completed (cache ${cacheHit ? "hit" : "miss"})`);
