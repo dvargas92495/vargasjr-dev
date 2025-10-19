@@ -290,8 +290,10 @@ async function setup(): Promise<void> {
   if (existsSync(playwrightCachePath)) {
     console.log("Playwright browsers already cached, skipping installation...");
   } else {
-    console.log("Installing Playwright browsers for CI environment...");
-    execSync("npx playwright install --with-deps", { stdio: "inherit" });
+    console.log("Installing Chromium browser for CI environment...");
+    execSync("npx playwright install chromium --with-deps", {
+      stdio: "inherit",
+    });
   }
 
   if (!cacheHit) {
