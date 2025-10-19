@@ -83,9 +83,59 @@ async function handleCaching(): Promise<void> {
     const top5 = directorySizes.sort((a, b) => b.size - a.size).slice(0, 5);
 
     console.log("\nTop 5 largest cache directories:");
-    top5.forEach((dir, index) => {
+    for (let index = 0; index < top5.length; index++) {
+      const dir = top5[index];
       console.log(`${index + 1}. ${dir.sizeFormatted}\t${dir.path}`);
-    });
+
+      try {
+        const subItems = execSync(
+          `find "${dir.path}" -maxdepth 1 -mindepth 1`,
+          {
+            encoding: "utf8",
+          }
+        )
+          .trim()
+          .split("\n")
+          .filter((item) => item.length > 0);
+
+        const subItemSizes: {
+          path: string;
+          size: number;
+          sizeFormatted: string;
+        }[] = [];
+
+        for (const item of subItems) {
+          try {
+            const sizeOutput = execSync(`du -sb "${item}"`, {
+              encoding: "utf8",
+            }).trim();
+            const size = parseInt(sizeOutput.split("\t")[0], 10);
+            const sizeFormatted = execSync(`du -sh "${item}"`, {
+              encoding: "utf8",
+            })
+              .trim()
+              .split("\t")[0];
+            subItemSizes.push({ path: item, size, sizeFormatted });
+          } catch (error) {}
+        }
+
+        const top5SubItems = subItemSizes
+          .sort((a, b) => b.size - a.size)
+          .slice(0, 5);
+
+        if (top5SubItems.length > 0) {
+          console.log(`   Top 5 items within this directory:`);
+          top5SubItems.forEach((subItem, subIndex) => {
+            console.log(
+              `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${subItem.path}`
+            );
+          });
+        }
+      } catch (error) {
+        console.warn(`   Could not analyze subdirectories of: ${dir.path}`);
+      }
+      console.log("");
+    }
     console.log("");
   }
 
