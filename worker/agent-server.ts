@@ -17,6 +17,7 @@ export interface BrowserSession {
 export interface AgentServerConfig {
   port: number;
   logger: Logger;
+  agentRunner?: any;
 }
 
 export class AgentServer {
@@ -27,11 +28,13 @@ export class AgentServer {
   private browser: Browser | null = null;
   private sessions: Map<string, BrowserSession> = new Map();
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private agentRunner?: any;
 
   constructor(config: AgentServerConfig) {
     this.app = express();
     this.logger = config.logger;
     this.port = config.port;
+    this.agentRunner = config.agentRunner;
     this.setupRoutes();
   }
 
@@ -415,6 +418,41 @@ export class AgentServer {
           res.status(500).json({
             status: "error",
             message: `Reboot failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    );
+
+    this.app.post(
+      "/api/reload-jobs",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          this.logger.info("Reload jobs endpoint called");
+          
+          if (!this.agentRunner) {
+            return res.status(503).json({
+              status: "error",
+              message: "Agent runner not available",
+              timestamp: new Date().toISOString(),
+            });
+          }
+
+          await this.agentRunner.reloadRoutineJobs();
+
+          res.json({
+            status: "success",
+            message: "Routine jobs reloaded successfully",
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          this.logger.error(`Failed to reload jobs: ${error}`);
+          res.status(500).json({
+            status: "error",
+            message: `Failed to reload jobs: ${
               error instanceof Error ? error.message : String(error)
             }`,
             timestamp: new Date().toISOString(),
