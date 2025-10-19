@@ -135,8 +135,10 @@ async function handlePostInstall(): Promise<void> {
         "Playwright browsers already cached, skipping installation..."
       );
     } else {
-      console.log("Installing Playwright browsers for CI environment...");
-      execSync("npx playwright install --with-deps", { stdio: "inherit" });
+      console.log("Installing Chromium browser for CI environment...");
+      execSync("npx playwright install chromium --with-deps", {
+        stdio: "inherit",
+      });
     }
 
     let shouldSaveCache = true;
