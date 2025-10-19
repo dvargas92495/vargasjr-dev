@@ -516,13 +516,24 @@ class VellumWorkflowPusher {
         return;
       }
 
-      const changedFiles = execSync(
-        "git diff --name-only HEAD~1 HEAD -- vellum/services/",
-        {
-          encoding: "utf8",
-          cwd: process.cwd(),
+      let changedFiles = "";
+      try {
+        changedFiles = execSync(
+          "git diff --name-only HEAD~1 HEAD -- vellum/services/",
+          {
+            encoding: "utf8",
+            cwd: process.cwd(),
+          }
+        ).trim();
+      } catch (error: any) {
+        if (error.message?.includes("bad revision") || error.message?.includes("HEAD~1")) {
+          console.log(
+            "ℹ️  No parent commit found (HEAD~1 doesn't exist), skipping services change detection"
+          );
+          return;
         }
-      ).trim();
+        throw error;
+      }
 
       const servicesFiles = changedFiles
         .split("\n")
