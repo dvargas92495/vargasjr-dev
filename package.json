@@ -3,8 +3,7 @@
   "version": "0.1.12",
   "private": true,
   "scripts": {
-    "preinstall": "npx tsx scripts/preinstall.ts",
-    "install": "npx tsx scripts/install.ts",
+    "setup": "npx tsx scripts/setup.ts",
     "dev": "npx tsx scripts/dev.ts",
     "build": "next build",
     "start": "next start",

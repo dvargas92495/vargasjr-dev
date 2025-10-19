@@ -42,7 +42,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm run setup
 
       - name: Set up python
         uses: actions/setup-python@v4
@@ -77,7 +77,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm run setup
 
       - name: Set up python
         uses: actions/setup-python@v4

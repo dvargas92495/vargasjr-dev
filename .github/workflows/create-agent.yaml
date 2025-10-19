@@ -30,7 +30,7 @@ jobs:
         with:
           node-version-file: ".nvmrc"
       - name: Install dependencies
-        run: npm install
+        run: npm run setup
       - name: Create agent
         run: npm run create-agent -- ${{ inputs.agent_name || github.event.inputs.agent_name || '' }}
         env:

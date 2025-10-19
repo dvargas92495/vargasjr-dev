@@ -36,7 +36,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npm run setup
 
       - name: Run migration preview
         run: npm run run-migrations -- --preview
@@ -61,7 +61,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm install
+        run: npm run setup
 
       - name: Generate and apply migrations
         run: npm run db:generate
