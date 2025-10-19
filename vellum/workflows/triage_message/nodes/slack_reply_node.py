@@ -41,7 +41,7 @@ class SlackReplyNode(BaseNode):
 
     class Outputs(BaseNode.Outputs):
         summary: str
-        outbox_message: OutboxMessage
+        outbox_message: Optional[OutboxMessage] = None
 
     def run(self) -> BaseNode.Outputs:
         slack_reply(
