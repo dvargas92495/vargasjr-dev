@@ -33,10 +33,7 @@ def postgres_session(expire_on_commit: bool = True):
     """Get a SQLModel Session using the POSTGRES_URL environment variable"""
     url = os.getenv("NEON_URL") or os.getenv("POSTGRES_URL")
     if not url:
-        raise ValueError(
-            "Database connection URL not found. Please set the POSTGRES_URL environment variable.\n"
-            "\nExample: export POSTGRES_URL='postgresql://user:password@host:port/database'"
-        )
+        raise ValueError("POSTGRES_URL is not set")
 
     def mask_url_password(url: str) -> str:
         """Mask password in database URL while preserving protocol and other details"""
