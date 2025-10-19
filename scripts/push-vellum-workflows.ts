@@ -526,7 +526,10 @@ class VellumWorkflowPusher {
           }
         ).trim();
       } catch (error: any) {
-        if (error.message?.includes("bad revision") || error.message?.includes("HEAD~1")) {
+        if (
+          error.message?.includes("bad revision") ||
+          error.message?.includes("HEAD~1")
+        ) {
           console.log(
             "ℹ️  No parent commit found (HEAD~1 doesn't exist), skipping services change detection"
           );
