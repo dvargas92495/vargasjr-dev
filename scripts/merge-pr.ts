@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
+import "dotenv/config";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
+import { GITHUB_REPOSITORY } from "../app/lib/constants";
 
 async function mergePR() {
   const prNumber = process.argv[2];
@@ -10,11 +12,7 @@ async function mergePR() {
     process.exit(1);
   }
 
-  const repo = process.env.GITHUB_REPOSITORY;
-  if (!repo) {
-    console.error("GITHUB_REPOSITORY environment variable is required");
-    process.exit(1);
-  }
+  const repo = GITHUB_REPOSITORY;
 
   try {
     console.log(`Merging PR #${prNumber} in ${repo}...`);

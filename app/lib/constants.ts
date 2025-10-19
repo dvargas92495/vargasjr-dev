@@ -8,3 +8,5 @@ export const VARGASJR_IMAGE_NAME = "vargasjr-workspace";
 export const LAMBDA_FUNCTION_NAMES = {
   EMAIL_PROCESSOR: "vargas-jr-email-processor",
 } as const;
+
+export const GITHUB_REPOSITORY = "dvargas92495/vargasjr-dev";
