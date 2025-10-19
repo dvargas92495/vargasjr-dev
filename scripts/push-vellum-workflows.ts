@@ -12,7 +12,6 @@ import {
 import { join } from "path";
 import { postGitHubComment } from "./utils";
 import { getGitHubAuthHeaders } from "../app/lib/github-auth";
-import { getAddedFilesInPR, findPRByBranch } from "./utils";
 import { getPRNumber } from "../app/api/constants";
 
 dotenv.config();
@@ -503,31 +502,34 @@ class VellumWorkflowPusher {
   }
 
   private async handleServicesChanges(): Promise<void> {
+    console.log("🔍 Checking for vellum/services changes...");
     try {
-      let prNumber = process.env.PR_NUMBER;
+      const currentBranch = execSync("git branch --show-current", {
+        encoding: "utf8",
+        cwd: process.cwd(),
+      }).trim();
 
-      if (!prNumber) {
-        try {
-          const branchName = execSync("git branch --show-current", {
-            encoding: "utf8",
-            cwd: process.cwd(),
-          }).trim();
-          prNumber = await findPRByBranch(branchName);
-        } catch (error) {
-          console.warn(
-            "Could not determine PR number, skipping services change detection"
-          );
-          return;
-        }
+      if (currentBranch !== "main") {
+        console.log(
+          `ℹ️  Not on main branch (current: ${currentBranch}), skipping services change detection`
+        );
+        return;
       }
 
-      const addedFiles = await getAddedFilesInPR(prNumber);
-      const servicesFiles = addedFiles.filter((file) =>
-        file.startsWith("vellum/services/")
-      );
+      const changedFiles = execSync(
+        "git diff --name-only HEAD~1 HEAD -- vellum/services/",
+        {
+          encoding: "utf8",
+          cwd: process.cwd(),
+        }
+      ).trim();
+
+      const servicesFiles = changedFiles
+        .split("\n")
+        .filter((file) => file.length > 0);
 
       console.log(
-        `📋 Added files in vellum/services: ${
+        `📋 Changed files in vellum/services: ${
           servicesFiles.join(", ") || "none"
         }`
       );

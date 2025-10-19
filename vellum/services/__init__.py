@@ -302,10 +302,11 @@ def get_all_transaction_rules() -> list[TransactionRule]:
 def add_transaction_rule(description: str, category: PersonalTransactionCategory) -> None:
     with sqlite_session() as session:
         session.add(
-            TransactionRule(  # type: ignore
+            TransactionRule(
                 category=category,
                 operation="EQUALS",
                 target=description,
+                description=description,
             )
         )
         session.commit()
