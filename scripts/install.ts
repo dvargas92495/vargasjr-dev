@@ -1,8 +1,7 @@
 #!/usr/bin/env tsx
 
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { execSync } from "child_process";
-import { join } from "path";
 
 function conditionalInstall(): void {
   if (process.env.SKIP_CUSTOM_INSTALL) {
@@ -16,24 +15,29 @@ function conditionalInstall(): void {
       stdio: "inherit",
       shell: "/bin/bash",
     });
-    execSync("npm run postinstall", { stdio: "inherit" });
     return;
   }
 
-  const nodeModulesPath = join(process.cwd(), "node_modules");
-  const hasValidNodeModules =
-    existsSync(nodeModulesPath) &&
-    existsSync(join(nodeModulesPath, ".package-lock.json"));
+  let cacheHit = false;
+  try {
+    const cacheStatusPath = "/tmp/cache-status.json";
+    if (existsSync(cacheStatusPath)) {
+      const cacheStatus = JSON.parse(readFileSync(cacheStatusPath, "utf8"));
+      cacheHit = cacheStatus.cacheHit === true;
+    }
+  } catch (error) {
+    console.warn("Could not read cache status:", error);
+  }
 
-  if (hasValidNodeModules) {
+  if (cacheHit) {
     console.log(
-      "✅ node_modules already present (restored by preinstall cache), skipping npm install"
+      "✅ Cache hit detected (node_modules restored by preinstall), skipping npm install"
     );
     console.log("Saving ~1 minute by skipping dependency installation");
     console.log("Running postinstall for environment setup...");
     execSync("npm run postinstall", { stdio: "inherit" });
   } else {
-    console.log("node_modules not found, running full npm install...");
+    console.log("Cache miss, running full npm install...");
     execSync("SKIP_CUSTOM_INSTALL=1 npm install --ignore-scripts", {
       stdio: "inherit",
       shell: "/bin/bash",
