@@ -432,7 +432,7 @@ export class AgentServer {
       async (req: express.Request, res: express.Response) => {
         try {
           this.logger.info("Reload jobs endpoint called");
-          
+
           if (!this.agentRunner) {
             return res.status(503).json({
               status: "error",

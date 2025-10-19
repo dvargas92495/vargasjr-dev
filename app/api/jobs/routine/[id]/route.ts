@@ -3,7 +3,11 @@ import { RoutineJobsTable } from "@/db/schema";
 import { getDb } from "@/db/connection";
 import { eq } from "drizzle-orm";
 import { EC2 } from "@aws-sdk/client-ec2";
-import { AGENT_SERVER_PORT, AWS_DEFAULT_REGION, DEFAULT_PRODUCTION_AGENT_NAME } from "@/server/constants";
+import {
+  AGENT_SERVER_PORT,
+  AWS_DEFAULT_REGION,
+  DEFAULT_PRODUCTION_AGENT_NAME,
+} from "@/server/constants";
 
 export async function PUT(
   request: Request,
@@ -45,7 +49,7 @@ export async function PUT(
 
     try {
       const ec2 = new EC2({ region: AWS_DEFAULT_REGION });
-      
+
       const instancesResult = await ec2.describeInstances({
         Filters: [
           {
@@ -60,10 +64,10 @@ export async function PUT(
       });
 
       const instance = instancesResult.Reservations?.[0]?.Instances?.[0];
-      
+
       if (instance?.PublicIpAddress) {
         const reloadUrl = `http://${instance.PublicIpAddress}:${AGENT_SERVER_PORT}/api/reload-jobs`;
-        
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
