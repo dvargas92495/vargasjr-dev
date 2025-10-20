@@ -7,6 +7,7 @@ import MercuryForm from "@/components/MercuryForm";
 import SlackForm from "@/components/SlackForm";
 import RoamResearchForm from "@/components/RoamResearchForm";
 import GoogleForm from "@/components/GoogleForm";
+import TwilioForm from "@/components/TwilioForm";
 import DefaultApplicationForm from "@/components/DefaultApplicationForm";
 
 interface ApplicationFormRendererProps {
@@ -31,6 +32,8 @@ export default function ApplicationFormRenderer({
       return <RoamResearchForm />;
     case "GOOGLE":
       return <GoogleForm />;
+    case "TWILIO":
+      return <TwilioForm />;
     case "NOTION":
     case "DEVIN":
     default:
