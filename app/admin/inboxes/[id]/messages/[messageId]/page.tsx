@@ -172,7 +172,7 @@ export default async function InboxMessage({
             {messageResponses.map((response) => (
               <Link
                 key={response.id}
-                href={`/admin/inboxes/${inboxId}/messages/${message.id}/responses/${response.id}`}
+                href={`/admin/messages/${response.id}`}
                 className="block hover:opacity-90 transition-opacity"
               >
                 <div className="bg-gray-800 rounded-lg shadow cursor-pointer hover:bg-gray-750 transition-colors">
