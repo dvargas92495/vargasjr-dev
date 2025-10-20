@@ -9,13 +9,25 @@ import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import MarkAsUnreadButton from "@/components/mark-as-unread-button";
 import MarkAsArchivedButton from "@/components/mark-as-archived-button";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 
 interface EmailMetadata {
   subject?: string;
   messageId?: string;
+}
+
+function formatChannelType(type: string): string {
+  const typeMap: Record<string, string> = {
+    EMAIL: "Email",
+    SMS: "SMS",
+    SLACK: "Slack",
+    CHAT_SESSION: "Chat",
+    FORM: "Form",
+    NONE: "None",
+  };
+  return typeMap[type] || type;
 }
 
 export default async function InboxMessage({
@@ -65,7 +77,14 @@ export default async function InboxMessage({
   );
 
   const messageResponses = await db
-    .select()
+    .select({
+      id: OutboxMessagesTable.id,
+      body: OutboxMessagesTable.body,
+      createdAt: OutboxMessagesTable.createdAt,
+      type: OutboxMessagesTable.type,
+      threadId: OutboxMessagesTable.threadId,
+      parentInboxMessageId: OutboxMessagesTable.parentInboxMessageId,
+    })
     .from(OutboxMessagesTable)
     .where(eq(OutboxMessagesTable.parentInboxMessageId, message.id));
 
@@ -151,38 +170,40 @@ export default async function InboxMessage({
 
           <div className="space-y-4">
             {messageResponses.map((response) => (
-              <details
+              <Link
                 key={response.id}
-                className="bg-gray-800 rounded-lg shadow cursor-pointer group"
+                href={`/admin/messages/${response.id}`}
+                className="block hover:opacity-90 transition-opacity"
               >
-                <summary className="px-6 py-4 flex items-center justify-between hover:bg-gray-700">
-                  <div className="flex items-center space-x-4">
-                    <span className="text-gray-300 text-sm">
-                      {response.createdAt.toLocaleString()}
-                    </span>
+                <div className="bg-gray-800 rounded-lg shadow cursor-pointer hover:bg-gray-750 transition-colors">
+                  <div className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center gap-2">
+                        <PaperAirplaneIcon className="w-5 h-5 text-blue-400" />
+                        <span className="text-xs font-semibold text-blue-400 uppercase">
+                          Outgoing
+                        </span>
+                      </div>
+                      <span className="text-gray-300 text-sm">
+                        {response.createdAt.toLocaleString()}
+                      </span>
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-700 text-gray-200">
+                        {formatChannelType(response.type)}
+                      </span>
+                    </div>
                   </div>
-                  <svg
-                    className="w-5 h-5 text-gray-600 group-open:rotate-180 transition-transform"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </summary>
-
-                <div className="px-6 py-4 border-t border-gray-700">
-                  <div className="text-sm text-gray-300">Response</div>
-                  <div className="mt-2 p-4 bg-gray-700 rounded whitespace-pre-wrap text-white overflow-x-auto w-full">
-                    {response.body.substring(0, 50)}
+                  <div className="px-6 py-4 border-t border-gray-700">
+                    <div className="text-sm text-gray-300 mb-2">
+                      Response Preview
+                    </div>
+                    <div className="p-4 bg-gray-700 rounded whitespace-pre-wrap text-white overflow-hidden text-ellipsis">
+                      {response.body.length > 200
+                        ? `${response.body.substring(0, 200)}...`
+                        : response.body}
+                    </div>
                   </div>
                 </div>
-              </details>
+              </Link>
             ))}
           </div>
         </div>
