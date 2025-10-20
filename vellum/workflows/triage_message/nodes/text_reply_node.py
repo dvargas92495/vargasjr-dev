@@ -1,27 +1,11 @@
-import os
 from uuid import UUID
 from typing import Optional
-from twilio.rest import Client  # type: ignore
 from models.outbox_message import OutboxMessage
 from models.types import InboxType
 from vellum.workflows.nodes import BaseNode
+from services.twilio import send_sms
 from .read_message_node import ReadMessageNode
 from .parse_function_call_node import ParseFunctionCallNode
-
-
-def send_sms(to: str, from_: str, body: str):
-    """
-    Send an SMS message via Twilio.
-    """
-    account_sid = os.environ["TWILIO_ACCOUNT_SID"]
-    auth_token = os.environ["TWILIO_AUTH_TOKEN"]
-    client = Client(account_sid, auth_token)
-    
-    client.messages.create(
-        to=to,
-        from_=from_,
-        body=body
-    )
 
 
 class TextReplyNode(BaseNode):
