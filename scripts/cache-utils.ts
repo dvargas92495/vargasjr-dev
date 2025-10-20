@@ -1,8 +1,4 @@
-import {
-  readFileSync,
-  existsSync,
-  createWriteStream,
-} from "fs";
+import { readFileSync, existsSync, createWriteStream } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
