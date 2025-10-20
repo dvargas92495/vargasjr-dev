@@ -21,6 +21,7 @@ export const AppTypes = [
   "SLACK",
   "ROAM_RESEARCH",
   "GOOGLE",
+  "TWILIO",
 ] as const;
 
 export type AppType = (typeof AppTypes)[number];
