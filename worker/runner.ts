@@ -71,6 +71,7 @@ export class AgentRunner {
     this.agentServer = new AgentServer({
       port: healthPort,
       logger: this.logger,
+      agentRunner: this,
     });
   }
 
@@ -150,6 +151,22 @@ export class AgentRunner {
     } catch (error) {
       this.logger.error(`Failed to load routine jobs: ${error}`);
       return [];
+    }
+  }
+
+  public async reloadRoutineJobs(): Promise<void> {
+    this.logger.info("Reloading routine jobs...");
+    try {
+      const jobs = await this.loadRoutineJobs();
+      this.routineJobs = jobs;
+      this.logger.info(
+        `Successfully reloaded ${jobs.length} scheduled job${
+          jobs.length === 1 ? "" : "s"
+        }`
+      );
+    } catch (error) {
+      this.logger.error(`Failed to reload routine jobs: ${error}`);
+      throw error;
     }
   }
 
