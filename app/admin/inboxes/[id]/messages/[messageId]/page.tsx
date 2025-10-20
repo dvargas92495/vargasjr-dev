@@ -193,7 +193,9 @@ export default async function InboxMessage({
                     </div>
                   </div>
                   <div className="px-6 py-4 border-t border-gray-700">
-                    <div className="text-sm text-gray-300 mb-2">Response Preview</div>
+                    <div className="text-sm text-gray-300 mb-2">
+                      Response Preview
+                    </div>
                     <div className="p-4 bg-gray-700 rounded whitespace-pre-wrap text-white overflow-hidden text-ellipsis">
                       {response.body.length > 200
                         ? `${response.body.substring(0, 200)}...`

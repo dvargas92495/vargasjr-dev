@@ -29,7 +29,7 @@ export default async function OutboxMessagePage({
   const { responseId, messageId, id: inboxId } = await params;
 
   const db = getDb();
-  
+
   const outboxMessages = await db
     .select({
       id: OutboxMessagesTable.id,
