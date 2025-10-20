@@ -32,9 +32,9 @@ class JobOpportunityResponseNode(BaseNode):
                 bcc=self.forwarder_email,
             )
             
-        except Exception:
+        except Exception as e:
             logger.exception("Failed to send job opportunity emails")
-            return self.Outputs(summary="Failed to send job opportunity emails.")
+            return self.Outputs(summary=f"Failed to send job opportunity emails: {str(e)}")
 
         return self.Outputs(
             summary=f"Sent job opportunity response to {self.original_recruiter_email} with BCC to {self.forwarder_email}.",
