@@ -1,7 +1,7 @@
 import os
 from uuid import UUID
 from typing import Optional
-from twilio.rest import Client
+from twilio.rest import Client  # type: ignore
 from models.outbox_message import OutboxMessage
 from models.types import InboxType
 from vellum.workflows.nodes import BaseNode
