@@ -57,8 +57,8 @@ const MessageCard = ({
   };
 
   const getStatusColor = (status: string) => {
-    if (status === "Unread") {
-      return "bg-blue-100 text-blue-800";
+    if (status === "UNREAD") {
+      return "bg-amber-100 text-amber-800";
     } else if (status === "ARCHIVED") {
       return "bg-gray-100 text-gray-800";
     } else {
