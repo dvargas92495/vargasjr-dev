@@ -1,9 +1,4 @@
-import {
-  readFileSync,
-  existsSync,
-  createWriteStream,
-  createReadStream,
-} from "fs";
+import { readFileSync, existsSync, createWriteStream } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
@@ -135,12 +130,12 @@ export async function uploadCacheToS3(cacheKey: string): Promise<boolean> {
     execSync(tarCommand, { stdio: "inherit" });
 
     console.log("Uploading cache to S3...");
-    const fileStream = createReadStream(tempFile);
+    const fileBuffer = readFileSync(tempFile);
 
     const command = new PutObjectCommand({
       Bucket: S3_BUCKET,
       Key: s3Key,
-      Body: fileStream,
+      Body: fileBuffer,
       ContentType: "application/gzip",
     });
 
