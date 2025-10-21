@@ -70,10 +70,9 @@ export default async function InboxMessage({
     .orderBy(desc(InboxMessageOperationsTable.createdAt));
 
   const statuses = Object.fromEntries(
-    messageOperations.map(({ inboxMessageId, operation }) => [
-      inboxMessageId,
-      operation,
-    ])
+    messageOperations.length > 0
+      ? [[messageOperations[0].inboxMessageId, messageOperations[0].operation]]
+      : []
   );
 
   const messageResponses = await db
