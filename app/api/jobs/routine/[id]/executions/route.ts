@@ -107,12 +107,13 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching routine job executions:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorDetails = error instanceof Error && error.stack ? error.stack : undefined;
+    const errorDetails =
+      error instanceof Error && error.stack ? error.stack : undefined;
     return NextResponse.json(
-      { 
+      {
         error: "Failed to fetch executions",
         message: errorMessage,
-        details: errorDetails
+        details: errorDetails,
       },
       { status: 500 }
     );

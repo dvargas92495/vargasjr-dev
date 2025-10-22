@@ -60,8 +60,8 @@ export default function ExecutionHistory({
         const response = await fetch(url.toString());
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData.message 
-            ? `Failed to fetch executions: ${errorData.message}` 
+          const errorMessage = errorData.message
+            ? `Failed to fetch executions: ${errorData.message}`
             : `Failed to fetch executions (${response.status})`;
           throw new Error(errorMessage);
         }
