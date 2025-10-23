@@ -146,7 +146,7 @@ export default async function InboxMessage({
 
         <div className="mb-4">
           <div className="text-sm text-gray-300">Status</div>
-          <div className="text-lg">{statuses[message.id] || "Unread"}</div>
+          <div className="text-lg">{statuses[message.id] || "UNREAD"}</div>
         </div>
 
         {message.externalId && (

@@ -92,7 +92,7 @@ export default async function InboxPage({
                 message.email ||
                 "Unknown",
             }}
-            status={statuses[message.id] || "Unread"}
+            status={statuses[message.id] || "UNREAD"}
             inboxId={id}
           />
         ))}

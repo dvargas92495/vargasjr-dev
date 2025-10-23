@@ -306,7 +306,7 @@ export default async function ContactPage({
                     message.email ||
                     "Unknown",
                 }}
-                status={messageStatuses[message.id] || "Unread"}
+                status={messageStatuses[message.id] || "UNREAD"}
                 inboxId={message.inboxId}
                 inboxName={message.inboxName}
               />

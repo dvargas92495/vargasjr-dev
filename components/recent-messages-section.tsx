@@ -96,7 +96,7 @@ const RecentMessagesSection = ({
                   message.email ||
                   "Unknown",
               }}
-              status={statuses[message.id] || "Unread"}
+              status={statuses[message.id] || "UNREAD"}
               inboxId={message.inboxId}
               inboxName={message.inboxName}
               showCheckbox={true}
