@@ -18,9 +18,13 @@ export class GitHubAppAuth {
   private config: GitHubAppConfig;
 
   constructor() {
+    const rawPrivateKey = process.env.GITHUB_PRIVATE_KEY || "";
+    
+    const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
+    
     this.config = {
       appId: GITHUB_APP_ID,
-      privateKey: process.env.GITHUB_PRIVATE_KEY || "",
+      privateKey,
       installationId: GITHUB_INSTALLATION_ID,
     };
 
