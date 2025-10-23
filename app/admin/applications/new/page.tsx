@@ -8,10 +8,12 @@ import ApplicationFormRenderer from "@/components/ApplicationFormRenderer";
 export default function NewApplicationPage() {
   const router = useRouter();
   const [selectedAppType, setSelectedAppType] = useState<AppType | "">("");
+  const [error, setError] = useState<string>("");
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      setError("");
       const formData = new FormData(e.currentTarget);
       const name = formData.get("name");
       const appType = formData.get("appType");
@@ -39,6 +41,9 @@ export default function NewApplicationPage() {
         if (response.ok) {
           const data = await response.json();
           router.push(`/admin/applications/${data.id}`);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || "Failed to create application");
         }
       }
     },
@@ -48,6 +53,11 @@ export default function NewApplicationPage() {
   return (
     <div className="max-w-md w-full">
       <h2 className="text-xl font-bold mb-4">New Application</h2>
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label htmlFor="name" className="block mb-1">
