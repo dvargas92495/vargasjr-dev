@@ -109,16 +109,6 @@ async function setup(): Promise<void> {
     return;
   }
 
-  const nodeModulesPath = join(process.cwd(), "node_modules");
-  const needsBootstrap = !existsSync(nodeModulesPath);
-
-  if (needsBootstrap) {
-    console.log(
-      "=== Bootstrap: Installing dependencies for first-time setup ==="
-    );
-    execSync("npm install --ignore-scripts", { stdio: "inherit" });
-  }
-
   console.log("\n=== Step 1: Restore cache from S3 ===");
 
   const isAnalyze = process.env.ANALYZE === "true";
@@ -264,13 +254,11 @@ async function setup(): Promise<void> {
   }
 
   console.log("\n=== Step 2: Install dependencies ===");
-  if (cacheHit && !needsBootstrap) {
+  if (cacheHit) {
     console.log(
       "✅ Cache hit detected (node_modules restored), skipping npm install"
     );
     console.log("Saving ~1 minute by skipping dependency installation");
-  } else if (needsBootstrap) {
-    console.log("✅ Dependencies already installed during bootstrap");
   } else {
     console.log("Cache miss, running npm install...");
     execSync("npm install --ignore-scripts", { stdio: "inherit" });
