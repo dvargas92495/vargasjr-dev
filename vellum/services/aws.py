@@ -2,18 +2,18 @@ from datetime import datetime
 import boto3
 import os
 from logging import Logger
-from services import MEMORY_DIR
+from services.constants import MEMORY_DIR
 from email.utils import formataddr
 from typing import Any
 
 
-def _get_region() -> str:
+def get_region() -> str:
     """Get AWS region from environment variables or default to us-east-1."""
     return os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
 
 
 def download_memory(logger: Logger):
-    session = boto3.Session(region_name=_get_region())
+    session = boto3.Session(region_name=get_region())
     s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
     if not MEMORY_DIR.exists():
@@ -42,7 +42,7 @@ def download_memory(logger: Logger):
 
 
 def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None:
-    region = _get_region()
+    region = get_region()
     ses_client = boto3.client("ses", region_name=region)
     if bcc:
         destination: Any = {"ToAddresses": [to], "BccAddresses": [bcc]}
@@ -59,7 +59,7 @@ def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None
 
 
 def list_attachments_since(cutoff_date: datetime) -> list[str]:
-    session = boto3.Session(region_name=_get_region())
+    session = boto3.Session(region_name=get_region())
     s3 = session.client("s3")
 
     # List objects

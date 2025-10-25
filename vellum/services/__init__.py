@@ -11,6 +11,8 @@ from models.inbox import Inbox
 from models.application import Application
 from models.application_workspace import ApplicationWorkspace
 import boto3
+from services.aws import get_region
+from services.constants import MEMORY_DIR
 
 import os
 from sqlalchemy import create_engine
@@ -20,9 +22,6 @@ from models.pkm.sport_game import SportGame
 from models.pkm.sport_team import SportTeam
 from models.pkm.transaction_rule import TransactionRule
 from models.types import InboxType, PersonalTransactionCategory, Sport
-
-
-MEMORY_DIR = Path(__file__).parent.parent.parent.parent / ".memory"
 
 
 def to_dollar_float(value: str) -> float:
@@ -254,8 +253,7 @@ def backup_memory(logger: Logger):
         logger.info("No memory directory found")
         return
 
-    from services.aws import _get_region
-    session = boto3.Session(region_name=_get_region())
+    session = boto3.Session(region_name=get_region())
     s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
 
