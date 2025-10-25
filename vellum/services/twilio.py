@@ -1,5 +1,5 @@
 from typing import Optional
-from twilio.rest import Client  # type: ignore
+from twilio.rest import Client  # type: ignore[import-untyped]
 from services import get_application_by_name
 
 
