@@ -12,7 +12,8 @@ from sqlmodel import or_, select
 from models.pkm.sport_game import SportGame
 from models.pkm.sport_team import SportTeam
 from models.types import USER, Sport, SportBroker
-from services import MEMORY_DIR, backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_espn_team_name, sqlite_session
+from services import backup_memory, fetch_scoreboard_on_date, get_sport_team_by_full_name, normalize_espn_team_name, sqlite_session
+from services.constants import MEMORY_DIR
 from services.aws import send_email
 from services.google_sheets import get_spreadsheets, prepend_rows
 from services import to_dollar_float
