@@ -11,6 +11,7 @@ from models.inbox import Inbox
 from models.application import Application
 from models.application_workspace import ApplicationWorkspace
 import boto3
+from services.aws import _get_region
 
 import os
 from sqlalchemy import create_engine
@@ -254,7 +255,7 @@ def backup_memory(logger: Logger):
         logger.info("No memory directory found")
         return
 
-    session = boto3.Session()
+    session = boto3.Session(region_name=_get_region())
     s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
 
