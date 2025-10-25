@@ -22,6 +22,13 @@ export class GitHubAppAuth {
 
     const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
 
+    console.log("Private key debug info:");
+    console.log(`  Length: ${privateKey.length}`);
+    console.log(`  First 4 chars: ${privateKey.substring(0, 4)}`);
+    console.log(
+      `  Last 4 chars: ${privateKey.substring(privateKey.length - 4)}`
+    );
+
     this.config = {
       appId: GITHUB_APP_ID,
       privateKey,
