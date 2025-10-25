@@ -78,11 +78,13 @@ function writeEnvFile(envVars: Record<string, string>): void {
       line.startsWith(`${key}=`)
     );
 
+    const formattedValue = value.includes("\n") ? `"${value}"` : value;
+
     if (existingLineIndex !== -1) {
-      lines[existingLineIndex] = `${key}=${value}`;
+      lines[existingLineIndex] = `${key}=${formattedValue}`;
       envContent = lines.join("\n");
     } else {
-      const newLine = `${key}=${value}`;
+      const newLine = `${key}=${formattedValue}`;
       if (envContent && !envContent.endsWith("\n")) {
         envContent += "\n";
       }
