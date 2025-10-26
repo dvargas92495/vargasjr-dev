@@ -339,6 +339,33 @@ async function setup(): Promise<void> {
   }
 
   console.log("\n=== Step 3: Post-install setup ===");
+  
+  if (!cacheHit) {
+    console.log("🧹 Cleaning up unnecessary files from node_modules...");
+    const cleanupGlobs = [
+      "node_modules/**/.jsii",
+    ];
+    
+    for (const globPattern of cleanupGlobs) {
+      try {
+        const files = execSync(`find ${globPattern} -type f 2>/dev/null || true`, {
+          encoding: "utf8",
+          cwd: process.cwd(),
+        }).trim();
+        
+        if (files) {
+          const fileList = files.split("\n").filter(f => f.length > 0);
+          console.log(`  Removing ${fileList.length} files matching ${globPattern}`);
+          execSync(`find ${globPattern} -type f -delete 2>/dev/null || true`, {
+            cwd: process.cwd(),
+          });
+        }
+      } catch (error) {
+        console.warn(`  Could not clean up ${globPattern}:`, error);
+      }
+    }
+  }
+  
   const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
   const target = isMainBranch ? "production" : "preview";
 
