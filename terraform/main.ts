@@ -21,6 +21,7 @@ import { LambdaPermission } from "@cdktf/provider-aws/lib/lambda-permission";
 import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
 import { IamInstanceProfile } from "@cdktf/provider-aws/lib/iam-instance-profile";
+import { IamPolicy } from "@cdktf/provider-aws/lib/iam-policy";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
 import { SesActiveReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-active-receipt-rule-set";
@@ -70,6 +71,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     this.createSecurityGroup(commonTags);
     this.createSESResources(commonTags);
     this.createEmailLambdaResources(commonTags);
+    this.createVargasJRAgentRole(commonTags);
     this.createCustomAMI(commonTags);
   }
 
@@ -261,6 +263,74 @@ class VargasJRInfrastructureStack extends TerraformStack {
 
   private getWebhookUrl(): string {
     return "https://www.vargasjr.dev/api/ses/webhook";
+  }
+
+  private createVargasJRAgentRole(tags: Record<string, string>) {
+    const vargasJRAgentRole = new IamRole(this, "VargasJRAgentRole", {
+      name: "vargasjr-agent",
+      assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Action: "sts:AssumeRole",
+            Effect: "Allow",
+            Principal: {
+              AWS: "*", // This will be restricted by external ID or other conditions in practice
+            },
+            Condition: {
+              StringEquals: {
+                "sts:ExternalId": "vargasjr-agent-external-id"
+              }
+            }
+          },
+        ],
+      }),
+      tags,
+    });
+
+    const vargasJRAgentPolicy = new IamPolicy(this, "VargasJRAgentPolicy", {
+      name: "vargasjr-agent-policy",
+      description: "Policy for VargasJR agent with narrow permissions for vellum workflows",
+      policy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Sid: "S3MemoryBucketAccess",
+            Effect: "Allow",
+            Action: [
+              "s3:ListObjectsV2",
+              "s3:GetObject",
+              "s3:PutObject",
+              "s3:DeleteObject"
+            ],
+            Resource: [
+              `arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}`,
+              `arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}/*`
+            ]
+          },
+          {
+            Sid: "SESEmailSending",
+            Effect: "Allow",
+            Action: [
+              "ses:SendEmail",
+              "ses:SendRawEmail"
+            ],
+            Resource: [
+              "arn:aws:ses:*:*:identity/hello@vargasjr.dev",
+              "arn:aws:ses:*:*:identity/vargasjr.dev"
+            ]
+          }
+        ]
+      }),
+      tags,
+    });
+
+    new IamRolePolicyAttachment(this, "VargasJRAgentPolicyAttachment", {
+      role: vargasJRAgentRole.name,
+      policyArn: vargasJRAgentPolicy.arn,
+    });
+
+    return vargasJRAgentRole;
   }
 
   private createCustomAMI(tags: Record<string, string>) {

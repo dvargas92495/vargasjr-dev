@@ -12,8 +12,45 @@ def get_region() -> str:
     return os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
 
 
+def get_aws_session() -> boto3.Session:
+    """Get AWS session using STS assume role for vargasjr-agent."""
+    region = get_region()
+    
+    use_assume_role = os.getenv("AGENT_ENVIRONMENT") == "production" or os.getenv("USE_ASSUME_ROLE") == "true"
+    
+    if not use_assume_role:
+        return boto3.Session(region_name=region)
+    
+    sts_client = boto3.client("sts", region_name=region)
+    
+    caller_identity = sts_client.get_caller_identity()
+    account_id = caller_identity["Account"]
+    
+    role_arn = f"arn:aws:iam::{account_id}:role/vargasjr-agent"
+    external_id = "vargasjr-agent-external-id"
+    
+    try:
+        assumed_role = sts_client.assume_role(
+            RoleArn=role_arn,
+            RoleSessionName="vargasjr-agent-session",
+            ExternalId=external_id,
+            DurationSeconds=3600  # 1 hour
+        )
+        
+        credentials = assumed_role["Credentials"]
+        
+        return boto3.Session(
+            aws_access_key_id=credentials["AccessKeyId"],
+            aws_secret_access_key=credentials["SecretAccessKey"],
+            aws_session_token=credentials["SessionToken"],
+            region_name=region
+        )
+    except Exception as e:
+        raise Exception(f"Failed to assume role {role_arn}: {str(e)}")
+
+
 def download_memory(logger: Logger):
-    session = boto3.Session(region_name=get_region())
+    session = get_aws_session()
     s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
     if not MEMORY_DIR.exists():
@@ -42,8 +79,8 @@ def download_memory(logger: Logger):
 
 
 def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None:
-    region = get_region()
-    ses_client = boto3.client("ses", region_name=region)
+    session = get_aws_session()
+    ses_client = session.client("ses")
     if bcc:
         destination: Any = {"ToAddresses": [to], "BccAddresses": [bcc]}
     else:
@@ -59,7 +96,7 @@ def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None
 
 
 def list_attachments_since(cutoff_date: datetime) -> list[str]:
-    session = boto3.Session(region_name=get_region())
+    session = get_aws_session()
     s3 = session.client("s3")
 
     # List objects
