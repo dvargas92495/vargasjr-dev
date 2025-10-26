@@ -22,6 +22,8 @@ import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 import { IamRolePolicyAttachment } from "@cdktf/provider-aws/lib/iam-role-policy-attachment";
 import { IamInstanceProfile } from "@cdktf/provider-aws/lib/iam-instance-profile";
 import { IamPolicy } from "@cdktf/provider-aws/lib/iam-policy";
+import { IamUser } from "@cdktf/provider-aws/lib/iam-user";
+import { IamUserPolicyAttachment } from "@cdktf/provider-aws/lib/iam-user-policy-attachment";
 import { SesReceiptRule } from "@cdktf/provider-aws/lib/ses-receipt-rule";
 import { SesReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-receipt-rule-set";
 import { SesActiveReceiptRuleSet } from "@cdktf/provider-aws/lib/ses-active-receipt-rule-set";
@@ -71,7 +73,7 @@ class VargasJRInfrastructureStack extends TerraformStack {
     this.createSecurityGroup(commonTags);
     this.createSESResources(commonTags);
     this.createEmailLambdaResources(commonTags);
-    this.createVargasJRAgentRole(commonTags);
+    this.createVargasJRVellumUser(commonTags);
     this.createCustomAMI(commonTags);
   }
 
@@ -265,48 +267,33 @@ class VargasJRInfrastructureStack extends TerraformStack {
     return "https://www.vargasjr.dev/api/ses/webhook";
   }
 
-  private createVargasJRAgentRole(tags: Record<string, string>) {
-    const vargasJRAgentRole = new IamRole(this, "VargasJRAgentRole", {
-      name: "vargasjr-agent",
-      assumeRolePolicy: JSON.stringify({
-        Version: "2012-10-17",
-        Statement: [
-          {
-            Action: "sts:AssumeRole",
-            Effect: "Allow",
-            Principal: {
-              AWS: "*", // This will be restricted by external ID or other conditions in practice
-            },
-            Condition: {
-              StringEquals: {
-                "sts:ExternalId": "vargasjr-agent-external-id"
-              }
-            }
-          },
-        ],
-      }),
+  private createVargasJRVellumUser(tags: Record<string, string>) {
+    const vargasJRVellumUser = new IamUser(this, "VargasJRVellumUser", {
+      name: "vargasjr-vellum",
       tags,
     });
 
-    const vargasJRAgentPolicy = new IamPolicy(this, "VargasJRAgentPolicy", {
-      name: "vargasjr-agent-policy",
-      description: "Policy for VargasJR agent with narrow permissions for vellum workflows",
+    const vargasJRVellumPolicy = new IamPolicy(this, "VargasJRVellumPolicy", {
+      name: "vargasjr-vellum-policy",
+      description: "Policy for VargasJR Vellum workflows with narrow permissions for S3 and SES",
       policy: JSON.stringify({
         Version: "2012-10-17",
         Statement: [
           {
-            Sid: "S3MemoryBucketAccess",
+            Sid: "S3MemoryBucketList",
+            Effect: "Allow",
+            Action: ["s3:ListBucket"],
+            Resource: [`arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}`]
+          },
+          {
+            Sid: "S3MemoryBucketObjects",
             Effect: "Allow",
             Action: [
-              "s3:ListObjectsV2",
               "s3:GetObject",
               "s3:PutObject",
               "s3:DeleteObject"
             ],
-            Resource: [
-              `arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}`,
-              `arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}/*`
-            ]
+            Resource: [`arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}/*`]
           },
           {
             Sid: "SESEmailSending",
@@ -315,22 +302,24 @@ class VargasJRInfrastructureStack extends TerraformStack {
               "ses:SendEmail",
               "ses:SendRawEmail"
             ],
-            Resource: [
-              "arn:aws:ses:*:*:identity/hello@vargasjr.dev",
-              "arn:aws:ses:*:*:identity/vargasjr.dev"
-            ]
+            Resource: "*",
+            Condition: {
+              StringEquals: {
+                "ses:FromAddress": "hello@vargasjr.dev"
+              }
+            }
           }
         ]
       }),
       tags,
     });
 
-    new IamRolePolicyAttachment(this, "VargasJRAgentPolicyAttachment", {
-      role: vargasJRAgentRole.name,
-      policyArn: vargasJRAgentPolicy.arn,
+    new IamUserPolicyAttachment(this, "VargasJRVellumPolicyAttachment", {
+      user: vargasJRVellumUser.name,
+      policyArn: vargasJRVellumPolicy.arn,
     });
 
-    return vargasJRAgentRole;
+    return vargasJRVellumUser;
   }
 
   private createCustomAMI(tags: Record<string, string>) {
