@@ -51,8 +51,7 @@ async function removeFilesByName(
         try {
           await fs.unlink(fullPath);
           removed++;
-        } catch {
-        }
+        } catch {}
       }
     }
   }

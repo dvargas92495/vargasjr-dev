@@ -275,7 +275,8 @@ class VargasJRInfrastructureStack extends TerraformStack {
 
     const vargasJRVellumPolicy = new IamPolicy(this, "VargasJRVellumPolicy", {
       name: "vargasjr-vellum-policy",
-      description: "Policy for VargasJR Vellum workflows with narrow permissions for S3 and SES",
+      description:
+        "Policy for VargasJR Vellum workflows with narrow permissions for S3 and SES",
       policy: JSON.stringify({
         Version: "2012-10-17",
         Statement: [
@@ -283,33 +284,26 @@ class VargasJRInfrastructureStack extends TerraformStack {
             Sid: "S3MemoryBucketList",
             Effect: "Allow",
             Action: ["s3:ListBucket"],
-            Resource: [`arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}`]
+            Resource: [`arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}`],
           },
           {
             Sid: "S3MemoryBucketObjects",
             Effect: "Allow",
-            Action: [
-              "s3:GetObject",
-              "s3:PutObject",
-              "s3:DeleteObject"
-            ],
-            Resource: [`arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}/*`]
+            Action: ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+            Resource: [`arn:aws:s3:::${AWS_S3_BUCKETS.MEMORY}/*`],
           },
           {
             Sid: "SESEmailSending",
             Effect: "Allow",
-            Action: [
-              "ses:SendEmail",
-              "ses:SendRawEmail"
-            ],
+            Action: ["ses:SendEmail", "ses:SendRawEmail"],
             Resource: "*",
             Condition: {
               StringEquals: {
-                "ses:FromAddress": "hello@vargasjr.dev"
-              }
-            }
-          }
-        ]
+                "ses:FromAddress": "hello@vargasjr.dev",
+              },
+            },
+          },
+        ],
       }),
       tags,
     });
