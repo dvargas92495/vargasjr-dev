@@ -229,16 +229,27 @@ async function setup(): Promise<void> {
           });
         }
 
-        const cdktfProviderAwsPath = subItemSizes.find((item) =>
-          item.path.endsWith("@cdktf/provider-aws")
-        );
-        if (cdktfProviderAwsPath) {
-          console.log(
-            `\n   Analyzing @cdktf/provider-aws subdirectories (${cdktfProviderAwsPath.sizeFormatted}):`
-          );
-          try {
+        try {
+          const providerAwsPath = execSync(
+            `find "${dir.path}" -type d -path "*/@cdktf/provider-aws" 2>/dev/null | head -1`,
+            {
+              encoding: "utf8",
+            }
+          ).trim();
+
+          if (providerAwsPath && existsSync(providerAwsPath)) {
+            const providerAwsSize = execSync(`du -sh "${providerAwsPath}"`, {
+              encoding: "utf8",
+            })
+              .trim()
+              .split("\t")[0];
+
+            console.log(
+              `\n   Analyzing @cdktf/provider-aws subdirectories (${providerAwsSize}):`
+            );
+
             const providerAwsSubItems = execSync(
-              `find "${cdktfProviderAwsPath.path}" -maxdepth 1 -mindepth 1`,
+              `find "${providerAwsPath}" -maxdepth 1 -mindepth 1`,
               {
                 encoding: "utf8",
               }
@@ -280,15 +291,17 @@ async function setup(): Promise<void> {
               console.log(`   Top 5 items within @cdktf/provider-aws:`);
               top5ProviderAwsSubItems.forEach((subItem, subIndex) => {
                 console.log(
-                  `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${subItem.path}`
+                  `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${
+                    subItem.path
+                  }`
                 );
               });
             }
-          } catch (error) {
-            console.warn(
-              `   Could not analyze @cdktf/provider-aws subdirectories`
-            );
           }
+        } catch (error) {
+          console.warn(
+            `   Could not analyze @cdktf/provider-aws subdirectories`
+          );
         }
       } catch (error) {
         console.warn(`   Could not analyze subdirectories of: ${dir.path}`);
