@@ -1,9 +1,64 @@
 #!/usr/bin/env tsx
 
 import { execSync } from "child_process";
-import { existsSync, writeFileSync, readFileSync, statSync } from "fs";
-import { join } from "path";
+import {
+  existsSync,
+  writeFileSync,
+  readFileSync,
+  statSync,
+  promises as fs,
+} from "fs";
+import { join, resolve, basename } from "path";
 import { homedir } from "os";
+
+type CleanupPattern = { baseDir: string; fileName: string };
+
+function parseCleanupPattern(pattern: string): CleanupPattern | null {
+  const parts = pattern.split("/**/");
+  if (parts.length !== 2) return null;
+  const [base, fileName] = parts;
+  return { baseDir: resolve(process.cwd(), base), fileName };
+}
+
+async function removeFilesByName(
+  baseDir: string,
+  targetFileName: string
+): Promise<number> {
+  let removed = 0;
+  const stack: string[] = [baseDir];
+
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    let entries;
+
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (entry.isSymbolicLink()) continue;
+
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name === targetFileName) {
+        try {
+          await fs.unlink(fullPath);
+          removed++;
+        } catch {
+        }
+      }
+    }
+  }
+
+  return removed;
+}
 
 async function fetchVercelEnvVars(
   target: "production" | "preview"
@@ -345,23 +400,16 @@ async function setup(): Promise<void> {
     const cleanupGlobs = ["node_modules/**/.jsii"];
 
     for (const globPattern of cleanupGlobs) {
-      try {
-        const files = execSync(
-          `find ${globPattern} -type f 2>/dev/null || true`,
-          {
-            encoding: "utf8",
-            cwd: process.cwd(),
-          }
-        ).trim();
+      const parsed = parseCleanupPattern(globPattern);
+      if (!parsed) {
+        console.warn(`  Could not parse pattern: ${globPattern}`);
+        continue;
+      }
 
-        if (files) {
-          const fileList = files.split("\n").filter((f) => f.length > 0);
-          console.log(
-            `  Removing ${fileList.length} files matching ${globPattern}`
-          );
-          execSync(`find ${globPattern} -type f -delete 2>/dev/null || true`, {
-            cwd: process.cwd(),
-          });
+      try {
+        const count = await removeFilesByName(parsed.baseDir, parsed.fileName);
+        if (count > 0) {
+          console.log(`  Removed ${count} files matching ${globPattern}`);
         }
       } catch (error) {
         console.warn(`  Could not clean up ${globPattern}:`, error);
