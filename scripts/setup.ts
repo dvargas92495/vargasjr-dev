@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { execSync } from "child_process";
-import { existsSync, writeFileSync, readFileSync } from "fs";
+import { existsSync, writeFileSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 
@@ -229,79 +229,76 @@ async function setup(): Promise<void> {
           });
         }
 
-        try {
-          const providerAwsPath = execSync(
-            `find "${dir.path}" -type d -path "*/@cdktf/provider-aws" 2>/dev/null | head -1`,
-            {
-              encoding: "utf8",
-            }
-          ).trim();
-
-          if (providerAwsPath && existsSync(providerAwsPath)) {
-            const providerAwsSize = execSync(`du -sh "${providerAwsPath}"`, {
-              encoding: "utf8",
-            })
-              .trim()
-              .split("\t")[0];
-
-            console.log(
-              `\n   Analyzing @cdktf/provider-aws subdirectories (${providerAwsSize}):`
-            );
-
-            const providerAwsSubItems = execSync(
-              `find "${providerAwsPath}" -maxdepth 1 -mindepth 1`,
-              {
-                encoding: "utf8",
-              }
-            )
-              .trim()
-              .split("\n")
-              .filter((item) => item.length > 0);
-
-            const providerAwsSubItemSizes: {
-              path: string;
-              size: number;
-              sizeFormatted: string;
-            }[] = [];
-
-            for (const item of providerAwsSubItems) {
+        if (index === 0 && top5SubItems.length > 0) {
+          try {
+            const largestSubdir = top5SubItems.find((item) => {
               try {
-                const sizeOutput = execSync(`du -sb "${item}"`, {
-                  encoding: "utf8",
-                }).trim();
-                const size = parseInt(sizeOutput.split("\t")[0], 10);
-                const sizeFormatted = execSync(`du -sh "${item}"`, {
-                  encoding: "utf8",
-                })
-                  .trim()
-                  .split("\t")[0];
-                providerAwsSubItemSizes.push({
-                  path: item,
-                  size,
-                  sizeFormatted,
-                });
-              } catch (error) {}
-            }
-
-            const top5ProviderAwsSubItems = providerAwsSubItemSizes
-              .sort((a, b) => b.size - a.size)
-              .slice(0, 5);
-
-            if (top5ProviderAwsSubItems.length > 0) {
-              console.log(`   Top 5 items within @cdktf/provider-aws:`);
-              top5ProviderAwsSubItems.forEach((subItem, subIndex) => {
-                console.log(
-                  `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${
-                    subItem.path
-                  }`
+                return (
+                  existsSync(item.path) && statSync(item.path).isDirectory()
                 );
-              });
+              } catch {
+                return false;
+              }
+            });
+
+            if (largestSubdir) {
+              console.log(
+                `\n   Deep dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
+              );
+
+              const deepDiveSubItems = execSync(
+                `find "${largestSubdir.path}" -maxdepth 1 -mindepth 1`,
+                {
+                  encoding: "utf8",
+                }
+              )
+                .trim()
+                .split("\n")
+                .filter((item) => item.length > 0);
+
+              const deepDiveSubItemSizes: {
+                path: string;
+                size: number;
+                sizeFormatted: string;
+              }[] = [];
+
+              for (const item of deepDiveSubItems) {
+                try {
+                  const sizeOutput = execSync(`du -sb "${item}"`, {
+                    encoding: "utf8",
+                  }).trim();
+                  const size = parseInt(sizeOutput.split("\t")[0], 10);
+                  const sizeFormatted = execSync(`du -sh "${item}"`, {
+                    encoding: "utf8",
+                  })
+                    .trim()
+                    .split("\t")[0];
+                  deepDiveSubItemSizes.push({
+                    path: item,
+                    size,
+                    sizeFormatted,
+                  });
+                } catch (error) {}
+              }
+
+              const top5DeepDiveItems = deepDiveSubItemSizes
+                .sort((a, b) => b.size - a.size)
+                .slice(0, 5);
+
+              if (top5DeepDiveItems.length > 0) {
+                console.log(`   Top 5 items within largest subdirectory:`);
+                top5DeepDiveItems.forEach((subItem, subIndex) => {
+                  console.log(
+                    `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${
+                      subItem.path
+                    }`
+                  );
+                });
+              }
             }
+          } catch (error) {
+            console.warn(`   Could not analyze largest subdirectory`);
           }
-        } catch (error) {
-          console.warn(
-            `   Could not analyze @cdktf/provider-aws subdirectories`
-          );
         }
       } catch (error) {
         console.warn(`   Could not analyze subdirectories of: ${dir.path}`);
