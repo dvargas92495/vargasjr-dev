@@ -12,8 +12,14 @@ def get_region() -> str:
     return os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1"
 
 
+def get_aws_session() -> boto3.Session:
+    """Get AWS session for vargasjr-vellum user."""
+    region = get_region()
+    return boto3.Session(region_name=region)
+
+
 def download_memory(logger: Logger):
-    session = boto3.Session(region_name=get_region())
+    session = get_aws_session()
     s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
     if not MEMORY_DIR.exists():
@@ -42,8 +48,8 @@ def download_memory(logger: Logger):
 
 
 def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None:
-    region = get_region()
-    ses_client = boto3.client("ses", region_name=region)
+    session = get_aws_session()
+    ses_client = session.client("ses")
     if bcc:
         destination: Any = {"ToAddresses": [to], "BccAddresses": [bcc]}
     else:
@@ -59,7 +65,7 @@ def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None
 
 
 def list_attachments_since(cutoff_date: datetime) -> list[str]:
-    session = boto3.Session(region_name=get_region())
+    session = get_aws_session()
     s3 = session.client("s3")
 
     # List objects

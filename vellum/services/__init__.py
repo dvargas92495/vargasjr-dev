@@ -11,7 +11,7 @@ from models.inbox import Inbox
 from models.application import Application
 from models.application_workspace import ApplicationWorkspace
 import boto3
-from services.aws import get_region
+from services.aws import get_region, get_aws_session
 from services.constants import MEMORY_DIR
 
 import os
@@ -253,7 +253,7 @@ def backup_memory(logger: Logger):
         logger.info("No memory directory found")
         return
 
-    session = boto3.Session(region_name=get_region())
+    session = get_aws_session()
     s3_client = session.client("s3")
     bucket_name = "vargas-jr-memory"
 
