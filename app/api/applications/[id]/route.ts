@@ -74,7 +74,8 @@ export async function PUT(
         return NextResponse.json(
           {
             error: "Invalid Twilio Account SID",
-            details: "Twilio Account SID must start with 'AC' (uppercase) followed by 32 hexadecimal characters",
+            details:
+              "Twilio Account SID must start with 'AC' (uppercase) followed by 32 hexadecimal characters",
           },
           { status: 400 }
         );
