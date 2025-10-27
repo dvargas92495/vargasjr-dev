@@ -7,10 +7,21 @@ import { AppTypes } from "@/db/constants";
 const applicationSchema = z.object({
   name: z.string(),
   appType: z.enum(AppTypes),
-  clientId: z.string().optional(),
-  clientSecret: z.string().optional(),
+  clientId: z.string().trim().optional(),
+  clientSecret: z.string().trim().optional(),
   accessToken: z.string().optional(),
   refreshToken: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.appType === "TWILIO" && data.clientId) {
+    const twilioAccountSidRegex = /^AC[0-9a-fA-F]{32}$/;
+    if (!twilioAccountSidRegex.test(data.clientId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Twilio Account SID must start with 'AC' (uppercase) followed by 32 hexadecimal characters",
+        path: ["clientId"],
+      });
+    }
+  }
 });
 
 async function createApplicationHandler(body: unknown) {
