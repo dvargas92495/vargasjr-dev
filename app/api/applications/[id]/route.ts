@@ -6,8 +6,8 @@ import { z, ZodError } from "zod";
 
 const updateApplicationSchema = z.object({
   name: z.string().optional(),
-  clientId: z.string().trim().optional(),
-  clientSecret: z.string().trim().optional(),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(),
 });
 
 export async function GET(
@@ -66,20 +66,6 @@ export async function PUT(
         { error: "Application not found" },
         { status: 404 }
       );
-    }
-
-    if (application.appType === "TWILIO" && updateData.clientId) {
-      const twilioAccountSidRegex = /^AC[0-9a-fA-F]{32}$/;
-      if (!twilioAccountSidRegex.test(updateData.clientId)) {
-        return NextResponse.json(
-          {
-            error: "Invalid Twilio Account SID",
-            details:
-              "Twilio Account SID must start with 'AC' (uppercase) followed by 32 hexadecimal characters",
-          },
-          { status: 400 }
-        );
-      }
     }
 
     await db

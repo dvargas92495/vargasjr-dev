@@ -20,10 +20,7 @@ def send_sms(to: str, from_: str, body: str) -> None:
     if not application.client_id or not application.client_secret:
         raise ValueError("Twilio credentials not configured in database")
     
-    account_sid = application.client_id.strip()
-    if account_sid[:2].lower() == "ac":
-        account_sid = "AC" + account_sid[2:]
-    
+    account_sid = application.client_id.strip().upper()
     auth_token = application.client_secret.strip()
     
     client = Client(account_sid, auth_token)
