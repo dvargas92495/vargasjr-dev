@@ -1,9 +1,63 @@
 #!/usr/bin/env tsx
 
 import { execSync } from "child_process";
-import { existsSync, writeFileSync, readFileSync, statSync } from "fs";
-import { join } from "path";
+import {
+  existsSync,
+  writeFileSync,
+  readFileSync,
+  statSync,
+  promises as fs,
+} from "fs";
+import { join, resolve, basename } from "path";
 import { homedir } from "os";
+
+type CleanupPattern = { baseDir: string; fileName: string };
+
+function parseCleanupPattern(pattern: string): CleanupPattern | null {
+  const parts = pattern.split("/**/");
+  if (parts.length !== 2) return null;
+  const [base, fileName] = parts;
+  return { baseDir: resolve(process.cwd(), base), fileName };
+}
+
+async function removeFilesByName(
+  baseDir: string,
+  targetFileName: string
+): Promise<number> {
+  let removed = 0;
+  const stack: string[] = [baseDir];
+
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    let entries;
+
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = join(dir, entry.name);
+
+      if (entry.isSymbolicLink()) continue;
+
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name === targetFileName) {
+        try {
+          await fs.unlink(fullPath);
+          removed++;
+        } catch {}
+      }
+    }
+  }
+
+  return removed;
+}
 
 async function fetchVercelEnvVars(
   target: "production" | "preview"
@@ -339,6 +393,29 @@ async function setup(): Promise<void> {
   }
 
   console.log("\n=== Step 3: Post-install setup ===");
+
+  if (!cacheHit) {
+    console.log("🧹 Cleaning up unnecessary files from node_modules...");
+    const cleanupGlobs = ["node_modules/**/.jsii"];
+
+    for (const globPattern of cleanupGlobs) {
+      const parsed = parseCleanupPattern(globPattern);
+      if (!parsed) {
+        console.warn(`  Could not parse pattern: ${globPattern}`);
+        continue;
+      }
+
+      try {
+        const count = await removeFilesByName(parsed.baseDir, parsed.fileName);
+        if (count > 0) {
+          console.log(`  Removed ${count} files matching ${globPattern}`);
+        }
+      } catch (error) {
+        console.warn(`  Could not clean up ${globPattern}:`, error);
+      }
+    }
+  }
+
   const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
   const target = isMainBranch ? "production" : "preview";
 
