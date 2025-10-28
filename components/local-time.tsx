@@ -21,7 +21,11 @@ export default function LocalTime({ value, options, className }: Props) {
   );
 
   return (
-    <time dateTime={date.toISOString()} className={className} suppressHydrationWarning>
+    <time
+      dateTime={date.toISOString()}
+      className={className}
+      suppressHydrationWarning
+    >
       {text}
     </time>
   );

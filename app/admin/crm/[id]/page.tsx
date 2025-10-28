@@ -278,7 +278,13 @@ export default async function ContactPage({
                 Client Since
               </label>
               <p className="mt-1 text-sm text-gray-900">
-                {clientSince && <LocalTime value={clientSince} options={{ dateStyle: "medium" }} />} ({clientDurationText})
+                {clientSince && (
+                  <LocalTime
+                    value={clientSince}
+                    options={{ dateStyle: "medium" }}
+                  />
+                )}{" "}
+                ({clientDurationText})
               </p>
             </div>
           )}
