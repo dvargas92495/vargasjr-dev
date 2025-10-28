@@ -110,8 +110,12 @@ const MessageCard = ({
                 {status}
               </span>
               <p className="text-xs text-gray-500">
-                {(message.latestOperationAt || message.createdAt).toLocaleDateString()}{" "}
-                {(message.latestOperationAt || message.createdAt).toLocaleTimeString([], {
+                {(
+                  message.latestOperationAt || message.createdAt
+                ).toLocaleDateString()}{" "}
+                {(
+                  message.latestOperationAt || message.createdAt
+                ).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
