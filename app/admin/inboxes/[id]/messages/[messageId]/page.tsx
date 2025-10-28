@@ -12,6 +12,7 @@ import MarkAsArchivedButton from "@/components/mark-as-archived-button";
 import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
+import LocalTime from "@/components/local-time";
 
 interface EmailMetadata {
   subject?: string;
@@ -141,7 +142,9 @@ export default async function InboxMessage({
 
         <div className="mb-4">
           <div className="text-sm text-gray-300">Created At</div>
-          <div className="text-lg">{message.createdAt.toLocaleString()}</div>
+          <div className="text-lg">
+            <LocalTime value={message.createdAt} />
+          </div>
         </div>
 
         <div className="mb-4">
@@ -184,7 +187,7 @@ export default async function InboxMessage({
                         </span>
                       </div>
                       <span className="text-gray-300 text-sm">
-                        {response.createdAt.toLocaleString()}
+                        <LocalTime value={response.createdAt} />
                       </span>
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-700 text-gray-200">
                         {formatChannelType(response.type)}
@@ -238,7 +241,7 @@ export default async function InboxMessage({
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {operation.createdAt.toLocaleString()}
+                        <LocalTime value={operation.createdAt} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {operation.executionId ? (
