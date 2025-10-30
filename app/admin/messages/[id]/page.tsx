@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
+import LocalTime from "@/components/local-time";
 
 function formatChannelType(type: string): string {
   const typeMap: Record<string, string> = {
@@ -100,7 +101,7 @@ export default async function OutboxMessagePage({
         <div className="mb-4">
           <div className="text-sm text-gray-300">Sent At</div>
           <div className="text-lg">
-            {outboxMessage.createdAt.toLocaleString()}
+            <LocalTime value={outboxMessage.createdAt} />
           </div>
         </div>
 

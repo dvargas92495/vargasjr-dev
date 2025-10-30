@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import PaginationControls from "@/components/pagination-controls";
+import LocalTime from "@/components/local-time";
 
 interface RoutineJobExecution {
   id: string;
@@ -159,7 +160,7 @@ export default function ExecutionHistory({
               {executions.map((execution) => (
                 <tr key={execution.id} className="border-b hover:bg-gray-50">
                   <td className="py-2 px-4 text-sm text-gray-900">
-                    {new Date(execution.createdAt).toLocaleString()}
+                    <LocalTime value={execution.createdAt} />
                   </td>
                   <td className="py-2 px-4">
                     <a

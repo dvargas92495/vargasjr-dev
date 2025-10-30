@@ -16,6 +16,7 @@ import PaginationControls from "@/components/pagination-controls";
 import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
+import LocalTime from "@/components/local-time";
 
 dayjs.extend(relativeTime);
 
@@ -254,7 +255,7 @@ export default async function ContactPage({
               Created At
             </label>
             <p className="mt-1 text-sm text-gray-900">
-              {contactData.createdAt.toLocaleString()}
+              <LocalTime value={contactData.createdAt} />
             </p>
           </div>
           <div>
@@ -277,7 +278,13 @@ export default async function ContactPage({
                 Client Since
               </label>
               <p className="mt-1 text-sm text-gray-900">
-                {clientSince?.toLocaleDateString()} ({clientDurationText})
+                {clientSince && (
+                  <LocalTime
+                    value={clientSince}
+                    options={{ dateStyle: "medium" }}
+                  />
+                )}{" "}
+                ({clientDurationText})
               </p>
             </div>
           )}
