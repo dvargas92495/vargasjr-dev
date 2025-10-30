@@ -4,7 +4,7 @@ import {
   InboxesTable,
   ContactsTable,
 } from "@/db/schema";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, max } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -30,19 +30,38 @@ export default async function InboxPage({
     notFound();
   }
 
+  const latestOperations = db
+    .select({
+      inboxMessageId: InboxMessageOperationsTable.inboxMessageId,
+      latestOperationTime: max(InboxMessageOperationsTable.createdAt).as(
+        "latest_operation_time"
+      ),
+    })
+    .from(InboxMessageOperationsTable)
+    .groupBy(InboxMessageOperationsTable.inboxMessageId)
+    .as("latest_operations");
+
   const messages = await db
-    .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
+    .selectDistinctOn([InboxMessagesTable.id], {
       id: InboxMessagesTable.id,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
       email: ContactsTable.email,
       createdAt: InboxMessagesTable.createdAt,
       body: InboxMessagesTable.body,
+      latestOperationTime: latestOperations.latestOperationTime,
     })
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
-    .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
+    .orderBy(
+      desc(latestOperations.latestOperationTime),
+      InboxMessagesTable.id
+    )
     .limit(25);
 
   const messageOperations = await db
@@ -55,11 +74,26 @@ export default async function InboxPage({
       )
     );
 
+  const operationsByMessage = messageOperations.reduce(
+    (acc, op) => {
+      if (!acc[op.inboxMessageId]) {
+        acc[op.inboxMessageId] = [];
+      }
+      acc[op.inboxMessageId].push(op);
+      return acc;
+    },
+    {} as Record<string, typeof messageOperations>
+  );
+
   const statuses = Object.fromEntries(
-    messageOperations.map(({ inboxMessageId, operation }) => [
-      inboxMessageId,
-      operation,
-    ])
+    messages.map((message) => {
+      const ops = operationsByMessage[message.id] || [];
+      const latestOp = ops.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+      return [message.id, latestOp?.operation || "UNREAD"];
+    })
   );
 
   return (
