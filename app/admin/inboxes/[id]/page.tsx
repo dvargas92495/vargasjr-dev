@@ -58,10 +58,7 @@ export default async function InboxPage({
       eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
     )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
-    .orderBy(
-      desc(latestOperations.latestOperationTime),
-      InboxMessagesTable.id
-    )
+    .orderBy(desc(latestOperations.latestOperationTime), InboxMessagesTable.id)
     .limit(25);
 
   const messageOperations = await db
@@ -74,16 +71,13 @@ export default async function InboxPage({
       )
     );
 
-  const operationsByMessage = messageOperations.reduce(
-    (acc, op) => {
-      if (!acc[op.inboxMessageId]) {
-        acc[op.inboxMessageId] = [];
-      }
-      acc[op.inboxMessageId].push(op);
-      return acc;
-    },
-    {} as Record<string, typeof messageOperations>
-  );
+  const operationsByMessage = messageOperations.reduce((acc, op) => {
+    if (!acc[op.inboxMessageId]) {
+      acc[op.inboxMessageId] = [];
+    }
+    acc[op.inboxMessageId].push(op);
+    return acc;
+  }, {} as Record<string, typeof messageOperations>);
 
   const statuses = Object.fromEntries(
     messages.map((message) => {
