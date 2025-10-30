@@ -11,6 +11,7 @@ interface RecentMessage {
   fullName: string | null;
   email: string | null;
   createdAt: Date;
+  latestOperationAt: Date | null;
   body: string;
   inboxId: string;
   inboxName: string | null;

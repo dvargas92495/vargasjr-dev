@@ -26,6 +26,7 @@ export default async function InboxesPage({
     fullName: string | null;
     email: string | null;
     createdAt: Date;
+    latestOperationAt: Date | null;
     body: string;
     inboxId: string;
     inboxName: string | null;
@@ -97,12 +98,13 @@ export default async function InboxesPage({
     totalPages = Math.ceil(totalMessages / pageSize);
 
     const allRecentMessages = await db
-      .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
+      .selectDistinctOn([InboxMessagesTable.id], {
         id: InboxMessagesTable.id,
         displayName: ContactsTable.slackDisplayName,
         fullName: ContactsTable.fullName,
         email: ContactsTable.email,
         createdAt: InboxMessagesTable.createdAt,
+        latestOperationAt: latestOperations.createdAt,
         body: InboxMessagesTable.body,
         inboxId: InboxMessagesTable.inboxId,
         inboxName: InboxesTable.displayLabel,
@@ -124,8 +126,13 @@ export default async function InboxesPage({
           ne(latestOperations.operation, "ARCHIVED")
         )
       )
-      .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
-      .limit(pageSize * 2)
+      .orderBy(
+        InboxMessagesTable.id,
+        desc(
+          sql`COALESCE(${latestOperations.createdAt}, ${InboxMessagesTable.createdAt})`
+        )
+      )
+      .limit(pageSize)
       .offset(offset);
 
     const messageOperations = await db
@@ -138,7 +145,7 @@ export default async function InboxesPage({
         )
       );
 
-    recentMessages = allRecentMessages.slice(0, pageSize);
+    recentMessages = allRecentMessages;
 
     statuses = Object.fromEntries(
       messageOperations.map(({ inboxMessageId, operation }) => [
