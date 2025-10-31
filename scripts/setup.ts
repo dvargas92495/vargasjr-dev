@@ -42,16 +42,20 @@ async function removeFilesByName(
 
       if (entry.isSymbolicLink()) continue;
 
-      if (entry.isDirectory()) {
-        stack.push(fullPath);
+      if (entry.name === targetFileName) {
+        try {
+          if (entry.isDirectory()) {
+            await fs.rm(fullPath, { recursive: true, force: true });
+          } else {
+            await fs.unlink(fullPath);
+          }
+          removed++;
+        } catch {}
         continue;
       }
 
-      if (entry.isFile() && entry.name === targetFileName) {
-        try {
-          await fs.unlink(fullPath);
-          removed++;
-        } catch {}
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
       }
     }
   }
@@ -392,29 +396,30 @@ async function setup(): Promise<void> {
     execSync("npm install --ignore-scripts", { stdio: "inherit" });
   }
 
-  console.log("\n=== Step 3: Post-install setup ===");
+  console.log("\n=== Step 3: Post-install cleanup ===");
+  console.log("🧹 Cleaning up unnecessary files from node_modules...");
+  const cleanupGlobs = ["node_modules/**/.jsii"];
 
-  if (!cacheHit) {
-    console.log("🧹 Cleaning up unnecessary files from node_modules...");
-    const cleanupGlobs = ["node_modules/**/.jsii"];
+  for (const globPattern of cleanupGlobs) {
+    const parsed = parseCleanupPattern(globPattern);
+    if (!parsed) {
+      console.warn(`  Could not parse pattern: ${globPattern}`);
+      continue;
+    }
 
-    for (const globPattern of cleanupGlobs) {
-      const parsed = parseCleanupPattern(globPattern);
-      if (!parsed) {
-        console.warn(`  Could not parse pattern: ${globPattern}`);
-        continue;
+    try {
+      const count = await removeFilesByName(parsed.baseDir, parsed.fileName);
+      if (count > 0) {
+        console.log(
+          `  Removed ${count} files/directories matching ${globPattern}`
+        );
       }
-
-      try {
-        const count = await removeFilesByName(parsed.baseDir, parsed.fileName);
-        if (count > 0) {
-          console.log(`  Removed ${count} files matching ${globPattern}`);
-        }
-      } catch (error) {
-        console.warn(`  Could not clean up ${globPattern}:`, error);
-      }
+    } catch (error) {
+      console.warn(`  Could not clean up ${globPattern}:`, error);
     }
   }
+
+  console.log("\n=== Step 4: Environment setup ===");
 
   const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
   const target = isMainBranch ? "production" : "preview";
@@ -435,13 +440,23 @@ async function setup(): Promise<void> {
     });
   }
 
-  if (!cacheHit) {
-    console.log("\n=== Step 4: Save cache to S3 ===");
+  const isMainBranchForCache = process.env.GITHUB_REF === "refs/heads/main";
+  const isLintJob = process.env.GITHUB_JOB === "lint";
+  const shouldSaveCache = !cacheHit && isMainBranchForCache && isLintJob;
+
+  if (shouldSaveCache) {
+    console.log("\n=== Step 5: Save cache to S3 ===");
+    console.log(`Saving cache (main branch, lint job, cache miss)`);
     await uploadCacheToS3(fullCacheKey);
   } else {
-    console.log(
-      `\nSkipping cache save (successful cache hit: ${fullCacheKey})`
-    );
+    console.log("\n=== Step 5: Cache save skipped ===");
+    if (cacheHit) {
+      console.log(`Reason: Cache hit (${fullCacheKey})`);
+    } else if (!isMainBranchForCache) {
+      console.log(`Reason: Not on main branch (${process.env.GITHUB_REF})`);
+    } else if (!isLintJob) {
+      console.log(`Reason: Not lint job (${process.env.GITHUB_JOB})`);
+    }
   }
 
   const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
