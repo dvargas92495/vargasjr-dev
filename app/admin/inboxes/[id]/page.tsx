@@ -4,7 +4,7 @@ import {
   InboxesTable,
   ContactsTable,
 } from "@/db/schema";
-import { desc, eq, inArray, max } from "drizzle-orm";
+import { desc, eq, inArray, max, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db/connection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -42,7 +42,7 @@ export default async function InboxPage({
     .as("latest_operations");
 
   const messages = await db
-    .selectDistinctOn([InboxMessagesTable.id], {
+    .select({
       id: InboxMessagesTable.id,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
@@ -58,7 +58,13 @@ export default async function InboxPage({
       eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
     )
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
-    .orderBy(desc(latestOperations.latestOperationTime), InboxMessagesTable.id)
+    .orderBy(
+      desc(
+        sql`coalesce(${latestOperations.latestOperationTime}, ${InboxMessagesTable.createdAt})`
+      ),
+      desc(InboxMessagesTable.createdAt),
+      InboxMessagesTable.id
+    )
     .limit(25);
 
   const messageOperations = await db
