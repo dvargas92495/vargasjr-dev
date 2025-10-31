@@ -1,21 +1,5 @@
 # Contributing to Vargas JR
 
-## Version Management
-
-### Vellum Directory Changes
-
-Always bump the patch version in `vellum/pyproject.toml` whenever making changes in the `/vellum` directory. This ensures proper versioning for agent releases.
-
-Example:
-
-```toml
-# Before changes
-version = "0.0.63"
-
-# After changes
-version = "0.0.64"
-```
-
 ## Style Guide
 
 ### Python Code Style

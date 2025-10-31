@@ -354,6 +354,12 @@ def main():
                             print(f"  • {fm['output_name']} ({fm['type']}):")
                             print(f"      Expected: {fm['expected']}")
                             print(f"      Got:      {fm['actual']}")
+                    
+                    if not test_result.get('success') and not test_result.get('workflow_error') and not test_result.get('failed_metrics'):
+                        workflow_result = test_result.get('workflow_result', {})
+                        if workflow_result and not workflow_result.get('error'):
+                            print(f"\n⚠️  Test failed with no metrics matched")
+                            print(f"  Available outputs: {list(workflow_result.keys())}")
             
             total_score += result['score']
         
@@ -415,6 +421,12 @@ def main():
                         print(f"  • {fm['output_name']} ({fm['type']}):")
                         print(f"      Expected: {fm['expected']}")
                         print(f"      Got:      {fm['actual']}")
+                
+                if not test_result.get('success') and not test_result.get('workflow_error') and not test_result.get('failed_metrics'):
+                    workflow_result = test_result.get('workflow_result', {})
+                    if workflow_result and not workflow_result.get('error'):
+                        print(f"\n⚠️  Test failed with no metrics matched")
+                        print(f"  Available outputs: {list(workflow_result.keys())}")
         
         print("=" * 50)
         
