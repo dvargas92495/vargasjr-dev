@@ -410,7 +410,9 @@ async function setup(): Promise<void> {
     try {
       const count = await removeFilesByName(parsed.baseDir, parsed.fileName);
       if (count > 0) {
-        console.log(`  Removed ${count} files/directories matching ${globPattern}`);
+        console.log(
+          `  Removed ${count} files/directories matching ${globPattern}`
+        );
       }
     } catch (error) {
       console.warn(`  Could not clean up ${globPattern}:`, error);
