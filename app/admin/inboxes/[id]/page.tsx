@@ -11,6 +11,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
 import DeleteInboxButton from "@/components/delete-inbox-button";
+import { OWN_EMAILS } from "@/app/lib/constants";
 
 // params will contain the dynamic [id] value
 export default async function InboxPage({
@@ -41,10 +42,6 @@ export default async function InboxPage({
     .groupBy(InboxMessageOperationsTable.inboxMessageId)
     .as("latest_operations");
 
-  const ownEmails = (process.env.OWN_EMAILS || "hello@vargasjr.dev")
-    .split(",")
-    .map((email) => email.trim().toLowerCase());
-
   const allMessages = await db
     .select({
       id: InboxMessagesTable.id,
@@ -74,7 +71,7 @@ export default async function InboxPage({
   const messages = allMessages.filter((message) => {
     if (!message.email) return true;
     const emailLower = message.email.toLowerCase();
-    return !ownEmails.some((ownEmail) => emailLower.includes(ownEmail));
+    return !OWN_EMAILS.some((ownEmail) => emailLower.includes(ownEmail.toLowerCase()));
   });
 
   const messageOperations = await db

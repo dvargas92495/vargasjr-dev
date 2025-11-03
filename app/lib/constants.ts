@@ -10,3 +10,5 @@ export const LAMBDA_FUNCTION_NAMES = {
 } as const;
 
 export const GITHUB_REPOSITORY = "dvargas92495/vargasjr-dev";
+
+export const OWN_EMAILS = ["hello@vargasjr.dev"] as const;

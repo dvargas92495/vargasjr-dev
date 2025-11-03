@@ -6,7 +6,7 @@ import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { AWS_S3_BUCKETS } from "@/app/lib/constants";
+import { AWS_S3_BUCKETS, OWN_EMAILS } from "@/app/lib/constants";
 import { parseEmailBody } from "@/server/email-content-parser";
 
 interface SESMail {
@@ -90,13 +90,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const ownEmails = (process.env.OWN_EMAILS || "hello@vargasjr.dev")
-      .split(",")
-      .map((email) => email.trim().toLowerCase());
-
     const senderLower = sender.toLowerCase();
-    const isOwnEmail = ownEmails.some((ownEmail) =>
-      senderLower.includes(ownEmail)
+    const isOwnEmail = OWN_EMAILS.some((ownEmail) =>
+      senderLower.includes(ownEmail.toLowerCase())
     );
 
     if (isOwnEmail) {

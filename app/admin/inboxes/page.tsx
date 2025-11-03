@@ -10,6 +10,7 @@ import InboxRow from "@/components/inbox-row";
 import RecentMessagesSection from "@/components/recent-messages-section";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
+import { OWN_EMAILS } from "@/app/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -97,10 +98,6 @@ export default async function InboxesPage({
     const totalMessages = totalMessagesResult[0]?.count || 0;
     totalPages = Math.ceil(totalMessages / pageSize);
 
-    const ownEmails = (process.env.OWN_EMAILS || "hello@vargasjr.dev")
-      .split(",")
-      .map((email) => email.trim().toLowerCase());
-
     const allRecentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id], {
         id: InboxMessagesTable.id,
@@ -142,7 +139,7 @@ export default async function InboxesPage({
     recentMessages = allRecentMessages.filter((message) => {
       if (!message.email) return true;
       const emailLower = message.email.toLowerCase();
-      return !ownEmails.some((ownEmail) => emailLower.includes(ownEmail));
+      return !OWN_EMAILS.some((ownEmail) => emailLower.includes(ownEmail.toLowerCase()));
     });
 
     const messageOperations = await db
