@@ -2,13 +2,21 @@ name: ci
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "vellum/pyproject.toml"
-      - "package.json"
       - "worker/**"
       - "scripts/**"
-      - "run_agent.sh"
+      - "app/**"
+      - "components/**"
+      - "db/**"
+      - "tests/**"
+      - "eslint.config.mjs"
+      - "package.json"
       - "knip.json"
+      - ".github/workflows/ci.yaml"
+      - "run_agent.sh"
   pull_request:
     paths:
       - "vellum/pyproject.toml"

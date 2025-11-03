@@ -440,9 +440,12 @@ async function setup(): Promise<void> {
     });
   }
 
-  const isMainBranchForCache = process.env.GITHUB_REF === "refs/heads/main";
+  const isMainPush =
+    process.env.GITHUB_EVENT_NAME === "push" &&
+    (process.env.GITHUB_REF === "refs/heads/main" ||
+      process.env.GITHUB_REF_NAME === "main");
   const isLintJob = process.env.GITHUB_JOB === "lint";
-  const shouldSaveCache = !cacheHit && isMainBranchForCache && isLintJob;
+  const shouldSaveCache = !cacheHit && isMainPush && isLintJob;
 
   if (shouldSaveCache) {
     console.log("\n=== Step 5: Save cache to S3 ===");
@@ -452,8 +455,10 @@ async function setup(): Promise<void> {
     console.log("\n=== Step 5: Cache save skipped ===");
     if (cacheHit) {
       console.log(`Reason: Cache hit (${fullCacheKey})`);
-    } else if (!isMainBranchForCache) {
-      console.log(`Reason: Not on main branch (${process.env.GITHUB_REF})`);
+    } else if (!isMainPush) {
+      console.log(
+        `Reason: Not a push to main branch (event: ${process.env.GITHUB_EVENT_NAME}, ref: ${process.env.GITHUB_REF})`
+      );
     } else if (!isLintJob) {
       console.log(`Reason: Not lint job (${process.env.GITHUB_JOB})`);
     }
