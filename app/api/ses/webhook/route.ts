@@ -82,6 +82,30 @@ export async function POST(request: Request) {
     const subject = sesNotification.mail.commonHeaders.subject || "No Subject";
     const messageId = sesNotification.mail.messageId;
 
+    if (!sender) {
+      console.error("Missing sender in SES notification");
+      return NextResponse.json(
+        { error: "Missing sender information" },
+        { status: 400 }
+      );
+    }
+
+    const ownEmails = (process.env.OWN_EMAILS || "hello@vargasjr.dev")
+      .split(",")
+      .map((email) => email.trim().toLowerCase());
+
+    const senderLower = sender.toLowerCase();
+    const isOwnEmail = ownEmails.some((ownEmail) =>
+      senderLower.includes(ownEmail)
+    );
+
+    if (isOwnEmail) {
+      console.log(
+        `Ignoring email from own address: ${sender} (messageId: ${messageId})`
+      );
+      return NextResponse.json({ received: true, ignored: true });
+    }
+
     const metadata = {
       subject: subject,
       messageId: messageId,
@@ -128,14 +152,6 @@ export async function POST(request: Request) {
       }
     } catch (error) {
       console.error("Failed to retrieve email body from S3:", error);
-    }
-
-    if (!sender) {
-      console.error("Missing sender in SES notification");
-      return NextResponse.json(
-        { error: "Missing sender information" },
-        { status: 400 }
-      );
     }
 
     const contactId = await upsertEmailContact(sender);

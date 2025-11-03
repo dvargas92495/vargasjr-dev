@@ -97,6 +97,10 @@ export default async function InboxesPage({
     const totalMessages = totalMessagesResult[0]?.count || 0;
     totalPages = Math.ceil(totalMessages / pageSize);
 
+    const ownEmails = (process.env.OWN_EMAILS || "hello@vargasjr.dev")
+      .split(",")
+      .map((email) => email.trim().toLowerCase());
+
     const allRecentMessages = await db
       .selectDistinctOn([InboxMessagesTable.id], {
         id: InboxMessagesTable.id,
@@ -135,17 +139,21 @@ export default async function InboxesPage({
       .limit(pageSize)
       .offset(offset);
 
+    recentMessages = allRecentMessages.filter((message) => {
+      if (!message.email) return true;
+      const emailLower = message.email.toLowerCase();
+      return !ownEmails.some((ownEmail) => emailLower.includes(ownEmail));
+    });
+
     const messageOperations = await db
       .select()
       .from(InboxMessageOperationsTable)
       .where(
         inArray(
           InboxMessageOperationsTable.inboxMessageId,
-          allRecentMessages.map((message) => message.id)
+          recentMessages.map((message) => message.id)
         )
       );
-
-    recentMessages = allRecentMessages;
 
     statuses = Object.fromEntries(
       messageOperations.map(({ inboxMessageId, operation }) => [

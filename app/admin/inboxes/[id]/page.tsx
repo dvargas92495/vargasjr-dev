@@ -41,7 +41,11 @@ export default async function InboxPage({
     .groupBy(InboxMessageOperationsTable.inboxMessageId)
     .as("latest_operations");
 
-  const messages = await db
+  const ownEmails = (process.env.OWN_EMAILS || "hello@vargasjr.dev")
+    .split(",")
+    .map((email) => email.trim().toLowerCase());
+
+  const allMessages = await db
     .select({
       id: InboxMessagesTable.id,
       displayName: ContactsTable.slackDisplayName,
@@ -66,6 +70,12 @@ export default async function InboxPage({
       InboxMessagesTable.id
     )
     .limit(25);
+
+  const messages = allMessages.filter((message) => {
+    if (!message.email) return true;
+    const emailLower = message.email.toLowerCase();
+    return !ownEmails.some((ownEmail) => emailLower.includes(ownEmail));
+  });
 
   const messageOperations = await db
     .select()
