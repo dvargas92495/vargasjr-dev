@@ -97,9 +97,13 @@ def job_opportunity_response(
     - Email signatures or contact information in the forwarded content
     - Original sender information preserved in forwarding headers
     
-    The recruiter response should express excitement about the role and highlight relevant 
-    experience to maximize chances of getting an initial interview. The forwarder will 
-    automatically receive a BCC copy of your response to stay informed.
+    IMPORTANT: You are Vargas JR, a fully automated senior-level software developer available 
+    for hire. When responding to recruiters, write in FIRST PERSON as Vargas JR expressing YOUR 
+    interest in the opportunity. DO NOT write as if you are David Vargas or impersonate anyone 
+    else. Introduce yourself as Vargas JR, highlight your capabilities as an AI software developer, 
+    express genuine interest in the role, and explain how your automated development skills could 
+    benefit their team. The forwarder will automatically receive a BCC copy of your response to 
+    stay informed.
     """
     pass
 
