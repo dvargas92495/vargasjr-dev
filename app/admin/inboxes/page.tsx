@@ -139,7 +139,9 @@ export default async function InboxesPage({
     recentMessages = allRecentMessages.filter((message) => {
       if (!message.email) return true;
       const emailLower = message.email.toLowerCase();
-      return !OWN_EMAILS.some((ownEmail) => emailLower.includes(ownEmail.toLowerCase()));
+      return !OWN_EMAILS.some((ownEmail) =>
+        emailLower.includes(ownEmail.toLowerCase())
+      );
     });
 
     const messageOperations = await db
