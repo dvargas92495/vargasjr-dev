@@ -11,6 +11,7 @@ from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
 from models.types import InboxMessageOperationType, InboxType
 from models.inbox import Inbox
+from models.contact import Contact
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
 
@@ -64,13 +65,14 @@ class ReadMessageNode(BaseNode):
                 )
 
                 statement = (
-                    select(InboxMessage, Inbox.type, Inbox.name)
+                    select(InboxMessage, Inbox.type, Inbox.name, Contact)
                     .join(
                         latest_operations_subquery,
                         latest_operations_subquery.c.inbox_message_id == InboxMessage.id,
                         isouter=True
                     )
                     .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore
+                    .join(Contact, Contact.id == InboxMessage.contact_id)  # type: ignore
                     .where(
                         or_(
                             latest_operations_subquery.c.operation.is_(None),
@@ -98,7 +100,7 @@ class ReadMessageNode(BaseNode):
                         )
                     )
 
-                inbox_message, inbox_type, inbox_name = result
+                inbox_message, inbox_type, inbox_name, contact = result
                 
                 execution_id = self.state.meta.span_id
                 
@@ -110,24 +112,14 @@ class ReadMessageNode(BaseNode):
                     )
                 )
                 session.commit()
-                contact_email = None
-                contact_full_name = None
-                contact_slack_display_name = None
-                contact_id = inbox_message.contact_id
-                
-                if hasattr(inbox_message, 'contact') and inbox_message.contact:
-                    contact = inbox_message.contact
-                    contact_email = contact.email
-                    contact_full_name = contact.full_name
-                    contact_slack_display_name = contact.slack_display_name
                 
                 message = SlimMessage(
                     message_id=inbox_message.id,
                     body=inbox_message.body,
-                    contact_email=contact_email,
-                    contact_id=contact_id,
-                    contact_full_name=contact_full_name,
-                    contact_slack_display_name=contact_slack_display_name,
+                    contact_email=contact.email,
+                    contact_id=inbox_message.contact_id,
+                    contact_full_name=contact.full_name,
+                    contact_slack_display_name=contact.slack_display_name,
                     channel=inbox_type,
                     inbox_name=inbox_name,
                     inbox_id=inbox_message.inbox_id,
