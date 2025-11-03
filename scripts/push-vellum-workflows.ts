@@ -47,10 +47,6 @@ class VellumWorkflowPusher {
         throw new Error("VELLUM_API_KEY environment variable is required");
       }
 
-      console.log(
-        `🔑 Vellum API Key (first 4 chars): ${vellumApiKey.substring(0, 4)}****`
-      );
-
       console.log("🏓 Pinging Vellum API...");
       try {
         const pingResult = spawnSync("poetry", ["run", "vellum", "ping"], {
