@@ -5,14 +5,13 @@ on:
     paths:
       - "vellum/pyproject.toml"
       - "package.json"
-      - "browser/**"
       - "worker/**"
+      - "scripts/**"
       - "run_agent.sh"
       - "knip.json"
   pull_request:
     paths:
       - "vellum/pyproject.toml"
-      - "browser/**"
       - "worker/**"
       - "scripts/**"
       - "app/**"
