@@ -25,6 +25,7 @@ class SlimMessage(UniversalBaseModel):
     contact_id: UUID
     contact_full_name: Optional[str] = None
     contact_slack_display_name: Optional[str] = None
+    contact_phone_number: Optional[str] = None
     channel: InboxType
     inbox_name: str
     inbox_id: UUID
@@ -93,6 +94,7 @@ class ReadMessageNode(BaseNode):
                             contact_id=uuid4(),
                             contact_full_name=None,
                             contact_slack_display_name=None,
+                            contact_phone_number=None,
                             channel=InboxType.NONE,
                             inbox_name="",
                             inbox_id=uuid4(),
@@ -120,6 +122,7 @@ class ReadMessageNode(BaseNode):
                     contact_id=inbox_message.contact_id,
                     contact_full_name=contact.full_name,
                     contact_slack_display_name=contact.slack_display_name,
+                    contact_phone_number=contact.phone_number,
                     channel=inbox_type,
                     inbox_name=inbox_name,
                     inbox_id=inbox_message.inbox_id,
@@ -134,6 +137,7 @@ class ReadMessageNode(BaseNode):
                     contact_id=uuid4(),
                     contact_full_name=None,
                     contact_slack_display_name=None,
+                    contact_phone_number=None,
                     channel=InboxType.NONE,
                     inbox_name="",
                     inbox_id=uuid4(),
