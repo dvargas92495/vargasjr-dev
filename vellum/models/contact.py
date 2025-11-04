@@ -11,6 +11,9 @@ class Contact(SQLModel, table=True):
     email: Optional[str] = None
     phone_number: Optional[str] = None
     full_name: Optional[str] = None
+    slack_id: Optional[str] = None
+    slack_display_name: Optional[str] = None
+    supports_imessage: Optional[bool] = False
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"name": "created_at"},
@@ -20,6 +23,8 @@ class Contact(SQLModel, table=True):
     def identifier(self) -> str:
         if self.full_name:
             return self.full_name
+        elif self.slack_display_name:
+            return self.slack_display_name
         elif self.email:
             return self.email
         elif self.phone_number:
