@@ -549,9 +549,7 @@ class VellumWorkflowPusher {
         }`
       );
       console.log(
-        `📋 Changed files in vellum/models: ${
-          modelsFiles.join(", ") || "none"
-        }`
+        `📋 Changed files in vellum/models: ${modelsFiles.join(", ") || "none"}`
       );
 
       if (servicesFiles.length > 0 || modelsFiles.length > 0) {
@@ -627,7 +625,9 @@ class VellumWorkflowPusher {
         writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
         console.log(`📝 Updated vellum.lock.json with new tag: ${newTag}`);
       } else {
-        console.log("ℹ️  No changes detected in vellum/services or vellum/models");
+        console.log(
+          "ℹ️  No changes detected in vellum/services or vellum/models"
+        );
       }
     } catch (error) {
       console.error(`⚠️  Failed to handle services changes: ${error}`);
