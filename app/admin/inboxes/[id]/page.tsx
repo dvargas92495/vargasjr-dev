@@ -11,7 +11,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
 import DeleteInboxButton from "@/components/delete-inbox-button";
-import { OWN_EMAILS } from "@/app/lib/constants";
+import { OWN_EMAIL } from "@/app/lib/constants";
 
 // params will contain the dynamic [id] value
 export default async function InboxPage({
@@ -71,9 +71,7 @@ export default async function InboxPage({
   const messages = allMessages.filter((message) => {
     if (!message.email) return true;
     const emailLower = message.email.toLowerCase();
-    return !OWN_EMAILS.some((ownEmail) =>
-      emailLower.includes(ownEmail.toLowerCase())
-    );
+    return !emailLower.includes(OWN_EMAIL.toLowerCase());
   });
 
   const messageOperations = await db
