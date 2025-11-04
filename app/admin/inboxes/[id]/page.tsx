@@ -11,6 +11,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
 import DeleteInboxButton from "@/components/delete-inbox-button";
+import { OWN_EMAIL } from "@/app/lib/constants";
 
 // params will contain the dynamic [id] value
 export default async function InboxPage({
@@ -41,7 +42,7 @@ export default async function InboxPage({
     .groupBy(InboxMessageOperationsTable.inboxMessageId)
     .as("latest_operations");
 
-  const messages = await db
+  const allMessages = await db
     .select({
       id: InboxMessagesTable.id,
       displayName: ContactsTable.slackDisplayName,
@@ -66,6 +67,12 @@ export default async function InboxPage({
       InboxMessagesTable.id
     )
     .limit(25);
+
+  const messages = allMessages.filter((message) => {
+    if (!message.email) return true;
+    const emailLower = message.email.toLowerCase();
+    return !emailLower.includes(OWN_EMAIL.toLowerCase());
+  });
 
   const messageOperations = await db
     .select()

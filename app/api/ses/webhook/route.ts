@@ -6,7 +6,7 @@ import { InboxesTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { AWS_S3_BUCKETS } from "@/app/lib/constants";
+import { AWS_S3_BUCKETS, OWN_EMAIL } from "@/app/lib/constants";
 import { parseEmailBody } from "@/server/email-content-parser";
 
 interface SESMail {
@@ -82,6 +82,24 @@ export async function POST(request: Request) {
     const subject = sesNotification.mail.commonHeaders.subject || "No Subject";
     const messageId = sesNotification.mail.messageId;
 
+    if (!sender) {
+      console.error("Missing sender in SES notification");
+      return NextResponse.json(
+        { error: "Missing sender information" },
+        { status: 400 }
+      );
+    }
+
+    const senderLower = sender.toLowerCase();
+    const isOwnEmail = senderLower.includes(OWN_EMAIL.toLowerCase());
+
+    if (isOwnEmail) {
+      console.log(
+        `Ignoring email from own address: ${sender} (messageId: ${messageId})`
+      );
+      return NextResponse.json({ received: true, ignored: true });
+    }
+
     const metadata = {
       subject: subject,
       messageId: messageId,
@@ -128,14 +146,6 @@ export async function POST(request: Request) {
       }
     } catch (error) {
       console.error("Failed to retrieve email body from S3:", error);
-    }
-
-    if (!sender) {
-      console.error("Missing sender in SES notification");
-      return NextResponse.json(
-        { error: "Missing sender information" },
-        { status: 400 }
-      );
     }
 
     const contactId = await upsertEmailContact(sender);

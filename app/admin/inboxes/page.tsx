@@ -10,6 +10,7 @@ import InboxRow from "@/components/inbox-row";
 import RecentMessagesSection from "@/components/recent-messages-section";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
+import { OWN_EMAIL } from "@/app/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -135,17 +136,21 @@ export default async function InboxesPage({
       .limit(pageSize)
       .offset(offset);
 
+    recentMessages = allRecentMessages.filter((message) => {
+      if (!message.email) return true;
+      const emailLower = message.email.toLowerCase();
+      return !emailLower.includes(OWN_EMAIL.toLowerCase());
+    });
+
     const messageOperations = await db
       .select()
       .from(InboxMessageOperationsTable)
       .where(
         inArray(
           InboxMessageOperationsTable.inboxMessageId,
-          allRecentMessages.map((message) => message.id)
+          recentMessages.map((message) => message.id)
         )
       );
-
-    recentMessages = allRecentMessages;
 
     statuses = Object.fromEntries(
       messageOperations.map(({ inboxMessageId, operation }) => [
