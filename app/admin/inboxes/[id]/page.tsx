@@ -61,9 +61,8 @@ export default async function InboxPage({
     .where(eq(InboxMessagesTable.inboxId, inbox[0].id))
     .orderBy(
       desc(
-        sql`coalesce(${latestOperations.latestOperationTime}, ${InboxMessagesTable.createdAt})`
+        sql`coalesce(${latestOperations.latestOperationTime}::timestamptz, ${InboxMessagesTable.createdAt}::timestamptz)`
       ),
-      desc(InboxMessagesTable.createdAt),
       InboxMessagesTable.id
     )
     .limit(25);
