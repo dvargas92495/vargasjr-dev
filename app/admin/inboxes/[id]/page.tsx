@@ -63,7 +63,6 @@ export default async function InboxPage({
       desc(
         sql`coalesce(${latestOperations.latestOperationTime}::timestamptz, ${InboxMessagesTable.createdAt}::timestamptz)`
       ),
-      desc(InboxMessagesTable.createdAt),
       InboxMessagesTable.id
     )
     .limit(25);
