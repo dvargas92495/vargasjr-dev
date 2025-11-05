@@ -301,7 +301,7 @@ async function setup(): Promise<void> {
 
             if (largestSubdir) {
               console.log(
-                `\n   Deep dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
+                `\n   Deeper Dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
               );
 
               const deepDiveSubItems = execSync(
@@ -352,6 +352,79 @@ async function setup(): Promise<void> {
                     }`
                   );
                 });
+
+                try {
+                  const largestDeepSubdir = top5DeepDiveItems.find((item) => {
+                    try {
+                      return (
+                        existsSync(item.path) &&
+                        statSync(item.path).isDirectory()
+                      );
+                    } catch {
+                      return false;
+                    }
+                  });
+
+                  if (largestDeepSubdir) {
+                    console.log(
+                      `\n      Further breakdown: largest subdirectory is ${largestDeepSubdir.path} (${largestDeepSubdir.sizeFormatted})`
+                    );
+
+                    const deeperDiveSubItems = execSync(
+                      `find "${largestDeepSubdir.path}" -maxdepth 1 -mindepth 1`,
+                      {
+                        encoding: "utf8",
+                      }
+                    )
+                      .trim()
+                      .split("\n")
+                      .filter((item) => item.length > 0);
+
+                    const deeperDiveSubItemSizes: {
+                      path: string;
+                      size: number;
+                      sizeFormatted: string;
+                    }[] = [];
+
+                    for (const item of deeperDiveSubItems) {
+                      try {
+                        const sizeOutput = execSync(`du -sb "${item}"`, {
+                          encoding: "utf8",
+                        }).trim();
+                        const size = parseInt(sizeOutput.split("\t")[0], 10);
+                        const sizeFormatted = execSync(`du -sh "${item}"`, {
+                          encoding: "utf8",
+                        })
+                          .trim()
+                          .split("\t")[0];
+                        deeperDiveSubItemSizes.push({
+                          path: item,
+                          size,
+                          sizeFormatted,
+                        });
+                      } catch (error) {}
+                    }
+
+                    const top5DeeperDiveItems = deeperDiveSubItemSizes
+                      .sort((a, b) => b.size - a.size)
+                      .slice(0, 5);
+
+                    if (top5DeeperDiveItems.length > 0) {
+                      console.log(
+                        `      Top 5 items within this subdirectory:`
+                      );
+                      top5DeeperDiveItems.forEach((subItem, subIndex) => {
+                        console.log(
+                          `      ${subIndex + 1}. ${subItem.sizeFormatted}\t${
+                            subItem.path
+                          }`
+                        );
+                      });
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`      Could not analyze deeper subdirectory`);
+                }
               }
             }
           } catch (error) {
