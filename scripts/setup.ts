@@ -313,7 +313,7 @@ async function setup(): Promise<void> {
                   `find "${largestSubdir.path}" -type d | wc -l`,
                   { encoding: "utf8" }
                 ).trim();
-                
+
                 console.log(`   Statistics:`);
                 console.log(`   - Total files: ${fileCount}`);
                 console.log(`   - Total directories: ${dirCount}`);
@@ -327,13 +327,15 @@ async function setup(): Promise<void> {
                   { encoding: "utf8" }
                 ).trim();
                 const relativeDepth = parseInt(maxDepth) - parseInt(baseDepth);
-                console.log(`   - Maximum nesting depth: ${relativeDepth} levels`);
+                console.log(
+                  `   - Maximum nesting depth: ${relativeDepth} levels`
+                );
 
                 const extensionStats = execSync(
                   `find "${largestSubdir.path}" -type f -name '*.*' | sed 's/.*\\.//' | sort | uniq -c | sort -rn | head -5`,
                   { encoding: "utf8" }
                 ).trim();
-                
+
                 if (extensionStats) {
                   console.log(`   - Top 5 file types by count:`);
                   extensionStats.split("\n").forEach((line) => {
@@ -354,9 +356,14 @@ async function setup(): Promise<void> {
                   } else if (avgSize < 1024 * 1024) {
                     avgSizeFormatted = `${(avgSize / 1024).toFixed(1)} KB`;
                   } else if (avgSize < 1024 * 1024 * 1024) {
-                    avgSizeFormatted = `${(avgSize / (1024 * 1024)).toFixed(1)} MB`;
+                    avgSizeFormatted = `${(avgSize / (1024 * 1024)).toFixed(
+                      1
+                    )} MB`;
                   } else {
-                    avgSizeFormatted = `${(avgSize / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+                    avgSizeFormatted = `${(
+                      avgSize /
+                      (1024 * 1024 * 1024)
+                    ).toFixed(1)} GB`;
                   }
                   console.log(`   - Average file size: ${avgSizeFormatted}`);
                 }
