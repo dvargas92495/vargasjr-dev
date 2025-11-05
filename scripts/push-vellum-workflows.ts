@@ -539,16 +539,22 @@ class VellumWorkflowPusher {
       const servicesFiles = allChangedFiles
         .map((file: any) => file.filename)
         .filter((filename: string) => filename.startsWith("vellum/services/"));
+      const modelsFiles = allChangedFiles
+        .map((file: any) => file.filename)
+        .filter((filename: string) => filename.startsWith("vellum/models/"));
 
       console.log(
         `📋 Changed files in vellum/services: ${
           servicesFiles.join(", ") || "none"
         }`
       );
+      console.log(
+        `📋 Changed files in vellum/models: ${modelsFiles.join(", ") || "none"}`
+      );
 
-      if (servicesFiles.length > 0) {
+      if (servicesFiles.length > 0 || modelsFiles.length > 0) {
         console.log(
-          "🔍 Detected changes in vellum/services, building new image..."
+          "🔍 Detected changes in vellum/services or vellum/models, building new image..."
         );
 
         const lockFilePath = join(this.agentDir, "vellum.lock.json");
@@ -619,7 +625,9 @@ class VellumWorkflowPusher {
         writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
         console.log(`📝 Updated vellum.lock.json with new tag: ${newTag}`);
       } else {
-        console.log("ℹ️  No changes detected in vellum/services");
+        console.log(
+          "ℹ️  No changes detected in vellum/services or vellum/models"
+        );
       }
     } catch (error) {
       console.error(`⚠️  Failed to handle services changes: ${error}`);
