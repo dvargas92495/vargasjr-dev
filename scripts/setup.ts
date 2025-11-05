@@ -301,8 +301,68 @@ async function setup(): Promise<void> {
 
             if (largestSubdir) {
               console.log(
-                `\n   Deep dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
+                `\n   Deeper Dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
               );
+
+              try {
+                const fileCount = execSync(
+                  `find "${largestSubdir.path}" -type f | wc -l`,
+                  { encoding: "utf8" }
+                ).trim();
+                const dirCount = execSync(
+                  `find "${largestSubdir.path}" -type d | wc -l`,
+                  { encoding: "utf8" }
+                ).trim();
+                
+                console.log(`   Statistics:`);
+                console.log(`   - Total files: ${fileCount}`);
+                console.log(`   - Total directories: ${dirCount}`);
+
+                const maxDepth = execSync(
+                  `find "${largestSubdir.path}" -type d -printf '%d\\n' | sort -rn | head -1`,
+                  { encoding: "utf8" }
+                ).trim();
+                const baseDepth = execSync(
+                  `find "${largestSubdir.path}" -maxdepth 0 -printf '%d\\n'`,
+                  { encoding: "utf8" }
+                ).trim();
+                const relativeDepth = parseInt(maxDepth) - parseInt(baseDepth);
+                console.log(`   - Maximum nesting depth: ${relativeDepth} levels`);
+
+                const extensionStats = execSync(
+                  `find "${largestSubdir.path}" -type f -name '*.*' | sed 's/.*\\.//' | sort | uniq -c | sort -rn | head -5`,
+                  { encoding: "utf8" }
+                ).trim();
+                
+                if (extensionStats) {
+                  console.log(`   - Top 5 file types by count:`);
+                  extensionStats.split("\n").forEach((line) => {
+                    const match = line.trim().match(/^(\d+)\s+(.+)$/);
+                    if (match) {
+                      console.log(`     ${match[2]}: ${match[1]} files`);
+                    }
+                  });
+                }
+
+                const totalSize = largestSubdir.size;
+                const fileCountNum = parseInt(fileCount);
+                if (fileCountNum > 0) {
+                  const avgSize = totalSize / fileCountNum;
+                  let avgSizeFormatted = "";
+                  if (avgSize < 1024) {
+                    avgSizeFormatted = `${avgSize.toFixed(0)} bytes`;
+                  } else if (avgSize < 1024 * 1024) {
+                    avgSizeFormatted = `${(avgSize / 1024).toFixed(1)} KB`;
+                  } else if (avgSize < 1024 * 1024 * 1024) {
+                    avgSizeFormatted = `${(avgSize / (1024 * 1024)).toFixed(1)} MB`;
+                  } else {
+                    avgSizeFormatted = `${(avgSize / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+                  }
+                  console.log(`   - Average file size: ${avgSizeFormatted}`);
+                }
+              } catch (error) {
+                console.warn(`   Could not gather additional statistics`);
+              }
 
               const deepDiveSubItems = execSync(
                 `find "${largestSubdir.path}" -maxdepth 1 -mindepth 1`,
