@@ -304,73 +304,6 @@ async function setup(): Promise<void> {
                 `\n   Deeper Dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
               );
 
-              try {
-                const fileCount = execSync(
-                  `find "${largestSubdir.path}" -type f | wc -l`,
-                  { encoding: "utf8" }
-                ).trim();
-                const dirCount = execSync(
-                  `find "${largestSubdir.path}" -type d | wc -l`,
-                  { encoding: "utf8" }
-                ).trim();
-
-                console.log(`   Statistics:`);
-                console.log(`   - Total files: ${fileCount}`);
-                console.log(`   - Total directories: ${dirCount}`);
-
-                const maxDepth = execSync(
-                  `find "${largestSubdir.path}" -type d -printf '%d\\n' | sort -rn | head -1`,
-                  { encoding: "utf8" }
-                ).trim();
-                const baseDepth = execSync(
-                  `find "${largestSubdir.path}" -maxdepth 0 -printf '%d\\n'`,
-                  { encoding: "utf8" }
-                ).trim();
-                const relativeDepth = parseInt(maxDepth) - parseInt(baseDepth);
-                console.log(
-                  `   - Maximum nesting depth: ${relativeDepth} levels`
-                );
-
-                const extensionStats = execSync(
-                  `find "${largestSubdir.path}" -type f -name '*.*' | sed 's/.*\\.//' | sort | uniq -c | sort -rn | head -5`,
-                  { encoding: "utf8" }
-                ).trim();
-
-                if (extensionStats) {
-                  console.log(`   - Top 5 file types by count:`);
-                  extensionStats.split("\n").forEach((line) => {
-                    const match = line.trim().match(/^(\d+)\s+(.+)$/);
-                    if (match) {
-                      console.log(`     ${match[2]}: ${match[1]} files`);
-                    }
-                  });
-                }
-
-                const totalSize = largestSubdir.size;
-                const fileCountNum = parseInt(fileCount);
-                if (fileCountNum > 0) {
-                  const avgSize = totalSize / fileCountNum;
-                  let avgSizeFormatted = "";
-                  if (avgSize < 1024) {
-                    avgSizeFormatted = `${avgSize.toFixed(0)} bytes`;
-                  } else if (avgSize < 1024 * 1024) {
-                    avgSizeFormatted = `${(avgSize / 1024).toFixed(1)} KB`;
-                  } else if (avgSize < 1024 * 1024 * 1024) {
-                    avgSizeFormatted = `${(avgSize / (1024 * 1024)).toFixed(
-                      1
-                    )} MB`;
-                  } else {
-                    avgSizeFormatted = `${(
-                      avgSize /
-                      (1024 * 1024 * 1024)
-                    ).toFixed(1)} GB`;
-                  }
-                  console.log(`   - Average file size: ${avgSizeFormatted}`);
-                }
-              } catch (error) {
-                console.warn(`   Could not gather additional statistics`);
-              }
-
               const deepDiveSubItems = execSync(
                 `find "${largestSubdir.path}" -maxdepth 1 -mindepth 1`,
                 {
@@ -419,6 +352,79 @@ async function setup(): Promise<void> {
                     }`
                   );
                 });
+
+                try {
+                  const largestDeepSubdir = top5DeepDiveItems.find((item) => {
+                    try {
+                      return (
+                        existsSync(item.path) &&
+                        statSync(item.path).isDirectory()
+                      );
+                    } catch {
+                      return false;
+                    }
+                  });
+
+                  if (largestDeepSubdir) {
+                    console.log(
+                      `\n      Further breakdown: largest subdirectory is ${largestDeepSubdir.path} (${largestDeepSubdir.sizeFormatted})`
+                    );
+
+                    const deeperDiveSubItems = execSync(
+                      `find "${largestDeepSubdir.path}" -maxdepth 1 -mindepth 1`,
+                      {
+                        encoding: "utf8",
+                      }
+                    )
+                      .trim()
+                      .split("\n")
+                      .filter((item) => item.length > 0);
+
+                    const deeperDiveSubItemSizes: {
+                      path: string;
+                      size: number;
+                      sizeFormatted: string;
+                    }[] = [];
+
+                    for (const item of deeperDiveSubItems) {
+                      try {
+                        const sizeOutput = execSync(`du -sb "${item}"`, {
+                          encoding: "utf8",
+                        }).trim();
+                        const size = parseInt(sizeOutput.split("\t")[0], 10);
+                        const sizeFormatted = execSync(`du -sh "${item}"`, {
+                          encoding: "utf8",
+                        })
+                          .trim()
+                          .split("\t")[0];
+                        deeperDiveSubItemSizes.push({
+                          path: item,
+                          size,
+                          sizeFormatted,
+                        });
+                      } catch (error) {}
+                    }
+
+                    const top5DeeperDiveItems = deeperDiveSubItemSizes
+                      .sort((a, b) => b.size - a.size)
+                      .slice(0, 5);
+
+                    if (top5DeeperDiveItems.length > 0) {
+                      console.log(
+                        `      Top 5 items within this subdirectory:`
+                      );
+                      top5DeeperDiveItems.forEach((subItem, subIndex) => {
+                        console.log(
+                          `      ${subIndex + 1}. ${subItem.sizeFormatted}\t${
+                            subItem.path
+                          }`
+                        );
+                      });
+                    }
+                  }
+                } catch (error) {
+                  console.warn(`      Could not analyze deeper subdirectory`);
+                }
               }
             }
           } catch (error) {
