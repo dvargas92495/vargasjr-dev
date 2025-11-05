@@ -2,9 +2,10 @@ import { EC2 } from "@aws-sdk/client-ec2";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
 import { withApiWrapper } from "@/utils/api-wrapper";
 import { NotFoundError } from "@/server/errors";
+import { z } from "zod";
 
-async function handler(body: { id: string }) {
-  const { id } = body;
+async function handler(body: unknown) {
+  const { id } = z.object({ id: z.string() }).parse(body || {});
   console.log(`[/api/instances/[id]] GET request for instance: ${id}`);
 
   const ec2 = new EC2({
