@@ -99,7 +99,7 @@ export default async function InboxesPage({
     totalPages = Math.ceil(totalMessages / pageSize);
 
     const allRecentMessages = await db
-      .selectDistinctOn([InboxMessagesTable.id], {
+      .select({
         id: InboxMessagesTable.id,
         displayName: ContactsTable.slackDisplayName,
         fullName: ContactsTable.fullName,
@@ -128,10 +128,10 @@ export default async function InboxesPage({
         )
       )
       .orderBy(
-        InboxMessagesTable.id,
         desc(
           sql`COALESCE(${latestOperations.createdAt}, ${InboxMessagesTable.createdAt})`
-        )
+        ),
+        desc(InboxMessagesTable.id)
       )
       .limit(pageSize)
       .offset(offset);
