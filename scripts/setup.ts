@@ -227,8 +227,7 @@ async function setup(): Promise<void> {
               .trim()
               .split("\t")[0];
             itemSizes.push({ path: item, size, sizeFormatted });
-          } catch (error) {
-          }
+          } catch (error) {}
         }
 
         const sortedItems = itemSizes.sort((a, b) => b.size - a.size);
@@ -242,8 +241,7 @@ async function setup(): Promise<void> {
               if (isDir) {
                 analyzeDirectory(item.path, indent + "  ");
               }
-            } catch (error) {
-            }
+            } catch (error) {}
           }
         }
       } catch (error) {
@@ -274,8 +272,7 @@ async function setup(): Promise<void> {
                 .trim()
                 .split("\t")[0];
               topLevelDirs.push({ path: dir, size, sizeFormatted });
-            } catch (error) {
-            }
+            } catch (error) {}
           }
         } catch (error) {
           console.warn(`Could not analyze directory: ${cachePath}`);
