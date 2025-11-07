@@ -196,70 +196,26 @@ async function setup(): Promise<void> {
   if (isAnalyze && cacheHit) {
     console.log("\nAnalyzing cache directory sizes...");
     const cachePaths = getCachePaths();
-    const directorySizes: {
+    const MIN_SIZE_BYTES = 50 * 1024 * 1024; // 50MB in bytes
+
+    interface DirectoryInfo {
       path: string;
       size: number;
       sizeFormatted: string;
-    }[] = [];
-
-    for (const cachePath of cachePaths) {
-      if (existsSync(cachePath)) {
-        try {
-          const topLevelDirs = execSync(
-            `find "${cachePath}" -maxdepth 1 -type d`,
-            {
-              encoding: "utf8",
-            }
-          )
-            .trim()
-            .split("\n")
-            .filter((dir) => dir !== cachePath);
-
-          for (const dir of topLevelDirs) {
-            try {
-              const sizeOutput = execSync(`du -sb "${dir}"`, {
-                encoding: "utf8",
-              }).trim();
-              const size = parseInt(sizeOutput.split("\t")[0], 10);
-              const sizeFormatted = execSync(`du -sh "${dir}"`, {
-                encoding: "utf8",
-              })
-                .trim()
-                .split("\t")[0];
-              directorySizes.push({ path: dir, size, sizeFormatted });
-            } catch (error) {}
-          }
-        } catch (error) {
-          console.warn(`Could not analyze directory: ${cachePath}`);
-        }
-      }
     }
 
-    const top5 = directorySizes.sort((a, b) => b.size - a.size).slice(0, 5);
-
-    console.log("\nTop 5 largest cache directories:");
-    for (let index = 0; index < top5.length; index++) {
-      const dir = top5[index];
-      console.log(`${index + 1}. ${dir.sizeFormatted}\t${dir.path}`);
-
+    function analyzeDirectory(dirPath: string, indent: string = ""): void {
       try {
-        const subItems = execSync(
-          `find "${dir.path}" -maxdepth 1 -mindepth 1`,
-          {
-            encoding: "utf8",
-          }
-        )
+        const items = execSync(`find "${dirPath}" -maxdepth 1 -mindepth 1`, {
+          encoding: "utf8",
+        })
           .trim()
           .split("\n")
           .filter((item) => item.length > 0);
 
-        const subItemSizes: {
-          path: string;
-          size: number;
-          sizeFormatted: string;
-        }[] = [];
+        const itemSizes: DirectoryInfo[] = [];
 
-        for (const item of subItems) {
+        for (const item of items) {
           try {
             const sizeOutput = execSync(`du -sb "${item}"`, {
               encoding: "utf8",
@@ -270,173 +226,73 @@ async function setup(): Promise<void> {
             })
               .trim()
               .split("\t")[0];
-            subItemSizes.push({ path: item, size, sizeFormatted });
-          } catch (error) {}
-        }
-
-        const top5SubItems = subItemSizes
-          .sort((a, b) => b.size - a.size)
-          .slice(0, 5);
-
-        if (top5SubItems.length > 0) {
-          console.log(`   Top 5 items within this directory:`);
-          top5SubItems.forEach((subItem, subIndex) => {
-            console.log(
-              `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${subItem.path}`
-            );
-          });
-        }
-
-        if (index === 0 && top5SubItems.length > 0) {
-          try {
-            const largestSubdir = top5SubItems.find((item) => {
-              try {
-                return (
-                  existsSync(item.path) && statSync(item.path).isDirectory()
-                );
-              } catch {
-                return false;
-              }
-            });
-
-            if (largestSubdir) {
-              console.log(
-                `\n   Deeper Dive: largest subdirectory is ${largestSubdir.path} (${largestSubdir.sizeFormatted})`
-              );
-
-              const deepDiveSubItems = execSync(
-                `find "${largestSubdir.path}" -maxdepth 1 -mindepth 1`,
-                {
-                  encoding: "utf8",
-                }
-              )
-                .trim()
-                .split("\n")
-                .filter((item) => item.length > 0);
-
-              const deepDiveSubItemSizes: {
-                path: string;
-                size: number;
-                sizeFormatted: string;
-              }[] = [];
-
-              for (const item of deepDiveSubItems) {
-                try {
-                  const sizeOutput = execSync(`du -sb "${item}"`, {
-                    encoding: "utf8",
-                  }).trim();
-                  const size = parseInt(sizeOutput.split("\t")[0], 10);
-                  const sizeFormatted = execSync(`du -sh "${item}"`, {
-                    encoding: "utf8",
-                  })
-                    .trim()
-                    .split("\t")[0];
-                  deepDiveSubItemSizes.push({
-                    path: item,
-                    size,
-                    sizeFormatted,
-                  });
-                } catch (error) {}
-              }
-
-              const top5DeepDiveItems = deepDiveSubItemSizes
-                .sort((a, b) => b.size - a.size)
-                .slice(0, 5);
-
-              if (top5DeepDiveItems.length > 0) {
-                console.log(`   Top 5 items within largest subdirectory:`);
-                top5DeepDiveItems.forEach((subItem, subIndex) => {
-                  console.log(
-                    `   ${subIndex + 1}. ${subItem.sizeFormatted}\t${
-                      subItem.path
-                    }`
-                  );
-                });
-
-                try {
-                  const largestDeepSubdir = top5DeepDiveItems.find((item) => {
-                    try {
-                      return (
-                        existsSync(item.path) &&
-                        statSync(item.path).isDirectory()
-                      );
-                    } catch {
-                      return false;
-                    }
-                  });
-
-                  if (largestDeepSubdir) {
-                    console.log(
-                      `\n      Further breakdown: largest subdirectory is ${largestDeepSubdir.path} (${largestDeepSubdir.sizeFormatted})`
-                    );
-
-                    const deeperDiveSubItems = execSync(
-                      `find "${largestDeepSubdir.path}" -maxdepth 1 -mindepth 1`,
-                      {
-                        encoding: "utf8",
-                      }
-                    )
-                      .trim()
-                      .split("\n")
-                      .filter((item) => item.length > 0);
-
-                    const deeperDiveSubItemSizes: {
-                      path: string;
-                      size: number;
-                      sizeFormatted: string;
-                    }[] = [];
-
-                    for (const item of deeperDiveSubItems) {
-                      try {
-                        const sizeOutput = execSync(`du -sb "${item}"`, {
-                          encoding: "utf8",
-                        }).trim();
-                        const size = parseInt(sizeOutput.split("\t")[0], 10);
-                        const sizeFormatted = execSync(`du -sh "${item}"`, {
-                          encoding: "utf8",
-                        })
-                          .trim()
-                          .split("\t")[0];
-                        deeperDiveSubItemSizes.push({
-                          path: item,
-                          size,
-                          sizeFormatted,
-                        });
-                      } catch (error) {}
-                    }
-
-                    const top5DeeperDiveItems = deeperDiveSubItemSizes
-                      .sort((a, b) => b.size - a.size)
-                      .slice(0, 5);
-
-                    if (top5DeeperDiveItems.length > 0) {
-                      console.log(
-                        `      Top 5 items within this subdirectory:`
-                      );
-                      top5DeeperDiveItems.forEach((subItem, subIndex) => {
-                        console.log(
-                          `      ${subIndex + 1}. ${subItem.sizeFormatted}\t${
-                            subItem.path
-                          }`
-                        );
-                      });
-                    }
-                  }
-                } catch (error) {
-                  console.warn(`      Could not analyze deeper subdirectory`);
-                }
-              }
-            }
+            itemSizes.push({ path: item, size, sizeFormatted });
           } catch (error) {
-            console.warn(`   Could not analyze largest subdirectory`);
+          }
+        }
+
+        const sortedItems = itemSizes.sort((a, b) => b.size - a.size);
+
+        for (const item of sortedItems) {
+          console.log(`${indent}${item.sizeFormatted}\t${item.path}`);
+
+          if (item.size >= MIN_SIZE_BYTES) {
+            try {
+              const isDir = statSync(item.path).isDirectory();
+              if (isDir) {
+                analyzeDirectory(item.path, indent + "  ");
+              }
+            } catch (error) {
+            }
           }
         }
       } catch (error) {
-        console.warn(`   Could not analyze subdirectories of: ${dir.path}`);
+        console.warn(`${indent}Could not analyze directory: ${dirPath}`);
+      }
+    }
+
+    const topLevelDirs: DirectoryInfo[] = [];
+    for (const cachePath of cachePaths) {
+      if (existsSync(cachePath)) {
+        try {
+          const dirs = execSync(`find "${cachePath}" -maxdepth 1 -type d`, {
+            encoding: "utf8",
+          })
+            .trim()
+            .split("\n")
+            .filter((dir) => dir !== cachePath);
+
+          for (const dir of dirs) {
+            try {
+              const sizeOutput = execSync(`du -sb "${dir}"`, {
+                encoding: "utf8",
+              }).trim();
+              const size = parseInt(sizeOutput.split("\t")[0], 10);
+              const sizeFormatted = execSync(`du -sh "${dir}"`, {
+                encoding: "utf8",
+              })
+                .trim()
+                .split("\t")[0];
+              topLevelDirs.push({ path: dir, size, sizeFormatted });
+            } catch (error) {
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not analyze directory: ${cachePath}`);
+        }
+      }
+    }
+
+    const sortedTopLevel = topLevelDirs.sort((a, b) => b.size - a.size);
+    console.log("\nCache directories (sorted by size):");
+    for (const dir of sortedTopLevel) {
+      console.log(`${dir.sizeFormatted}\t${dir.path}`);
+
+      if (dir.size >= MIN_SIZE_BYTES) {
+        analyzeDirectory(dir.path, "  ");
       }
       console.log("");
     }
-    console.log("");
   }
 
   const preinstallEndTime = isAnalyze ? Date.now() : 0;
