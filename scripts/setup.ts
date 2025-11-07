@@ -196,7 +196,8 @@ async function setup(): Promise<void> {
   if (isAnalyze && cacheHit) {
     console.log("\nAnalyzing cache directory sizes...");
     const cachePaths = getCachePaths();
-    const MIN_SIZE_BYTES = 50 * 1024 * 1024; // 50MB in bytes
+    const MIN_SIZE_BYTES = 50 * 1024 * 1024;
+    const MIN_DISPLAY_SIZE_BYTES = 1 * 1024 * 1024;
 
     interface DirectoryInfo {
       path: string;
@@ -233,15 +234,19 @@ async function setup(): Promise<void> {
         const sortedItems = itemSizes.sort((a, b) => b.size - a.size);
 
         for (const item of sortedItems) {
-          console.log(`${indent}${item.sizeFormatted}\t${item.path}`);
+          let isDir = false;
+          try {
+            isDir = statSync(item.path).isDirectory();
+          } catch (error) {}
 
-          if (item.size >= MIN_SIZE_BYTES) {
-            try {
-              const isDir = statSync(item.path).isDirectory();
-              if (isDir) {
-                analyzeDirectory(item.path, indent + "  ");
-              }
-            } catch (error) {}
+          const shouldDisplay = isDir || item.size >= MIN_DISPLAY_SIZE_BYTES;
+
+          if (shouldDisplay) {
+            console.log(`${indent}${item.sizeFormatted}\t${item.path}`);
+          }
+
+          if (isDir && item.size >= MIN_SIZE_BYTES) {
+            analyzeDirectory(item.path, indent + "  ");
           }
         }
       } catch (error) {
