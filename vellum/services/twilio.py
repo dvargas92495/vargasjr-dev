@@ -1,5 +1,5 @@
 import os
-from twilio.rest import Client  # type: ignore[import-untyped]
+from twilio.rest import Client
 
 
 def send_sms(to: str, from_: str, body: str) -> None:
