@@ -234,16 +234,16 @@ async function setup(): Promise<void> {
         const sortedItems = itemSizes.sort((a, b) => b.size - a.size);
 
         for (const item of sortedItems) {
+          if (item.size < MIN_DISPLAY_SIZE_BYTES) {
+            continue;
+          }
+
+          console.log(`${indent}${item.sizeFormatted}\t${item.path}`);
+
           let isDir = false;
           try {
             isDir = statSync(item.path).isDirectory();
           } catch (error) {}
-
-          const shouldDisplay = isDir || item.size >= MIN_DISPLAY_SIZE_BYTES;
-
-          if (shouldDisplay) {
-            console.log(`${indent}${item.sizeFormatted}\t${item.path}`);
-          }
 
           if (isDir && item.size >= MIN_SIZE_BYTES) {
             analyzeDirectory(item.path, indent + "  ");
@@ -288,6 +288,10 @@ async function setup(): Promise<void> {
     const sortedTopLevel = topLevelDirs.sort((a, b) => b.size - a.size);
     console.log("\nCache directories (sorted by size):");
     for (const dir of sortedTopLevel) {
+      if (dir.size < MIN_DISPLAY_SIZE_BYTES) {
+        continue;
+      }
+
       console.log(`${dir.sizeFormatted}\t${dir.path}`);
 
       if (dir.size >= MIN_SIZE_BYTES) {
