@@ -47,21 +47,53 @@ def download_memory(logger: Logger):
     del session
 
 
-def send_email(to: str, body: str, subject: str, bcc: str | None = None) -> None:
+def send_email(
+    to: str,
+    body: str,
+    subject: str,
+    bcc: str | None = None,
+    in_reply_to: str | None = None,
+    references: str | None = None,
+) -> None:
     session = get_aws_session()
     ses_client = session.client("ses")
     if bcc:
         destination: Any = {"ToAddresses": [to], "BccAddresses": [bcc]}
     else:
         destination = {"ToAddresses": [to]}
-    ses_client.send_email(
-        Source=formataddr(("Vargas JR", "hello@vargasjr.dev")),
-        Destination=destination,
-        Message={
-            "Subject": {"Data": subject},
-            "Body": {"Text": {"Data": body}},
-        },
-    )
+    
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
+    if in_reply_to or references:
+        msg = MIMEMultipart()
+        msg["From"] = formataddr(("Vargas JR", "hello@vargasjr.dev"))
+        msg["To"] = to
+        if bcc:
+            msg["Bcc"] = bcc
+        msg["Subject"] = subject
+        
+        if in_reply_to:
+            msg["In-Reply-To"] = in_reply_to
+        if references:
+            msg["References"] = references
+        
+        msg.attach(MIMEText(body, "plain"))
+        
+        ses_client.send_raw_email(
+            Source=formataddr(("Vargas JR", "hello@vargasjr.dev")),
+            Destinations=[to] + ([bcc] if bcc else []),
+            RawMessage={"Data": msg.as_string()},
+        )
+    else:
+        ses_client.send_email(
+            Source=formataddr(("Vargas JR", "hello@vargasjr.dev")),
+            Destination=destination,
+            Message={
+                "Subject": {"Data": subject},
+                "Body": {"Text": {"Data": body}},
+            },
+        )
 
 
 def list_attachments_since(cutoff_date: datetime) -> list[str]:

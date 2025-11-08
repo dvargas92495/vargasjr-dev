@@ -25,11 +25,24 @@ class JobOpportunityResponseNode(BaseNode):
 
     def run(self) -> BaseNode.Outputs:
         try:
+            from services import postgres_session
+            from models.inbox_message import InboxMessage
+            from sqlmodel import select
+            
+            original_message_id = None
+            with postgres_session() as session:
+                statement = select(InboxMessage).where(InboxMessage.id == self.inbox_message_id)
+                inbox_message = session.exec(statement).first()
+                if inbox_message and inbox_message.metadata and isinstance(inbox_message.metadata, dict):
+                    original_message_id = inbox_message.metadata.get("messageId")
+            
             send_email(
                 to=self.original_recruiter_email,
                 body=self.recruiter_body,
                 subject=self.recruiter_subject,
                 bcc=self.forwarder_email,
+                in_reply_to=original_message_id,
+                references=original_message_id,
             )
             
         except Exception as e:
