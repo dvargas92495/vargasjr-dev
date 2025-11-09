@@ -14,6 +14,13 @@ from .nodes import (
     FetchContactSummaryNode,
     UpdateContactSummaryNode,
     UploadContactSummaryNode,
+    ScheduleMeetingNode,
+    TriageMessageFollowupNode,
+    ParseFunctionCallFollowupNode,
+    EmailReplyFollowupNode,
+    EmailInitiateFollowupNode,
+    TextReplyFollowupNode,
+    SlackReplyFollowupNode,
 )
 
 
@@ -25,6 +32,16 @@ class TriageMessageWorkflow(BaseWorkflow):
             TriageMessageNode
             >> {
                 ParseFunctionCallNode.Ports.no_action >> NoActionNode,
+                ParseFunctionCallNode.Ports.create_meeting
+                >> ScheduleMeetingNode
+                >> TriageMessageFollowupNode
+                >> {
+                    ParseFunctionCallFollowupNode.Ports.email_reply >> EmailReplyFollowupNode,
+                    ParseFunctionCallFollowupNode.Ports.email_initiate >> EmailInitiateFollowupNode,
+                    ParseFunctionCallFollowupNode.Ports.text_reply >> TextReplyFollowupNode,
+                    ParseFunctionCallFollowupNode.Ports.slack_reply >> SlackReplyFollowupNode,
+                }
+                >> StoreOutboxMessageNode,
                 {
                     ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
                     ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,

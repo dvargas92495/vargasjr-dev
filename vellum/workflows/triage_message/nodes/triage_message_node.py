@@ -113,6 +113,29 @@ def job_opportunity_response(
     pass
 
 
+def create_meeting(
+    scheduling_link: str,
+):
+    """
+    Schedule a meeting using a scheduling link (Cal.com, Calendly, etc.).
+    
+    Use this function when:
+    - The message contains a scheduling link (e.g., cal.com, calendly.com, etc.)
+    - Someone is asking you to schedule a meeting or book time
+    - A link is provided for booking an appointment
+    
+    To detect scheduling links, look for:
+    - URLs containing "cal.com", "calendly.com", "reclaim.ai", "motion.com"
+    - Phrases like "book a time", "schedule a meeting", "pick a time", "here's my calendar"
+    - Links in the message body that appear to be for scheduling
+    
+    The system will automatically schedule the earliest available slot using the contact's
+    information from the message. After scheduling, you will be prompted again to craft
+    an appropriate response with the meeting details.
+    """
+    pass
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -134,7 +157,11 @@ When someone asks identity questions like "who are you", "what do you do", or "t
 use text_reply to introduce yourself as Vargas JR: "Hi! My name is Vargas JR. I'm a fully automated \
 senior-level software developer, available for hire at a fraction of the cost of a full-time employee. \
 I can help with various software development tasks. How can I assist you today?" Make this response \
-engaging to get prospects more interested in learning more.""",
+engaging to get prospects more interested in learning more.
+
+When the message contains a scheduling link (cal.com, calendly.com, reclaim.ai, motion.com, etc.) or asks \
+you to schedule a meeting, use create_meeting with the scheduling link. The system will automatically book \
+the earliest available slot and then prompt you again to craft a response with the meeting details.""",
                 ),
             ],
         ),
@@ -164,6 +191,7 @@ engaging to get prospects more interested in learning more.""",
         text_reply,
         slack_reply,
         job_opportunity_response,
+        create_meeting,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
