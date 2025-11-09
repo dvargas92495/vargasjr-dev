@@ -1,22 +1,31 @@
 import { z } from "zod";
 import { withApiWrapper } from "@/utils/api-wrapper";
 import { BadRequestError } from "@/server/errors";
+import { getDb } from "@/db/connection";
+import { ApplicationsTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const createBotSchema = z.object({
   meeting_url: z.string().url(),
-  bot_name: z.string().optional(),
 });
 
 async function createBotHandler(body: unknown) {
-  const { meeting_url, bot_name } = createBotSchema.parse(body);
+  const { meeting_url } = createBotSchema.parse(body);
 
-  const recallApiKey = process.env.RECALL_API_KEY;
-  if (!recallApiKey) {
+  const db = getDb();
+  const [zoomApp] = await db
+    .select()
+    .from(ApplicationsTable)
+    .where(eq(ApplicationsTable.name, "Zoom"))
+    .limit(1);
+
+  if (!zoomApp || !zoomApp.clientSecret) {
     throw new BadRequestError(
-      "Recall API key not configured. Please set RECALL_API_KEY environment variable."
+      "Zoom application not configured. Please add Zoom application with Recall API key in the applications table."
     );
   }
 
+  const recallApiKey = zoomApp.clientSecret;
   const recallApiUrl = "https://us-west-2.recall.ai/api/v1/bot/";
 
   const response = await fetch(recallApiUrl, {
@@ -28,7 +37,7 @@ async function createBotHandler(body: unknown) {
     },
     body: JSON.stringify({
       meeting_url,
-      bot_name: bot_name || "Meeting Notetaker",
+      bot_name: "Vargas Jr",
     }),
   });
 
