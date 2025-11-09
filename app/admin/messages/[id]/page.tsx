@@ -1,5 +1,6 @@
 import {
   OutboxMessagesTable,
+  OutboxMessageRecipientsTable,
   InboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
@@ -68,6 +69,25 @@ export default async function OutboxMessagePage({
 
   const parentMessage = parentMessages[0];
 
+  const recipients = await db
+    .select({
+      id: ContactsTable.id,
+      displayName: ContactsTable.slackDisplayName,
+      fullName: ContactsTable.fullName,
+      email: ContactsTable.email,
+      phoneNumber: ContactsTable.phoneNumber,
+      type: OutboxMessageRecipientsTable.type,
+    })
+    .from(OutboxMessageRecipientsTable)
+    .innerJoin(
+      ContactsTable,
+      eq(OutboxMessageRecipientsTable.contactId, ContactsTable.id)
+    )
+    .where(eq(OutboxMessageRecipientsTable.messageId, id));
+
+  const toContacts = recipients.filter((r) => r.type === "TO");
+  const bccContacts = recipients.filter((r) => r.type === "BCC");
+
   return (
     <div className="flex flex-col p-4">
       <div className="flex justify-between items-center mb-4">
@@ -104,6 +124,52 @@ export default async function OutboxMessagePage({
             <LocalTime value={outboxMessage.createdAt} />
           </div>
         </div>
+
+        {toContacts.length > 0 && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">Sent To</div>
+            <div className="text-lg">
+              {toContacts.map((contact, index) => (
+                <span key={contact.id}>
+                  {index > 0 && ", "}
+                  <Link
+                    href={`/admin/crm/${contact.id}`}
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    {contact.displayName ||
+                      contact.fullName ||
+                      contact.email ||
+                      contact.phoneNumber ||
+                      "Unknown"}
+                  </Link>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {bccContacts.length > 0 && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">BCC</div>
+            <div className="text-lg">
+              {bccContacts.map((contact, index) => (
+                <span key={contact.id}>
+                  {index > 0 && ", "}
+                  <Link
+                    href={`/admin/crm/${contact.id}`}
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    {contact.displayName ||
+                      contact.fullName ||
+                      contact.email ||
+                      contact.phoneNumber ||
+                      "Unknown"}
+                  </Link>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {outboxMessage.threadId && (
           <div className="mb-4">

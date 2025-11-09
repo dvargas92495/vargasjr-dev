@@ -127,10 +127,55 @@ def get_contact_by_email(email: str) -> Optional[Contact]:
         return session.exec(statement).one_or_none()
 
 
+def get_contact_id_by_email(email: str) -> Optional[str]:
+    contact = get_contact_by_email(email)
+    return str(contact.id) if contact else None
+
+
+def get_or_create_contact_id_by_email(email: str) -> str:
+    contact = get_contact_by_email(email)
+    if contact:
+        return str(contact.id)
+    contact = create_contact(InboxType.EMAIL, email)
+    return str(contact.id)
+
+
 def get_contact_by_phone_number(phone_number: str) -> Optional[Contact]:
     with postgres_session() as session:
         statement = select(Contact).where(Contact.phone_number == phone_number)
         return session.exec(statement).one_or_none()
+
+
+def get_contact_id_by_phone_number(phone_number: str) -> Optional[str]:
+    contact = get_contact_by_phone_number(phone_number)
+    return str(contact.id) if contact else None
+
+
+def get_or_create_contact_id_by_phone_number(phone_number: str) -> str:
+    contact = get_contact_by_phone_number(phone_number)
+    if contact:
+        return str(contact.id)
+    contact = create_contact(InboxType.SMS, phone_number)
+    return str(contact.id)
+
+
+def get_contact_by_slack_id(slack_id: str) -> Optional[Contact]:
+    with postgres_session() as session:
+        statement = select(Contact).where(Contact.slack_id == slack_id)
+        return session.exec(statement).one_or_none()
+
+
+def get_contact_id_by_slack_id(slack_id: str) -> Optional[str]:
+    contact = get_contact_by_slack_id(slack_id)
+    return str(contact.id) if contact else None
+
+
+def get_or_create_contact_id_by_slack_id(slack_id: str) -> str:
+    contact = get_contact_by_slack_id(slack_id)
+    if contact:
+        return str(contact.id)
+    contact = create_contact(InboxType.SLACK, slack_id)
+    return str(contact.id)
 
 
 @lru_cache

@@ -23,6 +23,13 @@ class StoreOutboxMessageNode(BaseNode):
         .coalesce(JobOpportunityResponseNode.Outputs.outbox_message)
     )
 
+    recipients = (
+        EmailReplyNode.Outputs.recipients.coalesce(EmailInitiateNode.Outputs.recipients)
+        .coalesce(TextReplyNode.Outputs.recipients)
+        .coalesce(SlackReplyNode.Outputs.recipients)
+        .coalesce(JobOpportunityResponseNode.Outputs.recipients)
+    )
+
     message = ReadMessageNode.Outputs.message
 
     class Outputs(BaseNode.Outputs):
@@ -33,6 +40,8 @@ class StoreOutboxMessageNode(BaseNode):
         if self.outbox_message is not None:
             with postgres_session() as session:
                 session.add(self.outbox_message)
+                for recipient in self.recipients:
+                    session.add(recipient)
                 session.commit()
 
         message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"

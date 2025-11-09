@@ -9,12 +9,22 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { InboxMessageOperationTypes, InboxTypes, AppTypes } from "./constants";
+import {
+  InboxMessageOperationTypes,
+  InboxTypes,
+  AppTypes,
+  OutboxRecipientTypes,
+} from "./constants";
 
 export type InboxType = (typeof InboxTypes)[number];
 export const InboxTypesEnum = pgEnum("inbox_type", InboxTypes);
 
 export const AppTypesEnum = pgEnum("app_type", AppTypes);
+
+export const OutboxRecipientTypesEnum = pgEnum(
+  "outbox_recipient_type",
+  OutboxRecipientTypes
+);
 
 export const InboxesTable = pgTable("inboxes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -83,6 +93,20 @@ export const OutboxMessagesTable = pgTable("outbox_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   type: InboxTypesEnum("type").notNull(),
 });
+
+export const OutboxMessageRecipientsTable = pgTable(
+  "outbox_message_recipients",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => OutboxMessagesTable.id),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => ContactsTable.id),
+    type: OutboxRecipientTypesEnum("type").notNull(),
+  }
+);
 
 export const ApplicationsTable = pgTable("applications", {
   id: uuid("id").primaryKey().defaultRandom(),
