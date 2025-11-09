@@ -105,7 +105,6 @@ export const OutboxMessageRecipientsTable = pgTable(
       .notNull()
       .references(() => ContactsTable.id),
     type: OutboxRecipientTypesEnum("type").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
   }
 );
 
