@@ -23,6 +23,13 @@ export default function SimulatorPage() {
       bgColor: "bg-blue-500",
       description: "Social media",
     },
+    {
+      name: "Zoom",
+      href: "/admin/simulator/zoom",
+      icon: "📹",
+      bgColor: "bg-blue-600",
+      description: "Video conferencing",
+    },
   ];
 
   return (
