@@ -9,7 +9,7 @@ from .fetch_contact_summary_node import FetchContactSummaryNode
 
 
 class UpdateContactSummaryNode(InlinePromptNode):
-    ml_model = "gpt-4o"
+    ml_model = "gpt-5"
     blocks = [
         ChatMessagePromptBlock(
             chat_role="SYSTEM",

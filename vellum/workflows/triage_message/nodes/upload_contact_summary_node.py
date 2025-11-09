@@ -1,5 +1,6 @@
 from vellum.workflows.nodes import BaseNode
 from services.aws import get_aws_session, generate_s3_key
+from services.constants import S3_MEMORY_BUCKET
 from .fetch_contact_summary_node import FetchContactSummaryNode
 from .update_contact_summary_node import UpdateContactSummaryNode
 
@@ -15,7 +16,7 @@ class UploadContactSummaryNode(BaseNode):
         try:
             session = get_aws_session()
             s3_client = session.client("s3")
-            bucket_name = "vargas-jr-memory"
+            bucket_name = S3_MEMORY_BUCKET
             
             base_key = f"contacts/{self.contact_id}/summary.txt"
             key = generate_s3_key(base_key)
