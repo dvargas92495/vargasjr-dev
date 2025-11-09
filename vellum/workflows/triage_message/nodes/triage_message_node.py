@@ -104,6 +104,11 @@ def job_opportunity_response(
     express genuine interest in the role, and explain how your automated development skills could 
     benefit their team. The forwarder will automatically receive a BCC copy of your response to 
     stay informed.
+    
+    CRITICAL: In your initial paragraph, acknowledge that while this email was originally intended 
+    for the person who forwarded it, that person is not currently available for new work. However, 
+    emphasize that because Vargas JR is infinitely scalable and fully automated, you are available 
+    and eager to discuss the opportunity.
     """
     pass
 

@@ -3,7 +3,10 @@ from typing import Optional
 from uuid import UUID
 from models.outbox_message import OutboxMessage
 from models.types import InboxType
-from services.aws import send_email
+from models.inbox_message import InboxMessage
+from services import postgres_session
+from services.aws import send_email, extract_original_message_id
+from sqlmodel import select
 from vellum.workflows.nodes import BaseNode
 from .read_message_node import ReadMessageNode
 from .parse_function_call_node import ParseFunctionCallNode
@@ -25,11 +28,20 @@ class JobOpportunityResponseNode(BaseNode):
 
     def run(self) -> BaseNode.Outputs:
         try:
+            original_message_id = None
+            with postgres_session() as session:
+                statement = select(InboxMessage).where(InboxMessage.id == self.inbox_message_id)
+                inbox_message = session.exec(statement).first()
+                if inbox_message and inbox_message.external_id:
+                    original_message_id = extract_original_message_id(inbox_message.external_id)
+            
             send_email(
                 to=self.original_recruiter_email,
                 body=self.recruiter_body,
                 subject=self.recruiter_subject,
                 bcc=self.forwarder_email,
+                in_reply_to=original_message_id,
+                references=original_message_id,
             )
             
         except Exception as e:
