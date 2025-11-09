@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { VideoCameraIcon } from "@heroicons/react/24/outline";
 
-export default function ZoomSimulatorClient() {
+export default function RecallSimulatorClient() {
   const [meetingUrl, setMeetingUrl] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -11,7 +11,7 @@ export default function ZoomSimulatorClient() {
 
   const handleJoin = async () => {
     if (!meetingUrl.trim()) {
-      setError("Please enter a Zoom meeting URL");
+      setError("Please enter a meeting URL");
       return;
     }
 
@@ -60,10 +60,10 @@ export default function ZoomSimulatorClient() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              Join Zoom Meeting
+              Join Meeting
             </h2>
             <p className="text-sm text-gray-500">
-              Enter a Zoom meeting URL to create a bot
+              Enter a meeting URL to create a Recall bot
             </p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function ZoomSimulatorClient() {
             How it works
           </h3>
           <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Enter a valid Zoom meeting URL</li>
+            <li>• Enter a valid meeting URL (Zoom, Google Meet, etc.)</li>
             <li>• Click &quot;Join Meeting&quot; to create a Recall bot</li>
             <li>• The bot will join the meeting and start recording</li>
           </ul>

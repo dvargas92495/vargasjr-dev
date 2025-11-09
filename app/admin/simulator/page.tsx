@@ -24,11 +24,11 @@ export default function SimulatorPage() {
       description: "Social media",
     },
     {
-      name: "Zoom",
-      href: "/admin/simulator/zoom",
+      name: "Recall",
+      href: "/admin/simulator/recall",
       icon: "📹",
       bgColor: "bg-blue-600",
-      description: "Video conferencing",
+      description: "Meeting bot integration",
     },
   ];
 

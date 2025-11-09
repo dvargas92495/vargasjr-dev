@@ -13,19 +13,19 @@ async function createBotHandler(body: unknown) {
   const { meeting_url } = createBotSchema.parse(body);
 
   const db = getDb();
-  const [zoomApp] = await db
+  const [recallApp] = await db
     .select()
     .from(ApplicationsTable)
-    .where(eq(ApplicationsTable.name, "Zoom"))
+    .where(eq(ApplicationsTable.name, "Recall"))
     .limit(1);
 
-  if (!zoomApp || !zoomApp.clientSecret) {
+  if (!recallApp || !recallApp.clientSecret) {
     throw new BadRequestError(
-      "Zoom application not configured. Please add Zoom application with Recall API key in the applications table."
+      "Recall application not configured. Please add Recall application with API key in the applications table."
     );
   }
 
-  const recallApiKey = zoomApp.clientSecret;
+  const recallApiKey = recallApp.clientSecret;
   const recallApiUrl = "https://us-west-2.recall.ai/api/v1/bot/";
 
   const response = await fetch(recallApiUrl, {
