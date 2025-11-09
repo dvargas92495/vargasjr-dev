@@ -30,9 +30,6 @@ jobs:
   preview-workflows:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    env:
-      GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
-      VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -66,9 +63,6 @@ jobs:
   push-workflows:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    env:
-      GITHUB_PRIVATE_KEY: ${{ secrets.VARGASJR_GITHUB_PRIVATE_KEY }}
-      VELLUM_API_KEY: ${{ secrets.VELLUM_API_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
