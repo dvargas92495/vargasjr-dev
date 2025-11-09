@@ -22,6 +22,26 @@ def get_aws_session() -> boto3.Session:
     return boto3.Session(region_name=region)
 
 
+def generate_s3_key(base_key: str) -> str:
+    """
+    Generate S3 key with environment-specific prefix.
+    
+    In production, returns the base key as-is.
+    In preview environments, prefixes with previews/{commitSha}/.
+    
+    Args:
+        base_key: The base S3 key (e.g., "contacts/{id}/summary.txt")
+    
+    Returns:
+        The full S3 key with environment-specific prefix
+    """
+    if os.getenv("VERCEL_ENV") == "production":
+        return base_key
+    
+    preview_id = os.getenv("VERCEL_GIT_COMMIT_SHA", "preview")
+    return f"previews/{preview_id}/{base_key}"
+
+
 def download_memory(logger: Logger):
     session = get_aws_session()
     s3_client = session.client("s3")
