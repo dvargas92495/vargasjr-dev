@@ -1,7 +1,6 @@
-import os
 from typing import Optional
 from vellum.workflows.nodes import BaseNode
-from services.aws import get_aws_session
+from services.aws import get_aws_session, generate_s3_key
 from .read_message_node import ReadMessageNode
 
 
@@ -20,11 +19,8 @@ class FetchContactSummaryNode(BaseNode):
             s3_client = session.client("s3")
             bucket_name = "vargas-jr-memory"
             
-            if os.getenv("VERCEL_ENV") == "production":
-                key = f"contacts/{contact_id}/summary.txt"
-            else:
-                preview_id = os.getenv("VERCEL_GIT_COMMIT_SHA", "preview")
-                key = f"previews/{preview_id}/contacts/{contact_id}/summary.txt"
+            base_key = f"contacts/{contact_id}/summary.txt"
+            key = generate_s3_key(base_key)
             
             response = s3_client.get_object(Bucket=bucket_name, Key=key)
             current_summary = response["Body"].read().decode("utf-8")

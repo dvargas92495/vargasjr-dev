@@ -1,6 +1,5 @@
-import os
 from vellum.workflows.nodes import BaseNode
-from services.aws import get_aws_session
+from services.aws import get_aws_session, generate_s3_key
 from .fetch_contact_summary_node import FetchContactSummaryNode
 from .update_contact_summary_node import UpdateContactSummaryNode
 
@@ -18,11 +17,8 @@ class UploadContactSummaryNode(BaseNode):
             s3_client = session.client("s3")
             bucket_name = "vargas-jr-memory"
             
-            if os.getenv("VERCEL_ENV") == "production":
-                key = f"contacts/{self.contact_id}/summary.txt"
-            else:
-                preview_id = os.getenv("VERCEL_GIT_COMMIT_SHA", "preview")
-                key = f"previews/{preview_id}/contacts/{self.contact_id}/summary.txt"
+            base_key = f"contacts/{self.contact_id}/summary.txt"
+            key = generate_s3_key(base_key)
             
             s3_client.put_object(
                 Bucket=bucket_name,

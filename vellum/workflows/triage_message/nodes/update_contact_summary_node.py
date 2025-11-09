@@ -23,7 +23,7 @@ Your goal is to maintain a concise, informative summary of this contact that cap
 - Notable patterns in their communication
 
 Keep the summary focused and actionable. Update or add new information based on the latest message, \
-but preserve important historical context. The summary should be 2-4 sentences.
+but preserve important historical context.
 
 {% if current_summary %}Current summary:
 {{ current_summary }}
@@ -40,7 +40,9 @@ Contact details:
 Latest message (via {{ channel }}):
 {{ message }}
 
-Provide an updated summary that incorporates this new information.""",
+Provide an updated summary that incorporates this new information. If the latest message does not add \
+substantive new information and aligns well with the current summary, it's acceptable to keep the summary \
+unchanged and return it as-is.""",
                 ),
             ],
         ),
