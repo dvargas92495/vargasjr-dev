@@ -354,6 +354,22 @@ async function setup(): Promise<void> {
     }
   }
 
+  const nodeptyPrebuildsPath = join(
+    process.cwd(),
+    "node_modules/@cdktf/node-pty-prebuilt-multiarch/prebuilds"
+  );
+  if (existsSync(nodeptyPrebuildsPath)) {
+    try {
+      const win32Path = join(nodeptyPrebuildsPath, "win32-x64");
+      if (existsSync(win32Path)) {
+        await fs.rm(win32Path, { recursive: true, force: true });
+        console.log("  Removed Windows prebuilds (win32-x64), saving ~158MB");
+      }
+    } catch (error) {
+      console.warn("  Could not remove Windows prebuilds:", error);
+    }
+  }
+
   console.log("\n=== Step 4: Environment setup ===");
 
   const isMainBranch = process.env.GITHUB_REF === "refs/heads/main";
