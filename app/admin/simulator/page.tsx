@@ -23,6 +23,13 @@ export default function SimulatorPage() {
       bgColor: "bg-blue-500",
       description: "Social media",
     },
+    {
+      name: "Recall",
+      href: "/admin/simulator/recall",
+      icon: "📹",
+      bgColor: "bg-blue-600",
+      description: "Meeting bot integration",
+    },
   ];
 
   return (
