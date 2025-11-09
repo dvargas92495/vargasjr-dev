@@ -1,12 +1,6 @@
-from typing import Any, Dict, List
+from typing import List
 from vellum.workflows.state import BaseState
-from vellum.client.core.pydantic_utilities import UniversalBaseModel
-
-
-class ActionRecord(UniversalBaseModel):
-    name: str
-    args: Dict[str, Any]
-    result: str
+from services import ActionRecord
 
 
 class State(BaseState):

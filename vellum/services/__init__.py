@@ -3,9 +3,10 @@ from functools import lru_cache
 from logging import Logger
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 import requests
 from pydantic import BaseModel
+from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from models.contact import Contact
 from models.inbox import Inbox
 from models.application import Application
@@ -22,6 +23,12 @@ from models.pkm.sport_game import SportGame
 from models.pkm.sport_team import SportTeam
 from models.pkm.transaction_rule import TransactionRule
 from models.types import InboxType, PersonalTransactionCategory, Sport
+
+
+class ActionRecord(UniversalBaseModel):
+    name: str
+    args: Dict[str, Any]
+    result: str
 
 
 def to_dollar_float(value: str) -> float:

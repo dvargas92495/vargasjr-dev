@@ -3,10 +3,9 @@ import requests
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from vellum.workflows.nodes import BaseNode
-from services import get_application_by_name
+from services import get_application_by_name, ActionRecord
 from .read_message_node import ReadMessageNode
 from .parse_function_call_node import ParseFunctionCallNode
-from ..state import ActionRecord
 
 logger = logging.getLogger(__name__)
 

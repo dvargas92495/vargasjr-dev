@@ -133,6 +133,11 @@ def create_meeting(
     The system will automatically schedule the earliest available slot using the contact's
     information from the message. After scheduling, you will be prompted again to craft
     an appropriate response with the meeting details.
+    
+    IMPORTANT: If you see in the action_history that a previous create_meeting attempt failed,
+    DO NOT try to call create_meeting again. Instead, inform the recipient that you don't know
+    how to schedule meetings yet and ask if it would be possible to continue the conversation
+    over email instead.
     """
     pass
 
