@@ -52,7 +52,7 @@ export async function getContactSummaryFromS3(
 ): Promise<string | null> {
   try {
     const bucketName = AWS_S3_BUCKETS.MEMORY;
-    const baseKey = `contact-summaries/${contactId}.txt`;
+    const baseKey = `contacts/${contactId}/summary.txt`;
     const key = generateS3Key(baseKey);
 
     const command = new GetObjectCommand({
