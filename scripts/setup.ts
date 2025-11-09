@@ -333,7 +333,10 @@ async function setup(): Promise<void> {
 
   console.log("\n=== Step 3: Post-install cleanup ===");
   console.log("🧹 Cleaning up unnecessary files from node_modules...");
-  const cleanupGlobs = ["node_modules/**/.jsii"];
+  const cleanupGlobs = [
+    "node_modules/**/.jsii",
+    "node_modules/@cdktf/node-pty-prebuilt-multiarch/prebuilds/**/win32-x64",
+  ];
 
   for (const globPattern of cleanupGlobs) {
     const parsed = parseCleanupPattern(globPattern);
