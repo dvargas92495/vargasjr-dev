@@ -17,6 +17,7 @@ import { ArrowLeftIcon, PencilIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import MessageCard from "@/components/message-card";
 import LocalTime from "@/components/local-time";
+import { getContactSummaryFromS3 } from "@/app/lib/s3-client";
 
 dayjs.extend(relativeTime);
 
@@ -179,6 +180,8 @@ export default async function ContactPage({
     console.error("Error checking Stripe client status:", error);
   }
 
+  const contactSummary = await getContactSummaryFromS3(id);
+
   return (
     <div className="flex flex-col p-4">
       <div className="flex items-center gap-4 mb-4">
@@ -290,6 +293,15 @@ export default async function ContactPage({
           )}
         </div>
       </div>
+
+      {contactSummary && (
+        <div className="mt-6 bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Contact Summary</h2>
+          <div className="text-sm text-gray-900 whitespace-pre-wrap">
+            {contactSummary}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6">
         <div className="flex justify-between items-center mb-4">
