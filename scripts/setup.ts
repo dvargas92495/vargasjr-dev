@@ -196,6 +196,53 @@ async function setup(): Promise<void> {
   if (isAnalyze && cacheHit) {
     console.log("\nAnalyzing cache directory sizes...");
     const cachePaths = getCachePaths();
+    
+    let totalUncompressedSize = 0;
+    for (const cachePath of cachePaths) {
+      if (existsSync(cachePath)) {
+        try {
+          const sizeOutput = execSync(`du -sb "${cachePath}"`, {
+            encoding: "utf8",
+          }).trim();
+          totalUncompressedSize += parseInt(sizeOutput.split("\t")[0], 10);
+        } catch (error) {}
+      }
+    }
+    
+    const totalUncompressedFormatted = execSync(
+      `echo ${totalUncompressedSize} | awk '{printf "%.1fM", $1/1024/1024}'`,
+      { encoding: "utf8" }
+    ).trim();
+    
+    let compressedSize = 0;
+    try {
+      const tempFile = `/tmp/cache-size-test-${Date.now()}.tar.gz`;
+      const relativePaths = cachePaths
+        .filter((p) => existsSync(p))
+        .map((p) => p.replace(homedir() + "/", ""));
+      if (relativePaths.length > 0) {
+        execSync(
+          `tar -czf ${tempFile} -C ${homedir()} ${relativePaths.join(" ")}`,
+          { stdio: "pipe" }
+        );
+        const compressedSizeOutput = execSync(`du -sb "${tempFile}"`, {
+          encoding: "utf8",
+        }).trim();
+        compressedSize = parseInt(compressedSizeOutput.split("\t")[0], 10);
+        execSync(`rm ${tempFile}`);
+      }
+    } catch (error) {}
+    
+    const compressedFormatted = execSync(
+      `echo ${compressedSize} | awk '{printf "%.1fM", $1/1024/1024}'`,
+      { encoding: "utf8" }
+    ).trim();
+    
+    console.log(`\nTotal cache size:`);
+    console.log(`  Uncompressed: ${totalUncompressedFormatted}`);
+    console.log(`  Compressed:   ${compressedFormatted}`);
+    console.log("");
+    
     const MIN_SIZE_BYTES = 50 * 1024 * 1024;
     const MIN_DISPLAY_SIZE_BYTES = 1 * 1024 * 1024;
 
@@ -336,6 +383,12 @@ async function setup(): Promise<void> {
   const cleanupGlobs = [
     "node_modules/**/.jsii",
     "node_modules/@cdktf/node-pty-prebuilt-multiarch/prebuilds/**/win32-x64",
+    "node_modules/**/swc-linux-x64-musl",
+    "node_modules/**/swc-darwin-x64",
+    "node_modules/**/swc-darwin-arm64",
+    "node_modules/**/swc-win32-x64-msvc",
+    "node_modules/**/swc-linux-arm64-gnu",
+    "node_modules/**/swc-linux-arm64-musl",
   ];
 
   for (const globPattern of cleanupGlobs) {
