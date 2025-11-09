@@ -3,12 +3,12 @@ from vellum import (
     JinjaPromptBlock,
     PromptParameters,
 )
-from vellum.workflows.nodes import BaseInlinePromptNode
+from vellum.workflows.nodes import InlinePromptNode
 from .read_message_node import ReadMessageNode
 from .fetch_contact_summary_node import FetchContactSummaryNode
 
 
-class UpdateContactSummaryNode(BaseInlinePromptNode):
+class UpdateContactSummaryNode(InlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
         ChatMessagePromptBlock(
