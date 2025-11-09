@@ -106,9 +106,9 @@ def job_opportunity_response(
     stay informed.
     
     CRITICAL: In your initial paragraph, acknowledge that while this email was originally intended 
-    for the person who forwarded it (David Vargas), that person is not currently available 
-    for new work. However, emphasize that because Vargas JR is infinitely scalable and fully 
-    automated, you are available and eager to discuss the opportunity.
+    for the person who forwarded it, that person is not currently available for new work. However, 
+    emphasize that because Vargas JR is infinitely scalable and fully automated, you are available 
+    and eager to discuss the opportunity.
     """
     pass
 
