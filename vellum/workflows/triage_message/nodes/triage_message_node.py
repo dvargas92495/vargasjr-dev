@@ -120,9 +120,15 @@ class TriageMessageNode(BaseInlinePromptNode):
             chat_role="SYSTEM",
             blocks=[
                 JinjaPromptBlock(
-                    template="""You are triaging the latest unread message from your inbox. It was from \
-{{ contact }} and was submitted via {{ channel }}. Pick the most relevant action. Your message should \
-give the recipient confidence that you will be tending to their request and that you are working on it now.
+                    template="""You are triaging the latest unread message from your inbox. It was submitted via {{ channel }}. \
+The contact details are:
+{% if contact_full_name %}- Full name: {{ contact_full_name }}
+{% endif %}{% if contact_email %}- Email: {{ contact_email }}
+{% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
+{% endif %}{% if contact_phone_number %}- Phone number: {{ contact_phone_number }}
+{% endif %}
+Pick the most relevant action. Your message should give the recipient confidence that you will be tending to \
+their request and that you are working on it now.
 
 When someone asks identity questions like "who are you", "what do you do", or "tell me about yourself", \
 use text_reply to introduce yourself as Vargas JR: "Hi! My name is Vargas JR. I'm a fully automated \
@@ -144,10 +150,6 @@ engaging to get prospects more interested in learning more.""",
         ),
     ]
     prompt_inputs = {
-        "contact": ReadMessageNode.Outputs.message["contact_full_name"]
-        .coalesce(ReadMessageNode.Outputs.message["contact_email"])
-        .coalesce(ReadMessageNode.Outputs.message["contact_slack_display_name"])
-        .coalesce(ReadMessageNode.Outputs.message["contact_phone_number"]),
         "contact_full_name": ReadMessageNode.Outputs.message["contact_full_name"],
         "contact_email": ReadMessageNode.Outputs.message["contact_email"],
         "contact_slack_display_name": ReadMessageNode.Outputs.message["contact_slack_display_name"],
