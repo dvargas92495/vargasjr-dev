@@ -31,12 +31,11 @@ export function createStableCacheKey(): string {
 
 export function getFullCacheKey(): string {
   const cacheKey = createStableCacheKey();
-  return `v6-deps-${process.platform}-${cacheKey}`;
+  return `v7-deps-${process.platform}-${cacheKey}`;
 }
 
 export function getCachePaths(): string[] {
   return [
-    join(homedir(), ".npm"),
     join(homedir(), ".cache", "ms-playwright"),
     join(process.cwd(), "node_modules"),
   ];
