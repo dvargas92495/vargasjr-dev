@@ -36,6 +36,7 @@ export default function ApplicationFormRenderer({
       return <TwilioForm />;
     case "NOTION":
     case "DEVIN":
+    case "RECALL":
     default:
       return appType ? <DefaultApplicationForm /> : null;
   }
