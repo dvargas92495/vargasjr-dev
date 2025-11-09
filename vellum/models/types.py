@@ -20,6 +20,12 @@ class InboxMessageOperationType(str, Enum):
     UNREAD = "UNREAD"
 
 
+class OutboxRecipientType(str, Enum):
+    TO = "TO"
+    CC = "CC"
+    BCC = "BCC"
+
+
 class Sport(str, Enum):
     MLB = "MLB"
     NBA = "NBA"

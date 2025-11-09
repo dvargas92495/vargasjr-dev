@@ -25,3 +25,5 @@ export const AppTypes = [
 ] as const;
 
 export type AppType = (typeof AppTypes)[number];
+
+export const OutboxRecipientTypes = ["TO", "CC", "BCC"] as const;

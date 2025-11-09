@@ -10,8 +10,6 @@ class OutboxMessage(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     parent_inbox_message_id: UUID = Field(sa_column_kwargs={"name": "parent_inbox_message_id"})
-    contact_id: Optional[UUID] = Field(default=None, sa_column_kwargs={"name": "contact_id"})
-    bcc: Optional[str] = None
     body: str
     thread_id: Optional[str] = Field(default=None, sa_column_kwargs={"name": "thread_id"})
     created_at: datetime = Field(

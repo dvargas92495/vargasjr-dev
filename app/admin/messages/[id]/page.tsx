@@ -1,5 +1,6 @@
 import {
   OutboxMessagesTable,
+  OutboxMessageRecipientsTable,
   InboxMessagesTable,
   ContactsTable,
 } from "@/db/schema";
@@ -39,8 +40,6 @@ export default async function OutboxMessagePage({
       type: OutboxMessagesTable.type,
       threadId: OutboxMessagesTable.threadId,
       parentInboxMessageId: OutboxMessagesTable.parentInboxMessageId,
-      contactId: OutboxMessagesTable.contactId,
-      bcc: OutboxMessagesTable.bcc,
     })
     .from(OutboxMessagesTable)
     .where(eq(OutboxMessagesTable.id, id))
@@ -70,35 +69,24 @@ export default async function OutboxMessagePage({
 
   const parentMessage = parentMessages[0];
 
-  const toContact = outboxMessage.contactId
-    ? await db
-        .select({
-          id: ContactsTable.id,
-          displayName: ContactsTable.slackDisplayName,
-          fullName: ContactsTable.fullName,
-          email: ContactsTable.email,
-          phoneNumber: ContactsTable.phoneNumber,
-        })
-        .from(ContactsTable)
-        .where(eq(ContactsTable.id, outboxMessage.contactId))
-        .limit(1)
-        .then((rows) => rows[0])
-    : null;
+  const recipients = await db
+    .select({
+      id: ContactsTable.id,
+      displayName: ContactsTable.slackDisplayName,
+      fullName: ContactsTable.fullName,
+      email: ContactsTable.email,
+      phoneNumber: ContactsTable.phoneNumber,
+      type: OutboxMessageRecipientsTable.type,
+    })
+    .from(OutboxMessageRecipientsTable)
+    .innerJoin(
+      ContactsTable,
+      eq(OutboxMessageRecipientsTable.contactId, ContactsTable.id)
+    )
+    .where(eq(OutboxMessageRecipientsTable.messageId, id));
 
-  const bccContact = outboxMessage.bcc
-    ? await db
-        .select({
-          id: ContactsTable.id,
-          displayName: ContactsTable.slackDisplayName,
-          fullName: ContactsTable.fullName,
-          email: ContactsTable.email,
-          phoneNumber: ContactsTable.phoneNumber,
-        })
-        .from(ContactsTable)
-        .where(eq(ContactsTable.email, outboxMessage.bcc))
-        .limit(1)
-        .then((rows) => rows[0])
-    : null;
+  const toContacts = recipients.filter((r) => r.type === "TO");
+  const bccContacts = recipients.filter((r) => r.type === "BCC");
 
   return (
     <div className="flex flex-col p-4">
@@ -137,38 +125,48 @@ export default async function OutboxMessagePage({
           </div>
         </div>
 
-        {toContact && (
+        {toContacts.length > 0 && (
           <div className="mb-4">
             <div className="text-sm text-gray-300">Sent To</div>
             <div className="text-lg">
-              <Link
-                href={`/admin/crm/${toContact.id}`}
-                className="text-blue-400 hover:text-blue-300 underline"
-              >
-                {toContact.displayName ||
-                  toContact.fullName ||
-                  toContact.email ||
-                  toContact.phoneNumber ||
-                  "Unknown"}
-              </Link>
+              {toContacts.map((contact, index) => (
+                <span key={contact.id}>
+                  {index > 0 && ", "}
+                  <Link
+                    href={`/admin/crm/${contact.id}`}
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    {contact.displayName ||
+                      contact.fullName ||
+                      contact.email ||
+                      contact.phoneNumber ||
+                      "Unknown"}
+                  </Link>
+                </span>
+              ))}
             </div>
           </div>
         )}
 
-        {bccContact && (
+        {bccContacts.length > 0 && (
           <div className="mb-4">
             <div className="text-sm text-gray-300">BCC</div>
             <div className="text-lg">
-              <Link
-                href={`/admin/crm/${bccContact.id}`}
-                className="text-blue-400 hover:text-blue-300 underline"
-              >
-                {bccContact.displayName ||
-                  bccContact.fullName ||
-                  bccContact.email ||
-                  bccContact.phoneNumber ||
-                  "Unknown"}
-              </Link>
+              {bccContacts.map((contact, index) => (
+                <span key={contact.id}>
+                  {index > 0 && ", "}
+                  <Link
+                    href={`/admin/crm/${contact.id}`}
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    {contact.displayName ||
+                      contact.fullName ||
+                      contact.email ||
+                      contact.phoneNumber ||
+                      "Unknown"}
+                  </Link>
+                </span>
+              ))}
             </div>
           </div>
         )}
