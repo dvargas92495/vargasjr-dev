@@ -333,7 +333,10 @@ async function setup(): Promise<void> {
 
   console.log("\n=== Step 3: Post-install cleanup ===");
   console.log("🧹 Cleaning up unnecessary files from node_modules...");
-  const cleanupGlobs = ["node_modules/**/.jsii"];
+  const cleanupGlobs = [
+    "node_modules/**/.jsii",
+    "node_modules/@cdktf/node-pty-prebuilt-multiarch/prebuilds/**/win32-x64",
+  ];
 
   for (const globPattern of cleanupGlobs) {
     const parsed = parseCleanupPattern(globPattern);
@@ -351,22 +354,6 @@ async function setup(): Promise<void> {
       }
     } catch (error) {
       console.warn(`  Could not clean up ${globPattern}:`, error);
-    }
-  }
-
-  const nodeptyPrebuildsPath = join(
-    process.cwd(),
-    "node_modules/@cdktf/node-pty-prebuilt-multiarch/prebuilds"
-  );
-  if (existsSync(nodeptyPrebuildsPath)) {
-    try {
-      const win32Path = join(nodeptyPrebuildsPath, "win32-x64");
-      if (existsSync(win32Path)) {
-        await fs.rm(win32Path, { recursive: true, force: true });
-        console.log("  Removed Windows prebuilds (win32-x64), saving ~158MB");
-      }
-    } catch (error) {
-      console.warn("  Could not remove Windows prebuilds:", error);
     }
   }
 
