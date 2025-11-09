@@ -27,6 +27,8 @@ class JobOpportunityResponseNode(BaseNode):
         outbox_message: Optional[OutboxMessage] = None
 
     def run(self) -> BaseNode.Outputs:
+        from services import get_contact_id_by_email
+        
         try:
             original_message_id = None
             with postgres_session() as session:
@@ -48,10 +50,14 @@ class JobOpportunityResponseNode(BaseNode):
             logger.exception("Failed to send job opportunity emails")
             return self.Outputs(summary=f"Failed to send job opportunity emails: {str(e)}")
 
+        contact_id = get_contact_id_by_email(self.original_recruiter_email)
+
         return self.Outputs(
             summary=f"Sent job opportunity response to {self.original_recruiter_email} with BCC to {self.forwarder_email}.",
             outbox_message=OutboxMessage(
                 parent_inbox_message_id=self.inbox_message_id,
+                contact_id=contact_id,
+                bcc=self.forwarder_email,
                 body=self.recruiter_body,
                 type=InboxType.EMAIL,
                 thread_id=self.thread_id,

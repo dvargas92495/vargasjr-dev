@@ -20,6 +20,8 @@ class TextReplyNode(BaseNode):
         outbox_message: Optional[OutboxMessage] = None
 
     def run(self) -> BaseNode.Outputs:
+        from services import get_contact_id_by_phone_number
+        
         from_phone = self.inbox_name.replace("twilio-phone-", "")
         
         send_sms(
@@ -28,10 +30,13 @@ class TextReplyNode(BaseNode):
             body=self.message
         )
         
+        contact_id = get_contact_id_by_phone_number(self.phone_number)
+        
         return self.Outputs(
             summary=f"Sent text message to {self.phone_number}.",
             outbox_message=OutboxMessage(
                 parent_inbox_message_id=self.inbox_message_id,
+                contact_id=contact_id,
                 body=self.message,
                 type=InboxType.SMS,
                 thread_id=self.thread_id,

@@ -39,6 +39,8 @@ export default async function OutboxMessagePage({
       type: OutboxMessagesTable.type,
       threadId: OutboxMessagesTable.threadId,
       parentInboxMessageId: OutboxMessagesTable.parentInboxMessageId,
+      contactId: OutboxMessagesTable.contactId,
+      bcc: OutboxMessagesTable.bcc,
     })
     .from(OutboxMessagesTable)
     .where(eq(OutboxMessagesTable.id, id))
@@ -67,6 +69,36 @@ export default async function OutboxMessagePage({
     .limit(1);
 
   const parentMessage = parentMessages[0];
+
+  const toContact = outboxMessage.contactId
+    ? await db
+        .select({
+          id: ContactsTable.id,
+          displayName: ContactsTable.slackDisplayName,
+          fullName: ContactsTable.fullName,
+          email: ContactsTable.email,
+          phoneNumber: ContactsTable.phoneNumber,
+        })
+        .from(ContactsTable)
+        .where(eq(ContactsTable.id, outboxMessage.contactId))
+        .limit(1)
+        .then((rows) => rows[0])
+    : null;
+
+  const bccContact = outboxMessage.bcc
+    ? await db
+        .select({
+          id: ContactsTable.id,
+          displayName: ContactsTable.slackDisplayName,
+          fullName: ContactsTable.fullName,
+          email: ContactsTable.email,
+          phoneNumber: ContactsTable.phoneNumber,
+        })
+        .from(ContactsTable)
+        .where(eq(ContactsTable.email, outboxMessage.bcc))
+        .limit(1)
+        .then((rows) => rows[0])
+    : null;
 
   return (
     <div className="flex flex-col p-4">
@@ -104,6 +136,42 @@ export default async function OutboxMessagePage({
             <LocalTime value={outboxMessage.createdAt} />
           </div>
         </div>
+
+        {toContact && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">Sent To</div>
+            <div className="text-lg">
+              <Link
+                href={`/admin/crm/${toContact.id}`}
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                {toContact.displayName ||
+                  toContact.fullName ||
+                  toContact.email ||
+                  toContact.phoneNumber ||
+                  "Unknown"}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {bccContact && (
+          <div className="mb-4">
+            <div className="text-sm text-gray-300">BCC</div>
+            <div className="text-lg">
+              <Link
+                href={`/admin/crm/${bccContact.id}`}
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                {bccContact.displayName ||
+                  bccContact.fullName ||
+                  bccContact.email ||
+                  bccContact.phoneNumber ||
+                  "Unknown"}
+              </Link>
+            </div>
+          </div>
+        )}
 
         {outboxMessage.threadId && (
           <div className="mb-4">

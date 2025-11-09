@@ -44,15 +44,21 @@ class SlackReplyNode(BaseNode):
         outbox_message: Optional[OutboxMessage] = None
 
     def run(self) -> BaseNode.Outputs:
+        from services import get_contact_id_by_slack_id
+        
         slack_reply(
             channel=self.channel,
             message=self.message,
             to=self.to,
         )
+        
+        contact_id = get_contact_id_by_slack_id(self.to)
+        
         return self.Outputs(
             summary=f"Sent Slack reply to {self.to} at #{self.channel}.",
             outbox_message=OutboxMessage(
                 parent_inbox_message_id=self.inbox_message_id,
+                contact_id=contact_id,
                 body=self.message,
                 type=InboxType.SLACK,
                 thread_id=self.thread_id,

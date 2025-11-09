@@ -78,6 +78,8 @@ export const OutboxMessagesTable = pgTable("outbox_messages", {
   parentInboxMessageId: uuid("parent_inbox_message_id")
     .notNull()
     .references(() => InboxMessagesTable.id),
+  contactId: uuid("contact_id").references(() => ContactsTable.id),
+  bcc: varchar("bcc"),
   body: text("body").notNull(),
   threadId: varchar("thread_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
