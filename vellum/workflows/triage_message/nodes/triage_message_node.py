@@ -146,7 +146,12 @@ engaging to get prospects more interested in learning more.""",
     prompt_inputs = {
         "contact": ReadMessageNode.Outputs.message["contact_full_name"]
         .coalesce(ReadMessageNode.Outputs.message["contact_email"])
-        .coalesce(ReadMessageNode.Outputs.message["contact_slack_display_name"]),
+        .coalesce(ReadMessageNode.Outputs.message["contact_slack_display_name"])
+        .coalesce(ReadMessageNode.Outputs.message["contact_phone_number"]),
+        "contact_full_name": ReadMessageNode.Outputs.message["contact_full_name"],
+        "contact_email": ReadMessageNode.Outputs.message["contact_email"],
+        "contact_slack_display_name": ReadMessageNode.Outputs.message["contact_slack_display_name"],
+        "contact_phone_number": ReadMessageNode.Outputs.message["contact_phone_number"],
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
     }
