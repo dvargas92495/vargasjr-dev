@@ -32,12 +32,4 @@ async function searchContactsHandler(body: unknown) {
   return contacts;
 }
 
-export const GET = withApiWrapper(searchContactsHandler, {
-  getBody: async (request: Request) => {
-    const { searchParams } = new URL(request.url);
-    return {
-      q: searchParams.get("q") || "",
-      exclude: searchParams.get("exclude") || undefined,
-    };
-  },
-});
+export const GET = withApiWrapper(searchContactsHandler);
