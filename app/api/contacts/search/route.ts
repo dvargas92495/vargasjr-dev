@@ -1,20 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db/connection";
 import { ContactsTable } from "@/db/schema";
 import { ilike, ne, or, and } from "drizzle-orm";
+import { withApiWrapper } from "@/utils/api-wrapper";
+import { z } from "zod";
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q") || "";
-  const excludeId = searchParams.get("exclude");
+const SearchContactsParamsSchema = z.object({
+  q: z.string().optional().default(""),
+  exclude: z.string().optional(),
+});
+
+async function searchContactsHandler(body: unknown) {
+  const { q, exclude } = SearchContactsParamsSchema.parse(body);
 
   const db = getDb();
-  let whereClause = excludeId ? ne(ContactsTable.id, excludeId) : undefined;
+  let whereClause = exclude ? ne(ContactsTable.id, exclude) : undefined;
 
-  if (query) {
+  if (q) {
     const searchClause = or(
-      ilike(ContactsTable.fullName, `%${query}%`),
-      ilike(ContactsTable.email, `%${query}%`)
+      ilike(ContactsTable.fullName, `%${q}%`),
+      ilike(ContactsTable.email, `%${q}%`)
     );
     whereClause = whereClause ? and(whereClause, searchClause) : searchClause;
   }
@@ -25,5 +29,7 @@ export async function GET(request: NextRequest) {
     .where(whereClause)
     .limit(20);
 
-  return NextResponse.json(contacts);
+  return contacts;
 }
+
+export const GET = withApiWrapper(searchContactsHandler);

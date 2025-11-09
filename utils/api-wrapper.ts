@@ -21,7 +21,9 @@ export function withApiWrapper<T = unknown>(
     try {
       let body;
       if (request.method === "GET") {
-        body = null;
+        const url = new URL(request.url);
+        const queryParams = Object.fromEntries(url.searchParams.entries());
+        body = queryParams;
       } else if (options?.getBody) {
         body = await options.getBody(request);
       } else {
@@ -55,7 +57,7 @@ export function withApiWrapper<T = unknown>(
 
       if (context && context.params) {
         const params = await context.params;
-        body = { ...body, ...params };
+        body = { ...(body || {}), ...params };
       }
 
       const result =
