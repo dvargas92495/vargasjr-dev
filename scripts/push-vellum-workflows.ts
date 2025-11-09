@@ -648,7 +648,10 @@ class VellumWorkflowPusher {
         console.log("🔍 Detected changes in vellum.lock.json, creating PR...");
 
         try {
-          const normalizedKey = (process.env.GITHUB_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+          const normalizedKey = (process.env.GITHUB_PRIVATE_KEY || "").replace(
+            /\\n/g,
+            "\n"
+          );
           console.log(`GITHUB_PRIVATE_KEY length: ${normalizedKey.length}`);
           await getGitHubAuthHeaders();
         } catch (authError) {
