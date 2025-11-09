@@ -59,9 +59,7 @@ export default function RecallSimulatorClient() {
             <VideoCameraIcon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              Join Meeting
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900">Join Meeting</h2>
             <p className="text-sm text-gray-500">
               Enter a meeting URL to create a Recall bot
             </p>
