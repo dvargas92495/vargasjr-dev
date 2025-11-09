@@ -7,6 +7,7 @@ from vellum import (
 )
 from vellum.workflows.nodes import BaseInlinePromptNode
 from .read_message_node import ReadMessageNode
+from ..state import State
 
 
 def no_action():
@@ -150,6 +151,11 @@ The contact details are:
 {% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
 {% endif %}{% if contact_phone_number %}- Phone number: {{ contact_phone_number }}
 {% endif %}
+{% if action_history %}
+Previous actions taken:
+{% for action in action_history %}- {{ action.name }}: {{ action.result }}
+{% endfor %}
+{% endif %}
 Pick the most relevant action. Your message should give the recipient confidence that you will be tending to \
 their request and that you are working on it now.
 
@@ -179,6 +185,7 @@ engaging to get prospects more interested in learning more.""",
         "contact_phone_number": ReadMessageNode.Outputs.message["contact_phone_number"],
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
+        "action_history": State.action_history,
     }
     functions = [
         no_action,
