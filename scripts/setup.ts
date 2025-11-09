@@ -22,7 +22,7 @@ function parseCleanupPattern(pattern: string): CleanupPattern | null {
 
 async function removeFilesByName(
   baseDir: string,
-  targetFileName: string,
+  targetFileName: string
 ): Promise<number> {
   let removed = 0;
   const stack: string[] = [baseDir];
@@ -64,13 +64,13 @@ async function removeFilesByName(
 }
 
 async function fetchVercelEnvVars(
-  target: "production" | "preview",
+  target: "production" | "preview"
 ): Promise<Record<string, string>> {
   const vercelToken = process.env.VERCEL_TOKEN;
 
   if (!vercelToken) {
     console.log(
-      `⚠️ VERCEL_TOKEN not found, skipping ${target} environment variable fetch`,
+      `⚠️ VERCEL_TOKEN not found, skipping ${target} environment variable fetch`
     );
     return {};
   }
@@ -83,12 +83,12 @@ async function fetchVercelEnvVars(
           Authorization: `Bearer ${vercelToken}`,
           "Content-Type": "application/json",
         },
-      },
+      }
     );
 
     if (!response.ok) {
       throw new Error(
-        `Vercel API error: ${response.status} ${response.statusText}`,
+        `Vercel API error: ${response.status} ${response.statusText}`
       );
     }
 
@@ -111,7 +111,7 @@ async function fetchVercelEnvVars(
   } catch (error) {
     console.warn(
       `Failed to fetch Vercel ${target} environment variables:`,
-      error,
+      error
     );
     return {};
   }
@@ -133,7 +133,7 @@ function writeEnvFile(envVars: Record<string, string>): void {
   Object.entries(envVars).forEach(([key, value]) => {
     const lines = envContent.split("\n");
     const existingLineIndex = lines.findIndex((line) =>
-      line.startsWith(`${key}=`),
+      line.startsWith(`${key}=`)
     );
 
     const formattedValue = value.includes("\n") ? `"${value}"` : value;
@@ -152,7 +152,7 @@ function writeEnvFile(envVars: Record<string, string>): void {
 
   writeFileSync(envFilePath, envContent);
   console.log(
-    `✅ Added ${Object.keys(envVars).length} environment variables to .env file`,
+    `✅ Added ${Object.keys(envVars).length} environment variables to .env file`
   );
 }
 
@@ -184,7 +184,7 @@ async function setup(): Promise<void> {
   const fullCacheKey = getFullCacheKey();
   if (isAnalyze) {
     const cacheKeyDuration = ((Date.now() - cacheKeyStartTime) / 1000).toFixed(
-      2,
+      2
     );
     console.log(`Generated cache key: ${fullCacheKey} (${cacheKeyDuration}s)`);
   } else {
@@ -211,7 +211,7 @@ async function setup(): Promise<void> {
 
     const totalUncompressedFormatted = execSync(
       `echo ${totalUncompressedSize} | awk '{printf "%.1fM", $1/1024/1024}'`,
-      { encoding: "utf8" },
+      { encoding: "utf8" }
     ).trim();
 
     let compressedSize = 0;
@@ -223,7 +223,7 @@ async function setup(): Promise<void> {
       if (relativePaths.length > 0) {
         execSync(
           `tar -czf ${tempFile} -C ${homedir()} ${relativePaths.join(" ")}`,
-          { stdio: "pipe" },
+          { stdio: "pipe" }
         );
         const compressedSizeOutput = execSync(`du -sb "${tempFile}"`, {
           encoding: "utf8",
@@ -235,7 +235,7 @@ async function setup(): Promise<void> {
 
     const compressedFormatted = execSync(
       `echo ${compressedSize} | awk '{printf "%.1fM", $1/1024/1024}'`,
-      { encoding: "utf8" },
+      { encoding: "utf8" }
     ).trim();
 
     console.log(`\nTotal cache size:`);
@@ -351,7 +351,7 @@ async function setup(): Promise<void> {
   const preinstallEndTime = isAnalyze ? Date.now() : 0;
   writeFileSync(
     "/tmp/cache-status.json",
-    JSON.stringify({ cacheHit, cacheKey: fullCacheKey, preinstallEndTime }),
+    JSON.stringify({ cacheHit, cacheKey: fullCacheKey, preinstallEndTime })
   );
 
   if (isAnalyze) {
@@ -359,18 +359,18 @@ async function setup(): Promise<void> {
     console.log(
       `Cache restoration completed in ${cacheDuration}s (cache ${
         cacheHit ? "hit" : "miss"
-      })`,
+      })`
     );
   } else {
     console.log(
-      `Cache restoration completed (cache ${cacheHit ? "hit" : "miss"})`,
+      `Cache restoration completed (cache ${cacheHit ? "hit" : "miss"})`
     );
   }
 
   console.log("\n=== Step 2: Install dependencies ===");
   if (cacheHit) {
     console.log(
-      "✅ Cache hit detected (node_modules restored), skipping npm install",
+      "✅ Cache hit detected (node_modules restored), skipping npm install"
     );
     console.log("Saving ~1 minute by skipping dependency installation");
   } else {
@@ -402,7 +402,7 @@ async function setup(): Promise<void> {
       const count = await removeFilesByName(parsed.baseDir, parsed.fileName);
       if (count > 0) {
         console.log(
-          `  Removed ${count} files/directories matching ${globPattern}`,
+          `  Removed ${count} files/directories matching ${globPattern}`
         );
       }
     } catch (error) {
@@ -416,7 +416,7 @@ async function setup(): Promise<void> {
   const target = isMainBranch ? "production" : "preview";
 
   console.log(
-    `🔧 Fetching Vercel ${target.toUpperCase()} environment variables...`,
+    `🔧 Fetching Vercel ${target.toUpperCase()} environment variables...`
   );
   const envVars = await fetchVercelEnvVars(target);
   writeEnvFile(envVars);
@@ -448,7 +448,7 @@ async function setup(): Promise<void> {
       console.log(`Reason: Cache hit (${fullCacheKey})`);
     } else if (!isMainPush) {
       console.log(
-        `Reason: Not a push to main branch (event: ${process.env.GITHUB_EVENT_NAME}, ref: ${process.env.GITHUB_REF})`,
+        `Reason: Not a push to main branch (event: ${process.env.GITHUB_EVENT_NAME}, ref: ${process.env.GITHUB_REF})`
       );
     } else if (!isLintJob) {
       console.log(`Reason: Not lint job (${process.env.GITHUB_JOB})`);
