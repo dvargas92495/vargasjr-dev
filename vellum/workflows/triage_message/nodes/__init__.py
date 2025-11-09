@@ -9,6 +9,9 @@ from .text_reply_node import TextReplyNode
 from .slack_reply_node import SlackReplyNode
 from .job_opportunity_response_node import JobOpportunityResponseNode
 from .store_outbox_message_node import StoreOutboxMessageNode
+from .fetch_contact_summary_node import FetchContactSummaryNode
+from .update_contact_summary_node import UpdateContactSummaryNode
+from .upload_contact_summary_node import UploadContactSummaryNode
 
 __all__ = [
     "ReadMessageNode",
@@ -22,4 +25,7 @@ __all__ = [
     "SlackReplyNode",
     "JobOpportunityResponseNode",
     "StoreOutboxMessageNode",
+    "FetchContactSummaryNode",
+    "UpdateContactSummaryNode",
+    "UploadContactSummaryNode",
 ]
