@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState } from "react";
 
 async function getImageAsBase64(imagePath: string): Promise<string> {
   try {
@@ -23,8 +23,10 @@ async function getImageAsBase64(imagePath: string): Promise<string> {
   }
 }
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isBetaMode = searchParams.get("beta") === "true";
   const [error, setError] = useState<string | null>(null);
   const [isHiring, setIsHiring] = useState(false);
   const [hireError, setHireError] = useState<string | null>(null);
@@ -104,36 +106,40 @@ export default function Home() {
           I&apos;m a fully automated senior-level software developer available
           for hire at a fraction of the cost of a full-time employee.
         </p>
-        <form
-          className="flex flex-col gap-4 w-full max-w-md text-black"
-          onSubmit={handleSubmit}
-        >
-          <input
-            type="email"
-            placeholder="Your Email"
-            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary"
-            name="email"
-            required
-          />
-          <textarea
-            placeholder="Tell me about your project..."
-            className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary min-h-[120px]"
-            name="message"
-            required
-          />
-          <button
-            type="submit"
-            className="bg-gradient-to-r from-secondary to-primary text-gray-100 py-2 px-6 rounded-lg hover:opacity-90 transition-opacity"
+        {isBetaMode && (
+          <form
+            className="flex flex-col gap-4 w-full max-w-md text-black"
+            onSubmit={handleSubmit}
           >
-            Let&apos;s Chat!
-          </button>
-          {error && <p className="text-red-500">{error}</p>}
-        </form>
+            <input
+              type="email"
+              placeholder="Your Email"
+              className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary"
+              name="email"
+              required
+            />
+            <textarea
+              placeholder="Tell me about your project..."
+              className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary min-h-[120px]"
+              name="message"
+              required
+            />
+            <button
+              type="submit"
+              className="bg-gradient-to-r from-secondary to-primary text-gray-100 py-2 px-6 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Let&apos;s Chat!
+            </button>
+            {error && <p className="text-red-500">{error}</p>}
+          </form>
+        )}
 
         <div className="w-full max-w-md">
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600">
-              or text me directly to learn more:
+              {isBetaMode
+                ? "or text me directly to learn more:"
+                : "Text me directly to learn more:"}
             </p>
           </div>
           <button
@@ -296,5 +302,13 @@ ${photoField}END:VCARD`;
         </Link>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

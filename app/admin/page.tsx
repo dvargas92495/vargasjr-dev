@@ -201,6 +201,13 @@ export default async function AdminPage() {
           <HomeIcon className="h-4 w-4" />
           Back to Home
         </Link>
+        <Link
+          href="/?beta=true"
+          className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-500 text-white hover:bg-purple-600 rounded-lg transition-colors"
+        >
+          <HomeIcon className="h-4 w-4" />
+          Home (Beta)
+        </Link>
       </div>
       <p className="text-sm text-gray-700">Manage Vargas Jr Settings</p>
 
