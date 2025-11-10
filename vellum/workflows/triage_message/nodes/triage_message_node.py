@@ -7,6 +7,7 @@ from vellum import (
 )
 from vellum.workflows.nodes import BaseInlinePromptNode
 from .read_message_node import ReadMessageNode
+from ..state import State
 
 
 def no_action():
@@ -113,6 +114,34 @@ def job_opportunity_response(
     pass
 
 
+def create_meeting(
+    scheduling_link: str,
+):
+    """
+    Schedule a meeting using a scheduling link (Cal.com, Calendly, etc.).
+    
+    Use this function when:
+    - The message contains a scheduling link (e.g., cal.com, calendly.com, etc.)
+    - Someone is asking you to schedule a meeting or book time
+    - A link is provided for booking an appointment
+    
+    To detect scheduling links, look for:
+    - URLs containing "cal.com", "calendly.com", "reclaim.ai", "motion.com"
+    - Phrases like "book a time", "schedule a meeting", "pick a time", "here's my calendar"
+    - Links in the message body that appear to be for scheduling
+    
+    The system will automatically schedule the earliest available slot using the contact's
+    information from the message. After scheduling, you will be prompted again to craft
+    an appropriate response with the meeting details.
+    
+    IMPORTANT: If you see in the action_history that a previous create_meeting attempt failed,
+    DO NOT try to call create_meeting again. Instead, inform the recipient that you don't know
+    how to schedule meetings yet and ask if it would be possible to continue the conversation
+    over email instead.
+    """
+    pass
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -126,6 +155,11 @@ The contact details are:
 {% endif %}{% if contact_email %}- Email: {{ contact_email }}
 {% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
 {% endif %}{% if contact_phone_number %}- Phone number: {{ contact_phone_number }}
+{% endif %}
+{% if action_history %}
+Previous actions taken:
+{% for action in action_history %}- {{ action.name }}: {{ action.result }}
+{% endfor %}
 {% endif %}
 Pick the most relevant action. Your message should give the recipient confidence that you will be tending to \
 their request and that you are working on it now.
@@ -156,6 +190,7 @@ engaging to get prospects more interested in learning more.""",
         "contact_phone_number": ReadMessageNode.Outputs.message["contact_phone_number"],
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
+        "action_history": State.action_history,
     }
     functions = [
         no_action,
@@ -164,6 +199,7 @@ engaging to get prospects more interested in learning more.""",
         text_reply,
         slack_reply,
         job_opportunity_response,
+        create_meeting,
     ]
     parameters = PromptParameters(
         max_tokens=1000,

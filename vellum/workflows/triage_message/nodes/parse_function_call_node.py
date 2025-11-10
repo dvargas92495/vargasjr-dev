@@ -16,6 +16,9 @@ class ParseFunctionCallNode(BaseNode):
         job_opportunity_response = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_response"))  # type: ignore
         )
+        create_meeting = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("create_meeting"))  # type: ignore
+        )
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore

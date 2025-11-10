@@ -1,4 +1,6 @@
 from vellum.workflows import BaseWorkflow
+from vellum.workflows.inputs import BaseInputs
+from .state import State
 from .nodes import (
     ReadMessageNode,
     TriageMessageNode,
@@ -14,10 +16,11 @@ from .nodes import (
     FetchContactSummaryNode,
     UpdateContactSummaryNode,
     UploadContactSummaryNode,
+    ScheduleMeetingNode,
 )
 
 
-class TriageMessageWorkflow(BaseWorkflow):
+class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
     graph = {
         ReadMessageNode.Ports.no_action >> NoActionNode,
         ReadMessageNode.Ports.triage
@@ -25,6 +28,7 @@ class TriageMessageWorkflow(BaseWorkflow):
             TriageMessageNode
             >> {
                 ParseFunctionCallNode.Ports.no_action >> NoActionNode,
+                ParseFunctionCallNode.Ports.create_meeting >> ScheduleMeetingNode >> TriageMessageNode,
                 {
                     ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
                     ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,

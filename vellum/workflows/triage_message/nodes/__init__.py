@@ -12,6 +12,7 @@ from .store_outbox_message_node import StoreOutboxMessageNode
 from .fetch_contact_summary_node import FetchContactSummaryNode
 from .update_contact_summary_node import UpdateContactSummaryNode
 from .upload_contact_summary_node import UploadContactSummaryNode
+from .schedule_meeting_node import ScheduleMeetingNode
 
 __all__ = [
     "ReadMessageNode",
@@ -28,4 +29,5 @@ __all__ = [
     "FetchContactSummaryNode",
     "UpdateContactSummaryNode",
     "UploadContactSummaryNode",
+    "ScheduleMeetingNode",
 ]
