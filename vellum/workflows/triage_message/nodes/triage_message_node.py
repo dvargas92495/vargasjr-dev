@@ -1,6 +1,5 @@
 import os
 import requests
-from typing import List
 from uuid import UUID
 from vellum import (
     ChatMessagePromptBlock,
@@ -39,10 +38,10 @@ def get_message_history(message_id: str) -> str:
             
             history_stmt = (
                 select(InboxMessage, Inbox.name)
-                .join(Inbox, Inbox.id == InboxMessage.inbox_id)
+                .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore[arg-type]
                 .where(InboxMessage.contact_id == current_message.contact_id)
                 .where(InboxMessage.id != message_uuid)
-                .order_by(InboxMessage.created_at.desc())
+                .order_by(InboxMessage.created_at.desc())  # type: ignore[attr-defined]
                 .limit(5)
             )
             
@@ -253,7 +252,6 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
         slack_reply,
         job_opportunity_response,
         create_meeting,
-        get_message_history,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
