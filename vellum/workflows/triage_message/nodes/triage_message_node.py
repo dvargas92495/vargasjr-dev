@@ -1,5 +1,7 @@
 import os
 import requests
+from typing import List
+from uuid import UUID
 from vellum import (
     ChatMessagePromptBlock,
     JinjaPromptBlock,
@@ -8,6 +10,58 @@ from vellum import (
 from vellum.workflows.nodes import BaseInlinePromptNode
 from .read_message_node import ReadMessageNode
 from ..state import State
+from services import postgres_session
+from sqlmodel import select
+from models.inbox_message import InboxMessage
+from models.inbox import Inbox
+
+
+def get_message_history(message_id: str) -> str:
+    """
+    Retrieve the last 5 messages from the same contact or inbox as the given message.
+    This provides conversation context to help understand the message history.
+    
+    Args:
+        message_id: The UUID of the message to get history for
+    
+    Returns:
+        A formatted string containing the last 5 messages with timestamps and bodies
+    """
+    try:
+        message_uuid = UUID(message_id)
+        
+        with postgres_session() as session:
+            current_message_stmt = select(InboxMessage).where(InboxMessage.id == message_uuid)
+            current_message = session.exec(current_message_stmt).one_or_none()
+            
+            if not current_message:
+                return f"Message with ID {message_id} not found"
+            
+            history_stmt = (
+                select(InboxMessage, Inbox.name)
+                .join(Inbox, Inbox.id == InboxMessage.inbox_id)
+                .where(InboxMessage.contact_id == current_message.contact_id)
+                .where(InboxMessage.id != message_uuid)
+                .order_by(InboxMessage.created_at.desc())
+                .limit(5)
+            )
+            
+            results = session.exec(history_stmt).all()
+            
+            if not results:
+                return "No previous messages found from this contact"
+            
+            history_lines = []
+            for message, inbox_name in results:
+                timestamp = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                history_lines.append(f"[{timestamp}] via {inbox_name}: {message.body}")
+            
+            return "\n".join(history_lines)
+            
+    except ValueError:
+        return f"Invalid message ID format: {message_id}"
+    except Exception as e:
+        return f"Error retrieving message history: {str(e)}"
 
 
 def no_action():
@@ -199,6 +253,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
         slack_reply,
         job_opportunity_response,
         create_meeting,
+        get_message_history,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
