@@ -383,12 +383,7 @@ async function setup(): Promise<void> {
   const cleanupGlobs = [
     "node_modules/**/.jsii",
     "node_modules/@cdktf/node-pty-prebuilt-multiarch/prebuilds/**/win32-x64",
-    "node_modules/**/swc-linux-x64-musl",
-    "node_modules/**/swc-darwin-x64",
-    "node_modules/**/swc-darwin-arm64",
-    "node_modules/**/swc-win32-x64-msvc",
-    "node_modules/**/swc-linux-arm64-gnu",
-    "node_modules/**/swc-linux-arm64-musl",
+    "node_modules/@next/**/swc-linux-x64-musl",
   ];
 
   for (const globPattern of cleanupGlobs) {
