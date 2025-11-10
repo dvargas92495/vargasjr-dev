@@ -131,10 +131,9 @@ Pick the most relevant action. Your message should give the recipient confidence
 their request and that you are working on it now.
 
 When someone asks identity questions like "who are you", "what do you do", or "tell me about yourself", \
-use text_reply with a short, casual message (max 2 sentences) that includes a clear call-to-action to \
-start a project. For example: "Hey—I'm Vargas JR, an AI software dev. Got a project? I can send a quick \
-plan + fixed price and start today—want me to send it?" Keep it conversational and guide them toward \
-committing to hire you.""",
+use text_reply. Keep it to 1-2 short sentences in a casual, conversational tone. End with a direct \
+call-to-action to start a project now by offering to share a brief plan and price and asking for a quick \
+yes/no to proceed. Keep it conversational and guide them toward committing to hire you.""",
                 ),
             ],
         ),
