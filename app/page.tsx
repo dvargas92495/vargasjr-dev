@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 
 async function getImageAsBase64(imagePath: string): Promise<string> {
   try {
@@ -23,7 +23,7 @@ async function getImageAsBase64(imagePath: string): Promise<string> {
   }
 }
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isBetaMode = searchParams.get("beta") === "true";
@@ -137,7 +137,9 @@ export default function Home() {
         <div className="w-full max-w-md">
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600">
-              or text me directly to learn more:
+              {isBetaMode
+                ? "or text me directly to learn more:"
+                : "Text me directly to learn more:"}
             </p>
           </div>
           <button
@@ -300,5 +302,13 @@ ${photoField}END:VCARD`;
         </Link>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
