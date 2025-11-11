@@ -13,18 +13,21 @@ from services import postgres_session
 from sqlmodel import select
 from models.inbox_message import InboxMessage
 from models.inbox import Inbox
+from models.outbox_message import OutboxMessage
+from models.outbox_message_recipient import OutboxMessageRecipient
+from models.contact import Contact
 
 
 def get_message_history(message_id: str) -> str:
     """
-    Retrieve the last 5 messages from the same contact or inbox as the given message.
+    Retrieve the last 5 messages (incoming and outgoing) from the same contact.
     This provides conversation context to help understand the message history.
     
     Args:
         message_id: The UUID of the message to get history for
     
     Returns:
-        A formatted string containing the last 5 messages with timestamps and bodies
+        A formatted string containing the last 5 messages with timestamps, sources, and bodies
     """
     try:
         message_uuid = UUID(message_id)
@@ -36,24 +39,62 @@ def get_message_history(message_id: str) -> str:
             if not current_message:
                 return f"Message with ID {message_id} not found"
             
-            history_stmt = (
-                select(InboxMessage, Inbox.name)
+            current_contact_id = current_message.contact_id
+            
+            incoming_stmt = (
+                select(InboxMessage, Inbox.name, Contact)
                 .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore[arg-type]
-                .where(InboxMessage.contact_id == current_message.contact_id)
+                .join(Contact, Contact.id == InboxMessage.contact_id)  # type: ignore[arg-type]
+                .where(InboxMessage.contact_id == current_contact_id)
                 .where(InboxMessage.id != message_uuid)
                 .order_by(InboxMessage.created_at.desc())  # type: ignore[attr-defined]
                 .limit(5)
             )
             
-            results = session.exec(history_stmt).all()
+            incoming_results = session.exec(incoming_stmt).all()
             
-            if not results:
+            outgoing_stmt = (
+                select(OutboxMessage)
+                .join(OutboxMessageRecipient, OutboxMessageRecipient.message_id == OutboxMessage.id)  # type: ignore[arg-type]
+                .where(OutboxMessageRecipient.contact_id == current_contact_id)
+                .order_by(OutboxMessage.created_at.desc())  # type: ignore[attr-defined]
+                .limit(5)
+            )
+            
+            outgoing_results = session.exec(outgoing_stmt).all()
+            
+            all_messages = []
+            
+            for inbox_msg, inbox_name, contact in incoming_results:
+                source = contact.identifier if hasattr(contact, 'identifier') else (
+                    contact.full_name or contact.email or contact.phone_number or contact.slack_display_name or "Contact"
+                )
+                all_messages.append({
+                    "timestamp": inbox_msg.created_at,
+                    "source": source,
+                    "channel": inbox_name,
+                    "body": inbox_msg.body
+                })
+            
+            for outbox_msg in outgoing_results:
+                all_messages.append({
+                    "timestamp": outbox_msg.created_at,
+                    "source": "VargasJR",
+                    "channel": str(outbox_msg.type),
+                    "body": outbox_msg.body
+                })
+            
+            all_messages.sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            last_5 = all_messages[:5]
+            
+            if not last_5:
                 return "No previous messages found from this contact"
             
             history_lines = []
-            for message, inbox_name in results:
-                timestamp = message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-                history_lines.append(f"[{timestamp}] via {inbox_name}: {message.body}")
+            for msg in last_5:
+                timestamp = msg["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
+                history_lines.append(f"[{timestamp}] from {msg['source']} via {msg['channel']}: {msg['body']}")
             
             return "\n".join(history_lines)
             
