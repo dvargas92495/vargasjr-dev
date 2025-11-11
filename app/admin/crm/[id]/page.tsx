@@ -114,6 +114,7 @@ export default async function ContactPage({
   const incomingMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
+      outboxId: sql<string | null>`null`,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
       email: ContactsTable.email,
@@ -387,7 +388,7 @@ export default async function ContactPage({
             {recentMessages.map((message) => (
               <MessageCard
                 key={
-                  message.isOutgoing
+                  message.outboxId
                     ? `out-${message.outboxId}`
                     : `in-${message.id}`
                 }
