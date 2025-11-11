@@ -14,6 +14,7 @@ export default async function CRMPage() {
       slackId: ContactsTable.slackId,
       slackDisplayName: ContactsTable.slackDisplayName,
       supportsImessage: ContactsTable.supportsImessage,
+      status: ContactsTable.status,
       createdAt: ContactsTable.createdAt,
       lastMessageAt: max(InboxMessagesTable.createdAt),
     })
