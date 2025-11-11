@@ -80,18 +80,34 @@ export default async function ContactPage({
         )
       )
     );
-  
+
   const outgoingMessagesCountResult = await db
-    .select({ count: sql<number>`count(*)` })
+    .select({ count: sql<number>`count(distinct ${OutboxMessagesTable.id})` })
     .from(OutboxMessagesTable)
     .innerJoin(
       OutboxMessageRecipientsTable,
       eq(OutboxMessagesTable.id, OutboxMessageRecipientsTable.messageId)
     )
-    .where(eq(OutboxMessageRecipientsTable.contactId, contactData.id));
+    .innerJoin(
+      InboxMessagesTable,
+      eq(OutboxMessagesTable.parentInboxMessageId, InboxMessagesTable.id)
+    )
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
+    .where(
+      and(
+        eq(OutboxMessageRecipientsTable.contactId, contactData.id),
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      )
+    );
 
-  const totalMessages = 
-    (incomingMessagesCountResult[0]?.count || 0) + 
+  const totalMessages =
+    (incomingMessagesCountResult[0]?.count || 0) +
     (outgoingMessagesCountResult[0]?.count || 0);
   const totalPages = Math.ceil(totalMessages / pageSize);
 
@@ -128,6 +144,7 @@ export default async function ContactPage({
   const outgoingMessages = await db
     .select({
       id: OutboxMessagesTable.parentInboxMessageId,
+      outboxId: OutboxMessagesTable.id,
       displayName: sql<string | null>`null`,
       fullName: sql<string | null>`null`,
       email: sql<string | null>`null`,
@@ -146,7 +163,19 @@ export default async function ContactPage({
       InboxMessagesTable,
       eq(OutboxMessagesTable.parentInboxMessageId, InboxMessagesTable.id)
     )
-    .where(eq(OutboxMessageRecipientsTable.contactId, contactData.id))
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
+    .where(
+      and(
+        eq(OutboxMessageRecipientsTable.contactId, contactData.id),
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      )
+    )
     .orderBy(desc(OutboxMessagesTable.createdAt));
 
   const allRecentMessages = [...incomingMessages, ...outgoingMessages]
@@ -357,14 +386,19 @@ export default async function ContactPage({
           <div className="space-y-3">
             {recentMessages.map((message) => (
               <MessageCard
-                key={message.id}
+                key={
+                  message.isOutgoing
+                    ? `out-${message.outboxId}`
+                    : `in-${message.id}`
+                }
                 message={{
                   ...message,
-                  source:
-                    message.displayName ||
-                    message.fullName ||
-                    message.email ||
-                    "Unknown",
+                  source: message.isOutgoing
+                    ? "Vargas JR"
+                    : message.displayName ||
+                      message.fullName ||
+                      message.email ||
+                      "Unknown",
                 }}
                 status={messageStatuses[message.id] || "UNREAD"}
                 inboxId={message.inboxId}
