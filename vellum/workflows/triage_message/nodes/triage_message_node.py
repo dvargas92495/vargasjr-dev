@@ -142,6 +142,17 @@ def create_meeting(
     pass
 
 
+def mark_contact_as_lead():
+    """
+    Mark the contact as a LEAD in the system. Use this when someone expresses interest
+    in working with you or asks about your services, but hasn't committed yet.
+    
+    After marking the contact as a lead, you will be prompted again to craft an
+    appropriate response to their message.
+    """
+    pass
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -155,6 +166,7 @@ The contact details are:
 {% endif %}{% if contact_email %}- Email: {{ contact_email }}
 {% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
 {% endif %}{% if contact_phone_number %}- Phone number: {{ contact_phone_number }}
+{% endif %}{% if contact_status %}- Status: {{ contact_status }}
 {% endif %}
 {% if action_history %}
 Previous actions taken:
@@ -187,6 +199,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
         "contact_email": ReadMessageNode.Outputs.message["contact_email"],
         "contact_slack_display_name": ReadMessageNode.Outputs.message["contact_slack_display_name"],
         "contact_phone_number": ReadMessageNode.Outputs.message["contact_phone_number"],
+        "contact_status": ReadMessageNode.Outputs.message["contact_status"],
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
         "action_history": State.action_history,
@@ -199,6 +212,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
         slack_reply,
         job_opportunity_response,
         create_meeting,
+        mark_contact_as_lead,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
