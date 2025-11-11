@@ -3,6 +3,8 @@ import {
   InboxMessagesTable,
   InboxMessageOperationsTable,
   InboxesTable,
+  OutboxMessagesTable,
+  OutboxMessageRecipientsTable,
 } from "@/db/schema";
 import { eq, desc, inArray, sql, and, isNull, ne, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -62,7 +64,7 @@ export default async function ContactPage({
     )
     .as("latestOperations");
 
-  const totalMessagesResult = await db
+  const incomingMessagesCountResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(InboxMessagesTable)
     .leftJoin(
@@ -78,10 +80,22 @@ export default async function ContactPage({
         )
       )
     );
-  const totalMessages = totalMessagesResult[0]?.count || 0;
+  
+  const outgoingMessagesCountResult = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(OutboxMessagesTable)
+    .innerJoin(
+      OutboxMessageRecipientsTable,
+      eq(OutboxMessagesTable.id, OutboxMessageRecipientsTable.messageId)
+    )
+    .where(eq(OutboxMessageRecipientsTable.contactId, contactData.id));
+
+  const totalMessages = 
+    (incomingMessagesCountResult[0]?.count || 0) + 
+    (outgoingMessagesCountResult[0]?.count || 0);
   const totalPages = Math.ceil(totalMessages / pageSize);
 
-  const allRecentMessages = await db
+  const incomingMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
       displayName: ContactsTable.slackDisplayName,
@@ -91,6 +105,7 @@ export default async function ContactPage({
       body: InboxMessagesTable.body,
       inboxId: InboxMessagesTable.inboxId,
       inboxName: InboxesTable.displayLabel,
+      isOutgoing: sql<boolean>`false`,
     })
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
@@ -108,9 +123,35 @@ export default async function ContactPage({
         )
       )
     )
-    .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
-    .limit(pageSize * 2)
-    .offset(offset);
+    .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id);
+
+  const outgoingMessages = await db
+    .select({
+      id: OutboxMessagesTable.parentInboxMessageId,
+      displayName: sql<string | null>`null`,
+      fullName: sql<string | null>`null`,
+      email: sql<string | null>`null`,
+      createdAt: OutboxMessagesTable.createdAt,
+      body: OutboxMessagesTable.body,
+      inboxId: InboxMessagesTable.inboxId,
+      inboxName: sql<string | null>`'Outgoing'`,
+      isOutgoing: sql<boolean>`true`,
+    })
+    .from(OutboxMessagesTable)
+    .innerJoin(
+      OutboxMessageRecipientsTable,
+      eq(OutboxMessagesTable.id, OutboxMessageRecipientsTable.messageId)
+    )
+    .innerJoin(
+      InboxMessagesTable,
+      eq(OutboxMessagesTable.parentInboxMessageId, InboxMessagesTable.id)
+    )
+    .where(eq(OutboxMessageRecipientsTable.contactId, contactData.id))
+    .orderBy(desc(OutboxMessagesTable.createdAt));
+
+  const allRecentMessages = [...incomingMessages, ...outgoingMessages]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(offset, offset + pageSize * 2);
 
   const messageOperations = await db
     .select()
