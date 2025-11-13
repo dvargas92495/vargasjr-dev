@@ -37,7 +37,7 @@ def get_message_history(message_id: Optional[str] = None) -> str:
     Returns:
         A formatted string containing the last 5 messages with timestamps, sources, and bodies
     """
-    pass
+    raise NotImplementedError("Tool stub. Implemented in GetMessageHistoryNode.")
 
 
 def no_action():
