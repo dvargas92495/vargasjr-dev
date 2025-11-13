@@ -9,99 +9,35 @@ from vellum import (
 from vellum.workflows.nodes import BaseInlinePromptNode
 from .read_message_node import ReadMessageNode
 from ..state import State
-from services import postgres_session
-from sqlmodel import select
-from models.inbox_message import InboxMessage
-from models.inbox import Inbox
-from models.outbox_message import OutboxMessage
-from models.outbox_message_recipient import OutboxMessageRecipient
-from models.contact import Contact
+from typing import Optional
 
 
-def get_message_history(message_id: str) -> str:
+def get_message_history(message_id: Optional[str] = None) -> str:
     """
-    Retrieve the last 5 messages (incoming and outgoing) from the same contact.
-    This provides conversation context to help understand the message history.
+    Retrieve the last 5 messages (incoming and outgoing) from the same contact to provide
+    conversation context. This helps understand the message history before deciding on an action.
+    
+    Use this function when:
+    - You need context about previous interactions with this contact
+    - The message references earlier conversations
+    - You want to understand the relationship history before responding
+    
+    The system will automatically retrieve history for the current message's contact.
+    After retrieving history, you will be prompted again to craft an appropriate response
+    with the conversation context available in action_history.
+    
+    IMPORTANT: If you see in the action_history that get_message_history has already been called,
+    DO NOT call it again. The history is already available in the action_history. Use that
+    information to inform your response instead.
     
     Args:
-        message_id: The UUID of the message to get history for
+        message_id: Optional UUID of the message to get history for. If not provided,
+                   uses the current message being triaged.
     
     Returns:
         A formatted string containing the last 5 messages with timestamps, sources, and bodies
     """
-    try:
-        message_uuid = UUID(message_id)
-        
-        with postgres_session() as session:
-            current_message_stmt = select(InboxMessage).where(InboxMessage.id == message_uuid)
-            current_message = session.exec(current_message_stmt).one_or_none()
-            
-            if not current_message:
-                return f"Message with ID {message_id} not found"
-            
-            current_contact_id = current_message.contact_id
-            
-            incoming_stmt = (
-                select(InboxMessage, Inbox.name, Contact)
-                .join(Inbox, Inbox.id == InboxMessage.inbox_id)  # type: ignore[arg-type]
-                .join(Contact, Contact.id == InboxMessage.contact_id)  # type: ignore[arg-type]
-                .where(InboxMessage.contact_id == current_contact_id)
-                .where(InboxMessage.id != message_uuid)
-                .order_by(InboxMessage.created_at.desc())  # type: ignore[attr-defined]
-                .limit(5)
-            )
-            
-            incoming_results = session.exec(incoming_stmt).all()
-            
-            outgoing_stmt = (
-                select(OutboxMessage)
-                .join(OutboxMessageRecipient, OutboxMessageRecipient.message_id == OutboxMessage.id)  # type: ignore[arg-type]
-                .where(OutboxMessageRecipient.contact_id == current_contact_id)
-                .order_by(OutboxMessage.created_at.desc())  # type: ignore[attr-defined]
-                .limit(5)
-            )
-            
-            outgoing_results = session.exec(outgoing_stmt).all()
-            
-            all_messages = []
-            
-            for inbox_msg, inbox_name, contact in incoming_results:
-                source = contact.identifier if hasattr(contact, 'identifier') else (
-                    contact.full_name or contact.email or contact.phone_number or contact.slack_display_name or "Contact"
-                )
-                all_messages.append({
-                    "timestamp": inbox_msg.created_at,
-                    "source": source,
-                    "channel": inbox_name,
-                    "body": inbox_msg.body
-                })
-            
-            for outbox_msg in outgoing_results:
-                all_messages.append({
-                    "timestamp": outbox_msg.created_at,
-                    "source": "VargasJR",
-                    "channel": str(outbox_msg.type),
-                    "body": outbox_msg.body
-                })
-            
-            all_messages.sort(key=lambda x: x["timestamp"], reverse=True)
-            
-            last_5 = all_messages[:5]
-            
-            if not last_5:
-                return "No previous messages found from this contact"
-            
-            history_lines = []
-            for msg in last_5:
-                timestamp = msg["timestamp"].strftime("%Y-%m-%d %H:%M:%S")
-                history_lines.append(f"[{timestamp}] from {msg['source']} via {msg['channel']}: {msg['body']}")
-            
-            return "\n".join(history_lines)
-            
-    except ValueError:
-        return f"Invalid message ID format: {message_id}"
-    except Exception as e:
-        return f"Error retrieving message history: {str(e)}"
+    pass
 
 
 def no_action():
@@ -287,6 +223,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
     }
     functions = [
         no_action,
+        get_message_history,
         email_reply,
         email_initiate,
         text_reply,

@@ -13,6 +13,7 @@ from .fetch_contact_summary_node import FetchContactSummaryNode
 from .update_contact_summary_node import UpdateContactSummaryNode
 from .upload_contact_summary_node import UploadContactSummaryNode
 from .schedule_meeting_node import ScheduleMeetingNode
+from .get_message_history_node import GetMessageHistoryNode
 
 __all__ = [
     "ReadMessageNode",
@@ -30,4 +31,5 @@ __all__ = [
     "UpdateContactSummaryNode",
     "UploadContactSummaryNode",
     "ScheduleMeetingNode",
+    "GetMessageHistoryNode",
 ]
