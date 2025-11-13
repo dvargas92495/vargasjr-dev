@@ -31,9 +31,7 @@ class VargasJRImageUpgrader {
         !Array.isArray(lockFileContent.workflows) ||
         lockFileContent.workflows.length === 0
       ) {
-        throw new Error(
-          "Invalid vellum.lock.json format: no workflows found"
-        );
+        throw new Error("Invalid vellum.lock.json format: no workflows found");
       }
 
       const currentTag =
@@ -49,10 +47,10 @@ class VargasJRImageUpgrader {
         JSON.stringify(lockFileContent, null, 2) + "\n"
       );
 
-      console.log(`✅ Successfully updated vellum.lock.json with tag: ${newTag}`);
       console.log(
-        "\n📝 Next steps:"
+        `✅ Successfully updated vellum.lock.json with tag: ${newTag}`
       );
+      console.log("\n📝 Next steps:");
       console.log("   1. Commit the vellum.lock.json changes");
       console.log("   2. Push your changes to trigger the workflow deployment");
       console.log(

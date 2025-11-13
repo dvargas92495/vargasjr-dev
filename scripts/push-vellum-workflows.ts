@@ -112,10 +112,6 @@ class VellumWorkflowPusher {
         }
       }
 
-      if (!this.isPreviewMode) {
-        await this.displayLockFile();
-      }
-
       if (failures.length > 0) {
         const action = this.isPreviewMode ? "preview" : "push";
         console.error(
@@ -443,12 +439,6 @@ class VellumWorkflowPusher {
         `✅ Successfully pushed container image: vargasjr:${tagToUse}`
       );
 
-      if (errorType === "sdk_version_mismatch") {
-        this.updateLockFileTag(lockFileContent, tagToUse);
-        writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
-        console.log(`📝 Updated vellum.lock.json with new tag: ${tagToUse}`);
-      }
-
       console.log(`🔄 Retrying workflow push for: ${workflowName}`);
       const retryResult = await this.pushWorkflow(workflowName);
 
@@ -538,9 +528,7 @@ class VellumWorkflowPusher {
         (file: any) => file.filename === "vellum/vellum.lock.json"
       );
 
-      console.log(
-        `📋 Lock file changed: ${lockFileChanged ? "yes" : "no"}`
-      );
+      console.log(`📋 Lock file changed: ${lockFileChanged ? "yes" : "no"}`);
 
       if (lockFileChanged) {
         console.log(
@@ -610,9 +598,7 @@ class VellumWorkflowPusher {
           `✅ Successfully pushed container image: vargasjr:${currentTag}`
         );
       } else {
-        console.log(
-          "ℹ️  No changes detected in vellum.lock.json"
-        );
+        console.log("ℹ️  No changes detected in vellum.lock.json");
       }
     } catch (error) {
       console.error(`⚠️  Failed to handle lock file changes: ${error}`);

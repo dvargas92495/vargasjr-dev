@@ -41,10 +41,12 @@ npm run upgrade-vargasjr-image
 ```
 
 This command will:
+
 1. Increment the patch version in `vellum/vellum.lock.json`
 2. Update all workflow entries with the new container image tag
 
 After running this command:
+
 1. Commit the `vellum.lock.json` changes along with your code changes
 2. Push your changes to trigger the CI workflow
 3. The CI will automatically build and push the new container image when it detects lock file changes
