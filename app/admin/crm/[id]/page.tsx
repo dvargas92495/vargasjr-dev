@@ -3,6 +3,8 @@ import {
   InboxMessagesTable,
   InboxMessageOperationsTable,
   InboxesTable,
+  OutboxMessagesTable,
+  OutboxMessageRecipientsTable,
 } from "@/db/schema";
 import { eq, desc, inArray, sql, and, isNull, ne, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -62,7 +64,7 @@ export default async function ContactPage({
     )
     .as("latestOperations");
 
-  const totalMessagesResult = await db
+  const incomingMessagesCountResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(InboxMessagesTable)
     .leftJoin(
@@ -78,12 +80,41 @@ export default async function ContactPage({
         )
       )
     );
-  const totalMessages = totalMessagesResult[0]?.count || 0;
+
+  const outgoingMessagesCountResult = await db
+    .select({ count: sql<number>`count(distinct ${OutboxMessagesTable.id})` })
+    .from(OutboxMessagesTable)
+    .innerJoin(
+      OutboxMessageRecipientsTable,
+      eq(OutboxMessagesTable.id, OutboxMessageRecipientsTable.messageId)
+    )
+    .innerJoin(
+      InboxMessagesTable,
+      eq(OutboxMessagesTable.parentInboxMessageId, InboxMessagesTable.id)
+    )
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
+    .where(
+      and(
+        eq(OutboxMessageRecipientsTable.contactId, contactData.id),
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      )
+    );
+
+  const totalMessages =
+    (incomingMessagesCountResult[0]?.count || 0) +
+    (outgoingMessagesCountResult[0]?.count || 0);
   const totalPages = Math.ceil(totalMessages / pageSize);
 
-  const allRecentMessages = await db
+  const incomingMessages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
+      outboxId: sql<string | null>`null`,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
       email: ContactsTable.email,
@@ -91,6 +122,7 @@ export default async function ContactPage({
       body: InboxMessagesTable.body,
       inboxId: InboxMessagesTable.inboxId,
       inboxName: InboxesTable.displayLabel,
+      isOutgoing: sql<boolean>`false`,
     })
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
@@ -108,9 +140,48 @@ export default async function ContactPage({
         )
       )
     )
-    .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id)
-    .limit(pageSize * 2)
-    .offset(offset);
+    .orderBy(desc(InboxMessagesTable.createdAt), InboxMessagesTable.id);
+
+  const outgoingMessages = await db
+    .select({
+      id: OutboxMessagesTable.parentInboxMessageId,
+      outboxId: OutboxMessagesTable.id,
+      displayName: sql<string | null>`null`,
+      fullName: sql<string | null>`null`,
+      email: sql<string | null>`null`,
+      createdAt: OutboxMessagesTable.createdAt,
+      body: OutboxMessagesTable.body,
+      inboxId: InboxMessagesTable.inboxId,
+      inboxName: sql<string | null>`'Outgoing'`,
+      isOutgoing: sql<boolean>`true`,
+    })
+    .from(OutboxMessagesTable)
+    .innerJoin(
+      OutboxMessageRecipientsTable,
+      eq(OutboxMessagesTable.id, OutboxMessageRecipientsTable.messageId)
+    )
+    .innerJoin(
+      InboxMessagesTable,
+      eq(OutboxMessagesTable.parentInboxMessageId, InboxMessagesTable.id)
+    )
+    .leftJoin(
+      latestOperations,
+      eq(InboxMessagesTable.id, latestOperations.inboxMessageId)
+    )
+    .where(
+      and(
+        eq(OutboxMessageRecipientsTable.contactId, contactData.id),
+        or(
+          isNull(latestOperations.operation),
+          ne(latestOperations.operation, "ARCHIVED")
+        )
+      )
+    )
+    .orderBy(desc(OutboxMessagesTable.createdAt));
+
+  const allRecentMessages = [...incomingMessages, ...outgoingMessages]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(offset, offset + pageSize * 2);
 
   const messageOperations = await db
     .select()
@@ -316,14 +387,19 @@ export default async function ContactPage({
           <div className="space-y-3">
             {recentMessages.map((message) => (
               <MessageCard
-                key={message.id}
+                key={
+                  message.outboxId
+                    ? `out-${message.outboxId}`
+                    : `in-${message.id}`
+                }
                 message={{
                   ...message,
-                  source:
-                    message.displayName ||
-                    message.fullName ||
-                    message.email ||
-                    "Unknown",
+                  source: message.isOutgoing
+                    ? "Vargas JR"
+                    : message.displayName ||
+                      message.fullName ||
+                      message.email ||
+                      "Unknown",
                 }}
                 status={messageStatuses[message.id] || "UNREAD"}
                 inboxId={message.inboxId}
