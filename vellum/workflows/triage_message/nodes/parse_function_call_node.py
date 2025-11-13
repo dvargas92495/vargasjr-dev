@@ -7,6 +7,9 @@ from .triage_message_node import TriageMessageNode
 class ParseFunctionCallNode(BaseNode):
     class Ports(BaseNode.Ports):
         no_action = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("no_action")))  # type: ignore
+        get_message_history = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("get_message_history"))  # type: ignore
+        )
         email_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_reply")))  # type: ignore
         email_initiate = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))  # type: ignore
