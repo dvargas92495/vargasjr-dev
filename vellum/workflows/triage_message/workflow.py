@@ -17,6 +17,7 @@ from .nodes import (
     UpdateContactSummaryNode,
     UploadContactSummaryNode,
     ScheduleMeetingNode,
+    MarkContactAsLeadNode,
 )
 
 
@@ -29,6 +30,7 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
             >> {
                 ParseFunctionCallNode.Ports.no_action >> NoActionNode,
                 ParseFunctionCallNode.Ports.create_meeting >> ScheduleMeetingNode >> TriageMessageNode,
+                ParseFunctionCallNode.Ports.mark_contact_as_lead >> MarkContactAsLeadNode >> TriageMessageNode,
                 {
                     ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
                     ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,

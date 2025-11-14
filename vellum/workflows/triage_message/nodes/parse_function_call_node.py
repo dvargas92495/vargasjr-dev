@@ -19,6 +19,9 @@ class ParseFunctionCallNode(BaseNode):
         create_meeting = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("create_meeting"))  # type: ignore
         )
+        mark_contact_as_lead = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("mark_contact_as_lead"))  # type: ignore
+        )
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore

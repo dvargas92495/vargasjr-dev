@@ -2,6 +2,7 @@ from datetime import datetime, UTC
 from typing import Optional
 from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
+from .types import ContactStatus
 
 
 class Contact(SQLModel, table=True):
@@ -14,6 +15,7 @@ class Contact(SQLModel, table=True):
     slack_id: Optional[str] = None
     slack_display_name: Optional[str] = None
     supports_imessage: Optional[bool] = False
+    status: Optional[ContactStatus] = None
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"name": "created_at"},

@@ -9,7 +9,7 @@ from sqlmodel import select, or_, func
 from vellum.client.core.pydantic_utilities import UniversalBaseModel
 from models.inbox_message import InboxMessage
 from models.inbox_message_operation import InboxMessageOperation
-from models.types import InboxMessageOperationType, InboxType
+from models.types import InboxMessageOperationType, InboxType, ContactStatus
 from models.inbox import Inbox
 from models.contact import Contact
 from vellum.workflows.ports import Port
@@ -26,6 +26,7 @@ class SlimMessage(UniversalBaseModel):
     contact_full_name: Optional[str] = None
     contact_slack_display_name: Optional[str] = None
     contact_phone_number: Optional[str] = None
+    contact_status: Optional[ContactStatus] = None
     channel: InboxType
     inbox_name: str
     inbox_id: UUID
@@ -95,6 +96,7 @@ class ReadMessageNode(BaseNode):
                             contact_full_name=None,
                             contact_slack_display_name=None,
                             contact_phone_number=None,
+                            contact_status=None,
                             channel=InboxType.NONE,
                             inbox_name="",
                             inbox_id=uuid4(),
@@ -123,6 +125,7 @@ class ReadMessageNode(BaseNode):
                     contact_full_name=contact.full_name,
                     contact_slack_display_name=contact.slack_display_name,
                     contact_phone_number=contact.phone_number,
+                    contact_status=contact.status,
                     channel=inbox_type,
                     inbox_name=inbox_name,
                     inbox_id=inbox_message.inbox_id,
@@ -138,6 +141,7 @@ class ReadMessageNode(BaseNode):
                     contact_full_name=None,
                     contact_slack_display_name=None,
                     contact_phone_number=None,
+                    contact_status=None,
                     channel=InboxType.NONE,
                     inbox_name="",
                     inbox_id=uuid4(),
