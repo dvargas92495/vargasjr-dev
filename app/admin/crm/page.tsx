@@ -1,4 +1,9 @@
-import { ContactsTable, InboxMessagesTable, OutboxMessagesTable, OutboxMessageRecipientsTable } from "@/db/schema";
+import {
+  ContactsTable,
+  InboxMessagesTable,
+  OutboxMessagesTable,
+  OutboxMessageRecipientsTable,
+} from "@/db/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
