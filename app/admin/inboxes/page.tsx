@@ -21,14 +21,14 @@ export default async function InboxesPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const db = getDb();
-  let allInboxes: Array<Inbox & { lastMessageDate: Date | null }> = [];
+  let allInboxes: Array<Inbox & { lastMessageDate: string | null }> = [];
   let recentMessages: Array<{
     id: string;
     displayName: string | null;
     fullName: string | null;
     email: string | null;
-    createdAt: Date;
-    latestOperationAt: Date | null;
+    createdAt: string;
+    latestOperationAt: string | null;
     body: string;
     inboxId: string;
     inboxName: string | null;
@@ -45,7 +45,7 @@ export default async function InboxesPage({
     const pageSize = 10;
     const offset = (currentPage - 1) * pageSize;
 
-    allInboxes = await db
+    const rawInboxes = await db
       .select({
         id: InboxesTable.id,
         name: InboxesTable.name,
@@ -83,6 +83,12 @@ export default async function InboxesPage({
         desc(InboxesTable.createdAt)
       );
 
+    allInboxes = rawInboxes.map((inbox) => ({
+      ...inbox,
+      createdAt: inbox.createdAt instanceof Date ? inbox.createdAt.toISOString() : String(inbox.createdAt),
+      lastMessageDate: inbox.lastMessageDate instanceof Date ? inbox.lastMessageDate.toISOString() : inbox.lastMessageDate ? String(inbox.lastMessageDate) : null,
+    }));
+
     const latestOperations = db
       .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {
         inboxMessageId: InboxMessageOperationsTable.inboxMessageId,
@@ -112,7 +118,7 @@ export default async function InboxesPage({
     const totalMessages = totalMessagesResult[0]?.count || 0;
     totalPages = Math.ceil(totalMessages / pageSize);
 
-    const allRecentMessages = await db
+    const rawRecentMessages = await db
       .select({
         id: InboxMessagesTable.id,
         displayName: ContactsTable.slackDisplayName,
@@ -150,11 +156,17 @@ export default async function InboxesPage({
       .limit(pageSize)
       .offset(offset);
 
-    recentMessages = allRecentMessages.filter((message) => {
+    const filteredMessages = rawRecentMessages.filter((message) => {
       if (!message.email) return true;
       const emailLower = message.email.toLowerCase();
       return !emailLower.includes(OWN_EMAIL.toLowerCase());
     });
+
+    recentMessages = filteredMessages.map((message) => ({
+      ...message,
+      createdAt: message.createdAt instanceof Date ? message.createdAt.toISOString() : String(message.createdAt),
+      latestOperationAt: message.latestOperationAt instanceof Date ? message.latestOperationAt.toISOString() : message.latestOperationAt ? String(message.latestOperationAt) : null,
+    }));
 
     const messageOperations = await db
       .select()

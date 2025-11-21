@@ -3,12 +3,37 @@
 import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+function formatDate(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return "N/A";
+  try {
+    const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    if (isNaN(date.getTime())) return "Invalid date";
+    return date.toLocaleDateString();
+  } catch {
+    return "Invalid date";
+  }
+}
+
+function formatTime(dateValue: string | Date | null | undefined): string {
+  if (!dateValue) return "";
+  try {
+    const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 interface MessageCardProps {
   message: {
     id: string;
     source: string;
-    createdAt: Date;
-    latestOperationAt?: Date | null;
+    createdAt: string;
+    latestOperationAt?: string | null;
     body: string;
   };
   status: string;
@@ -110,15 +135,8 @@ const MessageCard = ({
                 {status}
               </span>
               <p className="text-xs text-gray-500">
-                {(
-                  message.latestOperationAt || message.createdAt
-                ).toLocaleDateString()}{" "}
-                {(
-                  message.latestOperationAt || message.createdAt
-                ).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatDate(message.latestOperationAt || message.createdAt)}{" "}
+                {formatTime(message.latestOperationAt || message.createdAt)}
               </p>
             </div>
           </div>
