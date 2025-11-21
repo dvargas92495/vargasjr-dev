@@ -30,9 +30,9 @@ export type AppType = (typeof AppTypes)[number];
 export const OutboxRecipientTypes = ["TO", "CC", "BCC"] as const;
 
 export const ContactStatuses = [
+  "NEW",
   "LEAD",
   "CLIENT",
-  "PROSPECT",
   "INACTIVE",
 ] as const;
 

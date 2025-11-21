@@ -27,9 +27,9 @@ class OutboxRecipientType(str, Enum):
 
 
 class ContactStatus(str, Enum):
+    NEW = "NEW"
     LEAD = "LEAD"
     CLIENT = "CLIENT"
-    PROSPECT = "PROSPECT"
     INACTIVE = "INACTIVE"
 
 

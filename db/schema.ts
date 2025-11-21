@@ -81,7 +81,7 @@ export const ContactsTable = pgTable("contacts", {
   slackId: varchar("slack_id"),
   slackDisplayName: varchar("slack_display_name"),
   supportsImessage: boolean("supports_imessage").default(false),
-  status: ContactStatusesEnum("status"),
+  status: ContactStatusesEnum("status").default("NEW"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
