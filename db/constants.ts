@@ -29,11 +29,6 @@ export type AppType = (typeof AppTypes)[number];
 
 export const OutboxRecipientTypes = ["TO", "CC", "BCC"] as const;
 
-export const ContactStatuses = [
-  "NEW",
-  "LEAD",
-  "CLIENT",
-  "INACTIVE",
-] as const;
+export const ContactStatuses = ["NEW", "LEAD", "CLIENT", "INACTIVE"] as const;
 
 export type ContactStatus = (typeof ContactStatuses)[number];
