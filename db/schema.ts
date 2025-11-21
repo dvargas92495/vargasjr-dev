@@ -14,6 +14,7 @@ import {
   InboxTypes,
   AppTypes,
   OutboxRecipientTypes,
+  ContactStatuses,
 } from "./constants";
 
 export type InboxType = (typeof InboxTypes)[number];
@@ -25,6 +26,8 @@ export const OutboxRecipientTypesEnum = pgEnum(
   "outbox_recipient_type",
   OutboxRecipientTypes
 );
+
+export const ContactStatusesEnum = pgEnum("contact_status", ContactStatuses);
 
 export const InboxesTable = pgTable("inboxes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -78,6 +81,7 @@ export const ContactsTable = pgTable("contacts", {
   slackId: varchar("slack_id"),
   slackDisplayName: varchar("slack_display_name"),
   supportsImessage: boolean("supports_imessage").default(false),
+  status: ContactStatusesEnum("status").default("NEW"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

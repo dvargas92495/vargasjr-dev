@@ -26,6 +26,13 @@ class OutboxRecipientType(str, Enum):
     BCC = "BCC"
 
 
+class ContactStatus(str, Enum):
+    NEW = "NEW"
+    LEAD = "LEAD"
+    CLIENT = "CLIENT"
+    INACTIVE = "INACTIVE"
+
+
 class Sport(str, Enum):
     MLB = "MLB"
     NBA = "NBA"
