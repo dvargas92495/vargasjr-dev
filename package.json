@@ -28,7 +28,8 @@
     "agent:start": "node dist/worker.js",
     "agent:publish": "npx tsx scripts/publish-agent.ts",
     "connect": "npx tsx scripts/ssh-connect.ts",
-    "debug-agent": "npx tsx scripts/debug-agent.ts"
+    "debug-agent": "npx tsx scripts/debug-agent.ts",
+    "upgrade-vargasjr-image": "npx tsx scripts/upgrade-vargasjr-image.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.716.0",

@@ -83,7 +83,7 @@ class VellumWorkflowPusher {
       }
 
       if (!this.isPreviewMode) {
-        await this.handleServicesChanges();
+        await this.handleLockFileChanges();
       }
 
       const workflowDirs = this.getWorkflowDirectories(workflowsDir);
@@ -110,10 +110,6 @@ class VellumWorkflowPusher {
         if (result.output) {
           outputs.push(`=== ${workflowName} ===\n${result.output}\n`);
         }
-      }
-
-      if (!this.isPreviewMode) {
-        await this.displayLockFile();
       }
 
       if (failures.length > 0) {
@@ -153,8 +149,6 @@ class VellumWorkflowPusher {
         );
       } else {
         console.log("✅ All workflows pushed successfully!");
-
-        await this.handleLockFileChanges();
       }
     } catch (error) {
       const action = this.isPreviewMode ? "preview" : "push";
@@ -445,12 +439,6 @@ class VellumWorkflowPusher {
         `✅ Successfully pushed container image: vargasjr:${tagToUse}`
       );
 
-      if (errorType === "sdk_version_mismatch") {
-        this.updateLockFileTag(lockFileContent, tagToUse);
-        writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
-        console.log(`📝 Updated vellum.lock.json with new tag: ${tagToUse}`);
-      }
-
       console.log(`🔄 Retrying workflow push for: ${workflowName}`);
       const retryResult = await this.pushWorkflow(workflowName);
 
@@ -497,8 +485,8 @@ class VellumWorkflowPusher {
     }
   }
 
-  private async handleServicesChanges(): Promise<void> {
-    console.log("🔍 Checking for vellum/services changes...");
+  private async handleLockFileChanges(): Promise<void> {
+    console.log("🔍 Checking for vellum.lock.json changes...");
     try {
       const currentBranch = execSync("git branch --show-current", {
         encoding: "utf8",
@@ -507,7 +495,7 @@ class VellumWorkflowPusher {
 
       if (currentBranch !== "main") {
         console.log(
-          `ℹ️  Not on main branch (current: ${currentBranch}), skipping services change detection`
+          `ℹ️  Not on main branch (current: ${currentBranch}), skipping lock file change detection`
         );
         return;
       }
@@ -530,51 +518,40 @@ class VellumWorkflowPusher {
         console.log(
           `⚠️  Failed to fetch commit from GitHub API: ${response.status} ${errorText}`
         );
-        console.log("ℹ️  Skipping services change detection");
+        console.log("ℹ️  Skipping lock file change detection");
         return;
       }
 
       const commitData = await response.json();
       const allChangedFiles = commitData.files || [];
-      const servicesFiles = allChangedFiles
-        .map((file: any) => file.filename)
-        .filter((filename: string) => filename.startsWith("vellum/services/"));
-      const modelsFiles = allChangedFiles
-        .map((file: any) => file.filename)
-        .filter((filename: string) => filename.startsWith("vellum/models/"));
-
-      console.log(
-        `📋 Changed files in vellum/services: ${
-          servicesFiles.join(", ") || "none"
-        }`
-      );
-      console.log(
-        `📋 Changed files in vellum/models: ${modelsFiles.join(", ") || "none"}`
+      const lockFileChanged = allChangedFiles.some(
+        (file: any) => file.filename === "vellum/vellum.lock.json"
       );
 
-      if (servicesFiles.length > 0 || modelsFiles.length > 0) {
+      console.log(`📋 Lock file changed: ${lockFileChanged ? "yes" : "no"}`);
+
+      if (lockFileChanged) {
         console.log(
-          "🔍 Detected changes in vellum/services or vellum/models, building new image..."
+          "🔍 Detected changes in vellum.lock.json, building and pushing new image..."
         );
 
         const lockFilePath = join(this.agentDir, "vellum.lock.json");
         if (!existsSync(lockFilePath)) {
           throw new Error(
-            "vellum.lock.json not found - cannot update container image tag"
+            "vellum.lock.json not found - cannot read container image tag"
           );
         }
 
         const lockFileContent = JSON.parse(readFileSync(lockFilePath, "utf8"));
         const currentTag =
           lockFileContent.workflows[0]?.container_image_tag || "1.0.0";
-        const newTag = this.incrementPatchVersion(currentTag);
 
         console.log(
-          `📦 Building and pushing new container image with tag: ${newTag}`
+          `📦 Building and pushing container image with tag: ${currentTag}`
         );
 
         const dockerfilePath = join(this.agentDir, "workflows", "Dockerfile");
-        const pushImageCommand = `poetry run vellum images push vargasjr:${newTag} --source ${dockerfilePath}`;
+        const pushImageCommand = `poetry run vellum images push vargasjr:${currentTag} --source ${dockerfilePath}`;
 
         const vellumApiKey = process.env.VELLUM_API_KEY;
 
@@ -591,7 +568,7 @@ class VellumWorkflowPusher {
             "vellum",
             "images",
             "push",
-            `vargasjr:${newTag}`,
+            `vargasjr:${currentTag}`,
             "--source",
             dockerfilePath,
           ],
@@ -618,84 +595,7 @@ class VellumWorkflowPusher {
 
         this.hasDockerImageBeenPushed = true;
         console.log(
-          `✅ Successfully pushed container image: vargasjr:${newTag}`
-        );
-
-        this.updateLockFileTag(lockFileContent, newTag);
-        writeFileSync(lockFilePath, JSON.stringify(lockFileContent, null, 2));
-        console.log(`📝 Updated vellum.lock.json with new tag: ${newTag}`);
-      } else {
-        console.log(
-          "ℹ️  No changes detected in vellum/services or vellum/models"
-        );
-      }
-    } catch (error) {
-      console.error(`⚠️  Failed to handle services changes: ${error}`);
-    }
-  }
-
-  private async handleLockFileChanges(): Promise<void> {
-    try {
-      const gitStatus = execSync(
-        "git status --porcelain vellum/vellum.lock.json",
-        {
-          encoding: "utf8",
-          cwd: process.cwd(),
-        }
-      ).trim();
-
-      if (gitStatus) {
-        console.log("🔍 Detected changes in vellum.lock.json, creating PR...");
-
-        try {
-          const normalizedKey = (process.env.GITHUB_PRIVATE_KEY || "").replace(
-            /\\n/g,
-            "\n"
-          );
-          console.log(`GITHUB_PRIVATE_KEY length: ${normalizedKey.length}`);
-          await getGitHubAuthHeaders();
-        } catch (authError) {
-          console.log(
-            "⚠️  Skipping PR creation - GitHub authentication failed"
-          );
-          console.log(
-            "ℹ️  Lock file changes detected but cannot create PR without GitHub App authentication"
-          );
-          console.error("Authentication error:", authError);
-          return;
-        }
-
-        const timestamp = Math.floor(Date.now() / 1000);
-        const branchName = `devin/${timestamp}-update-vellum-lock-file`;
-
-        execSync(`git checkout -b ${branchName}`, { cwd: process.cwd() });
-        execSync("git add vellum/vellum.lock.json", { cwd: process.cwd() });
-        execSync(
-          'git -c user.name="Devin AI" -c user.email="devin-ai-integration[bot]@users.noreply.github.com" commit -m "Update vellum.lock.json with new workflow changes"',
-          { cwd: process.cwd() }
-        );
-        execSync(`git push origin ${branchName}`, { cwd: process.cwd() });
-
-        const prTitle = "Update vellum.lock.json with new workflow changes";
-        const prBody =
-          "This PR updates the vellum.lock.json file with new workflow changes to resolve SDK version mismatches.";
-
-        const headers = await getGitHubAuthHeaders();
-        const githubToken = headers.Authorization.replace("Bearer ", "");
-
-        execSync(
-          `gh pr create --title "${prTitle}" --body "${prBody}" --head ${branchName} --base main`,
-          {
-            cwd: process.cwd(),
-            env: {
-              ...process.env,
-              GITHUB_TOKEN: githubToken,
-            },
-          }
-        );
-
-        console.log(
-          `✅ Created PR for lock file changes on branch: ${branchName}`
+          `✅ Successfully pushed container image: vargasjr:${currentTag}`
         );
       } else {
         console.log("ℹ️  No changes detected in vellum.lock.json");
