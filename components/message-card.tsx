@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 function formatDate(dateValue: string | Date | null | undefined): string {
   if (!dateValue) return "N/A";
   try {
-    const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    const date =
+      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
     if (isNaN(date.getTime())) return "Invalid date";
     return date.toLocaleDateString();
   } catch {
@@ -17,7 +18,8 @@ function formatDate(dateValue: string | Date | null | undefined): string {
 function formatTime(dateValue: string | Date | null | undefined): string {
   if (!dateValue) return "";
   try {
-    const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    const date =
+      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
     if (isNaN(date.getTime())) return "";
     return date.toLocaleTimeString([], {
       hour: "2-digit",

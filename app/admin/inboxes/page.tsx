@@ -85,8 +85,16 @@ export default async function InboxesPage({
 
     allInboxes = rawInboxes.map((inbox) => ({
       ...inbox,
-      createdAt: inbox.createdAt instanceof Date ? inbox.createdAt.toISOString() : String(inbox.createdAt),
-      lastMessageDate: inbox.lastMessageDate instanceof Date ? inbox.lastMessageDate.toISOString() : inbox.lastMessageDate ? String(inbox.lastMessageDate) : null,
+      createdAt:
+        inbox.createdAt instanceof Date
+          ? inbox.createdAt.toISOString()
+          : String(inbox.createdAt),
+      lastMessageDate:
+        inbox.lastMessageDate instanceof Date
+          ? inbox.lastMessageDate.toISOString()
+          : inbox.lastMessageDate
+          ? String(inbox.lastMessageDate)
+          : null,
     }));
 
     const latestOperations = db
@@ -164,8 +172,16 @@ export default async function InboxesPage({
 
     recentMessages = filteredMessages.map((message) => ({
       ...message,
-      createdAt: message.createdAt instanceof Date ? message.createdAt.toISOString() : String(message.createdAt),
-      latestOperationAt: message.latestOperationAt instanceof Date ? message.latestOperationAt.toISOString() : message.latestOperationAt ? String(message.latestOperationAt) : null,
+      createdAt:
+        message.createdAt instanceof Date
+          ? message.createdAt.toISOString()
+          : String(message.createdAt),
+      latestOperationAt:
+        message.latestOperationAt instanceof Date
+          ? message.latestOperationAt.toISOString()
+          : message.latestOperationAt
+          ? String(message.latestOperationAt)
+          : null,
     }));
 
     const messageOperations = await db

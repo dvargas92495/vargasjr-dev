@@ -57,8 +57,16 @@ export default async function CRMPage() {
 
   const allContacts = rawContacts.map((contact) => ({
     ...contact,
-    createdAt: contact.createdAt instanceof Date ? contact.createdAt.toISOString() : String(contact.createdAt),
-    lastMessageAt: contact.lastMessageAt instanceof Date ? contact.lastMessageAt.toISOString() : contact.lastMessageAt ? String(contact.lastMessageAt) : null,
+    createdAt:
+      contact.createdAt instanceof Date
+        ? contact.createdAt.toISOString()
+        : String(contact.createdAt),
+    lastMessageAt:
+      contact.lastMessageAt instanceof Date
+        ? contact.lastMessageAt.toISOString()
+        : contact.lastMessageAt
+        ? String(contact.lastMessageAt)
+        : null,
   }));
 
   return (

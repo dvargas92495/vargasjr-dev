@@ -7,7 +7,8 @@ import { useCallback } from "react";
 function formatDate(dateValue: string | Date | null | undefined): string {
   if (!dateValue) return "N/A";
   try {
-    const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+    const date =
+      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
     if (isNaN(date.getTime())) return "Invalid date";
     return date.toLocaleDateString();
   } catch {
@@ -31,9 +32,7 @@ const InboxRow = ({
       onClick={handleClick}
     >
       <td className="px-6 py-4 border-b">{inbox.displayLabel || inbox.name}</td>
-      <td className="px-6 py-4 border-b">
-        {formatDate(inbox.createdAt)}
-      </td>
+      <td className="px-6 py-4 border-b">{formatDate(inbox.createdAt)}</td>
       <td className="px-6 py-4 border-b">
         {inbox.lastMessageDate
           ? formatDate(inbox.lastMessageDate)
