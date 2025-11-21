@@ -1,6 +1,5 @@
 "use client";
 
-import type { Contact } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
@@ -19,7 +18,14 @@ function formatDate(dateValue: string | Date | null | undefined): string {
 const ContactRow = ({
   contact,
 }: {
-  contact: Contact & { lastMessageAt: string | null };
+  contact: {
+    id: string;
+    email: string | null;
+    phoneNumber: string | null;
+    fullName: string | null;
+    createdAt: string;
+    lastMessageAt: string | null;
+  };
 }) => {
   const router = useRouter();
   const handleClick = useCallback(() => {

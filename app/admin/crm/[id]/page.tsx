@@ -193,7 +193,13 @@ export default async function ContactPage({
       )
     );
 
-  const recentMessages = allRecentMessages.slice(0, pageSize);
+  const recentMessages = allRecentMessages.slice(0, pageSize).map((message) => ({
+    ...message,
+    createdAt:
+      message.createdAt instanceof Date
+        ? message.createdAt.toISOString()
+        : String(message.createdAt),
+  }));
 
   const messageStatuses = Object.fromEntries(
     messageOperations.map(({ inboxMessageId, operation }) => [

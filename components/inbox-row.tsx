@@ -1,6 +1,5 @@
 "use client";
 
-import type { Inbox } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
@@ -19,7 +18,14 @@ function formatDate(dateValue: string | Date | null | undefined): string {
 const InboxRow = ({
   inbox,
 }: {
-  inbox: Inbox & { lastMessageDate: string | null };
+  inbox: {
+    id: string;
+    name: string;
+    displayLabel: string | null;
+    createdAt: string;
+    type: string;
+    lastMessageDate: string | null;
+  };
 }) => {
   const router = useRouter();
   const handleClick = useCallback(() => {

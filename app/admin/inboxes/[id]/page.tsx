@@ -67,11 +67,29 @@ export default async function InboxPage({
     )
     .limit(25);
 
-  const messages = allMessages.filter((message) => {
-    if (!message.email) return true;
-    const emailLower = message.email.toLowerCase();
-    return !emailLower.includes(OWN_EMAIL.toLowerCase());
-  });
+  const messages = allMessages
+    .filter((message) => {
+      if (!message.email) return true;
+      const emailLower = message.email.toLowerCase();
+      return !emailLower.includes(OWN_EMAIL.toLowerCase());
+    })
+    .map((message) => ({
+      id: message.id,
+      displayName: message.displayName,
+      fullName: message.fullName,
+      email: message.email,
+      body: message.body,
+      createdAt:
+        message.createdAt instanceof Date
+          ? message.createdAt.toISOString()
+          : String(message.createdAt),
+      latestOperationAt:
+        message.latestOperationTime instanceof Date
+          ? message.latestOperationTime.toISOString()
+          : message.latestOperationTime
+          ? String(message.latestOperationTime)
+          : null,
+    }));
 
   const messageOperations = await db
     .select()

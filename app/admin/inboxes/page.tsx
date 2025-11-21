@@ -4,7 +4,6 @@ import {
   ContactsTable,
   InboxMessageOperationsTable,
   OutboxMessagesTable,
-  type Inbox,
 } from "@/db/schema";
 import { desc, eq, inArray, sql, isNull, ne, or } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
@@ -21,7 +20,15 @@ export default async function InboxesPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const db = getDb();
-  let allInboxes: Array<Inbox & { lastMessageDate: string | null }> = [];
+  let allInboxes: Array<{
+    id: string;
+    name: string;
+    displayLabel: string | null;
+    createdAt: string;
+    type: string;
+    config: unknown;
+    lastMessageDate: string | null;
+  }> = [];
   let recentMessages: Array<{
     id: string;
     displayName: string | null;
@@ -95,7 +102,12 @@ export default async function InboxesPage({
           : inbox.lastMessageDate
           ? String(inbox.lastMessageDate)
           : null,
-    }));
+    })) as Array<
+      Omit<(typeof rawInboxes)[0], "createdAt" | "lastMessageDate"> & {
+        createdAt: string;
+        lastMessageDate: string | null;
+      }
+    >;
 
     const latestOperations = db
       .selectDistinctOn([InboxMessageOperationsTable.inboxMessageId], {

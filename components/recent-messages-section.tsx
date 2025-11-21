@@ -10,8 +10,8 @@ interface RecentMessage {
   displayName: string | null;
   fullName: string | null;
   email: string | null;
-  createdAt: Date;
-  latestOperationAt: Date | null;
+  createdAt: string;
+  latestOperationAt: string | null;
   body: string;
   inboxId: string;
   inboxName: string | null;

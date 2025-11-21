@@ -8,6 +8,8 @@ import { desc, eq, sql } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
 
+export const dynamic = "force-dynamic";
+
 export default async function CRMPage() {
   const db = getDb();
   const rawContacts = await db
@@ -67,7 +69,12 @@ export default async function CRMPage() {
         : contact.lastMessageAt
         ? String(contact.lastMessageAt)
         : null,
-  }));
+  })) as Array<
+    Omit<(typeof rawContacts)[0], "createdAt" | "lastMessageAt"> & {
+      createdAt: string;
+      lastMessageAt: string | null;
+    }
+  >;
 
   return (
     <>
