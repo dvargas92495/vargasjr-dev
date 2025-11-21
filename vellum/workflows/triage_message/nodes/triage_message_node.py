@@ -1,5 +1,6 @@
 import os
 import requests
+from uuid import UUID
 from vellum import (
     ChatMessagePromptBlock,
     JinjaPromptBlock,
@@ -8,6 +9,35 @@ from vellum import (
 from vellum.workflows.nodes import BaseInlinePromptNode
 from .read_message_node import ReadMessageNode
 from ..state import State
+from typing import Optional
+
+
+def get_message_history(message_id: Optional[str] = None) -> str:
+    """
+    Retrieve the last 5 messages (incoming and outgoing) from the same contact to provide
+    conversation context. This helps understand the message history before deciding on an action.
+    
+    Use this function when:
+    - You need context about previous interactions with this contact
+    - The message references earlier conversations
+    - You want to understand the relationship history before responding
+    
+    The system will automatically retrieve history for the current message's contact.
+    After retrieving history, you will be prompted again to craft an appropriate response
+    with the conversation context available in action_history.
+    
+    IMPORTANT: If you see in the action_history that get_message_history has already been called,
+    DO NOT call it again. The history is already available in the action_history. Use that
+    information to inform your response instead.
+    
+    Args:
+        message_id: Optional UUID of the message to get history for. If not provided,
+                   uses the current message being triaged.
+    
+    Returns:
+        A formatted string containing the last 5 messages with timestamps, sources, and bodies
+    """
+    raise NotImplementedError("Tool stub. Implemented in GetMessageHistoryNode.")
 
 
 def no_action():
@@ -206,6 +236,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
     }
     functions = [
         no_action,
+        get_message_history,
         email_reply,
         email_initiate,
         text_reply,

@@ -16,7 +16,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -35,7 +35,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -54,7 +54,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -73,7 +73,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -92,7 +92,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -111,7 +111,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -130,7 +130,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -149,7 +149,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -168,7 +168,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -187,7 +187,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     },
@@ -206,7 +206,7 @@
         }
       ],
       "container_image_name": "vargasjr",
-      "container_image_tag": "1.3.16",
+      "container_image_tag": "1.3.17",
       "workspace": "default",
       "target_directory": null
     }

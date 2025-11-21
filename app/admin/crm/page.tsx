@@ -1,5 +1,10 @@
-import { ContactsTable, InboxMessagesTable } from "@/db/schema";
-import { desc, max, eq, sql } from "drizzle-orm";
+import {
+  ContactsTable,
+  InboxMessagesTable,
+  OutboxMessagesTable,
+  OutboxMessageRecipientsTable,
+} from "@/db/schema";
+import { desc, eq, sql } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
 
@@ -16,19 +21,36 @@ export default async function CRMPage() {
       supportsImessage: ContactsTable.supportsImessage,
       status: ContactsTable.status,
       createdAt: ContactsTable.createdAt,
-      lastMessageAt: max(InboxMessagesTable.createdAt),
+      lastMessageAt: sql<Date | null>`
+        GREATEST(
+          MAX(${InboxMessagesTable.createdAt}),
+          MAX(${OutboxMessagesTable.createdAt})
+        )
+      `,
     })
     .from(ContactsTable)
     .leftJoin(
       InboxMessagesTable,
       eq(ContactsTable.id, InboxMessagesTable.contactId)
     )
+    .leftJoin(
+      OutboxMessageRecipientsTable,
+      eq(ContactsTable.id, OutboxMessageRecipientsTable.contactId)
+    )
+    .leftJoin(
+      OutboxMessagesTable,
+      eq(OutboxMessageRecipientsTable.messageId, OutboxMessagesTable.id)
+    )
     .groupBy(ContactsTable.id)
     .orderBy(
       desc(
-        sql`COALESCE(${max(
-          InboxMessagesTable.createdAt
-        )}, '1970-01-01'::timestamp)`
+        sql`COALESCE(
+          GREATEST(
+            MAX(${InboxMessagesTable.createdAt}),
+            MAX(${OutboxMessagesTable.createdAt})
+          ),
+          '1970-01-01'::timestamp
+        )`
       ),
       desc(ContactsTable.createdAt)
     );
