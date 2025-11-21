@@ -17,6 +17,7 @@ from .nodes import (
     UpdateContactSummaryNode,
     UploadContactSummaryNode,
     ScheduleMeetingNode,
+    GetMessageHistoryNode,
 )
 
 
@@ -28,6 +29,7 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
             TriageMessageNode
             >> {
                 ParseFunctionCallNode.Ports.no_action >> NoActionNode,
+                ParseFunctionCallNode.Ports.get_message_history >> GetMessageHistoryNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.create_meeting >> ScheduleMeetingNode >> TriageMessageNode,
                 {
                     ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
