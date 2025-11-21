@@ -3,9 +3,10 @@ import {
   InboxMessagesTable,
   ContactsTable,
   InboxMessageOperationsTable,
+  OutboxMessagesTable,
   type Inbox,
 } from "@/db/schema";
-import { desc, eq, inArray, max, sql, isNull, ne, or } from "drizzle-orm";
+import { desc, eq, inArray, sql, isNull, ne, or } from "drizzle-orm";
 import InboxRow from "@/components/inbox-row";
 import RecentMessagesSection from "@/components/recent-messages-section";
 import Link from "next/link";
@@ -52,19 +53,32 @@ export default async function InboxesPage({
         createdAt: InboxesTable.createdAt,
         type: InboxesTable.type,
         config: InboxesTable.config,
-        lastMessageDate: max(InboxMessagesTable.createdAt),
+        lastMessageDate: sql<Date | null>`
+          GREATEST(
+            MAX(${InboxMessagesTable.createdAt}),
+            MAX(${OutboxMessagesTable.createdAt})
+          )
+        `,
       })
       .from(InboxesTable)
       .leftJoin(
         InboxMessagesTable,
         eq(InboxesTable.id, InboxMessagesTable.inboxId)
       )
+      .leftJoin(
+        OutboxMessagesTable,
+        eq(InboxMessagesTable.id, OutboxMessagesTable.parentInboxMessageId)
+      )
       .groupBy(InboxesTable.id)
       .orderBy(
         desc(
-          sql`COALESCE(${max(
-            InboxMessagesTable.createdAt
-          )}, '1970-01-01'::timestamp)`
+          sql`COALESCE(
+            GREATEST(
+              MAX(${InboxMessagesTable.createdAt}),
+              MAX(${OutboxMessagesTable.createdAt})
+            ),
+            '1970-01-01'::timestamp
+          )`
         ),
         desc(InboxesTable.createdAt)
       );
