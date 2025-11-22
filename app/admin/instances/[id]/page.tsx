@@ -12,6 +12,7 @@ import BrowserSessionsIndicator from "@/components/browser-sessions-indicator";
 import CopyableText from "@/components/copyable-text";
 import AgentVersionDisplay from "@/components/agent-version-display";
 import AgentLogsIndicator from "@/components/agent-logs-indicator";
+import FileDirectoryIndicator from "@/components/file-directory-indicator";
 
 interface HealthStatus {
   status: "healthy" | "unhealthy" | "loading" | "error" | "offline";
@@ -316,6 +317,22 @@ export default function InstanceDetailPage({
         ) : (
           <div className="text-sm text-gray-700">
             Agent Logs: <span className="text-gray-600">N/A</span>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">
+          File Directory
+        </h3>
+        {instanceId ? (
+          <FileDirectoryIndicator
+            instanceId={instanceId}
+            instanceState={instanceState || ""}
+          />
+        ) : (
+          <div className="text-sm text-gray-700">
+            File Directory: <span className="text-gray-600">N/A</span>
           </div>
         )}
       </div>

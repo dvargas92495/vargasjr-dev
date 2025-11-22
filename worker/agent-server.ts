@@ -1,7 +1,8 @@
 import express from "express";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { execSync } from "child_process";
+import { join } from "path";
 import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
 import { rebootAgent } from "./reboot-manager";
@@ -464,6 +465,61 @@ export class AgentServer {
     this.app.get("/ping", (req, res) => {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
+
+    this.app.get(
+      "/api/file-directory",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const homeDir = process.env.HOME || "/home/ubuntu";
+          
+          const getDirectoryContents = (dirPath: string) => {
+            try {
+              const items = readdirSync(dirPath);
+              return items.map((item) => {
+                const fullPath = join(dirPath, item);
+                try {
+                  const stats = statSync(fullPath);
+                  return {
+                    name: item,
+                    type: stats.isDirectory() ? "directory" : "file",
+                    size: stats.size,
+                    modified: stats.mtime.toISOString(),
+                  };
+                } catch (error) {
+                  return {
+                    name: item,
+                    type: "unknown",
+                    error: error instanceof Error ? error.message : String(error),
+                  };
+                }
+              });
+            } catch (error) {
+              throw new Error(
+                `Failed to read directory: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              );
+            }
+          };
+
+          const contents = getDirectoryContents(homeDir);
+
+          res.json({
+            status: "success",
+            directory: homeDir,
+            contents,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          res.status(500).json({
+            status: "error",
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    );
   }
 
   public async start(): Promise<void> {
