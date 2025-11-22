@@ -128,9 +128,7 @@ export default function ContactReposSection({
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">
-          {error}
-        </div>
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">{error}</div>
       )}
 
       {showAddForm && (
