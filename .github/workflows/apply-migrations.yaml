@@ -74,3 +74,4 @@ jobs:
         env:
           NEON_URL: ${{ secrets.NEON_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
