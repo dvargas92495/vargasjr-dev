@@ -5,6 +5,125 @@ import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { postGitHubComment, getNeonPreviewDatabaseUrl } from "./utils";
 
+async function sendSlackMessageToEng(
+  text: string,
+  blocks?: unknown
+): Promise<void> {
+  const token = process.env.SLACK_BOT_TOKEN;
+  if (!token) {
+    console.warn("SLACK_BOT_TOKEN not set; skipping Slack notification");
+    return;
+  }
+
+  const body: Record<string, unknown> = {
+    channel: "eng",
+    text,
+  };
+
+  if (blocks) {
+    body.blocks = blocks;
+  }
+
+  try {
+    const response = await fetch("https://slack.com/api/chat.postMessage", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const respText = await response.text().catch(() => "");
+      console.error(
+        `Slack API error (${response.status} ${response.statusText}):`,
+        respText.slice(0, 500)
+      );
+    }
+  } catch (error) {
+    console.error("Failed to send Slack message:", error);
+  }
+}
+
+function shouldNotifySlack(isPreviewMode: boolean): boolean {
+  if (isPreviewMode) return false;
+
+  const isCi = process.env.GITHUB_ACTIONS === "true";
+  if (!isCi) return false;
+
+  const ref = process.env.GITHUB_REF;
+  const refName = process.env.GITHUB_REF_NAME;
+  const isMain = ref === "refs/heads/main" || refName === "main";
+
+  return isMain;
+}
+
+async function notifySlackOnMigrationFailure(
+  error: unknown,
+  isPreviewMode: boolean
+): Promise<void> {
+  if (!shouldNotifySlack(isPreviewMode)) {
+    return;
+  }
+
+  const errorMessage =
+    error instanceof Error ? error.message : String(error ?? "Unknown error");
+
+  const serverUrl = process.env.GITHUB_SERVER_URL || "https://github.com";
+  const repo = process.env.GITHUB_REPOSITORY ?? "dvargas92495/vargasjr-dev";
+  const runId = process.env.GITHUB_RUN_ID;
+  const commitSha = process.env.GITHUB_SHA;
+  const refName = process.env.GITHUB_REF_NAME ?? "main";
+
+  const actionUrl = runId ? `${serverUrl}/${repo}/actions/runs/${runId}` : "";
+  const commitUrl = commitSha ? `${serverUrl}/${repo}/commit/${commitSha}` : "";
+
+  const blocks = [
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `⚠️ *Database Migration Failed*\n\nThe database migration workflow failed on the main branch.\n\n*Error:* ${errorMessage}`,
+      },
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `*Repository:*\n${repo}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `*Branch:*\n${refName}`,
+        },
+        ...(commitUrl
+          ? [
+              {
+                type: "mrkdwn",
+                text: `*Commit:*\n<${commitUrl}|${commitSha?.slice(0, 7)}>`,
+              },
+            ]
+          : []),
+        ...(actionUrl
+          ? [
+              {
+                type: "mrkdwn",
+                text: `*Workflow:*\n<${actionUrl}|View Action>`,
+              },
+            ]
+          : []),
+      ],
+    },
+  ];
+
+  await sendSlackMessageToEng(
+    "⚠️ Database migration failed on main branch",
+    blocks
+  );
+}
+
 class MigrationRunner {
   private dbDir: string;
   private isPreviewMode: boolean;
@@ -34,6 +153,16 @@ class MigrationRunner {
     } catch (error) {
       const action = this.isPreviewMode ? "preview" : "run";
       console.error(`❌ Failed to ${action} migrations: ${error}`);
+
+      await notifySlackOnMigrationFailure(error, this.isPreviewMode).catch(
+        (notifyError) => {
+          console.error(
+            "Failed to send Slack notification for migration failure:",
+            notifyError
+          );
+        }
+      );
+
       process.exit(1);
     }
   }

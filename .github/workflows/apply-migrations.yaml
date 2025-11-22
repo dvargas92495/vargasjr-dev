@@ -64,56 +64,14 @@ jobs:
         run: npm run setup
 
       - name: Generate and apply migrations
-        id: generate-migrations
         run: npm run db:generate
         env:
           NEON_URL: ${{ secrets.NEON_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
 
       - name: Apply database migrations
-        id: apply-migrations
         run: npm run run-migrations
         env:
           NEON_URL: ${{ secrets.NEON_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-
-      - name: Notify Slack on failure
-        if: failure()
-        run: |
-          curl -X POST https://slack.com/api/chat.postMessage \
-            -H "Authorization: Bearer ${{ secrets.SLACK_BOT_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"channel\": \"eng\",
-              \"text\": \"⚠️ Database migration failed on main branch\",
-              \"blocks\": [
-                {
-                  \"type\": \"section\",
-                  \"text\": {
-                    \"type\": \"mrkdwn\",
-                    \"text\": \"⚠️ *Database Migration Failed*\\n\\nThe database migration workflow failed on the main branch.\"
-                  }
-                },
-                {
-                  \"type\": \"section\",
-                  \"fields\": [
-                    {
-                      \"type\": \"mrkdwn\",
-                      \"text\": \"*Repository:*\\n${{ github.repository }}\"
-                    },
-                    {
-                      \"type\": \"mrkdwn\",
-                      \"text\": \"*Branch:*\\n${{ github.ref_name }}\"
-                    },
-                    {
-                      \"type\": \"mrkdwn\",
-                      \"text\": \"*Commit:*\\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\"
-                    },
-                    {
-                      \"type\": \"mrkdwn\",
-                      \"text\": \"*Workflow:*\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Action>\"
-                    }
-                  ]
-                }
-              ]
-            }"
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
