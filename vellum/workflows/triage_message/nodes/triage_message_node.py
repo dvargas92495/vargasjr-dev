@@ -183,6 +183,34 @@ def mark_contact_as_lead():
     pass
 
 
+def generate_stripe_checkout():
+    """
+    Generate a Stripe checkout link and contract for the contact. Use this ONLY when you are
+    highly confident that the contact is ready to close and become a paying client.
+    
+    This function should be used when:
+    - The contact has explicitly expressed intent to hire you or start working together
+    - They have asked about pricing and are ready to proceed with payment
+    - They have confirmed they want to move forward and are asking for next steps
+    - The conversation has progressed beyond initial interest to commitment
+    
+    DO NOT use this function if:
+    - The contact is just asking general questions about your services
+    - They are still in the exploratory or consideration phase
+    - They haven't explicitly indicated readiness to pay or commit
+    - You're not certain they want to proceed immediately
+    
+    After generating the checkout link, you will be prompted again to craft an appropriate
+    response that includes the checkout URL. Make sure to include the checkout link in your
+    response and explain that they can complete the signup process there. The contract will
+    be automatically generated once they complete the payment.
+    
+    IMPORTANT: Only call this function when you have HIGH CONFIDENCE (90%+) that the contact
+    is ready to become a paying client right now.
+    """
+    pass
+
+
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -244,6 +272,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
         job_opportunity_response,
         create_meeting,
         mark_contact_as_lead,
+        generate_stripe_checkout,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
