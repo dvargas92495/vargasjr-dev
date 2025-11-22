@@ -8,9 +8,11 @@ import { desc, eq, sql } from "drizzle-orm";
 import ContactRow from "@/components/contact-row";
 import { getDb } from "@/db/connection";
 
+export const dynamic = "force-dynamic";
+
 export default async function CRMPage() {
   const db = getDb();
-  const allContacts = await db
+  const rawContacts = await db
     .select({
       id: ContactsTable.id,
       email: ContactsTable.email,
@@ -54,6 +56,25 @@ export default async function CRMPage() {
       ),
       desc(ContactsTable.createdAt)
     );
+
+  const allContacts = rawContacts.map((contact) => ({
+    ...contact,
+    createdAt:
+      contact.createdAt instanceof Date
+        ? contact.createdAt.toISOString()
+        : String(contact.createdAt),
+    lastMessageAt:
+      contact.lastMessageAt instanceof Date
+        ? contact.lastMessageAt.toISOString()
+        : contact.lastMessageAt
+        ? String(contact.lastMessageAt)
+        : null,
+  })) as Array<
+    Omit<(typeof rawContacts)[0], "createdAt" | "lastMessageAt"> & {
+      createdAt: string;
+      lastMessageAt: string | null;
+    }
+  >;
 
   return (
     <>
