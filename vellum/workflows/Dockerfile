@@ -1,4 +1,4 @@
-FROM vellumai/python-workflow-runtime:1.8.0
+FROM vellumai/python-workflow-runtime:1.11.2
 
 WORKDIR /app
 

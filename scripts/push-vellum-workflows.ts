@@ -280,6 +280,14 @@ class VellumWorkflowPusher {
         errorOutput.includes("does not match SDK version") &&
         errorOutput.includes("within the container image")
       ) {
+        if (this.isPreviewMode) {
+          const warningMessage = `⚠️  Skipping ${workflowName}: SDK version mismatch (will be resolved when pushed to main)`;
+          console.log(warningMessage);
+          return {
+            success: true,
+            output: `Skipped: ${workflowName} - SDK version mismatch (will be resolved when pushed to main)`,
+          };
+        }
         console.log(
           `🔄 Detected SDK version mismatch for ${workflowName}, attempting to push new image...`
         );
