@@ -6,6 +6,7 @@ import {
   real,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -204,3 +205,26 @@ export const WebAuthnCredentialsTable = pgTable("webauthn_credentials", {
   userId: varchar("user_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const ContactGithubReposTable = pgTable(
+  "contact_github_repos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => ContactsTable.id),
+    repoOwner: varchar("repo_owner").notNull(),
+    repoName: varchar("repo_name").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueContactRepo: unique("unique_contact_repo").on(
+      table.contactId,
+      table.repoOwner,
+      table.repoName
+    ),
+  })
+);
+
+export type ContactGithubRepo = typeof ContactGithubReposTable.$inferSelect;
