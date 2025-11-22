@@ -115,7 +115,7 @@ export const OutboxMessageRecipientsTable = pgTable(
 export const ApplicationsTable = pgTable("applications", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name").notNull(),
-  appType: AppTypesEnum("app_type").notNull(),
+  appType: AppTypesEnum("app_type"),
   clientId: varchar("client_id"),
   clientSecret: varchar("client_secret"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
