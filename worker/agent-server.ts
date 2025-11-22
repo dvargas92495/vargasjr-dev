@@ -472,7 +472,7 @@ export class AgentServer {
       async (req: express.Request, res: express.Response) => {
         try {
           const homeDir = process.env.HOME || "/home/ubuntu";
-          
+
           const getDirectoryContents = (dirPath: string) => {
             try {
               const items = readdirSync(dirPath);
@@ -490,7 +490,8 @@ export class AgentServer {
                   return {
                     name: item,
                     type: "unknown",
-                    error: error instanceof Error ? error.message : String(error),
+                    error:
+                      error instanceof Error ? error.message : String(error),
                   };
                 }
               });

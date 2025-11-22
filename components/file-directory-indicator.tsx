@@ -103,7 +103,7 @@ const FileDirectoryIndicator = ({
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${Math.round(bytes / Math.pow(k, i) * 100) / 100} ${sizes[i]}`;
+    return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
   };
 
   const formatDate = (dateString?: string): string => {
@@ -172,13 +172,8 @@ const FileDirectoryIndicator = ({
             </thead>
             <tbody>
               {directories.map((item, idx) => (
-                <tr
-                  key={`dir-${idx}`}
-                  className="border-t hover:bg-gray-50"
-                >
-                  <td className="p-2 font-mono">
-                    📁 {item.name}
-                  </td>
+                <tr key={`dir-${idx}`} className="border-t hover:bg-gray-50">
+                  <td className="p-2 font-mono">📁 {item.name}</td>
                   <td className="p-2 text-gray-600">directory</td>
                   <td className="p-2 text-right text-gray-600">-</td>
                   <td className="p-2 text-gray-600">
@@ -187,13 +182,8 @@ const FileDirectoryIndicator = ({
                 </tr>
               ))}
               {files.map((item, idx) => (
-                <tr
-                  key={`file-${idx}`}
-                  className="border-t hover:bg-gray-50"
-                >
-                  <td className="p-2 font-mono">
-                    📄 {item.name}
-                  </td>
+                <tr key={`file-${idx}`} className="border-t hover:bg-gray-50">
+                  <td className="p-2 font-mono">📄 {item.name}</td>
                   <td className="p-2 text-gray-600">file</td>
                   <td className="p-2 text-right text-gray-600">
                     {formatSize(item.size)}

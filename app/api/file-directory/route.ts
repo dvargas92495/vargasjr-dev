@@ -70,9 +70,7 @@ async function fetchFileDirectory(
     }
 
     const fileDirectoryUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/api/file-directory`;
-    console.log(
-      `[File Directory] Making HTTP request to: ${fileDirectoryUrl}`
-    );
+    console.log(`[File Directory] Making HTTP request to: ${fileDirectoryUrl}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
