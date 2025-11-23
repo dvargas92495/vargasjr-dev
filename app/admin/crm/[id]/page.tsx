@@ -374,14 +374,19 @@ export default async function ContactPage({
         </div>
       </div>
 
-      {contactSummary && (
-        <div className="mt-6 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Contact Summary</h2>
+      <div className="mt-6 bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Contact Summary</h2>
+        {contactSummary ? (
           <div className="text-sm text-gray-900 whitespace-pre-wrap">
             {contactSummary}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-sm text-gray-500 italic">
+            No summary available yet. Summaries are automatically generated as
+            you interact with this contact.
+          </div>
+        )}
+      </div>
 
       <div className="mt-6">
         <ContactReposSection contactId={id} />
