@@ -170,6 +170,7 @@ export const JobsTable = pgTable("jobs", {
   description: text("description"),
   dueDate: timestamp("due_date").notNull(),
   priority: real("priority").notNull(),
+  contactId: uuid("contact_id").references(() => ContactsTable.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

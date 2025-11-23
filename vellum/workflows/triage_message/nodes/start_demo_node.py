@@ -34,12 +34,13 @@ class StartDemoNode(BaseNode):
                     description=self.project_summary,
                     due_date=datetime.now(UTC) + timedelta(days=1),
                     priority=1.0,
+                    contact_id=self.contact_id,
                 )
                 session.add(job)
                 session.commit()
                 session.refresh(job)
                 
-                result = f"Demo creation job has been queued (Job ID: {job.id}). Another agent will pick this up and create a working demo based on the project requirements. The demo should be ready within 24 hours.\n\nProject Summary: {self.project_summary}"
+                result = "Demo creation job has been queued."
                 self._append_action_history("start_demo", {"project_summary": self.project_summary, "job_id": str(job.id)}, result)
                 return self.Outputs(summary=result)
                 
