@@ -20,6 +20,7 @@ import Link from "next/link";
 import MessageCard from "@/components/message-card";
 import LocalTime from "@/components/local-time";
 import { getContactSummaryFromS3 } from "@/app/lib/s3-client";
+import ContactReposSection from "@/components/contact-repos-section";
 
 dayjs.extend(relativeTime);
 
@@ -381,6 +382,10 @@ export default async function ContactPage({
           </div>
         </div>
       )}
+
+      <div className="mt-6">
+        <ContactReposSection contactId={id} />
+      </div>
 
       <div className="mt-6">
         <div className="flex justify-between items-center mb-4">
