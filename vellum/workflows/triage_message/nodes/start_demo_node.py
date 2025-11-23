@@ -1,6 +1,10 @@
 import logging
+from datetime import datetime, timedelta, UTC
 from vellum.workflows.nodes import BaseNode
-from services import ActionRecord
+from services import ActionRecord, postgres_session
+from models.job import Job
+from models.contact import Contact
+from sqlmodel import select
 from .read_message_node import ReadMessageNode
 from .triage_message_node import TriageMessageNode
 
@@ -16,17 +20,32 @@ class StartDemoNode(BaseNode):
     
     def run(self) -> Outputs:
         try:
-            # For now, we'll create a placeholder demo link
-            # In the future, this could trigger actual demo creation
-            demo_link = f"https://demo.vargasjr.dev/preview/{self.contact_id}"
-            
-            result = f"Demo created successfully. Share this link with the contact: {demo_link}\n\nProject Summary: {self.project_summary}"
-            self._append_action_history("start_demo", {"project_summary": self.project_summary}, result)
-            return self.Outputs(summary=result)
+            # Fetch contact information to create a meaningful job name
+            contact_identifier = "contact"
+            with postgres_session() as session:
+                statement = select(Contact).where(Contact.id == self.contact_id)
+                contact = session.exec(statement).first()
+                if contact:
+                    contact_identifier = contact.identifier or contact.email or contact.phone_number or str(self.contact_id)
+                
+                # Create a job for demo creation that another agent can pick up
+                job = Job(
+                    name=f"Create demo for {contact_identifier}",
+                    description=self.project_summary,
+                    due_date=datetime.now(UTC) + timedelta(days=1),
+                    priority=1.0,
+                )
+                session.add(job)
+                session.commit()
+                session.refresh(job)
+                
+                result = f"Demo creation job has been queued (Job ID: {job.id}). Another agent will pick this up and create a working demo based on the project requirements. The demo should be ready within 24 hours.\n\nProject Summary: {self.project_summary}"
+                self._append_action_history("start_demo", {"project_summary": self.project_summary, "job_id": str(job.id)}, result)
+                return self.Outputs(summary=result)
                 
         except Exception as e:
-            logger.exception(f"Error creating demo: {str(e)}")
-            result = f"Error creating demo: {str(e)}"
+            logger.exception(f"Error creating demo job: {str(e)}")
+            result = f"Error creating demo job: {str(e)}"
             self._append_action_history("start_demo", {"project_summary": self.project_summary}, result)
             return self.Outputs(summary=result)
     
