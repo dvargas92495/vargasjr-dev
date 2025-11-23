@@ -11,6 +11,8 @@ import {
   InboxMessageOperationsTable,
   OutboxMessagesTable,
   InboxesTable,
+  OutboxMessageRecipientsTable,
+  ContactGithubReposTable,
 } from "@/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { getDb } from "@/db/connection";
@@ -533,6 +535,37 @@ export async function mergeContact(
       .update(ChatSessionsTable)
       .set({ contactId: currentContactId })
       .where(eq(ChatSessionsTable.contactId, targetContactId));
+
+    await tx
+      .update(OutboxMessageRecipientsTable)
+      .set({ contactId: currentContactId })
+      .where(eq(OutboxMessageRecipientsTable.contactId, targetContactId));
+
+    const targetGithubRepos = await tx
+      .select()
+      .from(ContactGithubReposTable)
+      .where(eq(ContactGithubReposTable.contactId, targetContactId));
+
+    for (const targetRepo of targetGithubRepos) {
+      const existingRepo = await tx
+        .select()
+        .from(ContactGithubReposTable)
+        .where(eq(ContactGithubReposTable.contactId, currentContactId))
+        .where(eq(ContactGithubReposTable.repoOwner, targetRepo.repoOwner))
+        .where(eq(ContactGithubReposTable.repoName, targetRepo.repoName))
+        .limit(1);
+
+      if (existingRepo.length > 0) {
+        await tx
+          .delete(ContactGithubReposTable)
+          .where(eq(ContactGithubReposTable.id, targetRepo.id));
+      } else {
+        await tx
+          .update(ContactGithubReposTable)
+          .set({ contactId: currentContactId })
+          .where(eq(ContactGithubReposTable.id, targetRepo.id));
+      }
+    }
 
     const deletedContact = await tx
       .delete(ContactsTable)
