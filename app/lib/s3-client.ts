@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { AWS_S3_BUCKETS } from "./constants";
@@ -71,5 +72,56 @@ export async function getContactSummaryFromS3(
       error
     );
     return null;
+  }
+}
+
+export async function uploadContactSummaryToS3(
+  contactId: string,
+  summary: string
+): Promise<boolean> {
+  try {
+    const bucketName = AWS_S3_BUCKETS.MEMORY;
+    const baseKey = `contacts/${contactId}/summary.txt`;
+    const key = generateS3Key(baseKey);
+
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: summary,
+      ContentType: "text/plain",
+    });
+
+    await s3Client.send(command);
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to upload contact summary for ${contactId} to S3:`,
+      error
+    );
+    return false;
+  }
+}
+
+export async function deleteContactSummaryFromS3(
+  contactId: string
+): Promise<boolean> {
+  try {
+    const bucketName = AWS_S3_BUCKETS.MEMORY;
+    const baseKey = `contacts/${contactId}/summary.txt`;
+    const key = generateS3Key(baseKey);
+
+    const command = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    await s3Client.send(command);
+    return true;
+  } catch (error) {
+    console.error(
+      `Failed to delete contact summary for ${contactId} from S3:`,
+      error
+    );
+    return false;
   }
 }
