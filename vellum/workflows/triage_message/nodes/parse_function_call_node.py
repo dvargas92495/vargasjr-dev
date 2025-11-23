@@ -25,6 +25,9 @@ class ParseFunctionCallNode(BaseNode):
         mark_contact_as_lead = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("mark_contact_as_lead"))  # type: ignore
         )
+        generate_stripe_checkout = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("generate_stripe_checkout"))  # type: ignore
+        )
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore
