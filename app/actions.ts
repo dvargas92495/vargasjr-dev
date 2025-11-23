@@ -14,7 +14,7 @@ import {
   OutboxMessageRecipientsTable,
   ContactGithubReposTable,
 } from "@/db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import { getDb } from "@/db/connection";
 import { convertPriorityToLabel } from "@/server";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
@@ -550,9 +550,13 @@ export async function mergeContact(
       const existingRepo = await tx
         .select()
         .from(ContactGithubReposTable)
-        .where(eq(ContactGithubReposTable.contactId, currentContactId))
-        .where(eq(ContactGithubReposTable.repoOwner, targetRepo.repoOwner))
-        .where(eq(ContactGithubReposTable.repoName, targetRepo.repoName))
+        .where(
+          and(
+            eq(ContactGithubReposTable.contactId, currentContactId),
+            eq(ContactGithubReposTable.repoOwner, targetRepo.repoOwner),
+            eq(ContactGithubReposTable.repoName, targetRepo.repoName)
+          )
+        )
         .limit(1);
 
       if (existingRepo.length > 0) {
