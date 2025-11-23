@@ -589,7 +589,9 @@ export async function mergeContact(
     const targetSummary = await getContactSummaryFromS3(targetContactId);
 
     if (currentSummary && targetSummary) {
-      const mergedSummary = `${currentSummary}\n\n--- Merged from contact ${targetContact[0].fullName || targetContact[0].email || targetContactId} ---\n\n${targetSummary}`;
+      const mergedSummary = `${currentSummary}\n\n--- Merged from contact ${
+        targetContact[0].fullName || targetContact[0].email || targetContactId
+      } ---\n\n${targetSummary}`;
       await uploadContactSummaryToS3(currentContactId, mergedSummary);
     } else if (!currentSummary && targetSummary) {
       await uploadContactSummaryToS3(currentContactId, targetSummary);
