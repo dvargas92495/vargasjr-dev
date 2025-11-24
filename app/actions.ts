@@ -20,6 +20,11 @@ import { convertPriorityToLabel } from "@/server";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { AWS_S3_BUCKETS } from "@/app/lib/constants";
 import { AWS_DEFAULT_REGION } from "@/server/constants";
+import {
+  getContactSummaryFromS3,
+  uploadContactSummaryToS3,
+  deleteContactSummaryFromS3,
+} from "@/app/lib/s3-client";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
@@ -578,6 +583,22 @@ export async function mergeContact(
 
     if (!deletedContact.length) {
       throw new Error("Failed to delete target contact");
+    }
+
+    const currentSummary = await getContactSummaryFromS3(currentContactId);
+    const targetSummary = await getContactSummaryFromS3(targetContactId);
+
+    if (currentSummary && targetSummary) {
+      const mergedSummary = `${currentSummary}\n\n--- Merged from contact ${
+        targetContact[0].fullName || targetContact[0].email || targetContactId
+      } ---\n\n${targetSummary}`;
+      await uploadContactSummaryToS3(currentContactId, mergedSummary);
+    } else if (!currentSummary && targetSummary) {
+      await uploadContactSummaryToS3(currentContactId, targetSummary);
+    }
+
+    if (targetSummary) {
+      await deleteContactSummaryFromS3(targetContactId);
     }
 
     revalidatePath("/admin/crm");
