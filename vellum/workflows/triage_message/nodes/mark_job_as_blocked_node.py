@@ -3,7 +3,7 @@ from datetime import datetime, UTC
 from vellum.workflows.nodes import BaseNode
 from services import postgres_session
 from models.job_session import JobSession
-from models.job import Job
+from models.job import Job, JobStatus
 from sqlmodel import select
 from .read_message_node import ReadMessageNode
 from .parse_job_function_call_node import ParseJobFunctionCallNode
@@ -40,7 +40,7 @@ class MarkJobAsBlockedNode(BaseNode):
                 # Update job status to BLOCKED with reason
                 job = session.exec(select(Job).where(Job.id == self.job_id)).first()
                 if job:
-                    job.status = "BLOCKED"
+                    job.status = JobStatus.BLOCKED
                     job.reason = self.reason
                 
                 session.commit()

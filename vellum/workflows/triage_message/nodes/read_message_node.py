@@ -13,7 +13,7 @@ from models.inbox_message_operation import InboxMessageOperation
 from models.types import InboxMessageOperationType, InboxType, ContactStatus
 from models.inbox import Inbox
 from models.contact import Contact
-from models.job import Job
+from models.job import Job, JobStatus
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
 
@@ -111,7 +111,7 @@ class ReadMessageNode(BaseNode):
                     job_statement = (
                         select(Job)
                         .where(
-                            (Job.status == "OPEN") | (Job.status.is_(None))  # type: ignore
+                            (Job.status == JobStatus.OPEN) | (Job.status.is_(None))  # type: ignore
                         )
                         .where(
                             ~Job.id.in_(  # type: ignore

@@ -45,7 +45,7 @@ __all__ = [
     "GenerateStripeCheckoutNode",
     "ProcessJobNode",
     "ParseJobFunctionCallNode",
-    "GetJobContextNode",
+    "StartJobNode",
     "CompleteJobNode",
-    "DeferJobNode",
+    "MarkJobAsBlockedNode",
 ]

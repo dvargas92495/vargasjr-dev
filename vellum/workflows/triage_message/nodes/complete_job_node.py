@@ -3,7 +3,7 @@ from datetime import datetime, UTC
 from vellum.workflows.nodes import BaseNode
 from services import postgres_session
 from models.job_session import JobSession
-from models.job import Job
+from models.job import Job, JobStatus
 from sqlmodel import select
 from .read_message_node import ReadMessageNode
 
@@ -38,7 +38,7 @@ class CompleteJobNode(BaseNode):
                 # Update job status to COMPLETED
                 job = session.exec(select(Job).where(Job.id == self.job_id)).first()
                 if job:
-                    job.status = "COMPLETED"
+                    job.status = JobStatus.COMPLETED
                 
                 session.commit()
                 
