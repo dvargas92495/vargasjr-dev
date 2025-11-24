@@ -12,39 +12,34 @@ from .read_message_node import ReadMessageNode
 logger = logging.getLogger(__name__)
 
 
+def start_job():
+    """
+    Start working on the job by creating a job session.
+    Use this when you begin processing the job.
+    """
+    pass
+
+
 def complete_job():
     """
-    Mark the job as complete by creating a job session with an end time.
-    Use this when you have successfully completed the job's requirements.
+    Mark the job as complete when the artifacts generated from all of the job's 
+    sessions satisfy the requirements of the job.
     """
     pass
 
 
-def defer_job():
+def mark_job_as_blocked(reason: str):
     """
-    Defer the job for later processing. Use this when you need more information
-    or when the job cannot be completed at this time.
-    """
-    pass
-
-
-def get_job_context(job_id: Optional[str] = None) -> str:
-    """
-    Retrieve additional context about the job, including related contact information
-    and any previous job sessions.
+    Mark the job as blocked when you cannot proceed with the job.
     
     Args:
-        job_id: Optional UUID of the job to get context for. If not provided,
-                uses the current job being processed.
-    
-    Returns:
-        A formatted string containing job context and history
+        reason: Explanation of why the job is blocked
     """
-    raise NotImplementedError("Tool stub. Implemented in GetJobContextNode.")
+    pass
 
 
 class ProcessJobNode(BaseInlinePromptNode):
-    ml_model = "gpt-4o"
+    ml_model = "gpt-5.1"
     blocks = [
         ChatMessagePromptBlock(
             chat_role="SYSTEM",
@@ -59,13 +54,7 @@ class ProcessJobNode(BaseInlinePromptNode):
 {% if contact_id %}- Contact ID: {{ contact_id }}
 {% endif %}
 
-Your task is to work on this job. You have access to tools to:
-1. Get additional context about the job (get_job_context)
-2. Complete the job when finished (complete_job)
-3. Defer the job if you need more information or cannot complete it now (defer_job)
-
-Start by understanding what the job requires, then take appropriate action. If the job description
-provides clear instructions, follow them. If you need more context, use get_job_context first.""",
+Your goal is to complete the requirements of the job.""",
                 ),
             ],
         ),
@@ -87,12 +76,12 @@ provides clear instructions, follow them. If you need more context, use get_job_
         "contact_id": ReadMessageNode.Outputs.job["contact_id"],
     }
     functions = [
-        get_job_context,
+        start_job,
         complete_job,
-        defer_job,
+        mark_job_as_blocked,
     ]
     parameters = PromptParameters(
-        max_tokens=1000,
+        max_tokens=32000,
         custom_parameters={
             "tool_choice": "required",
         },

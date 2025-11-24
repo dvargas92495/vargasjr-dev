@@ -6,9 +6,9 @@ from .process_job_node import ProcessJobNode
 
 class ParseJobFunctionCallNode(BaseNode):
     class Ports(BaseNode.Ports):
-        get_job_context = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("get_job_context")))  # type: ignore
+        start_job = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("start_job")))  # type: ignore
         complete_job = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("complete_job")))  # type: ignore
-        defer_job = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("defer_job")))  # type: ignore
+        mark_job_as_blocked = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("mark_job_as_blocked")))  # type: ignore
 
     class Outputs(BaseNode.Outputs):
         action = ProcessJobNode.Outputs.results[0]["value"]["name"]  # type: ignore

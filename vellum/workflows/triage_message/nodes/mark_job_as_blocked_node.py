@@ -6,12 +6,14 @@ from models.job_session import JobSession
 from models.job import Job
 from sqlmodel import select
 from .read_message_node import ReadMessageNode
+from .parse_job_function_call_node import ParseJobFunctionCallNode
 
 logger = logging.getLogger(__name__)
 
 
-class CompleteJobNode(BaseNode):
+class MarkJobAsBlockedNode(BaseNode):
     job_id = ReadMessageNode.Outputs.job["job_id"]
+    reason = ParseJobFunctionCallNode.Outputs.parameters["reason"]
     
     class Outputs(BaseNode.Outputs):
         summary: str
@@ -35,19 +37,20 @@ class CompleteJobNode(BaseNode):
                 # Set the end time on the existing session
                 active_session.end_at = datetime.now(UTC)
                 
-                # Update job status to COMPLETED
+                # Update job status to BLOCKED with reason
                 job = session.exec(select(Job).where(Job.id == self.job_id)).first()
                 if job:
-                    job.status = "COMPLETED"
+                    job.status = "BLOCKED"
+                    job.reason = self.reason
                 
                 session.commit()
                 
-                summary = f"Job {self.job_id} marked as complete."
+                summary = f"Job {self.job_id} marked as blocked. Reason: {self.reason}"
                 url = f"/admin/jobs/{self.job_id}/sessions/{active_session.id}"
                 logger.info(summary)
                 return self.Outputs(summary=summary, url=url)
                 
         except Exception as e:
-            logger.exception(f"Error completing job: {str(e)}")
-            error_message = f"Error completing job: {str(e)}"
+            logger.exception(f"Error marking job as blocked: {str(e)}")
+            error_message = f"Error marking job as blocked: {str(e)}"
             return self.Outputs(summary=error_message, url="")

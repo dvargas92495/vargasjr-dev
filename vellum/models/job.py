@@ -1,7 +1,9 @@
 from datetime import datetime, UTC
-from typing import Optional
+from typing import Optional, Literal
 from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
+
+JobStatus = Literal["OPEN", "BLOCKED", "COMPLETED"]
 
 
 class Job(SQLModel, table=True):
@@ -13,6 +15,8 @@ class Job(SQLModel, table=True):
     due_date: datetime
     priority: float
     contact_id: Optional[UUID] = None
+    status: JobStatus = Field(default="OPEN")
+    reason: Optional[str] = None
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"name": "created_at"},

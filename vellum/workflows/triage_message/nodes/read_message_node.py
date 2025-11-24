@@ -48,18 +48,17 @@ class ReadMessageNode(BaseNode):
     class Ports(BaseNode.Ports):
         no_action = Port.on_if(
             LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
-            & LazyReference(lambda: ReadMessageNode.Outputs.has_job.equals(False))
+            & LazyReference(lambda: ReadMessageNode.Outputs.job.is_null())  # type: ignore
         )
         process_job = Port.on_if(
             LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
-            & LazyReference(lambda: ReadMessageNode.Outputs.has_job.equals(True))
+            & LazyReference(lambda: ReadMessageNode.Outputs.job.is_not_null())  # type: ignore
         )
         triage = Port.on_else()
 
     class Outputs(BaseNode.Outputs):
         message: SlimMessage
         job: Optional[SlimJob]
-        has_job: bool
 
     def run(self) -> Outputs:
         try:
@@ -106,8 +105,19 @@ class ReadMessageNode(BaseNode):
 
                 if not result:
                     # No messages found, check for jobs
+                    # Filter out BLOCKED and COMPLETED jobs, and jobs with active sessions
+                    from models.job_session import JobSession
+                    
                     job_statement = (
                         select(Job)
+                        .where(
+                            (Job.status == "OPEN") | (Job.status.is_(None))  # type: ignore
+                        )
+                        .where(
+                            ~Job.id.in_(  # type: ignore
+                                select(JobSession.job_id).where(JobSession.end_at.is_(None))  # type: ignore
+                            )
+                        )
                         .order_by(Job.priority.desc(), Job.due_date.asc())  # type: ignore
                     )
                     job_result = session.exec(job_statement).first()
@@ -137,7 +147,6 @@ class ReadMessageNode(BaseNode):
                                 priority=job_result.priority,
                                 contact_id=job_result.contact_id,
                             ),
-                            has_job=True,
                         )
                     else:
                         # No messages and no jobs
@@ -157,7 +166,6 @@ class ReadMessageNode(BaseNode):
                                 thread_id=None,
                             ),
                             job=None,
-                            has_job=False,
                         )
 
                 inbox_message, inbox_type, inbox_name, contact = result
@@ -192,7 +200,6 @@ class ReadMessageNode(BaseNode):
                 return self.Outputs(
                     message=message,
                     job=None,
-                    has_job=False,
                 )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
             return self.Outputs(
@@ -211,5 +218,4 @@ class ReadMessageNode(BaseNode):
                     thread_id=None,
                 ),
                 job=None,
-                has_job=False,
             )

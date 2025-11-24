@@ -23,9 +23,9 @@ from .nodes import (
     GenerateStripeCheckoutNode,
     ProcessJobNode,
     ParseJobFunctionCallNode,
-    GetJobContextNode,
+    StartJobNode,
     CompleteJobNode,
-    DeferJobNode,
+    MarkJobAsBlockedNode,
 )
 
 
@@ -35,9 +35,9 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
         ReadMessageNode.Ports.process_job >> {
             ProcessJobNode
             >> {
-                ParseJobFunctionCallNode.Ports.get_job_context >> GetJobContextNode >> ProcessJobNode,
+                ParseJobFunctionCallNode.Ports.start_job >> StartJobNode >> ProcessJobNode,
                 ParseJobFunctionCallNode.Ports.complete_job >> CompleteJobNode,
-                ParseJobFunctionCallNode.Ports.defer_job >> DeferJobNode,
+                ParseJobFunctionCallNode.Ports.mark_job_as_blocked >> MarkJobAsBlockedNode,
             }
         },
         ReadMessageNode.Ports.triage
@@ -69,12 +69,12 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
         ).coalesce(
             CompleteJobNode.Outputs.summary
         ).coalesce(
-            DeferJobNode.Outputs.summary
+            MarkJobAsBlockedNode.Outputs.summary
         )
         message_url = NoActionNode.Outputs.message_url.coalesce(
             StoreOutboxMessageNode.Outputs.message_url
         ).coalesce(
-            CompleteJobNode.Outputs.message_url
+            CompleteJobNode.Outputs.url
         ).coalesce(
-            DeferJobNode.Outputs.message_url
+            MarkJobAsBlockedNode.Outputs.url
         )
