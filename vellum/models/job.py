@@ -12,6 +12,7 @@ class Job(SQLModel, table=True):
     description: Optional[str] = None
     due_date: datetime
     priority: float
+    contact_id: Optional[UUID] = None
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"name": "created_at"},

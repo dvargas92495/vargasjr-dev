@@ -183,6 +183,34 @@ def mark_contact_as_lead():
     pass
 
 
+def start_demo(
+    project_summary: str,
+):
+    """
+    Create a demo for the contact's project. Use this function when you have gathered
+    enough information about their project to build a working demo.
+    
+    Use this function when:
+    - You understand the core requirements of their project
+    - You have asked relevant follow-up questions and received answers
+    - The contact has provided sufficient detail about what they need built
+    - You are confident you can create a meaningful demo to showcase capabilities
+    
+    IMPORTANT: Do NOT call this function immediately. First, gather information by:
+    1. Asking for a brief summary of their project
+    2. Asking relevant follow-up questions about requirements, tech stack, timeline, etc.
+    3. Understanding their specific needs and pain points
+    
+    Only call this function once you have enough context to build something meaningful.
+    After calling this function, you will receive a demo link to share with the contact.
+    
+    Args:
+        project_summary: A comprehensive summary of the project requirements and what
+                        the demo should demonstrate
+    """
+    pass
+
+
 def generate_stripe_checkout():
     """
     Generate a Stripe checkout link and contract for the contact. Use this ONLY when you are
@@ -209,8 +237,6 @@ def generate_stripe_checkout():
     is ready to become a paying client right now.
     """
     pass
-
-
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -235,9 +261,12 @@ Pick the most relevant action. Your message should give the recipient confidence
 their request and that you are working on it now.
 
 When someone asks identity questions like "who are you", "what do you do", or "tell me about yourself", \
-use text_reply. Keep it to 1-2 short sentences in a casual, conversational tone. End with a direct \
-call-to-action to start a project now by offering to share a brief plan and price and asking for a quick \
-yes/no to proceed. Keep it conversational and guide them toward committing to hire you.""",
+use text_reply. Keep it to 1-2 short sentences in a casual, conversational tone. Then ask them for a brief \
+summary of their project and what they're looking to build. Ask relevant follow-up questions to understand \
+their requirements, tech stack, timeline, and specific needs. Once you have gathered enough information and \
+are confident you understand their project, call start_demo to create a working demo. Share the demo link to \
+pique their interest and demonstrate capabilities. DO NOT mention pricing until they seem highly likely (90%+) \
+to commit to working together. Keep it conversational and focus on understanding their needs first.""",
                 ),
             ],
         ),
@@ -272,6 +301,7 @@ yes/no to proceed. Keep it conversational and guide them toward committing to hi
         job_opportunity_response,
         create_meeting,
         mark_contact_as_lead,
+        start_demo,
         generate_stripe_checkout,
     ]
     parameters = PromptParameters(
