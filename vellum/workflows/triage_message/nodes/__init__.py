@@ -17,6 +17,11 @@ from .mark_contact_as_lead_node import MarkContactAsLeadNode
 from .get_message_history_node import GetMessageHistoryNode
 from .start_demo_node import StartDemoNode
 from .generate_stripe_checkout_node import GenerateStripeCheckoutNode
+from .process_job_node import ProcessJobNode
+from .parse_job_function_call_node import ParseJobFunctionCallNode
+from .get_job_context_node import GetJobContextNode
+from .complete_job_node import CompleteJobNode
+from .defer_job_node import DeferJobNode
 
 __all__ = [
     "ReadMessageNode",
@@ -38,4 +43,9 @@ __all__ = [
     "GetMessageHistoryNode",
     "StartDemoNode",
     "GenerateStripeCheckoutNode",
+    "ProcessJobNode",
+    "ParseJobFunctionCallNode",
+    "GetJobContextNode",
+    "CompleteJobNode",
+    "DeferJobNode",
 ]

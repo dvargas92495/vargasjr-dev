@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 from uuid import UUID, uuid4
+from datetime import datetime
 import psycopg
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from services import postgres_session
@@ -12,6 +13,7 @@ from models.inbox_message_operation import InboxMessageOperation
 from models.types import InboxMessageOperationType, InboxType, ContactStatus
 from models.inbox import Inbox
 from models.contact import Contact
+from models.job import Job
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
 
@@ -33,15 +35,30 @@ class SlimMessage(UniversalBaseModel):
     thread_id: Optional[str] = None
 
 
+class SlimJob(UniversalBaseModel):
+    job_id: UUID
+    name: str
+    description: Optional[str] = None
+    due_date: datetime
+    priority: float
+    contact_id: Optional[UUID] = None
+
+
 class ReadMessageNode(BaseNode):
     class Ports(BaseNode.Ports):
         no_action = Port.on_if(
             LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
+            & LazyReference(lambda: ReadMessageNode.Outputs.job["job_id"].equals(uuid4()))
+        )
+        process_job = Port.on_if(
+            LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
+            & ~LazyReference(lambda: ReadMessageNode.Outputs.job["job_id"].equals(uuid4()))
         )
         triage = Port.on_else()
 
     class Outputs(BaseNode.Outputs):
         message: SlimMessage
+        job: SlimJob
 
     def run(self) -> Outputs:
         try:
@@ -87,22 +104,66 @@ class ReadMessageNode(BaseNode):
                 result = session.exec(statement).first()
 
                 if not result:
-                    return self.Outputs(
-                        message=SlimMessage(
-                            message_id=uuid4(),
-                            body="No messages found",
-                            contact_email=None,
-                            contact_id=uuid4(),
-                            contact_full_name=None,
-                            contact_slack_display_name=None,
-                            contact_phone_number=None,
-                            contact_status=None,
-                            channel=InboxType.NONE,
-                            inbox_name="",
-                            inbox_id=uuid4(),
-                            thread_id=None,
-                        )
+                    # No messages found, check for jobs
+                    job_statement = (
+                        select(Job)
+                        .order_by(Job.priority.desc(), Job.due_date.asc())  # type: ignore
                     )
+                    job_result = session.exec(job_statement).first()
+                    
+                    if job_result:
+                        # Found a job to process
+                        return self.Outputs(
+                            message=SlimMessage(
+                                message_id=uuid4(),
+                                body="No messages found",
+                                contact_email=None,
+                                contact_id=uuid4(),
+                                contact_full_name=None,
+                                contact_slack_display_name=None,
+                                contact_phone_number=None,
+                                contact_status=None,
+                                channel=InboxType.NONE,
+                                inbox_name="",
+                                inbox_id=uuid4(),
+                                thread_id=None,
+                            ),
+                            job=SlimJob(
+                                job_id=job_result.id,
+                                name=job_result.name,
+                                description=job_result.description,
+                                due_date=job_result.due_date,
+                                priority=job_result.priority,
+                                contact_id=job_result.contact_id,
+                            )
+                        )
+                    else:
+                        # No messages and no jobs
+                        dummy_job_id = uuid4()
+                        return self.Outputs(
+                            message=SlimMessage(
+                                message_id=uuid4(),
+                                body="No messages found",
+                                contact_email=None,
+                                contact_id=uuid4(),
+                                contact_full_name=None,
+                                contact_slack_display_name=None,
+                                contact_phone_number=None,
+                                contact_status=None,
+                                channel=InboxType.NONE,
+                                inbox_name="",
+                                inbox_id=uuid4(),
+                                thread_id=None,
+                            ),
+                            job=SlimJob(
+                                job_id=dummy_job_id,
+                                name="",
+                                description=None,
+                                due_date=datetime.now(),
+                                priority=0.0,
+                                contact_id=None,
+                            )
+                        )
 
                 inbox_message, inbox_type, inbox_name, contact = result
                 
@@ -131,7 +192,22 @@ class ReadMessageNode(BaseNode):
                     inbox_id=inbox_message.inbox_id,
                     thread_id=inbox_message.thread_id,
                 )
+                
+                # Return dummy job when we have a message
+                dummy_job_id = uuid4()
+                return self.Outputs(
+                    message=message,
+                    job=SlimJob(
+                        job_id=dummy_job_id,
+                        name="",
+                        description=None,
+                        due_date=datetime.now(),
+                        priority=0.0,
+                        contact_id=None,
+                    )
+                )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
+            dummy_job_id = uuid4()
             return self.Outputs(
                 message=SlimMessage(
                     message_id=uuid4(),
@@ -146,7 +222,13 @@ class ReadMessageNode(BaseNode):
                     inbox_name="",
                     inbox_id=uuid4(),
                     thread_id=None,
+                ),
+                job=SlimJob(
+                    job_id=dummy_job_id,
+                    name="",
+                    description=None,
+                    due_date=datetime.now(),
+                    priority=0.0,
+                    contact_id=None,
                 )
             )
-
-        return self.Outputs(message=message)
