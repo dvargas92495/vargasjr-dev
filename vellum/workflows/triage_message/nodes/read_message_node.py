@@ -48,17 +48,18 @@ class ReadMessageNode(BaseNode):
     class Ports(BaseNode.Ports):
         no_action = Port.on_if(
             LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
-            & LazyReference(lambda: ReadMessageNode.Outputs.job["job_id"].equals(uuid4()))
+            & LazyReference(lambda: ReadMessageNode.Outputs.has_job.equals(False))
         )
         process_job = Port.on_if(
             LazyReference(lambda: ReadMessageNode.Outputs.message["channel"].equals(InboxType.NONE))
-            & ~LazyReference(lambda: ReadMessageNode.Outputs.job["job_id"].equals(uuid4()))
+            & LazyReference(lambda: ReadMessageNode.Outputs.has_job.equals(True))
         )
         triage = Port.on_else()
 
     class Outputs(BaseNode.Outputs):
         message: SlimMessage
-        job: SlimJob
+        job: Optional[SlimJob]
+        has_job: bool
 
     def run(self) -> Outputs:
         try:
@@ -135,11 +136,11 @@ class ReadMessageNode(BaseNode):
                                 due_date=job_result.due_date,
                                 priority=job_result.priority,
                                 contact_id=job_result.contact_id,
-                            )
+                            ),
+                            has_job=True,
                         )
                     else:
                         # No messages and no jobs
-                        dummy_job_id = uuid4()
                         return self.Outputs(
                             message=SlimMessage(
                                 message_id=uuid4(),
@@ -155,14 +156,8 @@ class ReadMessageNode(BaseNode):
                                 inbox_id=uuid4(),
                                 thread_id=None,
                             ),
-                            job=SlimJob(
-                                job_id=dummy_job_id,
-                                name="",
-                                description=None,
-                                due_date=datetime.now(),
-                                priority=0.0,
-                                contact_id=None,
-                            )
+                            job=None,
+                            has_job=False,
                         )
 
                 inbox_message, inbox_type, inbox_name, contact = result
@@ -193,21 +188,13 @@ class ReadMessageNode(BaseNode):
                     thread_id=inbox_message.thread_id,
                 )
                 
-                # Return dummy job when we have a message
-                dummy_job_id = uuid4()
+                # Return no job when we have a message
                 return self.Outputs(
                     message=message,
-                    job=SlimJob(
-                        job_id=dummy_job_id,
-                        name="",
-                        description=None,
-                        due_date=datetime.now(),
-                        priority=0.0,
-                        contact_id=None,
-                    )
+                    job=None,
+                    has_job=False,
                 )
         except (psycopg.OperationalError, SQLAlchemyOperationalError):
-            dummy_job_id = uuid4()
             return self.Outputs(
                 message=SlimMessage(
                     message_id=uuid4(),
@@ -223,12 +210,6 @@ class ReadMessageNode(BaseNode):
                     inbox_id=uuid4(),
                     thread_id=None,
                 ),
-                job=SlimJob(
-                    job_id=dummy_job_id,
-                    name="",
-                    description=None,
-                    due_date=datetime.now(),
-                    priority=0.0,
-                    contact_id=None,
-                )
+                job=None,
+                has_job=False,
             )

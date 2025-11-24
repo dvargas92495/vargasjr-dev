@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from vellum import (
     ChatMessagePromptBlock,
     JinjaPromptBlock,
@@ -27,7 +28,7 @@ def defer_job():
     pass
 
 
-def get_job_context(job_id: str = None) -> str:
+def get_job_context(job_id: Optional[str] = None) -> str:
     """
     Retrieve additional context about the job, including related contact information
     and any previous job sessions.
