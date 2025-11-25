@@ -32,3 +32,7 @@ export const OutboxRecipientTypes = ["TO", "CC", "BCC"] as const;
 export const ContactStatuses = ["NEW", "LEAD", "CLIENT", "INACTIVE"] as const;
 
 export type ContactStatus = (typeof ContactStatuses)[number];
+
+export const JobStatuses = ["OPEN", "BLOCKED", "COMPLETED"] as const;
+
+export type JobStatus = (typeof JobStatuses)[number];

@@ -16,6 +16,7 @@ import {
   AppTypes,
   OutboxRecipientTypes,
   ContactStatuses,
+  JobStatuses,
 } from "./constants";
 
 export type InboxType = (typeof InboxTypes)[number];
@@ -29,6 +30,8 @@ export const OutboxRecipientTypesEnum = pgEnum(
 );
 
 export const ContactStatusesEnum = pgEnum("contact_status", ContactStatuses);
+
+export const JobStatusesEnum = pgEnum("job_status", JobStatuses);
 
 export const InboxesTable = pgTable("inboxes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -171,6 +174,8 @@ export const JobsTable = pgTable("jobs", {
   dueDate: timestamp("due_date").notNull(),
   priority: real("priority").notNull(),
   contactId: uuid("contact_id").references(() => ContactsTable.id),
+  status: JobStatusesEnum("status").default("OPEN"),
+  reason: text("reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
