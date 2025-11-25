@@ -57,5 +57,5 @@ unchanged and return it as-is.""",
         "message": ReadMessageNode.Outputs.message["body"],
     }
     parameters = PromptParameters(
-        max_tokens=500,
+        max_tokens=32000,
     )
