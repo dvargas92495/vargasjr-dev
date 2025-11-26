@@ -92,15 +92,13 @@ export default async function OutboxMessagePage({
     <div className="flex flex-col p-4">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
-            {parentMessage && (
-              <Link
-                href={`/admin/messages/inbox/${parentMessage.id}`}
-              >
-                <button className="flex items-center gap-2 text-gray-300 hover:text-white">
-                  <ArrowLeftIcon className="w-5 h-5" />
-                </button>
-              </Link>
-            )}
+          {parentMessage && (
+            <Link href={`/admin/messages/inbox/${parentMessage.id}`}>
+              <button className="flex items-center gap-2 text-gray-300 hover:text-white">
+                <ArrowLeftIcon className="w-5 h-5" />
+              </button>
+            </Link>
+          )}
           <div className="flex items-center gap-3">
             <PaperAirplaneIcon className="w-6 h-6 text-blue-400" />
             <h1 className="text-2xl font-bold">Outgoing Message</h1>

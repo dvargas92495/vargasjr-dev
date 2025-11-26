@@ -101,12 +101,21 @@ export default async function InboxMessage({
         </div>
         <div className="flex items-center gap-2">
           {statuses[message.id] === "READ" && (
-            <MarkAsUnreadButton messageId={message.id} inboxId={message.inboxId} />
+            <MarkAsUnreadButton
+              messageId={message.id}
+              inboxId={message.inboxId}
+            />
           )}
           {statuses[message.id] !== "ARCHIVED" && (
-            <MarkAsArchivedButton messageId={message.id} inboxId={message.inboxId} />
+            <MarkAsArchivedButton
+              messageId={message.id}
+              inboxId={message.inboxId}
+            />
           )}
-          <DeleteMessageButton messageId={message.id} inboxId={message.inboxId} />
+          <DeleteMessageButton
+            messageId={message.id}
+            inboxId={message.inboxId}
+          />
         </div>
       </div>
 
@@ -118,7 +127,9 @@ export default async function InboxMessage({
               href={`/admin/inboxes/${message.inboxId}`}
               className="text-blue-600 hover:text-blue-800 underline"
             >
-              {message.inboxDisplayLabel || message.inboxName || "Unknown Inbox"}
+              {message.inboxDisplayLabel ||
+                message.inboxName ||
+                "Unknown Inbox"}
             </Link>
           </div>
         </div>
