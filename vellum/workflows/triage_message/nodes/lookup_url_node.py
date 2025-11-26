@@ -14,44 +14,41 @@ from .parse_function_call_node import ParseFunctionCallNode
 logger = logging.getLogger(__name__)
 
 
-class HTMLTextExtractor(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__()
-        self.text_parts: list[str] = []
-        self.skip_tags = {"script", "style", "head", "meta", "link", "noscript"}
-        self.current_skip_depth = 0
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.lower() in self.skip_tags:
-            self.current_skip_depth += 1
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag.lower() in self.skip_tags and self.current_skip_depth > 0:
-            self.current_skip_depth -= 1
-
-    def handle_data(self, data: str) -> None:
-        if self.current_skip_depth == 0:
-            text = data.strip()
-            if text:
-                self.text_parts.append(text)
-
-    def get_text(self) -> str:
-        return " ".join(self.text_parts)
-
-
-def extract_text_from_html(html: str) -> str:
-    parser = HTMLTextExtractor()
-    parser.feed(html)
-    text = parser.get_text()
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-
-def generate_url_hash(url: str) -> str:
-    return hashlib.sha256(url.encode()).hexdigest()[:16]
-
-
 class LookupUrlNode(BaseNode):
+    class _HTMLTextExtractor(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__()
+            self.text_parts: list[str] = []
+            self.skip_tags = {"script", "style", "head", "meta", "link", "noscript"}
+            self.current_skip_depth = 0
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            if tag.lower() in self.skip_tags:
+                self.current_skip_depth += 1
+
+        def handle_endtag(self, tag: str) -> None:
+            if tag.lower() in self.skip_tags and self.current_skip_depth > 0:
+                self.current_skip_depth -= 1
+
+        def handle_data(self, data: str) -> None:
+            if self.current_skip_depth == 0:
+                text = data.strip()
+                if text:
+                    self.text_parts.append(text)
+
+        def get_text(self) -> str:
+            return " ".join(self.text_parts)
+
+    def _extract_text_from_html(self, html: str) -> str:
+        parser = self._HTMLTextExtractor()
+        parser.feed(html)
+        text = parser.get_text()
+        text = re.sub(r"\s+", " ", text)
+        return text.strip()
+
+    def _generate_url_hash(self, url: str) -> str:
+        return hashlib.sha256(url.encode()).hexdigest()[:16]
+
     parameters = ParseFunctionCallNode.Outputs.parameters
 
     class Outputs(BaseNode.Outputs):
@@ -96,12 +93,12 @@ class LookupUrlNode(BaseNode):
         try:
             truncated_content = content[:10000]
 
-            response = self._context.vellum_client.ad_hoc.adhoc_execute_prompt_stream(
-                ml_model="gpt-4o-mini",
+            response = self._context.vellum_client.ad_hoc.adhoc_execute_prompt(
+                ml_model="gpt-5.1",
                 input_values=[],
                 input_variables=[],
                 parameters=PromptParameters(
-                    max_tokens=200,
+                    max_tokens=32000,
                 ),
                 blocks=[
                     ChatMessagePromptBlock(
@@ -122,20 +119,17 @@ Provide a 2-3 sentence summary of what this webpage is about.""",
                 ],
             )
 
-            for prompt_event in response:
-                if prompt_event.state != "FULFILLED":
-                    continue
+            if response.state != "FULFILLED":
+                return self._generate_heuristic_summary(content)
 
-                output = prompt_event.outputs[0]
-                if not output:
-                    return self._generate_heuristic_summary(content)
+            output = response.outputs[0]
+            if not output:
+                return self._generate_heuristic_summary(content)
 
-                if output.type != "STRING" or not output.value:
-                    return self._generate_heuristic_summary(content)
+            if output.type != "STRING" or not output.value:
+                return self._generate_heuristic_summary(content)
 
-                return output.value.strip()
-
-            return self._generate_heuristic_summary(content)
+            return output.value.strip()
 
         except Exception as e:
             logger.warning(f"Failed to generate LLM summary: {str(e)}, falling back to heuristic")
@@ -158,12 +152,12 @@ Provide a 2-3 sentence summary of what this webpage is about.""",
             response.raise_for_status()
 
             html_content = response.text
-            text_content = extract_text_from_html(html_content)
+            text_content = self._extract_text_from_html(html_content)
 
             if not text_content:
                 return "Error: Could not extract text content from the webpage"
 
-            url_hash = generate_url_hash(url)
+            url_hash = self._generate_url_hash(url)
             self._store_in_s3(url_hash, url, text_content)
 
             return text_content
