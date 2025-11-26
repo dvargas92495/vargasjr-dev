@@ -112,6 +112,8 @@ def job_opportunity_response(
     Handle a job opportunity that was forwarded to you by sending a response to the original 
     recruiter while BCC'ing the person who forwarded the opportunity.
     
+    THIS IS A FINAL ACTION - it must be called ALONE, never in the same step as other tools.
+    
     Use this function when:
     - A job opportunity has been forwarded to you from another person
     - The message contains job-related content like positions, roles, opportunities, recruitment
