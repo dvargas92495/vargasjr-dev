@@ -344,7 +344,7 @@ export async function markMessageAsUnread(
       })
       .execute();
 
-    revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+    revalidatePath(`/admin/messages/inbox/${messageId}`);
     revalidatePath(`/admin/inboxes/${inboxId}`);
     return { success: true };
   } catch (e) {
@@ -367,7 +367,7 @@ export async function markMessageAsArchived(
     })
     .execute();
 
-  revalidatePath(`/admin/inboxes/${inboxId}/messages/${messageId}`);
+  revalidatePath(`/admin/messages/inbox/${messageId}`);
   revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 

@@ -49,7 +49,6 @@ interface MessageCardProps {
 const MessageCard = ({
   message,
   status,
-  inboxId,
   inboxName,
   isSelected = false,
   onSelectionChange,
@@ -58,8 +57,8 @@ const MessageCard = ({
   const router = useRouter();
 
   const handleClick = useCallback(() => {
-    router.push(`/admin/inboxes/${inboxId}/messages/${message.id}`);
-  }, [router, inboxId, message.id]);
+    router.push(`/admin/messages/inbox/${message.id}`);
+  }, [router, message.id]);
 
   const handleCheckboxClick = useCallback(
     (e: React.MouseEvent<HTMLInputElement>) => {

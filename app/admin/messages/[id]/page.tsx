@@ -92,15 +92,15 @@ export default async function OutboxMessagePage({
     <div className="flex flex-col p-4">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
-          {parentMessage && (
-            <Link
-              href={`/admin/inboxes/${parentMessage.inboxId}/messages/${parentMessage.id}`}
-            >
-              <button className="flex items-center gap-2 text-gray-300 hover:text-white">
-                <ArrowLeftIcon className="w-5 h-5" />
-              </button>
-            </Link>
-          )}
+            {parentMessage && (
+              <Link
+                href={`/admin/messages/inbox/${parentMessage.id}`}
+              >
+                <button className="flex items-center gap-2 text-gray-300 hover:text-white">
+                  <ArrowLeftIcon className="w-5 h-5" />
+                </button>
+              </Link>
+            )}
           <div className="flex items-center gap-3">
             <PaperAirplaneIcon className="w-6 h-6 text-blue-400" />
             <h1 className="text-2xl font-bold">Outgoing Message</h1>
@@ -185,7 +185,7 @@ export default async function OutboxMessagePage({
             <div className="text-sm text-gray-300">In Response To</div>
             <div className="text-lg">
               <Link
-                href={`/admin/inboxes/${parentMessage.inboxId}/messages/${parentMessage.id}`}
+                href={`/admin/messages/inbox/${parentMessage.id}`}
                 className="text-blue-400 hover:text-blue-300 underline"
               >
                 Message from{" "}

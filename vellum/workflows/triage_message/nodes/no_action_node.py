@@ -18,7 +18,7 @@ class NoActionNode(BaseNode):
         if self.message.channel == InboxType.NONE:
             return self.Outputs(message_url="")  # type: ignore
         
-        message_url = f"/admin/inboxes/{self.message.inbox_id}/messages/{self.message.message_id}"
+        message_url = f"/admin/messages/inbox/{self.message.message_id}"
         
         with postgres_session() as session:
             message_exists = session.exec(

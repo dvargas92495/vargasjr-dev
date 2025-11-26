@@ -3,13 +3,14 @@ import {
   InboxMessagesTable,
   OutboxMessagesTable,
   ContactsTable,
+  InboxesTable,
 } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import DeleteMessageButton from "@/components/delete-message-button";
 import MarkAsUnreadButton from "@/components/mark-as-unread-button";
 import MarkAsArchivedButton from "@/components/mark-as-archived-button";
-import { ArrowLeftIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getDb } from "@/db/connection";
 import LocalTime from "@/components/local-time";
@@ -34,14 +35,15 @@ function formatChannelType(type: string): string {
 export default async function InboxMessage({
   params,
 }: {
-  params: Promise<{ messageId: string; id: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { messageId, id: inboxId } = await params;
+  const { id: messageId } = await params;
 
   const db = getDb();
   const messages = await db
     .selectDistinctOn([InboxMessagesTable.id, InboxMessagesTable.createdAt], {
       id: InboxMessagesTable.id,
+      inboxId: InboxMessagesTable.inboxId,
       displayName: ContactsTable.slackDisplayName,
       fullName: ContactsTable.fullName,
       email: ContactsTable.email,
@@ -50,9 +52,12 @@ export default async function InboxMessage({
       body: InboxMessagesTable.body,
       externalId: InboxMessagesTable.externalId,
       metadata: InboxMessagesTable.metadata,
+      inboxName: InboxesTable.name,
+      inboxDisplayLabel: InboxesTable.displayLabel,
     })
     .from(InboxMessagesTable)
     .leftJoin(ContactsTable, eq(InboxMessagesTable.contactId, ContactsTable.id))
+    .leftJoin(InboxesTable, eq(InboxMessagesTable.inboxId, InboxesTable.id))
     .where(eq(InboxMessagesTable.id, messageId))
     .limit(1);
 
@@ -92,25 +97,32 @@ export default async function InboxMessage({
     <div className="flex flex-col p-4">
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-4">
-          <Link href={`/admin/inboxes/${inboxId}`}>
-            <button className="flex items-center gap-2 text-gray-300 hover:text-white">
-              <ArrowLeftIcon className="w-5 h-5" />
-            </button>
-          </Link>
           <h1 className="text-2xl font-bold">Message</h1>
         </div>
         <div className="flex items-center gap-2">
           {statuses[message.id] === "READ" && (
-            <MarkAsUnreadButton messageId={message.id} inboxId={inboxId} />
+            <MarkAsUnreadButton messageId={message.id} inboxId={message.inboxId} />
           )}
           {statuses[message.id] !== "ARCHIVED" && (
-            <MarkAsArchivedButton messageId={message.id} inboxId={inboxId} />
+            <MarkAsArchivedButton messageId={message.id} inboxId={message.inboxId} />
           )}
-          <DeleteMessageButton messageId={message.id} inboxId={inboxId} />
+          <DeleteMessageButton messageId={message.id} inboxId={message.inboxId} />
         </div>
       </div>
 
       <div className="bg-gray-800 shadow rounded-lg p-6 text-white">
+        <div className="mb-4">
+          <div className="text-sm text-gray-300">Inbox</div>
+          <div className="text-lg">
+            <Link
+              href={`/admin/inboxes/${message.inboxId}`}
+              className="text-blue-600 hover:text-blue-800 underline"
+            >
+              {message.inboxDisplayLabel || message.inboxName || "Unknown Inbox"}
+            </Link>
+          </div>
+        </div>
+
         <div className="mb-4">
           <div className="text-sm text-gray-300">Source</div>
           <div className="text-lg">
