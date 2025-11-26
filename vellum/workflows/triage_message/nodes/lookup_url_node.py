@@ -3,13 +3,8 @@ import logging
 import re
 from html.parser import HTMLParser
 from typing import Any, Dict
-from vellum import (
-    ChatMessagePromptBlock,
-    JinjaPromptBlock,
-    PromptParameters,
-)
-from vellum.workflows.nodes import InlinePromptNode
-from vellum.workflows.state import BaseState
+from vellum import ChatMessagePromptBlock, JinjaPromptBlock, PromptParameters
+from vellum.workflows.nodes import BaseNode
 import requests
 from services import ActionRecord
 from services.aws import get_aws_session, generate_s3_key
@@ -56,49 +51,22 @@ def generate_url_hash(url: str) -> str:
     return hashlib.sha256(url.encode()).hexdigest()[:16]
 
 
-class LookupUrlNode(InlinePromptNode):
-    parameters_input = ParseFunctionCallNode.Outputs.parameters
-    ml_model = "gpt-4o-mini"
-    blocks = [
-        ChatMessagePromptBlock(
-            chat_role="SYSTEM",
-            blocks=[
-                JinjaPromptBlock(
-                    template="""You are summarizing the content of a webpage. Provide a brief 2-3 sentence summary \
-that captures the main purpose and key information on the page. Be concise and informative.
+class LookupUrlNode(BaseNode):
+    parameters = ParseFunctionCallNode.Outputs.parameters
 
-URL: {{ url }}
-
-Page content:
-{{ content }}
-
-Provide a 2-3 sentence summary of what this webpage is about.""",
-                ),
-            ],
-        ),
-    ]
-    prompt_inputs: Dict[str, Any] = {}
-    parameters = PromptParameters(
-        max_tokens=200,
-    )
-
-    class Outputs(InlinePromptNode.Outputs):
+    class Outputs(BaseNode.Outputs):
         summary: str
 
     def run(self) -> Outputs:
         try:
-            url = self.parameters_input.get("url", "")
+            url = self.parameters.get("url", "")  # type: ignore[attr-defined]
         except (AttributeError, KeyError):
             url = ""
 
         if not url:
             error_msg = "No URL provided"
             self._append_action_history("lookup_url", {"url": url}, error_msg)
-            return self.Outputs(
-                results=[],
-                text=error_msg,
-                summary=error_msg,
-            )
+            return self.Outputs(summary=error_msg)
 
         args = {"url": url}
 
@@ -106,43 +74,80 @@ Provide a 2-3 sentence summary of what this webpage is about.""",
             content = self._fetch_and_store_webpage(url)
             if content.startswith("Error"):
                 self._append_action_history("lookup_url", args, content)
-                return self.Outputs(
-                    results=[],
-                    text=content,
-                    summary=content,
-                )
+                return self.Outputs(summary=content)
 
-            self.prompt_inputs = {
-                "url": url,
-                "content": content[:10000],
-            }
-
-            result = super().run()
-            summary = result.text
-
+            summary = self._generate_summary(url, content)
             self._append_action_history("lookup_url", args, summary)
-
-            return self.Outputs(
-                results=result.results,
-                text=summary,
-                summary=summary,
-            )
+            return self.Outputs(summary=summary)
 
         except Exception as e:
             logger.exception(f"Error looking up URL: {str(e)}")
             error_msg = f"Error looking up URL: {str(e)}"
             self._append_action_history("lookup_url", args, error_msg)
-            return self.Outputs(
-                results=[],
-                text=error_msg,
-                summary=error_msg,
-            )
+            return self.Outputs(summary=error_msg)
 
     def _append_action_history(self, name: str, args: Dict[str, Any], result: str) -> None:
         action_record = ActionRecord(name=name, args=args, result=result)
         if not hasattr(self.state, "action_history"):
             self.state.action_history = []
         self.state.action_history.append(action_record)
+
+    def _generate_summary(self, url: str, content: str) -> str:
+        try:
+            truncated_content = content[:10000]
+
+            response = self._context.vellum_client.ad_hoc.adhoc_execute_prompt_stream(
+                ml_model="gpt-4o-mini",
+                input_values=[],
+                input_variables=[],
+                parameters=PromptParameters(
+                    max_tokens=200,
+                ),
+                blocks=[
+                    ChatMessagePromptBlock(
+                        chat_role="SYSTEM",
+                        blocks=[
+                            JinjaPromptBlock(
+                                template=f"""You are summarizing the content of a webpage. Provide a brief 2-3 sentence summary that captures the main purpose and key information on the page. Be concise and informative.
+
+URL: {url}
+
+Page content:
+{truncated_content}
+
+Provide a 2-3 sentence summary of what this webpage is about.""",
+                            )
+                        ],
+                    )
+                ],
+            )
+
+            for prompt_event in response:
+                if prompt_event.state != "FULFILLED":
+                    continue
+
+                output = prompt_event.outputs[0]
+                if not output:
+                    return self._generate_heuristic_summary(content)
+
+                if output.type != "STRING" or not output.value:
+                    return self._generate_heuristic_summary(content)
+
+                return output.value.strip()
+
+            return self._generate_heuristic_summary(content)
+
+        except Exception as e:
+            logger.warning(f"Failed to generate LLM summary: {str(e)}, falling back to heuristic")
+            return self._generate_heuristic_summary(content)
+
+    def _generate_heuristic_summary(self, content: str) -> str:
+        sentences = re.split(r"(?<=[.!?])\s+", content)
+        summary_sentences = sentences[:3]
+        summary = " ".join(summary_sentences)
+        if len(summary) > 500:
+            summary = summary[:497] + "..."
+        return summary if summary else "Could not extract summary from webpage content."
 
     def _fetch_and_store_webpage(self, url: str) -> str:
         try:
