@@ -19,6 +19,7 @@ from .nodes import (
     ScheduleMeetingNode,
     MarkContactAsLeadNode,
     GetMessageHistoryNode,
+    LookupUrlNode,
     StartDemoNode,
     GenerateStripeCheckoutNode,
     ProcessJobNode,
@@ -46,6 +47,7 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
             >> {
                 ParseFunctionCallNode.Ports.no_action >> NoActionNode,
                 ParseFunctionCallNode.Ports.get_message_history >> GetMessageHistoryNode >> TriageMessageNode,
+                ParseFunctionCallNode.Ports.lookup_url >> LookupUrlNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.create_meeting >> ScheduleMeetingNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.mark_contact_as_lead >> MarkContactAsLeadNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.start_demo >> StartDemoNode >> TriageMessageNode,

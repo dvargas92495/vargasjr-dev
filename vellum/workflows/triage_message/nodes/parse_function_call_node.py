@@ -10,6 +10,9 @@ class ParseFunctionCallNode(BaseNode):
         get_message_history = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("get_message_history"))  # type: ignore
         )
+        lookup_url = Port.on_if(
+            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("lookup_url"))  # type: ignore
+        )
         email_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_reply")))  # type: ignore
         email_initiate = Port.on_if(
             LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))  # type: ignore
