@@ -21,7 +21,7 @@ class RecruiterEmailHappyPathEval(BaseEval):
     metrics = [
         RegexMatchMetric(
             output_name="message_url",
-            target_expression=r"^/admin/messages/inbox/[0-9a-f-]+$",
+            target_expression=r"^/admin/messages/[0-9a-f-]+$",
             weight=3
         ),
         RegexMatchMetric(

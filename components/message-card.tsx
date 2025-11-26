@@ -57,7 +57,7 @@ const MessageCard = ({
   const router = useRouter();
 
   const handleClick = useCallback(() => {
-    router.push(`/admin/messages/inbox/${message.id}`);
+    router.push(`/admin/messages/${message.id}`);
   }, [router, message.id]);
 
   const handleCheckboxClick = useCallback(

@@ -344,7 +344,7 @@ export async function markMessageAsUnread(
       })
       .execute();
 
-    revalidatePath(`/admin/messages/inbox/${messageId}`);
+    revalidatePath(`/admin/messages/${messageId}`);
     revalidatePath(`/admin/inboxes/${inboxId}`);
     return { success: true };
   } catch (e) {
