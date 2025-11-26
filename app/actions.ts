@@ -367,7 +367,7 @@ export async function markMessageAsArchived(
     })
     .execute();
 
-  revalidatePath(`/admin/messages/inbox/${messageId}`);
+  revalidatePath(`/admin/messages/${messageId}`);
   revalidatePath(`/admin/inboxes/${inboxId}`);
 }
 
