@@ -1,10 +1,15 @@
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlmodel import Session
 from uuid import UUID
 from vellum.workflows.nodes import BaseNode
 from services import postgres_session, ActionRecord
-from sqlmodel import select
+from sqlmodel import select, func
 from models.inbox_message import InboxMessage
+from models.inbox_message_operation import InboxMessageOperation
+from models.types import InboxMessageOperationType
 from models.inbox import Inbox
 from models.outbox_message import OutboxMessage
 from models.outbox_message_recipient import OutboxMessageRecipient
@@ -76,6 +81,11 @@ class GetMessageHistoryNode(BaseNode):
                 
                 incoming_results = session.exec(incoming_stmt).all()
                 
+                # Mark any unread messages as read
+                inbox_message_ids = [inbox_msg.id for inbox_msg, _, _ in incoming_results]
+                if inbox_message_ids:
+                    self._mark_unread_messages_as_read(session, inbox_message_ids)
+                
                 outgoing_stmt = (
                     select(OutboxMessage)
                     .join(OutboxMessageRecipient, OutboxMessageRecipient.message_id == OutboxMessage.id)  # type: ignore[arg-type]
@@ -126,3 +136,60 @@ class GetMessageHistoryNode(BaseNode):
         except Exception as e:
             logger.exception(f"Error in _retrieve_message_history: {str(e)}")
             return f"Error retrieving message history: {str(e)}"
+    
+    def _mark_unread_messages_as_read(self, session: "Session", inbox_message_ids: List[UUID]) -> None:
+        """Mark any unread messages in the list as read"""
+        # Build a subquery to find the latest operation for each message
+        ranked_operations = (
+            select(
+                InboxMessageOperation.inbox_message_id,
+                InboxMessageOperation.operation,
+                func.row_number()
+                .over(
+                    partition_by=[InboxMessageOperation.inbox_message_id],  # type: ignore
+                    order_by=InboxMessageOperation.created_at.desc()  # type: ignore
+                )
+                .label("rn"),
+            )
+            .where(InboxMessageOperation.inbox_message_id.in_(inbox_message_ids))  # type: ignore
+            .subquery()
+        )
+        
+        latest_operations_subquery = (
+            select(ranked_operations.c.inbox_message_id, ranked_operations.c.operation)
+            .where(ranked_operations.c.rn == 1)
+            .subquery()
+        )
+        
+        # Find messages that are unread (either no operation or latest is UNREAD)
+        unread_stmt = (
+            select(InboxMessage.id)
+            .outerjoin(
+                latest_operations_subquery,
+                latest_operations_subquery.c.inbox_message_id == InboxMessage.id
+            )
+            .where(InboxMessage.id.in_(inbox_message_ids))  # type: ignore
+            .where(
+                (latest_operations_subquery.c.operation.is_(None)) |
+                (latest_operations_subquery.c.operation == InboxMessageOperationType.UNREAD)
+            )
+        )
+        
+        unread_message_ids = session.exec(unread_stmt).all()
+        
+        # Get execution_id from workflow state
+        execution_id = self.state.meta.span_id
+        
+        # Create READ operations for each unread message
+        for message_id in unread_message_ids:
+            session.add(
+                InboxMessageOperation(
+                    inbox_message_id=message_id,
+                    operation=InboxMessageOperationType.READ,
+                    execution_id=execution_id,
+                )
+            )
+        
+        if unread_message_ids:
+            session.commit()
+            logger.info(f"Marked {len(unread_message_ids)} messages as read")
