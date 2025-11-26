@@ -113,9 +113,6 @@ def job_opportunity_response(
     recruiter while BCC'ing the person who forwarded the opportunity.
     
     THIS IS A FINAL ACTION - it must be called ALONE, never in the same step as other tools.
-    Before calling this function, ensure all setup actions (like create_meeting, get_message_history,
-    mark_contact_as_lead, start_demo, generate_stripe_checkout) have already been completed and
-    appear in action_history. Only call this function when you are ready to send the final response.
     
     Use this function when:
     - A job opportunity has been forwarded to you from another person
@@ -262,17 +259,6 @@ Previous actions taken:
 {% for action in action_history %}- {{ action.name }}: {{ action.result }}
 {% endfor %}
 {% endif %}
-IMPORTANT: You must call exactly ONE tool per step. Your workflow has two phases:
-1. SETUP PHASE: Use tools like get_message_history, create_meeting, mark_contact_as_lead, start_demo, or \
-generate_stripe_checkout to gather information or perform setup actions. Each of these will loop back to you \
-for the next step.
-2. FINAL COMMUNICATION PHASE: Once all setup is complete, choose exactly ONE communication tool (email_reply, \
-email_initiate, text_reply, slack_reply, or job_opportunity_response) to send your final response.
-
-The job_opportunity_response tool is ONLY for the final communication phase. Never call it in the same step as \
-setup tools like create_meeting. If a message requires both scheduling a meeting AND responding to a job \
-opportunity, first call create_meeting, then in the next step call job_opportunity_response.
-
 Pick the most relevant action. Your message should give the recipient confidence that you will be tending to \
 their request and that you are working on it now.
 
