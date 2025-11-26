@@ -239,6 +239,36 @@ def generate_stripe_checkout():
     is ready to become a paying client right now.
     """
     pass
+
+
+def lookup_url(url: str) -> str:
+    """
+    Look up the contents of a URL and retrieve a summary of what's on the page.
+    
+    Use this function when:
+    - The message contains a URL that you need to understand before responding
+    - Someone shares a link and you need context about what it contains
+    - You need to reference specific content from a webpage in your response
+    
+    The system will:
+    1. Fetch the webpage content
+    2. Store it in memory for future reference
+    3. Return a brief 2-3 sentence summary of what's on the page
+    
+    After looking up the URL, you will be prompted again to craft an appropriate
+    response with the webpage context available in action_history.
+    
+    IMPORTANT: If you see in the action_history that lookup_url has already been called
+    for this URL, DO NOT call it again. The summary is already available in the
+    action_history. Use that information to inform your response instead.
+    
+    Args:
+        url: The URL to look up (must be a valid HTTP or HTTPS URL)
+    
+    Returns:
+        A brief 2-3 sentence summary of the webpage content
+    """
+    raise NotImplementedError("Tool stub. Implemented in LookupUrlNode.")
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-4o"
     blocks = [
@@ -296,6 +326,7 @@ to commit to working together. Keep it conversational and focus on understanding
     functions = [
         no_action,
         get_message_history,
+        lookup_url,
         email_reply,
         email_initiate,
         text_reply,
