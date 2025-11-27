@@ -40,7 +40,7 @@ class GetMessageHistoryNode(BaseNode):
         }
         
         try:
-            result = self._retrieve_message_history(resolved_message_id)
+            result = self._retrieve_message_history(str(resolved_message_id))
         except Exception as e:
             logger.exception(f"Error retrieving message history: {str(e)}")
             result = f"Error retrieving message history: {str(e)}"
