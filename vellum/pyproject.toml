@@ -46,3 +46,6 @@ eval-runner = "evals.runner:main"
 
 [tool.mypy]
 plugins = ["pydantic.mypy", "vellum.plugins.vellum_mypy", "sqlalchemy.ext.mypy.plugin"]
+
+[tool.pytest.ini_options]
+testpaths = ["."]

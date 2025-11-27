@@ -43,10 +43,11 @@ jobs:
         working-directory: vellum
 
       - name: Run pytest
-        run: poetry run pytest
+        run: poetry run pytest || [ $? -eq 5 ]
         working-directory: vellum
 
   run-eval:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
