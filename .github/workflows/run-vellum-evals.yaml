@@ -42,8 +42,12 @@ jobs:
         run: poetry install
         working-directory: vellum
 
+      - name: Run mypy type checking
+        run: poetry run mypy .
+        working-directory: vellum
+
       - name: Run pytest
-        run: poetry run pytest || [ $? -eq 5 ]
+        run: poetry run pytest
         working-directory: vellum
 
   run-eval:
