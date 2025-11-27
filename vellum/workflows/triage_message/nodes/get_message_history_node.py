@@ -1,10 +1,15 @@
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlmodel import Session
 from uuid import UUID
 from vellum.workflows.nodes import BaseNode
 from services import postgres_session, ActionRecord
 from sqlmodel import select
 from models.inbox_message import InboxMessage
+from models.inbox_message_operation import InboxMessageOperation
+from models.types import InboxMessageOperationType
 from models.inbox import Inbox
 from models.outbox_message import OutboxMessage
 from models.outbox_message_recipient import OutboxMessageRecipient
@@ -96,7 +101,9 @@ class GetMessageHistoryNode(BaseNode):
                         "timestamp": inbox_msg.created_at,
                         "source": source,
                         "channel": inbox_name,
-                        "body": inbox_msg.body
+                        "body": inbox_msg.body,
+                        "message_id": inbox_msg.id,
+                        "is_incoming": True,
                     })
                 
                 for outbox_msg in outgoing_results:
@@ -104,12 +111,23 @@ class GetMessageHistoryNode(BaseNode):
                         "timestamp": outbox_msg.created_at,
                         "source": "VargasJR",
                         "channel": str(outbox_msg.type),
-                        "body": outbox_msg.body
+                        "body": outbox_msg.body,
+                        "message_id": outbox_msg.id,
+                        "is_incoming": False,
                     })
                 
                 all_messages.sort(key=lambda x: x["timestamp"], reverse=True)
                 
                 last_5 = all_messages[:5]
+                
+                # Mark any inbox messages in last_5 as read
+                inbox_message_ids_to_mark = [
+                    msg["message_id"]
+                    for msg in last_5
+                    if msg.get("is_incoming")
+                ]
+                if inbox_message_ids_to_mark:
+                    self._mark_messages_as_read(session, inbox_message_ids_to_mark)
                 
                 if not last_5:
                     return "No previous messages found from this contact"
@@ -126,3 +144,22 @@ class GetMessageHistoryNode(BaseNode):
         except Exception as e:
             logger.exception(f"Error in _retrieve_message_history: {str(e)}")
             return f"Error retrieving message history: {str(e)}"
+    
+    def _mark_messages_as_read(self, session: "Session", inbox_message_ids: List[UUID]) -> None:
+        """Mark the given inbox messages as read"""
+        if not inbox_message_ids:
+            return
+        
+        execution_id = self.state.meta.span_id
+        
+        for message_id in inbox_message_ids:
+            session.add(
+                InboxMessageOperation(
+                    inbox_message_id=message_id,
+                    operation=InboxMessageOperationType.READ,
+                    execution_id=execution_id,
+                )
+            )
+        
+        session.commit()
+        logger.info(f"Marked {len(inbox_message_ids)} messages as read")
