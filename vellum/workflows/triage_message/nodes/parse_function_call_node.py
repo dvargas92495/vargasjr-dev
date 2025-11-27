@@ -1,3 +1,4 @@
+from typing import Any
 from vellum.workflows.nodes import BaseNode
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
@@ -5,6 +6,8 @@ from .triage_message_node import TriageMessageNode
 
 
 class ParseFunctionCallNode(BaseNode):
+    result = TriageMessageNode.Outputs.results[0]
+
     class Ports(BaseNode.Ports):
         no_action = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("no_action")))  # type: ignore
         get_message_history = Port.on_if(
@@ -36,5 +39,26 @@ class ParseFunctionCallNode(BaseNode):
         )
 
     class Outputs(BaseNode.Outputs):
-        action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore
-        parameters = TriageMessageNode.Outputs.results[0]["value"]["arguments"]  # type: ignore
+        action: str
+        parameters: dict[str, Any]
+
+    def run(self) -> Outputs:
+        result = self.result
+
+        if not result or "type" not in result:
+            return self.Outputs(action="no_action", parameters={})
+
+        if result["type"] == "FUNCTION_CALL":
+            value = result.get("value") or {}
+            return self.Outputs(
+                action=value.get("name", "no_action"),
+                parameters=value.get("arguments") or {},
+            )
+
+        value = result.get("value")
+        if isinstance(value, str) and value:
+            action = value
+        else:
+            action = "no_action"
+
+        return self.Outputs(action=action, parameters={})
