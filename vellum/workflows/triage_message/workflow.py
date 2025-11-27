@@ -45,6 +45,7 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
         >> {
             TriageMessageNode
             >> {
+                ParseFunctionCallNode.Ports.retry >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.no_action >> NoActionNode,
                 ParseFunctionCallNode.Ports.get_message_history >> GetMessageHistoryNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.lookup_url >> LookupUrlNode >> TriageMessageNode,

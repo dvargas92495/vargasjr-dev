@@ -270,7 +270,7 @@ def lookup_url(url: str) -> str:
     """
     raise NotImplementedError("Tool stub. Implemented in LookupUrlNode.")
 class TriageMessageNode(BaseInlinePromptNode):
-    ml_model = "gpt-4o"
+    ml_model = "gpt-5.1"
     blocks = [
         ChatMessagePromptBlock(
             chat_role="SYSTEM",

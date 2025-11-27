@@ -68,13 +68,12 @@ class LookupUrlNode(BaseNode):
         args = {"url": url}
 
         try:
-            url_str = str(url)
-            content = self._fetch_and_store_webpage(url_str)
+            content = self._fetch_and_store_webpage(url)
             if content.startswith("Error"):
                 self._append_action_history("lookup_url", args, content)
                 return self.Outputs(summary=content)
 
-            summary = self._generate_summary(url_str, content)
+            summary = self._generate_summary(url, content)
             self._append_action_history("lookup_url", args, summary)
             return self.Outputs(summary=summary)
 
