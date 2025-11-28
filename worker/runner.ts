@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import * as dotenv from "dotenv";
 import { existsSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
 import { join } from "path";
 import { createFileLogger, Logger } from "./utils";
 import { getVersion } from "@/server/versioning";
@@ -171,11 +172,6 @@ export class AgentRunner {
       this.logger.info(`Created repos directory: ${reposDir}`);
     }
 
-    const allowedRepos = [
-      { owner: "dvargas92495", name: "vargasjr-dev" },
-      { owner: "Cari-AI", name: "cari-ai" },
-    ];
-
     try {
       const db = postgresSession();
       const repos = await db
@@ -185,14 +181,7 @@ export class AgentRunner {
         })
         .from(ContactGithubReposTable);
 
-      const filteredRepos = repos.filter((repo) =>
-        allowedRepos.some(
-          (allowed) =>
-            allowed.owner === repo.repoOwner && allowed.name === repo.repoName
-        )
-      );
-
-      for (const repo of filteredRepos) {
+      for (const repo of repos) {
         const ownerDir = join(reposDir, repo.repoOwner);
         const repoDir = join(ownerDir, repo.repoName);
 
@@ -202,14 +191,23 @@ export class AgentRunner {
         }
 
         if (!existsSync(repoDir)) {
-          mkdirSync(repoDir, { recursive: true });
-          this.logger.info(`Created repo directory: ${repoDir}`);
+          const repoUrl = `https://github.com/${repo.repoOwner}/${repo.repoName}.git`;
+          this.logger.info(`Cloning ${repoUrl} into ${repoDir}...`);
+          try {
+            execSync(`git clone ${repoUrl} ${repoDir}`, {
+              stdio: "pipe",
+              encoding: "utf8",
+            });
+            this.logger.info(`Successfully cloned ${repo.repoOwner}/${repo.repoName}`);
+          } catch (cloneError) {
+            this.logger.error(
+              `Failed to clone ${repo.repoOwner}/${repo.repoName}: ${cloneError}`
+            );
+          }
         }
       }
 
-      this.logger.info(
-        `Ensured ${filteredRepos.length} repo directories exist`
-      );
+      this.logger.info(`Ensured ${repos.length} repo directories exist`);
     } catch (error) {
       this.logger.error(`Failed to ensure repo directories: ${error}`);
       throw error;
