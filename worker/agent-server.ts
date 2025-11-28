@@ -1,7 +1,7 @@
 import express from "express";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
 import { existsSync, readFileSync, readdirSync, statSync } from "fs";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import { join } from "path";
 import { Logger } from "./utils";
 import { getHealthCheckData } from "../server/health-check";
@@ -510,6 +510,85 @@ export class AgentServer {
             status: "success",
             directory: homeDir,
             contents,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          res.status(500).json({
+            status: "error",
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    );
+
+    this.app.post(
+      "/api/bash",
+      authMiddleware,
+      async (req: express.Request, res: express.Response) => {
+        try {
+          const { command, args } = req.body;
+
+          if (typeof command !== "string") {
+            return res.status(400).json({
+              status: "error",
+              message: "Command must be a string",
+              timestamp: new Date().toISOString(),
+            });
+          }
+
+          const ALLOWED_COMMANDS = ["ls", "grep"];
+
+          if (!ALLOWED_COMMANDS.includes(command)) {
+            return res.status(403).json({
+              status: "error",
+              message: `Command '${command}' is not allowed. Allowed commands: ${ALLOWED_COMMANDS.join(
+                ", "
+              )}`,
+              timestamp: new Date().toISOString(),
+            });
+          }
+
+          const argsArray: string[] = Array.isArray(args)
+            ? args
+            : typeof args === "string"
+            ? [args]
+            : [];
+
+          for (const arg of argsArray) {
+            if (typeof arg !== "string") {
+              return res.status(400).json({
+                status: "error",
+                message: "All arguments must be strings",
+                timestamp: new Date().toISOString(),
+              });
+            }
+          }
+
+          const FORBIDDEN_PATTERNS = ["|", ";", "&&", "||", "`", "$(", "$(("];
+          for (const arg of argsArray) {
+            for (const pattern of FORBIDDEN_PATTERNS) {
+              if (arg.includes(pattern)) {
+                return res.status(403).json({
+                  status: "error",
+                  message: `Pipe and shell operators are not allowed in arguments`,
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            }
+          }
+
+          const result = spawnSync(command, argsArray, {
+            encoding: "utf8",
+            timeout: 30000,
+            maxBuffer: 10 * 1024 * 1024,
+          });
+
+          res.json({
+            status: "success",
+            stdout: result.stdout,
+            stderr: result.stderr,
+            exitCode: result.status,
             timestamp: new Date().toISOString(),
           });
         } catch (error) {
