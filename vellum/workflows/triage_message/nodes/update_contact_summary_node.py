@@ -35,6 +35,7 @@ Contact details:
 {% endif %}{% if contact_email %}- Email: {{ contact_email }}
 {% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
 {% endif %}{% if contact_phone_number %}- Phone number: {{ contact_phone_number }}
+{% endif %}{% if repos %}- Associated GitHub repos: {{ repos | join(', ') }}
 {% endif %}
 
 Latest message (via {{ channel }}):
@@ -55,6 +56,7 @@ unchanged and return it as-is.""",
         "contact_phone_number": ReadMessageNode.Outputs.message["contact_phone_number"],
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
+        "repos": FetchContactSummaryNode.Outputs.repos,
     }
     parameters = PromptParameters(
         max_tokens=32000,

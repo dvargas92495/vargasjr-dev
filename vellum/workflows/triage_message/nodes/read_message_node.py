@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID, uuid4
 from datetime import datetime
 import psycopg
@@ -13,6 +13,7 @@ from models.inbox_message_operation import InboxMessageOperation
 from models.types import InboxMessageOperationType, InboxType, ContactStatus
 from models.inbox import Inbox
 from models.contact import Contact
+from models.contact_github_repo import ContactGithubRepo
 from models.job import Job, JobStatus
 from vellum.workflows.ports import Port
 from vellum.workflows.references import LazyReference
@@ -33,6 +34,7 @@ class SlimMessage(UniversalBaseModel):
     inbox_name: str
     inbox_id: UUID
     thread_id: Optional[str] = None
+    repos: List[str] = []
 
 
 class SlimJob(UniversalBaseModel):
@@ -181,6 +183,12 @@ class ReadMessageNode(BaseNode):
                 )
                 session.commit()
                 
+                repos_statement = select(ContactGithubRepo).where(
+                    ContactGithubRepo.contact_id == inbox_message.contact_id
+                )
+                contact_repos = session.exec(repos_statement).all()
+                repos = [f"{repo.repo_owner}/{repo.repo_name}" for repo in contact_repos]
+                
                 message = SlimMessage(
                     message_id=inbox_message.id,
                     body=inbox_message.body,
@@ -194,6 +202,7 @@ class ReadMessageNode(BaseNode):
                     inbox_name=inbox_name,
                     inbox_id=inbox_message.inbox_id,
                     thread_id=inbox_message.thread_id,
+                    repos=repos,
                 )
                 
                 # Return no job when we have a message
