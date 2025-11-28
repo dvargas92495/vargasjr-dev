@@ -131,10 +131,23 @@ export async function rebootAgent(
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      rebootLogger.error(`Failed to restart systemd service: ${errorMessage}`);
+      let details = "";
+      const err = error as Record<string, unknown>;
+      if (err.status !== undefined) {
+        details += ` (exit code: ${err.status})`;
+      }
+      if (err.stderr) {
+        details += `; stderr: ${String(err.stderr).trim()}`;
+      }
+      if (err.stdout) {
+        details += `; stdout: ${String(err.stdout).trim()}`;
+      }
+      rebootLogger.error(
+        `Failed to restart systemd service: ${errorMessage}${details}`
+      );
       return {
         success: false,
-        error: `Failed to restart systemd service: ${errorMessage}`,
+        error: `Failed to restart systemd service: ${errorMessage}${details}`,
       };
     }
 
