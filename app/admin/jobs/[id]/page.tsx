@@ -8,6 +8,7 @@ interface Job {
   dueDate: string;
   priority: string;
   createdAt: string;
+  externalUrl: string | null;
 }
 
 interface JobDetailClientProps {
@@ -55,6 +56,21 @@ function JobDetailClient({ job }: JobDetailClientProps) {
                 Description
               </label>
               <p className="mt-1 text-sm text-gray-900">{job.description}</p>
+            </div>
+          )}
+          {job.externalUrl && (
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700">
+                External URL
+              </label>
+              <a
+                href={job.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 text-sm text-blue-600 hover:underline"
+              >
+                {job.externalUrl}
+              </a>
             </div>
           )}
         </div>

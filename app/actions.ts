@@ -105,6 +105,7 @@ export async function createJob(formData: FormData) {
   const description = formData.get("description") as string;
   const dueDate = formData.get("dueDate") as string;
   const priority = parseFloat(formData.get("priority") as string);
+  const externalUrl = formData.get("externalUrl") as string;
 
   if (!name || !dueDate || isNaN(priority)) {
     throw new Error("Name, due date, and priority are required");
@@ -118,6 +119,7 @@ export async function createJob(formData: FormData) {
       description: description || null,
       dueDate: new Date(dueDate),
       priority,
+      externalUrl: externalUrl || null,
     })
     .returning()
     .execute();
@@ -131,6 +133,7 @@ export async function updateJob(id: string, formData: FormData) {
   const description = formData.get("description") as string;
   const dueDate = formData.get("dueDate") as string;
   const priority = parseFloat(formData.get("priority") as string);
+  const externalUrl = formData.get("externalUrl") as string;
 
   if (!name || !dueDate || isNaN(priority)) {
     throw new Error("Name, due date, and priority are required");
@@ -144,6 +147,7 @@ export async function updateJob(id: string, formData: FormData) {
       description: description || null,
       dueDate: new Date(dueDate),
       priority,
+      externalUrl: externalUrl || null,
     })
     .where(eq(JobsTable.id, id))
     .returning()
