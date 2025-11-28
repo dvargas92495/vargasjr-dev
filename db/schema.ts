@@ -176,6 +176,7 @@ export const JobsTable = pgTable("jobs", {
   contactId: uuid("contact_id").references(() => ContactsTable.id),
   status: JobStatusesEnum("status").default("OPEN"),
   reason: text("reason"),
+  externalUrl: varchar("external_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
