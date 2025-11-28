@@ -7,6 +7,7 @@ import { UnauthorizedError } from "@/server/errors";
 
 const fileDirectorySchema = z.object({
   instanceId: z.string(),
+  path: z.string().optional(),
 });
 
 interface FileDirectoryItem {
@@ -29,6 +30,7 @@ interface FileDirectoryResult {
 
 async function fetchFileDirectory(
   instanceId: string,
+  path?: string,
   region: string = AWS_DEFAULT_REGION
 ): Promise<FileDirectoryResult> {
   const ec2 = new EC2({ region });
@@ -69,14 +71,21 @@ async function fetchFileDirectory(
       };
     }
 
-    const fileDirectoryUrl = `http://${publicIp}:${AGENT_SERVER_PORT}/api/file-directory`;
-    console.log(`[File Directory] Making HTTP request to: ${fileDirectoryUrl}`);
+    const fileDirectoryUrl = new URL(
+      `http://${publicIp}:${AGENT_SERVER_PORT}/api/file-directory`
+    );
+    if (path) {
+      fileDirectoryUrl.searchParams.set("path", path);
+    }
+    console.log(
+      `[File Directory] Making HTTP request to: ${fileDirectoryUrl.toString()}`
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const response = await fetch(fileDirectoryUrl, {
+      const response = await fetch(fileDirectoryUrl.toString(), {
         method: "GET",
         signal: controller.signal,
         headers: {
@@ -149,8 +158,8 @@ async function fileDirectoryHandler(body: unknown) {
     throw new UnauthorizedError();
   }
 
-  const { instanceId } = fileDirectorySchema.parse(body);
-  const result = await fetchFileDirectory(instanceId);
+  const { instanceId, path } = fileDirectorySchema.parse(body);
+  const result = await fetchFileDirectory(instanceId, path);
   return result;
 }
 

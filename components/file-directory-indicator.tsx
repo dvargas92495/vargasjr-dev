@@ -29,73 +29,97 @@ const FileDirectoryIndicator = ({
   const [directoryStatus, setDirectoryStatus] = useState<FileDirectoryStatus>({
     status: "loading",
   });
+  const [currentPath, setCurrentPath] = useState<string>("/home/ubuntu");
 
-  const fetchDirectory = useCallback(async () => {
-    if (instanceState !== "running") {
-      setDirectoryStatus({
-        status: "offline",
-        error: `Instance ${instanceState || "unknown state"}`,
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/file-directory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instanceId }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+  const fetchDirectory = useCallback(
+    async (path?: string) => {
+      if (instanceState !== "running") {
         setDirectoryStatus({
-          status: data.status,
-          directory: data.directory,
-          contents: data.contents,
-          error: data.error,
+          status: "offline",
+          error: `Instance ${instanceState || "unknown state"}`,
         });
-      } else {
-        let errorMessage = "Failed to fetch file directory";
+        return;
+      }
 
-        try {
-          const errorData = await response.json();
-          if (errorData.error && errorData.source) {
-            errorMessage = `${errorMessage} (${errorData.source}): ${errorData.error}`;
-          } else if (errorData.error) {
-            errorMessage = `${errorMessage}: ${errorData.error}`;
-          } else {
-            errorMessage = `${errorMessage} (HTTP ${response.status})`;
+      setDirectoryStatus((prev) => ({ ...prev, status: "loading" }));
+
+      try {
+        const response = await fetch("/api/file-directory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instanceId, path }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setDirectoryStatus({
+            status: data.status,
+            directory: data.directory,
+            contents: data.contents,
+            error: data.error,
+          });
+          if (data.directory) {
+            setCurrentPath(data.directory);
           }
-        } catch {
-          const errorText = await response.text();
-          if (
-            errorText.includes("<!DOCTYPE html>") ||
-            errorText.includes("<html")
-          ) {
-            errorMessage = `${errorMessage} (Next.js routing error - HTML response received)`;
-          } else if (errorText) {
-            errorMessage = `${errorMessage} (HTTP ${response.status}): ${errorText}`;
-          } else {
-            errorMessage = `${errorMessage} (HTTP ${response.status})`;
+        } else {
+          let errorMessage = "Failed to fetch file directory";
+
+          try {
+            const errorData = await response.json();
+            if (errorData.error && errorData.source) {
+              errorMessage = `${errorMessage} (${errorData.source}): ${errorData.error}`;
+            } else if (errorData.error) {
+              errorMessage = `${errorMessage}: ${errorData.error}`;
+            } else {
+              errorMessage = `${errorMessage} (HTTP ${response.status})`;
+            }
+          } catch {
+            const errorText = await response.text();
+            if (
+              errorText.includes("<!DOCTYPE html>") ||
+              errorText.includes("<html")
+            ) {
+              errorMessage = `${errorMessage} (Next.js routing error - HTML response received)`;
+            } else if (errorText) {
+              errorMessage = `${errorMessage} (HTTP ${response.status}): ${errorText}`;
+            } else {
+              errorMessage = `${errorMessage} (HTTP ${response.status})`;
+            }
           }
+
+          setDirectoryStatus({
+            status: "error",
+            error: errorMessage,
+          });
         }
-
+      } catch (error) {
         setDirectoryStatus({
           status: "error",
-          error: errorMessage,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
-    } catch (error) {
-      setDirectoryStatus({
-        status: "error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }, [instanceId, instanceState]);
+    },
+    [instanceId, instanceState]
+  );
 
   useEffect(() => {
-    fetchDirectory();
-  }, [fetchDirectory]);
+    fetchDirectory(currentPath);
+  }, [fetchDirectory, currentPath]);
+
+  const navigateToDirectory = (dirName: string) => {
+    const newPath =
+      currentPath === "/" ? `/${dirName}` : `${currentPath}/${dirName}`;
+    setCurrentPath(newPath);
+  };
+
+  const navigateUp = () => {
+    if (currentPath === "/") return;
+    const parentPath =
+      currentPath.substring(0, currentPath.lastIndexOf("/")) || "/";
+    setCurrentPath(parentPath);
+  };
+
+  const canNavigateUp = currentPath !== "/";
 
   const formatSize = (bytes?: number): string => {
     if (bytes === undefined) return "N/A";
@@ -144,18 +168,27 @@ const FileDirectoryIndicator = ({
   return (
     <div className="text-sm">
       <div className="flex items-center gap-2 mb-2">
-        <span className="font-medium">
-          Directory: {directoryStatus.directory || "/home/ubuntu"}
+        {canNavigateUp && (
+          <button
+            onClick={navigateUp}
+            className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded text-gray-800"
+            title="Go up one directory"
+          >
+            ↑ Up
+          </button>
+        )}
+        <span className="font-medium text-gray-900">
+          Directory: {currentPath}
         </span>
         <button
-          onClick={fetchDirectory}
+          onClick={() => fetchDirectory(currentPath)}
           className="text-blue-600 hover:text-blue-800 text-xs"
           title="Refresh file directory"
         >
           ↻
         </button>
       </div>
-      <div className="text-xs text-gray-600 mb-2">
+      <div className="text-xs text-gray-700 mb-2">
         {directories.length} director{directories.length !== 1 ? "ies" : "y"},{" "}
         {files.length} file{files.length !== 1 ? "s" : ""}
       </div>
@@ -164,31 +197,49 @@ const FileDirectoryIndicator = ({
           <table className="w-full text-xs">
             <thead className="bg-gray-100">
               <tr>
-                <th className="text-left p-2 font-medium">Name</th>
-                <th className="text-left p-2 font-medium">Type</th>
-                <th className="text-right p-2 font-medium">Size</th>
-                <th className="text-left p-2 font-medium">Modified</th>
+                <th className="text-left p-2 font-medium text-gray-900">
+                  Name
+                </th>
+                <th className="text-left p-2 font-medium text-gray-900">
+                  Type
+                </th>
+                <th className="text-right p-2 font-medium text-gray-900">
+                  Size
+                </th>
+                <th className="text-left p-2 font-medium text-gray-900">
+                  Modified
+                </th>
               </tr>
             </thead>
             <tbody>
               {directories.map((item, idx) => (
                 <tr key={`dir-${idx}`} className="border-t hover:bg-gray-50">
-                  <td className="p-2 font-mono">📁 {item.name}</td>
-                  <td className="p-2 text-gray-600">directory</td>
-                  <td className="p-2 text-right text-gray-600">-</td>
-                  <td className="p-2 text-gray-600">
+                  <td className="p-2 font-mono text-gray-900">
+                    <button
+                      onClick={() => navigateToDirectory(item.name)}
+                      className="hover:text-blue-600 hover:underline cursor-pointer text-left"
+                      title={`Open ${item.name}`}
+                    >
+                      📁 {item.name}
+                    </button>
+                  </td>
+                  <td className="p-2 text-gray-700">directory</td>
+                  <td className="p-2 text-right text-gray-700">-</td>
+                  <td className="p-2 text-gray-700">
                     {formatDate(item.modified)}
                   </td>
                 </tr>
               ))}
               {files.map((item, idx) => (
                 <tr key={`file-${idx}`} className="border-t hover:bg-gray-50">
-                  <td className="p-2 font-mono">📄 {item.name}</td>
-                  <td className="p-2 text-gray-600">file</td>
-                  <td className="p-2 text-right text-gray-600">
+                  <td className="p-2 font-mono text-gray-900">
+                    📄 {item.name}
+                  </td>
+                  <td className="p-2 text-gray-700">file</td>
+                  <td className="p-2 text-right text-gray-700">
                     {formatSize(item.size)}
                   </td>
-                  <td className="p-2 text-gray-600">
+                  <td className="p-2 text-gray-700">
                     {formatDate(item.modified)}
                   </td>
                 </tr>
