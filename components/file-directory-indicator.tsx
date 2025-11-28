@@ -31,86 +31,91 @@ const FileDirectoryIndicator = ({
   });
   const [currentPath, setCurrentPath] = useState<string>("/home/ubuntu");
 
-  const fetchDirectory = useCallback(async (path?: string) => {
-    if (instanceState !== "running") {
-      setDirectoryStatus({
-        status: "offline",
-        error: `Instance ${instanceState || "unknown state"}`,
-      });
-      return;
-    }
-
-    setDirectoryStatus((prev) => ({ ...prev, status: "loading" }));
-
-    try {
-      const response = await fetch("/api/file-directory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instanceId, path }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+  const fetchDirectory = useCallback(
+    async (path?: string) => {
+      if (instanceState !== "running") {
         setDirectoryStatus({
-          status: data.status,
-          directory: data.directory,
-          contents: data.contents,
-          error: data.error,
+          status: "offline",
+          error: `Instance ${instanceState || "unknown state"}`,
         });
-        if (data.directory) {
-          setCurrentPath(data.directory);
-        }
-      } else {
-        let errorMessage = "Failed to fetch file directory";
+        return;
+      }
 
-        try {
-          const errorData = await response.json();
-          if (errorData.error && errorData.source) {
-            errorMessage = `${errorMessage} (${errorData.source}): ${errorData.error}`;
-          } else if (errorData.error) {
-            errorMessage = `${errorMessage}: ${errorData.error}`;
-          } else {
-            errorMessage = `${errorMessage} (HTTP ${response.status})`;
-          }
-        } catch {
-          const errorText = await response.text();
-          if (
-            errorText.includes("<!DOCTYPE html>") ||
-            errorText.includes("<html")
-          ) {
-            errorMessage = `${errorMessage} (Next.js routing error - HTML response received)`;
-          } else if (errorText) {
-            errorMessage = `${errorMessage} (HTTP ${response.status}): ${errorText}`;
-          } else {
-            errorMessage = `${errorMessage} (HTTP ${response.status})`;
-          }
-        }
+      setDirectoryStatus((prev) => ({ ...prev, status: "loading" }));
 
+      try {
+        const response = await fetch("/api/file-directory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instanceId, path }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setDirectoryStatus({
+            status: data.status,
+            directory: data.directory,
+            contents: data.contents,
+            error: data.error,
+          });
+          if (data.directory) {
+            setCurrentPath(data.directory);
+          }
+        } else {
+          let errorMessage = "Failed to fetch file directory";
+
+          try {
+            const errorData = await response.json();
+            if (errorData.error && errorData.source) {
+              errorMessage = `${errorMessage} (${errorData.source}): ${errorData.error}`;
+            } else if (errorData.error) {
+              errorMessage = `${errorMessage}: ${errorData.error}`;
+            } else {
+              errorMessage = `${errorMessage} (HTTP ${response.status})`;
+            }
+          } catch {
+            const errorText = await response.text();
+            if (
+              errorText.includes("<!DOCTYPE html>") ||
+              errorText.includes("<html")
+            ) {
+              errorMessage = `${errorMessage} (Next.js routing error - HTML response received)`;
+            } else if (errorText) {
+              errorMessage = `${errorMessage} (HTTP ${response.status}): ${errorText}`;
+            } else {
+              errorMessage = `${errorMessage} (HTTP ${response.status})`;
+            }
+          }
+
+          setDirectoryStatus({
+            status: "error",
+            error: errorMessage,
+          });
+        }
+      } catch (error) {
         setDirectoryStatus({
           status: "error",
-          error: errorMessage,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
-    } catch (error) {
-      setDirectoryStatus({
-        status: "error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }, [instanceId, instanceState]);
+    },
+    [instanceId, instanceState]
+  );
 
   useEffect(() => {
     fetchDirectory(currentPath);
   }, [fetchDirectory, currentPath]);
 
   const navigateToDirectory = (dirName: string) => {
-    const newPath = currentPath === "/" ? `/${dirName}` : `${currentPath}/${dirName}`;
+    const newPath =
+      currentPath === "/" ? `/${dirName}` : `${currentPath}/${dirName}`;
     setCurrentPath(newPath);
   };
 
   const navigateUp = () => {
     if (currentPath === "/") return;
-    const parentPath = currentPath.substring(0, currentPath.lastIndexOf("/")) || "/";
+    const parentPath =
+      currentPath.substring(0, currentPath.lastIndexOf("/")) || "/";
     setCurrentPath(parentPath);
   };
 
@@ -192,10 +197,18 @@ const FileDirectoryIndicator = ({
           <table className="w-full text-xs">
             <thead className="bg-gray-100">
               <tr>
-                <th className="text-left p-2 font-medium text-gray-900">Name</th>
-                <th className="text-left p-2 font-medium text-gray-900">Type</th>
-                <th className="text-right p-2 font-medium text-gray-900">Size</th>
-                <th className="text-left p-2 font-medium text-gray-900">Modified</th>
+                <th className="text-left p-2 font-medium text-gray-900">
+                  Name
+                </th>
+                <th className="text-left p-2 font-medium text-gray-900">
+                  Type
+                </th>
+                <th className="text-right p-2 font-medium text-gray-900">
+                  Size
+                </th>
+                <th className="text-left p-2 font-medium text-gray-900">
+                  Modified
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -219,7 +232,9 @@ const FileDirectoryIndicator = ({
               ))}
               {files.map((item, idx) => (
                 <tr key={`file-${idx}`} className="border-t hover:bg-gray-50">
-                  <td className="p-2 font-mono text-gray-900">📄 {item.name}</td>
+                  <td className="p-2 font-mono text-gray-900">
+                    📄 {item.name}
+                  </td>
                   <td className="p-2 text-gray-700">file</td>
                   <td className="p-2 text-right text-gray-700">
                     {formatSize(item.size)}

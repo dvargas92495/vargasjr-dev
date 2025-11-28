@@ -71,11 +71,15 @@ async function fetchFileDirectory(
       };
     }
 
-    const fileDirectoryUrl = new URL(`http://${publicIp}:${AGENT_SERVER_PORT}/api/file-directory`);
+    const fileDirectoryUrl = new URL(
+      `http://${publicIp}:${AGENT_SERVER_PORT}/api/file-directory`
+    );
     if (path) {
       fileDirectoryUrl.searchParams.set("path", path);
     }
-    console.log(`[File Directory] Making HTTP request to: ${fileDirectoryUrl.toString()}`);
+    console.log(
+      `[File Directory] Making HTTP request to: ${fileDirectoryUrl.toString()}`
+    );
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
