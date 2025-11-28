@@ -4,36 +4,30 @@ from vellum.workflows.references import LazyReference
 from .triage_message_node import TriageMessageNode
 
 
+def _is_function_call(name: str) -> Port:
+    return Port.on_if(
+        LazyReference(lambda: TriageMessageNode.Outputs.results[0]["type"].equals("FUNCTION_CALL"))  # type: ignore
+        & LazyReference(lambda: TriageMessageNode.Outputs.results[0]["value"]["name"].equals(name))  # type: ignore
+    )
+
+
 class ParseFunctionCallNode(BaseNode):
     class Ports(BaseNode.Ports):
-        no_action = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("no_action")))  # type: ignore
-        get_message_history = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("get_message_history"))  # type: ignore
+        retry = Port.on_if(
+            LazyReference(lambda: TriageMessageNode.Outputs.results[0]["type"].does_not_equal("FUNCTION_CALL"))  # type: ignore
         )
-        lookup_url = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("lookup_url"))  # type: ignore
-        )
-        email_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_reply")))  # type: ignore
-        email_initiate = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("email_initiate"))  # type: ignore
-        )
-        text_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("text_reply")))  # type: ignore
-        slack_reply = Port.on_if(LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("slack_reply")))  # type: ignore
-        job_opportunity_response = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("job_opportunity_response"))  # type: ignore
-        )
-        create_meeting = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("create_meeting"))  # type: ignore
-        )
-        mark_contact_as_lead = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("mark_contact_as_lead"))  # type: ignore
-        )
-        start_demo = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("start_demo"))  # type: ignore
-        )
-        generate_stripe_checkout = Port.on_if(
-            LazyReference(lambda: ParseFunctionCallNode.Outputs.action.equals("generate_stripe_checkout"))  # type: ignore
-        )
+        no_action = _is_function_call("no_action")
+        get_message_history = _is_function_call("get_message_history")
+        lookup_url = _is_function_call("lookup_url")
+        email_reply = _is_function_call("email_reply")
+        email_initiate = _is_function_call("email_initiate")
+        text_reply = _is_function_call("text_reply")
+        slack_reply = _is_function_call("slack_reply")
+        job_opportunity_response = _is_function_call("job_opportunity_response")
+        create_meeting = _is_function_call("create_meeting")
+        mark_contact_as_lead = _is_function_call("mark_contact_as_lead")
+        start_demo = _is_function_call("start_demo")
+        generate_stripe_checkout = _is_function_call("generate_stripe_checkout")
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore
