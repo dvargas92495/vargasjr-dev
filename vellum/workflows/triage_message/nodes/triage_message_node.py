@@ -283,6 +283,7 @@ The contact details are:
 {% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
 {% endif %}{% if contact_phone_number %}- Phone number: {{ contact_phone_number }}
 {% endif %}{% if contact_status %}- Status: {{ contact_status }}
+{% endif %}{% if repos %}- Associated GitHub repos: {{ repos | join(', ') }}
 {% endif %}
 {% if action_history %}
 Previous actions taken:
@@ -322,6 +323,7 @@ to commit to working together. Keep it conversational and focus on understanding
         "channel": ReadMessageNode.Outputs.message["channel"],
         "message": ReadMessageNode.Outputs.message["body"],
         "action_history": State.action_history,
+        "repos": ReadMessageNode.Outputs.message["repos"],
     }
     functions = [
         no_action,
