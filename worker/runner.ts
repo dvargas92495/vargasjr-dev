@@ -198,7 +198,9 @@ export class AgentRunner {
               stdio: "pipe",
               encoding: "utf8",
             });
-            this.logger.info(`Successfully cloned ${repo.repoOwner}/${repo.repoName}`);
+            this.logger.info(
+              `Successfully cloned ${repo.repoOwner}/${repo.repoName}`
+            );
           } catch (cloneError) {
             this.logger.error(
               `Failed to clone ${repo.repoOwner}/${repo.repoName}: ${cloneError}`
