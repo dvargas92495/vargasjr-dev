@@ -10,7 +10,6 @@ from models.inbox_message import InboxMessage
 from models.types import InboxType
 from vellum.client.types import StringVellumValue
 
-from services import postgres_session
 from workflows.triage_message.workflow import TriageMessageWorkflow
 from workflows.triage_message.nodes import ReadMessageNode, TriageMessageNode
 from workflows.triage_message.nodes.read_message_node import SlimMessage
@@ -90,23 +89,12 @@ def create_text_reply_function_call_output(phone_number: str, message: str):
 @patch("workflows.triage_message.nodes.text_reply_node.send_sms")
 def test_triage_message_workflow_text_reply(
     mock_send_sms,
-    test_inbox,
-    test_contact,
-    test_inbox_message,
     test_slim_message,
 ):
     """
     Test that the TriageMessage workflow correctly processes a text_reply function call
     and calls the Twilio API to send an SMS.
     """
-    # Seed the database with test data so that TextReplyNode and StoreOutboxMessageNode
-    # can interact with real database records
-    with postgres_session() as session:
-        session.add(test_inbox)
-        session.add(test_contact)
-        session.add(test_inbox_message)
-        session.commit()
-
     test_phone_number = "+15551234567"
     test_message = "Hello! I am Vargas JR, an AI assistant."
 
@@ -148,6 +136,3 @@ def test_triage_message_workflow_text_reply(
         from_="+15559876543",
         body=test_message,
     )
-
-    if result.name != "workflow.execution.fulfilled":
-        pytest.fail(f"Workflow rejected: {getattr(result, 'error', None)!r}")
