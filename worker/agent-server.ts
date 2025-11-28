@@ -542,7 +542,9 @@ export class AgentServer {
           if (!ALLOWED_COMMANDS.includes(command)) {
             return res.status(403).json({
               status: "error",
-              message: `Command '${command}' is not allowed. Allowed commands: ${ALLOWED_COMMANDS.join(", ")}`,
+              message: `Command '${command}' is not allowed. Allowed commands: ${ALLOWED_COMMANDS.join(
+                ", "
+              )}`,
               timestamp: new Date().toISOString(),
             });
           }
@@ -550,8 +552,8 @@ export class AgentServer {
           const argsArray: string[] = Array.isArray(args)
             ? args
             : typeof args === "string"
-              ? [args]
-              : [];
+            ? [args]
+            : [];
 
           for (const arg of argsArray) {
             if (typeof arg !== "string") {
