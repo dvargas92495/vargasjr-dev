@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -87,11 +87,7 @@ def create_text_reply_function_call_output(phone_number: str, message: str):
 
 
 @patch("workflows.triage_message.nodes.text_reply_node.send_sms")
-@patch("workflows.triage_message.nodes.text_reply_node.get_or_create_contact_id_by_phone_number")
-@patch("workflows.triage_message.nodes.store_outbox_message_node.postgres_session")
 def test_triage_message_workflow_text_reply(
-    mock_store_outbox_session,
-    mock_get_or_create_contact,
     mock_send_sms,
     test_slim_message,
 ):
@@ -101,12 +97,6 @@ def test_triage_message_workflow_text_reply(
     """
     test_phone_number = "+15551234567"
     test_message = "Hello! I am Vargas JR, an AI assistant."
-
-    mock_session = MagicMock()
-    mock_store_outbox_session.return_value.__enter__ = MagicMock(return_value=mock_session)
-    mock_store_outbox_session.return_value.__exit__ = MagicMock(return_value=False)
-
-    mock_get_or_create_contact.return_value = str(uuid4())
 
     read_message_outputs = ReadMessageNode.Outputs(
         message=test_slim_message,
