@@ -1,10 +1,13 @@
 import { EventEmitter } from "events";
 import * as dotenv from "dotenv";
+import { existsSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
+import { join } from "path";
 import { createFileLogger, Logger } from "./utils";
 import { getVersion } from "@/server/versioning";
 import { postgresSession } from "./database";
 import { RoutineJob } from "./routine-job";
-import { RoutineJobsTable } from "@/db/schema";
+import { RoutineJobsTable, ContactGithubReposTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { AgentServer } from "./agent-server";
 import { AGENT_SERVER_PORT } from "@/server/constants";
@@ -76,6 +79,12 @@ export class AgentRunner {
   }
 
   public async run(): Promise<void> {
+    try {
+      await this.ensureReposDirectories();
+    } catch (error) {
+      this.logger.error(`Failed to ensure repos directories: ${error}`);
+    }
+
     try {
       await this.agentServer?.start();
       this.logger.info("Agent server started successfully");
@@ -151,6 +160,59 @@ export class AgentRunner {
     } catch (error) {
       this.logger.error(`Failed to load routine jobs: ${error}`);
       return [];
+    }
+  }
+
+  private async ensureReposDirectories(): Promise<void> {
+    const homeDir = process.env.HOME || "/home/ubuntu";
+    const reposDir = join(homeDir, "repos");
+
+    if (!existsSync(reposDir)) {
+      mkdirSync(reposDir, { recursive: true });
+      this.logger.info(`Created repos directory: ${reposDir}`);
+    }
+
+    try {
+      const db = postgresSession();
+      const repos = await db
+        .select({
+          repoOwner: ContactGithubReposTable.repoOwner,
+          repoName: ContactGithubReposTable.repoName,
+        })
+        .from(ContactGithubReposTable);
+
+      for (const repo of repos) {
+        const ownerDir = join(reposDir, repo.repoOwner);
+        const repoDir = join(ownerDir, repo.repoName);
+
+        if (!existsSync(ownerDir)) {
+          mkdirSync(ownerDir, { recursive: true });
+          this.logger.info(`Created owner directory: ${ownerDir}`);
+        }
+
+        if (!existsSync(repoDir)) {
+          const repoUrl = `https://github.com/${repo.repoOwner}/${repo.repoName}.git`;
+          this.logger.info(`Cloning ${repoUrl} into ${repoDir}...`);
+          try {
+            execSync(`git clone ${repoUrl} ${repoDir}`, {
+              stdio: "pipe",
+              encoding: "utf8",
+            });
+            this.logger.info(
+              `Successfully cloned ${repo.repoOwner}/${repo.repoName}`
+            );
+          } catch (cloneError) {
+            this.logger.error(
+              `Failed to clone ${repo.repoOwner}/${repo.repoName}: ${cloneError}`
+            );
+          }
+        }
+      }
+
+      this.logger.info(`Ensured ${repos.length} repo directories exist`);
+    } catch (error) {
+      this.logger.error(`Failed to ensure repo directories: ${error}`);
+      throw error;
     }
   }
 
