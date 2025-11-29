@@ -269,6 +269,35 @@ def lookup_url(url: str) -> str:
         A brief 2-3 sentence summary of the webpage content
     """
     raise NotImplementedError("Tool stub. Implemented in LookupUrlNode.")
+
+
+def create_ticket(
+    title: str,
+    body: str,
+    repo: str,
+):
+    """
+    Create a GitHub issue ticket and associate it with a job for tracking.
+    
+    Use this function when:
+    - The contact requests a feature, bug fix, or enhancement
+    - You need to track work that should be done in a specific repository
+    - The conversation has identified a concrete task that needs to be implemented
+    
+    The system will:
+    1. Create a GitHub issue in the specified repository
+    2. Create a job in the system with the GitHub issue URL as the external URL
+    3. Return the issue URL for reference
+    
+    After creating the ticket, you will be prompted again to craft an appropriate
+    response with the ticket details available in action_history.
+    
+    Args:
+        title: A concise title for the GitHub issue
+        body: A detailed description of the issue, including any relevant context
+        repo: The repository to create the issue in (format: owner/repo, e.g., "dvargas92495/vargasjr-dev" or "Cari-AI/cari-ai")
+    """
+    raise NotImplementedError("Tool stub. Implemented in CreateTicketNode.")
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-5.1"
     blocks = [
@@ -338,6 +367,7 @@ to commit to working together. Keep it conversational and focus on understanding
         mark_contact_as_lead,
         start_demo,
         generate_stripe_checkout,
+        create_ticket,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
