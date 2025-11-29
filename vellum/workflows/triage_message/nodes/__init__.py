@@ -23,6 +23,7 @@ from .parse_job_function_call_node import ParseJobFunctionCallNode
 from .start_job_node import StartJobNode
 from .complete_job_node import CompleteJobNode
 from .mark_job_as_blocked_node import MarkJobAsBlockedNode
+from .create_ticket_node import CreateTicketNode
 
 __all__ = [
     "ReadMessageNode",
@@ -50,4 +51,5 @@ __all__ = [
     "StartJobNode",
     "CompleteJobNode",
     "MarkJobAsBlockedNode",
+    "CreateTicketNode",
 ]
