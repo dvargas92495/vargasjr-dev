@@ -143,6 +143,39 @@ Provide a 2-3 sentence summary of what this webpage is about.""",
             summary = summary[:497] + "..."
         return summary if summary else "Could not extract summary from webpage content."
 
+    def _build_empty_content_error(
+        self, response: requests.Response, html_content: str
+    ) -> str:
+        content_type = response.headers.get("Content-Type", "unknown")
+        html_length = len(html_content or "")
+
+        note_parts = []
+        if "text/html" not in content_type.lower():
+            note_parts.append("non-HTML content; only text/html is supported")
+        elif html_length == 0:
+            note_parts.append("empty response body")
+        else:
+            note_parts.append(
+                "HTML contained no visible text outside script/style/head tags; "
+                "page may be JS-rendered or gated"
+            )
+
+        note = "; ".join(note_parts)
+
+        error_message = (
+            "Error: Could not extract text content from the webpage. "
+            f"Details: status={response.status_code}, "
+            f"content_type={content_type}, "
+            f"html_length={html_length}, "
+            f"note={note}"
+        )
+
+        if "text/html" in content_type.lower() and html_length > 0:
+            snippet = re.sub(r"\s+", " ", html_content[:200]).strip()
+            error_message += f" Snippet: {snippet}"
+
+        return error_message
+
     def _fetch_and_store_webpage(self, url: str) -> str:
         try:
             headers = {
@@ -155,7 +188,7 @@ Provide a 2-3 sentence summary of what this webpage is about.""",
             text_content = self._extract_text_from_html(html_content)
 
             if not text_content:
-                return "Error: Could not extract text content from the webpage"
+                return self._build_empty_content_error(response, html_content)
 
             url_hash = self._generate_url_hash(url)
             self._store_in_s3(url_hash, url, text_content)
@@ -163,9 +196,9 @@ Provide a 2-3 sentence summary of what this webpage is about.""",
             return text_content
 
         except requests.exceptions.Timeout:
-            return "Error: Request timed out while fetching the webpage"
+            return f"Error: Request timed out while fetching the webpage. Details: url={url}, timeout=30s"
         except requests.exceptions.RequestException as e:
-            return f"Error fetching webpage: {str(e)}"
+            return f"Error fetching webpage: {str(e)}. Details: url={url}"
 
     def _store_in_s3(self, url_hash: str, url: str, content: str) -> None:
         try:
