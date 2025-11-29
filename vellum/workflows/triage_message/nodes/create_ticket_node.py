@@ -1,8 +1,8 @@
 import logging
-import os
 from datetime import datetime, timedelta, UTC
 from vellum.workflows.nodes import BaseNode
 from services import ActionRecord, postgres_session
+from services.github_auth import get_github_auth_headers, GitHubAppAuthError
 from models.job import Job
 from models.contact import Contact
 from sqlmodel import select
@@ -24,9 +24,10 @@ class CreateTicketNode(BaseNode):
     
     def run(self) -> Outputs:
         try:
-            github_token = os.environ.get("GITHUB_TOKEN")
-            if not github_token:
-                result = "Error: GITHUB_TOKEN environment variable is not set"
+            try:
+                headers = get_github_auth_headers()
+            except GitHubAppAuthError as e:
+                result = f"Error getting GitHub auth headers: {str(e)}"
                 self._append_action_history("create_ticket", {
                     "title": self.title,
                     "body": self.body,
@@ -36,15 +37,12 @@ class CreateTicketNode(BaseNode):
             
             response = requests.post(
                 f"https://api.github.com/repos/{self.repo}/issues",
-                headers={
-                    "Authorization": f"Bearer {github_token}",
-                    "Accept": "application/vnd.github+json",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
+                headers=headers,
                 json={
                     "title": self.title,
                     "body": self.body,
                 },
+                timeout=10,
             )
             
             if response.status_code != 201:

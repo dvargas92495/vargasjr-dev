@@ -26,6 +26,8 @@ runwayml = "^2.2.1"
 tweepy = "^4.14.0"
 twilio = "^9.3.7"
 stripe = "^11.1.1"
+PyJWT = "^2.8.0"
+cryptography = "^41.0.0"
 
 
 
