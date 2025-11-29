@@ -472,6 +472,8 @@ export class AgentServer {
       async (req: express.Request, res: express.Response) => {
         try {
           const homeDir = process.env.HOME || "/home/ubuntu";
+          const requestedPath = req.query.path as string | undefined;
+          const targetPath = requestedPath || homeDir;
 
           const getDirectoryContents = (dirPath: string) => {
             try {
@@ -504,11 +506,11 @@ export class AgentServer {
             }
           };
 
-          const contents = getDirectoryContents(homeDir);
+          const contents = getDirectoryContents(targetPath);
 
           res.json({
             status: "success",
-            directory: homeDir,
+            directory: targetPath,
             contents,
             timestamp: new Date().toISOString(),
           });
