@@ -25,12 +25,19 @@ Your goal is to maintain a concise, informative summary of this contact that cap
 Keep the summary focused and actionable. Update or add new information based on the latest message, \
 but preserve important historical context.
 
+IMPORTANT RULES:
+1. DO NOT include any contact information in the summary (no email addresses, phone numbers, or Slack IDs). \
+This information is tracked separately in our database.
+2. If the current summary contains merge markers (lines like "--- Merged from contact ... ---"), this indicates \
+that two contact records were merged. In this case, consolidate the information from both sections into a single, \
+clean summary without any merge markers. Remove duplicate information and create a unified narrative.
+
 {% if current_summary %}Current summary:
 {{ current_summary }}
 {% else %}This is the first message from this contact, so there is no existing summary.
 {% endif %}
 
-Contact details:
+Contact details (for context only - DO NOT include these in the summary):
 {% if contact_full_name %}- Full name: {{ contact_full_name }}
 {% endif %}{% if contact_email %}- Email: {{ contact_email }}
 {% endif %}{% if contact_slack_display_name %}- Slack display name: {{ contact_slack_display_name }}
@@ -43,7 +50,8 @@ Latest message (via {{ channel }}):
 
 Provide an updated summary that incorporates this new information. If the latest message does not add \
 substantive new information and aligns well with the current summary, it's acceptable to keep the summary \
-unchanged and return it as-is.""",
+unchanged and return it as-is. Remember: no contact info (emails, phone numbers) in the output, and clean up \
+any merge markers if present.""",
                 ),
             ],
         ),
