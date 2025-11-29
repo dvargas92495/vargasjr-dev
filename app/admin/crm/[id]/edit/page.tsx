@@ -5,6 +5,7 @@ import { useCallback, useState, useEffect } from "react";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { updateContact } from "@/app/actions";
+import { ContactStatuses, ContactStatus } from "@/db/constants";
 
 interface Contact {
   id: string;
@@ -13,6 +14,7 @@ interface Contact {
   phoneNumber: string | null;
   slackId: string | null;
   slackDisplayName: string | null;
+  status: ContactStatus | null;
   createdAt: string;
 }
 
@@ -189,6 +191,27 @@ export default function EditContactPage({
               className="w-full p-2 border rounded text-black"
               placeholder="Enter Slack display name"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              defaultValue={contact.status || "NEW"}
+              className="w-full p-2 border rounded text-black"
+            >
+              {ContactStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex gap-4 mt-6">

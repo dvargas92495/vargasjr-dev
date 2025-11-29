@@ -25,6 +25,7 @@ import {
   uploadContactSummaryToS3,
   deleteContactSummaryFromS3,
 } from "@/app/lib/s3-client";
+import { ContactStatus } from "@/db/constants";
 
 export async function sendChatMessage(sessionId: string, formData: FormData) {
   const message = formData.get("message") as string;
@@ -241,6 +242,7 @@ export async function updateContact(id: string, formData: FormData) {
   const phoneNumber = formData.get("phoneNumber") as string;
   const slackId = formData.get("slackId") as string;
   const slackDisplayName = formData.get("slackDisplayName") as string;
+  const status = formData.get("status") as ContactStatus;
 
   const db = getDb();
   const updatedContact = await db
@@ -251,6 +253,7 @@ export async function updateContact(id: string, formData: FormData) {
       phoneNumber: phoneNumber || null,
       slackId: slackId || null,
       slackDisplayName: slackDisplayName || null,
+      status: status || "NEW",
     })
     .where(eq(ContactsTable.id, id))
     .returning()
