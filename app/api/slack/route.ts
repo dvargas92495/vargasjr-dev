@@ -216,7 +216,7 @@ export async function POST(request: Request) {
               })
               .returning({ id: InboxesTable.id });
             inbox = newInbox;
-          }else {
+          } else {
             await db
               .update(InboxesTable)
               .set({ displayLabel: displayLabel })
