@@ -45,7 +45,6 @@ export default async function ThankYou({
               .values({
                 name: "chat-sessions",
                 type: "CHAT_SESSION",
-                config: {},
               })
               .returning({ id: InboxesTable.id });
             inbox = newInbox;

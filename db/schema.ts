@@ -39,7 +39,6 @@ export const InboxesTable = pgTable("inboxes", {
   displayLabel: varchar("display_label"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   type: InboxTypesEnum("type").notNull(),
-  config: jsonb("config").notNull(),
 });
 
 export type Inbox = typeof InboxesTable.$inferSelect;

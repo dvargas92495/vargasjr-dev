@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
         .values({
           name: "chat-sessions",
           type: "CHAT_SESSION",
-          config: {},
         })
         .returning({ id: InboxesTable.id });
       inbox = newInbox;

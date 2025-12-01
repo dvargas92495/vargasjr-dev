@@ -26,7 +26,6 @@ export default async function InboxesPage({
     displayLabel: string | null;
     createdAt: string;
     type: string;
-    config: unknown;
     lastMessageDate: string | null;
   }> = [];
   let recentMessages: Array<{
@@ -59,7 +58,6 @@ export default async function InboxesPage({
         displayLabel: InboxesTable.displayLabel,
         createdAt: InboxesTable.createdAt,
         type: InboxesTable.type,
-        config: InboxesTable.config,
         lastMessageDate: sql<Date | null>`
           GREATEST(
             MAX(${InboxMessagesTable.createdAt}),

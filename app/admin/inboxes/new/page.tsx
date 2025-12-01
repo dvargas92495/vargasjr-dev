@@ -23,7 +23,6 @@ export default function NewInboxPage() {
           body: JSON.stringify({
             name: name.toString(),
             type: type.toString(),
-            config: {}, // Default empty config
           }),
         });
 

@@ -119,7 +119,6 @@ export async function POST(request: Request) {
         .values({
           name: "email",
           type: "EMAIL",
-          config: {},
         })
         .returning({ id: InboxesTable.id });
       inbox = newInbox;
