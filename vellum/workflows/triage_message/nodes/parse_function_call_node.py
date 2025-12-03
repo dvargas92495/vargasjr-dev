@@ -29,6 +29,7 @@ class ParseFunctionCallNode(BaseNode):
         start_demo = _is_function_call("start_demo")
         generate_stripe_checkout = _is_function_call("generate_stripe_checkout")
         create_ticket = _is_function_call("create_ticket")
+        create_project = _is_function_call("create_project")
 
     class Outputs(BaseNode.Outputs):
         action = TriageMessageNode.Outputs.results[0]["value"]["name"]  # type: ignore

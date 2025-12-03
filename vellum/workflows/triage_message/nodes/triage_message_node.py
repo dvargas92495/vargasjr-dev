@@ -298,6 +298,48 @@ def create_ticket(
         repo: The repository to create the issue in (format: owner/repo, e.g., "dvargas92495/vargasjr-dev" or "Cari-AI/cari-ai")
     """
     raise NotImplementedError("Tool stub. Implemented in CreateTicketNode.")
+
+
+def create_project(
+    title: str,
+    spec_url: str,
+    summary: str,
+):
+    """
+    Create a project job in the system when a project specification is received.
+    
+    Use this function when:
+    - The message contains a link to a project specification document (Notion doc, Google doc, etc.)
+    - The message itself is a detailed project specification or requirements document
+    - Someone shares a comprehensive project brief or scope document
+    - A long message describes a complete project with multiple requirements
+    
+    To detect project specifications, look for:
+    - Links to Notion pages (notion.so, notion.site)
+    - Links to Google Docs (docs.google.com)
+    - Links to other document platforms (Confluence, Coda, etc.)
+    - Long messages (500+ words) that describe a project in detail
+    - Messages containing sections like "Requirements", "Scope", "Deliverables", "Timeline"
+    - Structured content with multiple features or tasks to be completed
+    
+    The system will:
+    1. Create a job in the database with the project details
+    2. Store the spec URL as the external URL for reference
+    3. Return confirmation that the project has been created
+    
+    After creating the project, you will be prompted again to craft an appropriate
+    response acknowledging receipt of the project spec and next steps.
+    
+    IMPORTANT: Before calling this function, you should use lookup_url to fetch and
+    understand the contents of any linked documents. This ensures you can provide
+    an accurate summary of the project.
+    
+    Args:
+        title: A concise title for the project (e.g., "E-commerce Platform Redesign")
+        spec_url: The URL to the project specification document, or empty string if the spec was in the message body
+        summary: A comprehensive summary of the project requirements and scope
+    """
+    raise NotImplementedError("Tool stub. Implemented in CreateProjectNode.")
 class TriageMessageNode(BaseInlinePromptNode):
     ml_model = "gpt-5.1"
     blocks = [
@@ -368,6 +410,7 @@ to commit to working together. Keep it conversational and focus on understanding
         start_demo,
         generate_stripe_checkout,
         create_ticket,
+        create_project,
     ]
     parameters = PromptParameters(
         max_tokens=1000,
