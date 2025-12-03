@@ -28,6 +28,7 @@ from .nodes import (
     CompleteJobNode,
     MarkJobAsBlockedNode,
     CreateTicketNode,
+    CreateProjectNode,
 )
 
 
@@ -55,6 +56,7 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
                 ParseFunctionCallNode.Ports.start_demo >> StartDemoNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.generate_stripe_checkout >> GenerateStripeCheckoutNode >> TriageMessageNode,
                 ParseFunctionCallNode.Ports.create_ticket >> CreateTicketNode >> TriageMessageNode,
+                ParseFunctionCallNode.Ports.create_project >> CreateProjectNode >> TriageMessageNode,
                 {
                     ParseFunctionCallNode.Ports.email_reply >> EmailReplyNode,
                     ParseFunctionCallNode.Ports.email_initiate >> EmailInitiateNode,
