@@ -25,7 +25,7 @@ class CreateTicketNode(BaseNode):
     def run(self) -> Outputs:
         try:
             try:
-                headers = get_github_auth_headers()
+                headers = get_github_auth_headers(self.repo)
             except GitHubAppAuthError as e:
                 result = f"Error getting GitHub auth headers: {str(e)}"
                 self._append_action_history("create_ticket", {

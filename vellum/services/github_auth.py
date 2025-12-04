@@ -6,7 +6,6 @@ import jwt
 import requests
 
 GITHUB_APP_ID = "1344447"
-GITHUB_INSTALLATION_ID = "77219262"
 
 
 class GitHubAppAuthError(Exception):
@@ -36,10 +35,56 @@ def _generate_jwt() -> str:
     return token
 
 
-def _get_installation_token() -> str:
+def _get_installation_id_for_repo(repo: str) -> str:
+    """
+    Fetch the installation ID for a given repository.
+    
+    Args:
+        repo: Repository in 'owner/repo' format
+        
+    Returns:
+        The installation ID as a string
+        
+    Raises:
+        GitHubAppAuthError: If the installation cannot be found
+    """
+    jwt_token = _generate_jwt()
+    response = requests.get(
+        f"https://api.github.com/repos/{repo}/installation",
+        headers={
+            "Authorization": f"Bearer {jwt_token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        timeout=10,
+    )
+    if not response.ok:
+        raise GitHubAppAuthError(
+            f"Failed to get installation for repo {repo}: {response.status_code} {response.text}"
+        )
+    data = response.json()
+    installation_id = data.get("id")
+    if not installation_id:
+        raise GitHubAppAuthError(
+            f"Installation response for repo {repo} missing 'id' field"
+        )
+    return str(installation_id)
+
+
+def _get_installation_token(repo: str) -> str:
+    """
+    Get an installation access token for a given repository.
+    
+    Args:
+        repo: Repository in 'owner/repo' format
+        
+    Returns:
+        The installation access token
+    """
+    installation_id = _get_installation_id_for_repo(repo)
     jwt_token = _generate_jwt()
     response = requests.post(
-        f"https://api.github.com/app/installations/{GITHUB_INSTALLATION_ID}/access_tokens",
+        f"https://api.github.com/app/installations/{installation_id}/access_tokens",
         headers={
             "Authorization": f"Bearer {jwt_token}",
             "Accept": "application/vnd.github+json",
@@ -58,8 +103,18 @@ def _get_installation_token() -> str:
     return token
 
 
-def get_github_auth_headers() -> Dict[str, str]:
-    token = _get_installation_token()
+def get_github_auth_headers(repo: str) -> Dict[str, str]:
+    """
+    Get authenticated headers for GitHub API requests.
+    
+    Args:
+        repo: Repository in 'owner/repo' format. Used to determine which
+              GitHub App installation to authenticate with.
+              
+    Returns:
+        Dictionary of headers for authenticated GitHub API requests
+    """
+    token = _get_installation_token(repo)
     return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
