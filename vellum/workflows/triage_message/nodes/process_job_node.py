@@ -48,9 +48,9 @@ def split_job(sub_jobs: list, repo: Optional[str] = None):
             - name: Short descriptive name for the sub-job
             - description: Detailed description of what needs to be done
             - priority: Priority level (1.0 is normal, higher is more urgent)
-        repo: Optional GitHub repository (owner/repo format) to create issues in.
-              Must be one of: dvargas92495/vargasjr-dev, Cari-AI/cari-ai.
-              If not specified, will use the contact's associated repo or default to dvargas92495/vargasjr-dev.
+        repo: GitHub repository to create issues in. Can be either:
+            - An existing repo in owner/repo format (e.g., "owner/repo-name")
+            - A new repo name without slash (e.g., "my-new-repo") to create in the vargasjr-dev org
     """
     pass
 

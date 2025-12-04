@@ -14,7 +14,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_REPOS = ["dvargas92495/vargasjr-dev", "Cari-AI/cari-ai"]
+GITHUB_ORG = "vargasjr-dev"
 
 
 class SplitJobNode(BaseNode):
@@ -29,19 +29,24 @@ class SplitJobNode(BaseNode):
     def run(self) -> Outputs:
         try:
             repo = self.repo
-            if repo and repo not in ALLOWED_REPOS:
-                return self.Outputs(
-                    summary=f"Repository '{repo}' is not in the allowed list. Allowed repos: {', '.join(ALLOWED_REPOS)}"
-                )
             
-            if not repo:
+            if repo:
+                # Check if this is a new repo name (no slash) or existing repo (has slash)
+                if "/" not in repo:
+                    # Create new repo in the vargasjr-dev org
+                    created_repo = self._create_repo_for_job(repo)
+                    if not created_repo:
+                        return self.Outputs(
+                            summary=f"Failed to create repository '{repo}' in {GITHUB_ORG} org"
+                        )
+                    repo = created_repo
+            else:
+                # No repo specified, try to find one for the contact
                 repo = self._find_repo_for_contact()
                 if not repo:
-                    repo = self._create_repo_for_job()
-                    if not repo:
-                        return self.Outputs(
-                            summary="Could not find or create a suitable repository for GitHub issues"
-                        )
+                    return self.Outputs(
+                        summary="No repository specified and no associated repo found for contact. Please specify a repo name."
+                    )
             
             try:
                 headers = get_github_auth_headers()
@@ -122,11 +127,36 @@ class SplitJobNode(BaseNode):
             repo = session.exec(statement).first()
             
             if repo:
-                full_repo = f"{repo.repo_owner}/{repo.repo_name}"
-                if full_repo in ALLOWED_REPOS:
-                    return full_repo
+                return f"{repo.repo_owner}/{repo.repo_name}"
         
         return None
     
-    def _create_repo_for_job(self) -> str | None:
-        return "dvargas92495/vargasjr-dev"
+    def _create_repo_for_job(self, repo_name: str) -> str | None:
+        """Create a new repository in the vargasjr-dev org via GitHub API."""
+        try:
+            headers = get_github_auth_headers()
+        except GitHubAppAuthError as e:
+            logger.error(f"Error getting GitHub auth headers for repo creation: {str(e)}")
+            return None
+        
+        response = requests.post(
+            f"https://api.github.com/orgs/{GITHUB_ORG}/repos",
+            headers=headers,
+            json={
+                "name": repo_name,
+                "private": True,
+                "auto_init": True,
+            },
+            timeout=10,
+        )
+        
+        if response.status_code == 201:
+            logger.info(f"Successfully created repository {GITHUB_ORG}/{repo_name}")
+            return f"{GITHUB_ORG}/{repo_name}"
+        elif response.status_code == 422:
+            # Repository might already exist, try to use it
+            logger.info(f"Repository {GITHUB_ORG}/{repo_name} may already exist, attempting to use it")
+            return f"{GITHUB_ORG}/{repo_name}"
+        else:
+            logger.error(f"Failed to create repository: {response.status_code} - {response.text}")
+            return None
