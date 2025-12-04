@@ -38,7 +38,7 @@ def mark_job_as_blocked(reason: str):
     pass
 
 
-def split_job(sub_jobs: list, repo: str = None):
+def split_job(sub_jobs: list, repo: Optional[str] = None):
     """
     Split the current job into smaller sub-jobs when the job is too large or complex
     to complete in a single session. Each sub-job will be tracked as a GitHub issue.
