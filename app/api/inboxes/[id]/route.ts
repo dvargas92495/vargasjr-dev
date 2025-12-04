@@ -9,7 +9,6 @@ const updateInboxSchema = z.object({
   name: z.string(),
   displayLabel: z.string().nullable().optional(),
   type: z.enum(InboxTypes),
-  config: z.record(z.any()).optional().default({}),
 });
 
 async function getInboxHandler(body: unknown) {
@@ -30,7 +29,7 @@ async function getInboxHandler(body: unknown) {
 
 async function updateInboxHandler(body: unknown) {
   const parsedBody = updateInboxSchema.extend({ id: z.string() }).parse(body);
-  const { id, name, displayLabel, type, config } = parsedBody;
+  const { id, name, displayLabel, type } = parsedBody;
 
   const db = getDb();
   const [updatedInbox] = await db
@@ -39,7 +38,6 @@ async function updateInboxHandler(body: unknown) {
       name,
       displayLabel,
       type,
-      config,
     })
     .where(eq(InboxesTable.id, id))
     .returning();

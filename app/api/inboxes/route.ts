@@ -15,7 +15,7 @@ async function createInboxHandler(body: unknown) {
   const db = getDb();
   const [inbox] = await db
     .insert(InboxesTable)
-    .values({ name, type, config: {} })
+    .values({ name, type })
     .returning({ id: InboxesTable.id });
 
   return { id: inbox.id };

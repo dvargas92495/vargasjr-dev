@@ -96,7 +96,6 @@ class EvalRunner:
                             name=inbox_name,
                             type=inbox_type,
                             display_label=display_label,
-                            config={}
                         )
                         session.add(inbox)
                         session.commit()

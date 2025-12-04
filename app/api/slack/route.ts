@@ -213,7 +213,6 @@ export async function POST(request: Request) {
                 name: inboxName,
                 displayLabel: displayLabel,
                 type: "SLACK",
-                config: {},
               })
               .returning({ id: InboxesTable.id });
             inbox = newInbox;

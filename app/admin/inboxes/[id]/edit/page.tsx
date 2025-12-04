@@ -11,7 +11,6 @@ interface Inbox {
   name: string;
   displayLabel: string | null;
   type: string;
-  config: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -60,16 +59,6 @@ export default function EditInboxPage({
         const name = formData.get("name");
         const displayLabel = formData.get("displayLabel");
         const type = formData.get("type");
-        const configText = formData.get("config");
-
-        let config;
-        try {
-          config = configText ? JSON.parse(configText.toString()) : {};
-        } catch {
-          setError("Invalid JSON in config field");
-          setSaving(false);
-          return;
-        }
 
         const response = await fetch(`/api/inboxes/${inbox.id}`, {
           method: "PUT",
@@ -80,7 +69,6 @@ export default function EditInboxPage({
             name: name?.toString(),
             displayLabel: displayLabel?.toString() || null,
             type: type?.toString(),
-            config,
           }),
         });
 
@@ -189,23 +177,6 @@ export default function EditInboxPage({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="config"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Configuration (JSON)
-            </label>
-            <textarea
-              id="config"
-              name="config"
-              defaultValue={JSON.stringify(inbox.config, null, 2)}
-              rows={6}
-              className="w-full p-2 border rounded text-black font-mono text-sm"
-              placeholder="{}"
-            />
           </div>
 
           <div className="flex gap-4 mt-6">

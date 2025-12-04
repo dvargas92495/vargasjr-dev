@@ -52,7 +52,6 @@ export const POST = withApiWrapper(async (body: unknown) => {
       .values({
         name: `twilio-phone-${To}`,
         type: "SMS",
-        config: {},
       })
       .returning({ id: InboxesTable.id });
     inbox = newInbox;
