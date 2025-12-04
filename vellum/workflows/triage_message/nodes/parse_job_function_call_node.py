@@ -9,6 +9,7 @@ class ParseJobFunctionCallNode(BaseNode):
         start_job = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("start_job")))  # type: ignore
         complete_job = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("complete_job")))  # type: ignore
         mark_job_as_blocked = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("mark_job_as_blocked")))  # type: ignore
+        split_job = Port.on_if(LazyReference(lambda: ParseJobFunctionCallNode.Outputs.action.equals("split_job")))  # type: ignore
 
     class Outputs(BaseNode.Outputs):
         action = ProcessJobNode.Outputs.results[0]["value"]["name"]  # type: ignore

@@ -23,6 +23,7 @@ class Job(SQLModel, table=True):
     status: JobStatus = Field(default=JobStatus.OPEN)
     reason: Optional[str] = None
     external_url: Optional[str] = None
+    parent_job_id: Optional[UUID] = None
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"name": "created_at"},
