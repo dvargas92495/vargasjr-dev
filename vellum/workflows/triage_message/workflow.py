@@ -27,6 +27,7 @@ from .nodes import (
     StartJobNode,
     CompleteJobNode,
     MarkJobAsBlockedNode,
+    SplitJobNode,
     CreateTicketNode,
     CreateProjectNode,
 )
@@ -41,6 +42,7 @@ class TriageMessageWorkflow(BaseWorkflow[BaseInputs, State]):
                 ParseJobFunctionCallNode.Ports.start_job >> StartJobNode >> ProcessJobNode,
                 ParseJobFunctionCallNode.Ports.complete_job >> CompleteJobNode,
                 ParseJobFunctionCallNode.Ports.mark_job_as_blocked >> MarkJobAsBlockedNode,
+                ParseJobFunctionCallNode.Ports.split_job >> SplitJobNode,
             }
         },
         ReadMessageNode.Ports.triage

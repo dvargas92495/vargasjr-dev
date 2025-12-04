@@ -38,6 +38,23 @@ def mark_job_as_blocked(reason: str):
     pass
 
 
+def split_job(sub_jobs: list, repo: Optional[str] = None):
+    """
+    Split the current job into smaller sub-jobs when the job is too large or complex
+    to complete in a single session. Each sub-job will be tracked as a GitHub issue.
+    
+    Args:
+        sub_jobs: List of sub-job definitions, each containing:
+            - name: Short descriptive name for the sub-job
+            - description: Detailed description of what needs to be done
+            - priority: Priority level (1.0 is normal, higher is more urgent)
+        repo: GitHub repository to create issues in. Can be either:
+            - An existing repo in owner/repo format (e.g., "owner/repo-name")
+            - A new repo name without slash (e.g., "my-new-repo") to create in the vargasjr-dev org
+    """
+    pass
+
+
 class ProcessJobNode(BaseInlinePromptNode):
     ml_model = "gpt-5.1"
     blocks = [
@@ -79,6 +96,7 @@ Your goal is to complete the requirements of the job.""",
         start_job,
         complete_job,
         mark_job_as_blocked,
+        split_job,
     ]
     parameters = PromptParameters(
         max_tokens=32000,
