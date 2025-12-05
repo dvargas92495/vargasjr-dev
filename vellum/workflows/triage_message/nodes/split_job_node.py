@@ -15,6 +15,8 @@ import requests
 logger = logging.getLogger(__name__)
 
 GITHUB_ORG = "vargasjr-dev"
+# Reference repo used to get installation ID for org-level operations
+GITHUB_ORG_REFERENCE_REPO = "dvargas92495/vargasjr-dev"
 
 
 class SplitJobNode(BaseNode):
@@ -49,7 +51,7 @@ class SplitJobNode(BaseNode):
                     )
             
             try:
-                headers = get_github_auth_headers()
+                headers = get_github_auth_headers(repo)
             except GitHubAppAuthError as e:
                 return self.Outputs(summary=f"Error getting GitHub auth headers: {str(e)}")
             
@@ -134,7 +136,8 @@ class SplitJobNode(BaseNode):
     def _create_repo_for_job(self, repo_name: str) -> str | None:
         """Create a new repository in the vargasjr-dev org via GitHub API."""
         try:
-            headers = get_github_auth_headers()
+            # Use reference repo to get installation ID for org-level operations
+            headers = get_github_auth_headers(GITHUB_ORG_REFERENCE_REPO)
         except GitHubAppAuthError as e:
             logger.error(f"Error getting GitHub auth headers for repo creation: {str(e)}")
             return None
